@@ -29,7 +29,9 @@ export default function Unavailable() {
   return (
     <CenterScreen>
       <WalletNewIcon />
-      <Text bigger>Chimera Wallet</Text>
+      <Text bigger heading medium>
+        Chimera Wallet
+      </Text>
       <ErrorMessage error text={error} />
     </CenterScreen>
   )

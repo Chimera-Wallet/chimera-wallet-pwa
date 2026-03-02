@@ -16,6 +16,7 @@ export type Config = {
   aspUrl: string
   currencyDisplay: CurrencyDisplay
   fiat: Fiats
+  haptics: boolean
   nostrBackup: boolean
   notifications: boolean
   pubkey: string
@@ -55,6 +56,7 @@ export enum SettingsOptions {
   Advanced = 'advanced',
   Backup = 'backup',
   General = 'general',
+  Haptics = 'haptics feedback',
   KnowledgeBase = 'knowledge base',
   KYC = 'KYC - verification',
   Lock = 'lock wallet',
@@ -72,6 +74,7 @@ export enum SettingsOptions {
 }
 
 export enum Themes {
+  Auto = 'Auto',
   Dark = 'Dark',
   Light = 'Light',
 }

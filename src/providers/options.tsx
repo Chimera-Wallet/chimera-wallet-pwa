@@ -1,5 +1,6 @@
 import { ReactElement, ReactNode, createContext, useState } from 'react'
 import AddressBookIcon from '../icons/AddressBook'
+import { ReactElement, ReactNode, createContext, useCallback, useState } from 'react'
 import BackupIcon from '../icons/Backup'
 import InfoIcon from '../icons/Info'
 import KnowledgeBaseIcon from '../icons/KnowledgeBase'
@@ -115,6 +116,11 @@ export const options: Option[] = [
   },
   {
     icon: <></>,
+    option: SettingsOptions.Haptics,
+    section: SettingsSections.Config,
+  },
+  {
+    icon: <></>,
     option: SettingsOptions.Password,
     section: SettingsSections.Advanced,
   },
@@ -132,7 +138,10 @@ const allOptions: SectionResponse[] = [SettingsSections.Account, SettingsSection
   }
 })
 
+export type SettingsDirection = 'forward' | 'back'
+
 interface OptionsContextProps {
+  direction: SettingsDirection
   option: SettingsOptions
   options: Option[]
   goBack: () => void
@@ -141,6 +150,7 @@ interface OptionsContextProps {
 }
 
 export const OptionsContext = createContext<OptionsContextProps>({
+  direction: 'forward',
   option: SettingsOptions.Menu,
   options: [],
   goBack: () => {},
@@ -150,21 +160,31 @@ export const OptionsContext = createContext<OptionsContextProps>({
 
 export const OptionsProvider = ({ children }: { children: ReactNode }) => {
   const [option, setOption] = useState(SettingsOptions.Menu)
+  const [direction, setDirection] = useState<SettingsDirection>('forward')
 
-  const optionSection = (option: SettingsOptions): SettingsSections => {
-    return options.find((o) => o.option === option)?.section || SettingsSections.General
+  const optionSection = (opt: SettingsOptions): SettingsSections => {
+    return options.find((o) => o.option === opt)?.section || SettingsSections.General
   }
 
-  const goBack = () => {
-    const section = optionSection(option)
-    setOption(
-      section === SettingsSections.Advanced
+  const navigateToOption = useCallback(
+    (o: SettingsOptions) => {
+      setDirection('forward')
+      setOption(o)
+    },
+    [setOption],
+  )
+
+  const goBack = useCallback(() => {
+    setDirection('back')
+    setOption((current) => {
+      const section = optionSection(current)
+      return section === SettingsSections.Advanced
         ? SettingsOptions.Advanced
         : section === SettingsSections.Config
           ? SettingsOptions.General
-          : SettingsOptions.Menu,
-    )
-  }
+          : SettingsOptions.Menu
+    })
+  }, [setOption])
 
   const validOptions = (): SectionResponse[] => {
     return allOptions
@@ -173,10 +193,11 @@ export const OptionsProvider = ({ children }: { children: ReactNode }) => {
   return (
     <OptionsContext.Provider
       value={{
+        direction,
         option,
         options,
         goBack,
-        setOption,
+        setOption: navigateToOption,
         validOptions,
       }}
     >

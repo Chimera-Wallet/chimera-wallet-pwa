@@ -18,16 +18,18 @@ import { EmptyTxList } from '../../components/Empty'
 import { InfoBox } from '../../components/AlertBox'
 import { psaMessage } from '../../lib/constants'
 import { AnnouncementContext } from '../../providers/announcements'
+import { WalletStaggerContainer, WalletStaggerChild } from '../../components/WalletLoadIn'
 
 export default function Wallet() {
   const { aspInfo } = useContext(AspContext)
   const { announcement } = useContext(AnnouncementContext)
   const { setRecvInfo, setSendInfo } = useContext(FlowContext)
-  const { navigate } = useContext(NavigationContext)
+  const { isInitialLoad, navigate } = useContext(NavigationContext)
   const { balance, txs } = useContext(WalletContext)
   const { nudge } = useContext(NudgeContext)
 
   const [error, setError] = useState(false)
+  const shouldStagger = isInitialLoad
 
   useEffect(() => {
     setError(aspInfo.unreachable)
@@ -48,29 +50,45 @@ export default function Wallet() {
       {announcement}
       <Content>
         <Padded>
-          <FlexCol>
-            <FlexCol gap='0'>
-              <img
+          <WalletStaggerContainer animate={shouldStagger}>
+            <FlexCol>
+              <FlexCol gap='0'>
+                <WalletStaggerChild animate={shouldStagger}>
+                  <img
                 src='/arkade-icon.png'
                 alt='Arkade logo'
                 style={{ width: 40, height: 40, objectFit: 'contain' }}
               />
-              <Balance amount={balance} />
-              <ErrorMessage error={error} text='Ark server unreachable' />
-              <FlexRow padding='0 0 0.5rem 0'>
-                <Button main icon={<SendIcon />} label='Send' onClick={handleSend} />
-                <Button main icon={<ReceiveIcon />} label='Receive' onClick={handleReceive} />
-              </FlexRow>
-              {nudge ? nudge : psaMessage ? <InfoBox html={psaMessage} /> : null}
+                </WalletStaggerChild>
+                <WalletStaggerChild animate={shouldStagger}>
+                  <Balance amount={balance} />
+                </WalletStaggerChild>
+                <WalletStaggerChild animate={shouldStagger}>
+                  <ErrorMessage error={error} text='Ark server unreachable' />
+                </WalletStaggerChild>
+                <WalletStaggerChild animate={shouldStagger}>
+                  <FlexRow padding='0 0 0.5rem 0'>
+                    <Button main icon={<SendIcon />} label='Send' onClick={handleSend} />
+                    <Button main icon={<ReceiveIcon />} label='Receive' onClick={handleReceive} />
+                  </FlexRow>
+                </WalletStaggerChild>
+                <WalletStaggerChild animate={shouldStagger}>
+                  {nudge ? nudge : psaMessage ? <InfoBox html={psaMessage} /> : null}
+                </WalletStaggerChild>
+              </FlexCol>
+              {txs?.length === 0 ? (
+                <WalletStaggerChild animate={shouldStagger}>
+                  <div style={{ marginTop: '5rem', width: '100%' }}>
+                    <EmptyTxList />
+                  </div>
+                </WalletStaggerChild>
+              ) : (
+                <WalletStaggerChild animate={shouldStagger}>
+                  <TransactionsList />
+                </WalletStaggerChild>
+              )}
             </FlexCol>
-            {txs?.length === 0 ? (
-              <div style={{ marginTop: '5rem', width: '100%' }}>
-                <EmptyTxList />
-              </div>
-            ) : (
-              <TransactionsList />
-            )}
-          </FlexCol>
+          </WalletStaggerContainer>
         </Padded>
       </Content>
     </>
