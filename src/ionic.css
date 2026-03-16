@@ -304,6 +304,10 @@ input.native-input:focus::placeholder {
   color: transparent; /* Hide placeholder on focus */
 }
 
+input.native-input {
+  color: var(--white) !important;
+}
+
 ion-toast {
   --background: var(--greenbg);
   --border-radius: 0.5rem;

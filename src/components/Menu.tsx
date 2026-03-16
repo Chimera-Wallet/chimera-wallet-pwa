@@ -16,12 +16,16 @@ interface MenuProps {
 export default function Menu({ rows, styled }: MenuProps) {
   const { setOption } = useContext(OptionsContext)
 
-  const bgColor = styled ? 'var(--dark10)' : 'transparent'
+  const bgColor = styled ? 'var(--info-container-bg)' : 'transparent'
 
-  const rowStyle = (option: SettingsOptions) => ({
+  const rowStyle = (option: SettingsOptions, isFirst: boolean, isLast: boolean) => ({
     alignItems: 'center',
     backgroundColor: option === SettingsOptions.Reset ? 'var(--redbg)' : bgColor,
     borderBottom: '1px solid var(--dark10)',
+    borderTopLeftRadius: isFirst ? 'var(--info-container-radius)' : '0',
+    borderTopRightRadius: isFirst ? 'var(--info-container-radius)' : '0',
+    borderBottomLeftRadius: isLast ? 'var(--info-container-radius)' : '0',
+    borderBottomRightRadius: isLast ? 'var(--info-container-radius)' : '0',
     color: 'white',
     cursor: 'pointer',
     display: 'flex',
@@ -32,7 +36,7 @@ export default function Menu({ rows, styled }: MenuProps) {
 
   return (
     <FlexCol gap='0'>
-      {rows.map(({ icon, option }) => (
+      {rows.map(({ icon, option }, index) => (
         <Focusable
           onEnter={() => {
             hapticSubtle()
@@ -46,7 +50,7 @@ export default function Menu({ rows, styled }: MenuProps) {
                 hapticSubtle()
                 setOption(option)
               }}
-              style={rowStyle(option)}
+              style={rowStyle(option, index === 0, index === rows.length - 1)}
             >
               <FlexRow>
                 {styled ? icon : null}
