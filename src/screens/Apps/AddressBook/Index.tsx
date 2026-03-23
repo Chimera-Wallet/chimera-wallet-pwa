@@ -119,7 +119,7 @@ function EmptyState({ message }: { message: string }) {
   return (
     <FlexCol centered gap='1rem'>
       <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <Text>{message}</Text>
+        <Text wrap>{message}</Text>
       </div>
     </FlexCol>
   )

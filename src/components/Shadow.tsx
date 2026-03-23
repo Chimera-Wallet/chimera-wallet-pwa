@@ -78,6 +78,7 @@ export default function Shadow({
             : '0.5rem',
     width: flex ? undefined : '100%',
     alignItems: input ? 'center' : undefined,
+    boxSizing: 'border-box',
   }
 
   return (

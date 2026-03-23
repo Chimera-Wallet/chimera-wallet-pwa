@@ -113,7 +113,7 @@ export default function Statement() {
       <Content>
         <Padded>
           <FlexCol gap='1rem'>
-            <Text>
+            <Text wrap>
               Generate a PDF statement of your transaction history for a specified date range.
             </Text>
 

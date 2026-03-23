@@ -9,6 +9,7 @@ export default function Padded({ children }: PaddedProps) {
     height: '100%',
     padding: '0 1rem',
     width: '100%',
+    boxSizing: 'border-box',
   }
   return <div style={style}>{children}</div>
 }
