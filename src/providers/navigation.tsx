@@ -13,6 +13,10 @@ import ReceiveSuccess from '../screens/Wallet/Receive/Success'
 import SendForm from '../screens/Wallet/Send/Form'
 import SendDetails from '../screens/Wallet/Send/Details'
 import SendSuccess from '../screens/Wallet/Send/Success'
+import AssetNetworkSelect from '../screens/Wallet/AssetNetworkSelect'
+import BankReceive from '../screens/Wallet/Receive/BankReceive'
+import BankSend from '../screens/Wallet/Send/BankSend'
+import BankOrderStatus from '../screens/Wallet/BankOrderStatus'
 import Transaction from '../screens/Wallet/Transaction'
 import Transactions from '../screens/Wallet/Transactions'
 import Unlock from '../screens/Wallet/Unlock'
@@ -57,6 +61,7 @@ export enum Pages {
   AppAddressBookForm,
   AppAddressBookContact,
   Apps,
+  AssetNetworkSelect,
   Init,
   InitRestore,
   InitPassword,
@@ -70,6 +75,9 @@ export enum Pages {
   ReceiveAmount,
   ReceiveQRCode,
   ReceiveSuccess,
+  BankReceive,
+  BankSend,
+  BankOrderStatus,
   SendForm,
   SendDetails,
   SendSuccess,
@@ -108,6 +116,7 @@ const pageTab = {
   [Pages.AppAddressBookForm]: Tabs.Apps,
   [Pages.AppAddressBookContact]: Tabs.Apps,
   [Pages.Apps]: Tabs.Apps,
+  [Pages.AssetNetworkSelect]: Tabs.Wallet,
   [Pages.Init]: Tabs.None,
   [Pages.InitRestore]: Tabs.None,
   [Pages.InitPassword]: Tabs.None,
@@ -121,6 +130,9 @@ const pageTab = {
   [Pages.ReceiveAmount]: Tabs.Wallet,
   [Pages.ReceiveQRCode]: Tabs.Wallet,
   [Pages.ReceiveSuccess]: Tabs.Wallet,
+  [Pages.BankReceive]: Tabs.Wallet,
+  [Pages.BankSend]: Tabs.Wallet,
+  [Pages.BankOrderStatus]: Tabs.Wallet,
   [Pages.SendForm]: Tabs.Wallet,
   [Pages.SendDetails]: Tabs.Wallet,
   [Pages.SendSuccess]: Tabs.Wallet,
@@ -137,7 +149,7 @@ const pageTab = {
 // Root pages of each tab — tab switches between these get no animation
 const ROOT_PAGES = new Set([Pages.AppCardReservation, Pages.AppSwap, Pages.Wallet, Pages.Apps, Pages.Settings])
 
-export const pageComponent = (page: Pages): JSX.Element => {
+export const pageComponent = (page: Pages, navigationData?: Record<string, unknown>): JSX.Element => {
   switch (page) {
     case Pages.AppBoltz:
       return <AppBoltz />
@@ -169,6 +181,8 @@ export const pageComponent = (page: Pages): JSX.Element => {
       return <AppAddressBookContact />
     case Pages.Apps:
       return <Apps />
+    case Pages.AssetNetworkSelect:
+      return <AssetNetworkSelect mode={(navigationData?.mode as 'send' | 'receive') || 'receive'} />
     case Pages.Init:
       return <Init />
     case Pages.InitConnect:
@@ -195,6 +209,12 @@ export const pageComponent = (page: Pages): JSX.Element => {
       return <ReceiveQRCode />
     case Pages.ReceiveSuccess:
       return <ReceiveSuccess />
+    case Pages.BankReceive:
+      return <BankReceive />
+    case Pages.BankSend:
+      return <BankSend />
+    case Pages.BankOrderStatus:
+      return <BankOrderStatus />
     case Pages.SendForm:
       return <SendForm />
     case Pages.SendDetails:

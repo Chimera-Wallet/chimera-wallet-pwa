@@ -34,7 +34,7 @@ const TransactionLine = ({ tx, onClick }: { tx: Tx; onClick: () => void }) => {
   // Get status
   const getStatus = () => {
     if (tx.settled) return { text: 'Confirmed', color: 'var(--green-positive)' }
-    if (tx.preconfirmed) return { text: 'Pending', color: 'var(--orange)' }
+    if (tx.preconfirmed) return { text: 'Confirmed', color: 'var(--green-positive)' }
     if (tx.boardingTxid) return { text: 'Processing', color: 'var(--yellow)' }
     return { text: 'Unknown', color: 'var(--grey)' }
   }

@@ -134,3 +134,176 @@ export const getOrderStatus = async (orderId: string): Promise<ChimeraOrder> => 
 
   return response.json()
 }
+
+// ============================================
+// Bank Transfer (OTC) API Functions
+// ============================================
+
+import type { BankCircuit, BankData } from '../lib/bankTransferConfig'
+
+// Bank Deposit Request (Fiat → Crypto)
+export interface BankDepositPayload {
+  email: string
+  from_amount: number
+  from_asset: string // Fiat currency (EUR, CHF, USD)
+  to_asset: string // Crypto asset (BTC)
+  destination_address: string // User's crypto receive address
+}
+
+// Bank Deposit Response includes bank details to send fiat to
+export interface BankDepositResponse {
+  order?: ChimeraOrder
+  message?: string
+  kycError?: boolean
+}
+
+// Bank Withdraw Request (Crypto → Fiat)
+interface BankWithdrawBasePayload {
+  email: string
+  from_amount: number
+  from_asset: string // Crypto asset (BTC)
+  to_asset: string // Fiat currency (EUR, CHF, USD)
+  destination_type: BankCircuit
+}
+
+type BankWithdrawSepaPayload = BankWithdrawBasePayload & {
+  destination_type: 'sepa'
+  destination_bank_address: string // IBAN
+  destination_bank_name: string // Account holder name
+}
+
+type BankWithdrawSwiftPayload = BankWithdrawBasePayload & {
+  destination_type: 'swift'
+  destination_bank_address: string // IBAN
+  destination_bank_name: string // Account holder name
+  destination_bank_account_number: string
+}
+
+type BankWithdrawUsPayload = BankWithdrawBasePayload & {
+  destination_type: 'us'
+  destination_bank_account_number: string
+  destination_bank_routing_number: string
+}
+
+type BankWithdrawPayload = BankWithdrawSepaPayload | BankWithdrawSwiftPayload | BankWithdrawUsPayload
+
+export interface BankWithdrawResponse {
+  order: ChimeraOrder
+}
+
+/**
+ * Create a bank deposit order (Fiat → Crypto)
+ * Returns bank details where user should send their fiat
+ */
+export const createBankDeposit = async (payload: BankDepositPayload): Promise<BankDepositResponse> => {
+  const baseUrl = getBaseUrl()
+  const response = await fetch(`${baseUrl}/otc/deposit/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    if (errorData.message) {
+      throw new Error(errorData.message)
+    }
+    throw new Error(`Failed to create deposit order: ${response.status}`)
+  }
+
+  const data = await response.json()
+  
+  if (data.message) {
+    throw new Error(data.message)
+  }
+
+  return data
+}
+
+/**
+ * Create a bank withdraw order (Crypto → Fiat)
+ * User provides their bank details where fiat will be sent
+ */
+export const createBankWithdraw = async (params: {
+  email: string
+  fromAmount: number
+  fromAsset: string
+  toAsset: string
+  bankData: BankData
+}): Promise<BankWithdrawResponse> => {
+  const { email, fromAmount, fromAsset, toAsset, bankData } = params
+  const baseUrl = getBaseUrl()
+
+  let payload: BankWithdrawPayload
+
+  switch (bankData.circuit) {
+    case 'sepa':
+      if (!bankData.destinationBankAddress || !bankData.accountHolderName) {
+        throw new Error('SEPA transfer requires IBAN and account holder name')
+      }
+      payload = {
+        email,
+        from_amount: fromAmount,
+        from_asset: fromAsset,
+        to_asset: toAsset,
+        destination_type: 'sepa',
+        destination_bank_address: bankData.destinationBankAddress,
+        destination_bank_name: bankData.accountHolderName,
+      }
+      break
+
+    case 'swift':
+      if (!bankData.destinationBankAddress || !bankData.accountHolderName || !bankData.accountNumber) {
+        throw new Error('SWIFT transfer requires IBAN, account holder name, and account number')
+      }
+      payload = {
+        email,
+        from_amount: fromAmount,
+        from_asset: fromAsset,
+        to_asset: toAsset,
+        destination_type: 'swift',
+        destination_bank_address: bankData.destinationBankAddress,
+        destination_bank_name: bankData.accountHolderName,
+        destination_bank_account_number: bankData.accountNumber,
+      }
+      break
+
+    case 'us':
+      if (!bankData.accountNumber || !bankData.routingNumber) {
+        throw new Error('US wire transfer requires account number and routing number')
+      }
+      payload = {
+        email,
+        from_amount: fromAmount,
+        from_asset: fromAsset,
+        to_asset: toAsset,
+        destination_type: 'us',
+        destination_bank_account_number: bankData.accountNumber,
+        destination_bank_routing_number: bankData.routingNumber,
+      }
+      break
+
+    default:
+      throw new Error('Unsupported bank circuit')
+  }
+
+  const response = await fetch(`${baseUrl}/otc/withdraw/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    if (errorData.message) {
+      throw new Error(errorData.message)
+    }
+    throw new Error(`Failed to create withdraw order: ${response.status}`)
+  }
+
+  return response.json()
+}

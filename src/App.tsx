@@ -83,7 +83,7 @@ function AnimatedTabIcon({ children, animating }: { children: React.ReactNode; a
 export default function App() {
   const { aspInfo } = useContext(AspContext)
   const { configLoaded } = useContext(ConfigContext)
-  const { direction, navigate, screen, tab } = useContext(NavigationContext)
+  const { direction, navigate, navigationData, screen, tab } = useContext(NavigationContext)
   const { initInfo } = useContext(FlowContext)
   const { setOption } = useContext(OptionsContext)
   const { walletLoaded, initialized, wallet } = useContext(WalletContext)
@@ -226,7 +226,7 @@ export default function App() {
   const page =
     jsCapabilitiesChecked && configLoaded && (aspInfo.signerPubkey || aspInfo.unreachable) ? screen : Pages.Loading
 
-  const comp = page === Pages.Loading ? <Loading /> : pageComponent(page)
+  const comp = page === Pages.Loading ? <Loading /> : pageComponent(page, navigationData)
 
   return (
     <IonApp>

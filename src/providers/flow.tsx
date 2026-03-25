@@ -3,6 +3,7 @@ import { ReactNode, createContext, useState } from 'react'
 import { Tx } from '../lib/types'
 import type { TransferMethod } from '../lib/transferMethods'
 import { ChimeraOrder } from './chimera'
+import type { BankCircuit, BankCurrency, BankData } from '../lib/bankTransferConfig'
 export type { TransferMethod } from '../lib/transferMethods'
 
 export interface InitInfo {
@@ -36,6 +37,23 @@ export interface RecvInfo {
   txid?: string
 }
 
+// Bank Receive (Deposit) Info - for fiat → crypto
+export interface BankRecvInfo {
+  currency: BankCurrency
+  circuit: BankCircuit
+  amount: number
+  order?: ChimeraOrder
+}
+
+// Bank Send (Withdraw) Info - for crypto → fiat
+export interface BankSendInfo {
+  currency: BankCurrency
+  circuit: BankCircuit
+  amount: number
+  bankData?: BankData
+  order?: ChimeraOrder
+}
+
 export type SendInfo = {
   address?: string
   arkAddress?: string
@@ -67,6 +85,8 @@ interface FlowContextProps {
   swapInfo: SwapInfo
   swapOrderInfo: SwapOrderInfo
   txInfo: TxInfo
+  bankRecvInfo: BankRecvInfo
+  bankSendInfo: BankSendInfo
   setInitInfo: (arg0: InitInfo) => void
   setKycAuthParams: (arg0: KycAuthParams | undefined) => void
   setNoteInfo: (arg0: NoteInfo) => void
@@ -76,6 +96,8 @@ interface FlowContextProps {
   setSwapInfo: (arg0: SwapInfo) => void
   setSwapOrderInfo: (arg0: SwapOrderInfo) => void
   setTxInfo: (arg0: TxInfo) => void
+  setBankRecvInfo: (arg0: BankRecvInfo) => void
+  setBankSendInfo: (arg0: BankSendInfo) => void
 }
 
 export const emptyInitInfo: InitInfo = {
@@ -105,6 +127,18 @@ export const emptySendInfo: SendInfo = {
   txid: '',
 }
 
+export const emptyBankRecvInfo: BankRecvInfo = {
+  currency: 'EUR',
+  circuit: 'sepa',
+  amount: 0,
+}
+
+export const emptyBankSendInfo: BankSendInfo = {
+  currency: 'EUR',
+  circuit: 'sepa',
+  amount: 0,
+}
+
 export const FlowContext = createContext<FlowContextProps>({
   initInfo: emptyInitInfo,
   kycAuthParams: undefined,
@@ -115,6 +149,8 @@ export const FlowContext = createContext<FlowContextProps>({
   swapInfo: undefined,
   swapOrderInfo: undefined,
   txInfo: undefined,
+  bankRecvInfo: emptyBankRecvInfo,
+  bankSendInfo: emptyBankSendInfo,
   setInitInfo: () => {},
   setKycAuthParams: () => {},
   setNoteInfo: () => {},
@@ -124,6 +160,8 @@ export const FlowContext = createContext<FlowContextProps>({
   setSwapInfo: () => {},
   setSwapOrderInfo: () => {},
   setTxInfo: () => {},
+  setBankRecvInfo: () => {},
+  setBankSendInfo: () => {},
 })
 
 export const FlowProvider = ({ children }: { children: ReactNode }) => {
@@ -136,6 +174,8 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
   const [swapInfo, setSwapInfo] = useState<SwapInfo>()
   const [swapOrderInfo, setSwapOrderInfo] = useState<SwapOrderInfo>()
   const [txInfo, setTxInfo] = useState<TxInfo>()
+  const [bankRecvInfo, setBankRecvInfo] = useState<BankRecvInfo>(emptyBankRecvInfo)
+  const [bankSendInfo, setBankSendInfo] = useState<BankSendInfo>(emptyBankSendInfo)
 
   return (
     <FlowContext.Provider
@@ -149,6 +189,8 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
         swapInfo,
         swapOrderInfo,
         txInfo,
+        bankRecvInfo,
+        bankSendInfo,
         setInitInfo,
         setKycAuthParams,
         setNoteInfo,
@@ -158,6 +200,8 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
         setSwapInfo,
         setSwapOrderInfo,
         setTxInfo,
+        setBankRecvInfo,
+        setBankSendInfo,
       }}
     >
       {children}

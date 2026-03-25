@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from 'react'
 import Button from '../../../components/Button'
 import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import { FlowContext } from '../../../providers/flow'
+import { NavigationContext, Pages } from '../../../providers/navigation'
 import Padded from '../../../components/Padded'
 import ErrorMessage from '../../../components/Error'
 import { getReceivingAddresses } from '../../../lib/asp'
@@ -25,11 +26,8 @@ import ExpandAddresses from '../../../components/ExpandAddresses'
 import { canBrowserShareData, shareData } from '../../../lib/share'
 import { NotificationsContext } from '../../../providers/notifications'
 import { encodeBip21 } from '../../../lib/bip21'
-import NetworkSelector from '../../../components/NetworkSelector'
-import SelectSheet from '../../../components/SelectSheet'
+import { ASSETS, type AssetSymbol } from '../../../lib/assets'
 import AssetIcon from '../../../icons/AssetIcon'
-import { ASSETS, ASSET_LIST, type AssetSymbol } from '../../../lib/assets'
-import ChevronDown from '../../../icons/ChevronDown'
 import WhenIcon from '../../../icons/When'
 import FeesIcon from '../../../icons/Fees'
 import {
@@ -37,11 +35,14 @@ import {
   RECEIVE_METHOD_TIME_TEXT,
   RECEIVE_METHOD_WARNING_TEXT,
   TRANSFER_METHOD,
+  TRANSFER_METHOD_LABELS,
+  type TransferMethod,
 } from '../../../lib/transferMethods'
 
 export default function ReceiveAmount() {
   const { aspInfo } = useContext(AspContext)
   const { recvInfo, setRecvInfo } = useContext(FlowContext)
+  const { navigate } = useContext(NavigationContext)
   const { notifyPaymentReceived } = useContext(NotificationsContext)
   const { arkadeLightning, createReverseSwap, calcReverseSwapFee } = useContext(LightningContext)
   const {
@@ -63,9 +64,9 @@ export default function ReceiveAmount() {
   const [qrValue, setQrValue] = useState('')
   const [bip21uri, setBip21uri] = useState('')
   const [showQrCode, setShowQrCode] = useState(false)
-  const [assetSheetOpen, setAssetSheetOpen] = useState(false)
-  const [selectedAsset, setSelectedAsset] = useState<AssetSymbol>('BTC')
 
+  // Asset and network are pre-selected by AssetNetworkSelect
+  const selectedAsset: AssetSymbol = 'BTC' // For now only BTC is supported
   const selectedMethod = recvInfo.method ?? TRANSFER_METHOD.bitcoin
 
   useEffect(() => {
@@ -239,37 +240,23 @@ export default function ReceiveAmount() {
         <Padded>
           <FlexCol>
             <ErrorMessage error={Boolean(error)} text={error} />
-            {/* Full-width Asset Selector */}
-            <div
-              onClick={() => setAssetSheetOpen(true)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem',
-                padding: '1rem',
-                borderRadius: '12px',
-                backgroundColor: 'var(--white05)',
-                cursor: 'pointer',
-                border: '1px solid var(--white10)',
-                width: '100%',
-              }}
-            >
-              <AssetIcon symbol={selectedAsset} size={32} />
-              <div style={{ flex: 1 }}>
-                <div style={{ color: 'white', fontSize: '1rem', fontWeight: 600 }}>
-                  {ASSETS[selectedAsset].name}
-                </div>
-                <div style={{ color: 'var(--white50)', fontSize: '0.875rem' }}>
-                  {ASSETS[selectedAsset].symbol}
-                </div>
-              </div>
-              <ChevronDown />
+            {/* Network indicator (non-editable - set by AssetNetworkSelect) */}
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.75rem 1rem',
+              borderRadius: '12px',
+              backgroundColor: 'var(--white05)',
+              border: '1px solid var(--white10)',
+              justifyContent: 'center',
+              marginBottom: '1rem',
+            }}>
+              <AssetIcon symbol={selectedAsset} size={24} />
+              <span style={{ color: 'white', fontSize: '1rem' }}>
+                {ASSETS[selectedAsset].name} via {TRANSFER_METHOD_LABELS[selectedMethod] || selectedMethod}
+              </span>
             </div>
-            <NetworkSelector
-              label='Network'
-              selected={selectedMethod}
-              onSelect={(network) => setRecvInfo({ ...recvInfo, method: network, invoice: undefined })}
-            />
             {Boolean(methodWarningInfo || showLightningFees || methodTimeInfo || methodFeesInfo) && (
               <InfoContainer>
                 {methodWarningInfo ? <InfoLine compact color='orange' text={methodWarningInfo} /> : null}
@@ -278,48 +265,30 @@ export default function ReceiveAmount() {
                 {methodFeesInfo ? <InfoLine compact icon={<FeesIcon />} text={methodFeesInfo} /> : null}
               </InfoContainer>
             )}
-            {selectedMethod === TRANSFER_METHOD.bank ? (
-              <InfoLine color='orange' text='Bank transfers are handled in Transfers' />
-            ) : null}
-            {selectedMethod !== TRANSFER_METHOD.bank ? (
-              noPaymentMethods ? (
-                <div>No valid payment methods available for this amount</div>
-              ) : showQrCode ? (
-                <FlexCol centered>
-                  {invoice ? <InfoLine centered color='orange' text='Keep tab open to receive Lightning' /> : null}
-                  <QrCode value={qrValue} />
-                  <ExpandAddresses
-                    bip21uri={bip21uri}
-                    boardingAddr={address}
-                    offchainAddr={arkAddress}
-                    invoice={invoice}
-                    onClick={setQrValue}
-                  />
-                </FlexCol>
-              ) : (
-                <Loading text='Generating QR code...' />
-              )
-            ) : null}
+            {noPaymentMethods ? (
+              <div>No valid payment methods available for this amount</div>
+            ) : showQrCode ? (
+              <FlexCol centered>
+                {invoice ? <InfoLine centered color='orange' text='Keep tab open to receive Lightning' /> : null}
+                <QrCode value={qrValue} />
+                <ExpandAddresses
+                  bip21uri={bip21uri}
+                  boardingAddr={address}
+                  offchainAddr={arkAddress}
+                  invoice={invoice}
+                  onClick={setQrValue}
+                />
+              </FlexCol>
+            ) : (
+              <Loading text='Generating QR code...' />
+            )}
           </FlexCol>
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        {selectedMethod !== TRANSFER_METHOD.bank ? <Button label='Share' onClick={handleShare} disabled={disabled} /> : null}
+        <Button label='Share' onClick={handleShare} disabled={disabled} />
         {showFaucetButton ? <Button disabled={!satoshis} label='Faucet' onClick={handleFaucet} secondary /> : null}
       </ButtonsOnBottom>
-      <SelectSheet
-        isOpen={assetSheetOpen}
-        onClose={() => setAssetSheetOpen(false)}
-        onSelect={(id) => setSelectedAsset(id as AssetSymbol)}
-        options={ASSET_LIST.map((asset) => ({
-          id: asset.symbol,
-          label: asset.name,
-          description: asset.symbol,
-          icon: <AssetIcon symbol={asset.symbol} size={32} />,
-        }))}
-        selected={selectedAsset}
-        title="Select Asset"
-      />
     </>
   )
 }

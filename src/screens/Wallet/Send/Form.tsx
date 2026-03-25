@@ -42,16 +42,14 @@ import { LightningContext } from '../../../providers/lightning'
 import { decodeBip21, isBip21 } from '../../../lib/bip21'
 import { FeesContext } from '../../../providers/fees'
 import { InfoLine } from '../../../components/Info'
-import NetworkSelector from '../../../components/NetworkSelector'
 import { getNetworkConfig } from '../../../lib/networks'
-import { ASSETS, ASSET_LIST, type AssetSymbol } from '../../../lib/assets'
+import { ASSETS, type AssetSymbol } from '../../../lib/assets'
 import AssetIcon from '../../../icons/AssetIcon'
-import SelectSheet from '../../../components/SelectSheet'
-import ChevronDown from '../../../icons/ChevronDown'
 import WhenIcon from '../../../icons/When'
 import FeesIcon from '../../../icons/Fees'
 import {
   TRANSFER_METHOD,
+  TRANSFER_METHOD_LABELS,
   SEND_METHOD_FEES_TEXT,
   SEND_METHOD_TIME_TEXT,
   SEND_METHOD_WARNING_TEXT,
@@ -86,9 +84,9 @@ export default function SendForm() {
   const [scan, setScan] = useState(false)
   const [textValue, setTextValue] = useState('')
   const [tryingToSelfSend, setTryingToSelfSend] = useState(false)
-  const [assetSheetOpen, setAssetSheetOpen] = useState(false)
-  const [selectedAsset, setSelectedAsset] = useState<AssetSymbol>('BTC')
 
+  // Asset and network are pre-selected by AssetNetworkSelect
+  const selectedAsset: AssetSymbol = 'BTC' // For now only BTC is supported
   const selectedMethod: TransferMethod = sendInfo.method ?? TRANSFER_METHOD.bitcoin
 
   const smartSetError = (str: string) => {
@@ -135,7 +133,8 @@ export default function SendForm() {
     smartSetError('')
     const parseRecipient = async () => {
       setNudgeBoltz(false)
-      if (selectedMethod === TRANSFER_METHOD.bank) return setError('Bank transfers are handled in Transfers')
+      // Bank transfers are handled by a separate screen
+      if (selectedMethod === TRANSFER_METHOD.bank) return
       if (!recipient) return
       const lowerCaseData = recipient.toLowerCase().replace(/^lightning:/, '')
       if (isURLWithLightningQueryString(recipient)) {
@@ -487,10 +486,6 @@ export default function SendForm() {
     satoshis < 1 ||
     processing
 
-  if (keys && !amountIsReadOnly) {
-    return <Keyboard back={() => setKeys(false)} onSats={handleAmountChange} value={amount} />
-  }
-
   if (scan) {
     return (
       <Scanner close={() => setScan(false)} label='Recipient address' onData={setRecipient} onError={smartSetError} />
@@ -504,26 +499,41 @@ export default function SendForm() {
         <Padded>
           <FlexCol gap='2rem'>
             <ErrorMessage error={Boolean(error)} text={error} />
-            {/* Amount Display Section */}
+            {/* Inline Editable Amount Section */}
             <div style={{ textAlign: 'center', width: '100%', marginTop: '1rem' }}>
-              {/* Large tappable amount */}
-              <div
-                onClick={() => {
-                  if (!amountIsReadOnly) {
-                    setKeys(true)
-                  }
-                }}
-                style={{
-                  cursor: amountIsReadOnly ? 'default' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                }}
-              >
-                <span style={{ fontSize: '2.5rem', fontWeight: 700, color: 'white', fontFamily: 'monospace' }}>
-                  {prettyNumber((amount || 0) / Math.pow(10, ASSETS[selectedAsset].precision), 8)}
-                </span>
+              <div style={{ marginBottom: '0.5rem', color: 'var(--white70)', fontSize: '0.875rem' }}>
+                Amount
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                <input
+                  type="number"
+                  value={amount ? amount / Math.pow(10, ASSETS[selectedAsset].precision) : ''}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    if (value === '') {
+                      setAmount(undefined)
+                    } else {
+                      const numValue = parseFloat(value)
+                      if (!isNaN(numValue) && numValue >= 0) {
+                        handleAmountChange(Math.floor(numValue * Math.pow(10, ASSETS[selectedAsset].precision)))
+                      }
+                    }
+                  }}
+                  placeholder="0"
+                  disabled={amountIsReadOnly}
+                  style={{
+                    fontSize: '2.5rem',
+                    fontWeight: 700,
+                    color: 'white',
+                    fontFamily: 'monospace',
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    textAlign: 'center',
+                    width: '12ch',
+                    padding: '0.25rem',
+                  }}
+                />
                 <span style={{ fontSize: '1.25rem', fontWeight: 600, color: 'white' }}>
                   {ASSETS[selectedAsset].symbol}
                 </span>
@@ -532,46 +542,23 @@ export default function SendForm() {
               <div style={{ fontSize: '1rem', color: 'var(--white50)', marginTop: '0.25rem' }}>
                 {prettyNumber(toFiat(amount || 0), 2)} {config.fiat}
               </div>
-              {/* Asset selector dropdown */}
-              <div
-                onClick={() => setAssetSheetOpen(true)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  marginTop: '1rem',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '2rem',
-                  backgroundColor: 'var(--white05)',
-                  cursor: 'pointer',
-                }}
-              >
+              {/* Network indicator (non-editable - set by AssetNetworkSelect) */}
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginTop: '1rem',
+                padding: '0.5rem 1rem',
+                borderRadius: '2rem',
+                backgroundColor: 'var(--white05)',
+              }}>
                 <AssetIcon symbol={selectedAsset} size={20} />
                 <span style={{ color: 'white', fontSize: '0.875rem' }}>
-                  {ASSETS[selectedAsset].name} - {prettyNumber(availableBalance / Math.pow(10, ASSETS[selectedAsset].precision), 8)} {ASSETS[selectedAsset].symbol}
+                  {ASSETS[selectedAsset].name} via {TRANSFER_METHOD_LABELS[selectedMethod] || selectedMethod}
                 </span>
-                <ChevronDown />
               </div>
             </div>
-            <NetworkSelector
-              label='Network'
-              selected={selectedMethod}
-              onSelect={(network) => {
-                setRecipient('')
-                setState({
-                  ...sendInfo,
-                  method: network,
-                  address: '',
-                  arkAddress: '',
-                  invoice: '',
-                  lnUrl: undefined,
-                  pendingSwap: undefined,
-                  recipient: '',
-                })
-              }}
-            />
-            {selectedMethod !== TRANSFER_METHOD.bank ? (
-              <InputAddress
+            <InputAddress
                 name='send-address'
                 focus={focus === 'recipient'}
                 label='Recipient address'
@@ -585,9 +572,6 @@ export default function SendForm() {
                 }}
                 value={recipient}
               />
-            ) : (
-              <InfoLine color='orange' text='Bank transfers are handled in Transfers' />
-            )}
             {Boolean(methodWarningInfo || methodFeeText || methodTimeInfo || methodFeesInfo || deductFromAmount) && (
               <InfoContainer>
                 {methodWarningInfo ? <InfoLine compact color='orange' text={methodWarningInfo} /> : null}
@@ -617,19 +601,6 @@ export default function SendForm() {
       <ButtonsOnBottom>
         <Button onClick={handleContinue} label={label} disabled={buttonDisabled} />
       </ButtonsOnBottom>
-      <SelectSheet
-        isOpen={assetSheetOpen}
-        onClose={() => setAssetSheetOpen(false)}
-        onSelect={(id) => setSelectedAsset(id as AssetSymbol)}
-        options={ASSET_LIST.map((asset) => ({
-          id: asset.symbol,
-          label: asset.name,
-          description: asset.symbol,
-          icon: <AssetIcon symbol={asset.symbol} size={32} />,
-        }))}
-        selected={selectedAsset}
-        title="Select Asset"
-      />
     </>
   )
 }

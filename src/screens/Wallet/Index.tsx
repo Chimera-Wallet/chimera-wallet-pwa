@@ -43,12 +43,12 @@ export default function Wallet() {
 
   const handleReceive = () => {
     setRecvInfo(emptyRecvInfo)
-    navigate(Pages.ReceiveAmount)
+    navigate(Pages.AssetNetworkSelect, { mode: 'receive' })
   }
 
   const handleSend = () => {
     setSendInfo(emptySendInfo)
-    navigate(Pages.SendForm)
+    navigate(Pages.AssetNetworkSelect, { mode: 'send' })
   }
 
   const handleAssetClick = (symbol: AssetSymbol) => {
