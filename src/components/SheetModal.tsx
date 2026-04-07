@@ -14,12 +14,12 @@ export default function SheetModal({ children, isOpen, onClose }: SheetModalProp
       isOpen={isOpen} 
       onDidDismiss={onClose}
       style={{
-        '--background': 'var(--ion-background-color)',
+        '--background': '#101015',
       } as React.CSSProperties}
     >
       <div
         style={{
-          backgroundColor: 'var(--ion-background-color)',
+          backgroundColor: '#101015',
           borderTop: '1px solid var(--dark50)',
           borderRadius: '1rem',
           height: '100%',

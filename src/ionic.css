@@ -419,12 +419,25 @@ ion-backdrop {
 /* Ensure modals and sheets respect theme on iOS */
 ion-modal,
 ion-action-sheet {
-  --background: var(--ion-background-color);
+  --background: #101015 !important;
+  color-scheme: dark;
 }
 
 ion-modal .modal-wrapper,
 ion-action-sheet .action-sheet-wrapper {
-  background: var(--ion-background-color) !important;
+  background: #101015 !important;
+  background-color: #101015 !important;
+}
+
+/* Force dark background on modal content for iOS */
+ion-modal::part(content) {
+  --background: #101015 !important;
+  background: #101015 !important;
+  background-color: #101015 !important;
+}
+
+ion-modal::part(handle) {
+  background: #747474 !important;
 }
 
 /* Prevent white backgrounds in iOS Safari */
