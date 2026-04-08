@@ -12,6 +12,8 @@ export const getIntercomConfig = (): IntercomConfig => {
   }
 }
 
+let isIntercomReady = false
+
 export const initializeIntercom = (): void => {
   const config = getIntercomConfig()
   
@@ -21,10 +23,35 @@ export const initializeIntercom = (): void => {
   }
 
   Intercom(config)
+  
+  // Mark as ready after a short delay to ensure SDK is fully initialized
+  // This is especially important on iOS Safari
+  setTimeout(() => {
+    isIntercomReady = true
+  }, 1000)
 }
 
 export const showIntercom = (): void => {
-  showMessages()
+  // If Intercom isn't ready yet, wait and retry
+  if (!isIntercomReady) {
+    console.log('Intercom not ready yet, waiting...')
+    setTimeout(() => {
+      showIntercom()
+    }, 500)
+    return
+  }
+  
+  try {
+    showMessages()
+  } catch (error) {
+    console.error('Failed to show Intercom messenger:', error)
+    // Fallback: try using show() instead
+    try {
+      show()
+    } catch (fallbackError) {
+      console.error('Fallback also failed:', fallbackError)
+    }
+  }
 }
 
 export const hideIntercom = (): void => {
@@ -33,6 +60,7 @@ export const hideIntercom = (): void => {
 
 export const shutdownIntercom = (): void => {
   shutdown()
+  isIntercomReady = false
 }
 
 export const updateIntercomUser = (user: { name?: string; email?: string; user_id?: string }): void => {

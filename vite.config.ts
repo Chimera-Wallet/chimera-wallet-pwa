@@ -20,7 +20,7 @@ export default defineConfig({
   server: {
     port: 3002,
     host: true,
-    allowedHosts: ['.trycloudflare.com'],
+    allowedHosts: ['.trycloudflare.com', '.ngrok-free.app'],
     // Handle SPA routing - all paths fallback to index.html
     historyApiFallback: true,
   },

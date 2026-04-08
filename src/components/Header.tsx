@@ -35,7 +35,29 @@ export default function Header({ auxAriaLabel, auxFunc, auxText, back, text, aux
 
   const handleSupport = () => {
     hapticLight()
+    
+    // Try to show Intercom messenger
     showIntercom()
+    
+    // On iOS, if Intercom doesn't open after a delay, open knowledge base as fallback
+    const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    
+    if (isIos) {
+      setTimeout(() => {
+        // Check if Intercom messenger is visible
+        const intercomFrame = document.querySelector('iframe[name*="intercom"]')
+        const isVisible = intercomFrame && 
+                         window.getComputedStyle(intercomFrame).display !== 'none' &&
+                         window.getComputedStyle(intercomFrame).visibility !== 'hidden'
+        
+        // If Intercom isn't visible, open knowledge base as fallback
+        if (!isVisible) {
+          console.log('Intercom not visible on iOS, opening knowledge base')
+          window.open(KNOWLEDGE_BASE_URL, '_blank')
+        }
+      }, 2000)
+    }
   }
 
   const SideButton = (text: string) => (
