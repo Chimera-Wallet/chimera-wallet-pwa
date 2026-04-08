@@ -232,7 +232,8 @@ ion-app ion-header {
   border-bottom: 1px solid #444;
   color: #fbfbfb;
   display: flex;
-  height: 4rem;
+  height: calc(4rem + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
   & ion-grid {
     margin: auto;
   }
@@ -247,8 +248,7 @@ ion-tab-bar {
   border-top: 1px solid var(--dark20);
   width: 100%;
   background-color: var(--ion-tabbar-background-color);
-  /* Handle iOS safe area */
-  padding-bottom: env(safe-area-inset-bottom);
+  /* Ionic handles safe areas automatically via --ion-safe-area-bottom */
   & ion-tab-button {
     --background: var(--ion-tabbar-background-color);
     --color: var(--grey);
