@@ -24,7 +24,7 @@ export const NETWORKS: Record<TransferMethod, NetworkConfig> = {
     name: 'Lightning',
     description: 'Fast Lightning Network payments',
     icon: '/images/icons/network-lightning.svg',
-    addressPlaceholder: 'Paste Lightning invoice or LNURL',
+    addressPlaceholder: 'Paste Lightning invoice address',
   },
   [TRANSFER_METHOD.bitcoin]: {
     id: TRANSFER_METHOD.bitcoin,

@@ -148,7 +148,7 @@ export default function SendForm() {
           return setState({ ...sendInfo, address: '', arkAddress, invoice: '', lnUrl: undefined, recipient, satoshis })
         }
         if (selectedMethod === TRANSFER_METHOD.lightning) {
-          if (!invoice && !lnurl) return setError('Selected method requires a Lightning invoice or LNURL')
+          if (!invoice && !lnurl) return setError('Selected method requires a Lightning invoice address')
           return setState({
             ...sendInfo,
             address: '',
@@ -474,16 +474,18 @@ export default function SendForm() {
           <FlexCol gap='2rem'>
             <ErrorMessage error={Boolean(error)} text={error} />
             
-            {/* Amount Input */}
-            <InlineAmountInput
-              value={amount || 0}
-              onChange={(newAmount) => handleAmountChange(newAmount)}
-              asset={selectedAsset}
-              disabled={amountIsReadOnly}
-            />
-            
-            {/* Percentage Buttons */}
-            {!amountIsReadOnly && availableBalance > 0 ? (
+            {/* Amount Input - Hidden for Lightning since amount is in invoice */}
+            {selectedMethod !== TRANSFER_METHOD.lightning ? (
+              <>
+                <InlineAmountInput
+                  value={amount || 0}
+                  onChange={(newAmount) => handleAmountChange(newAmount)}
+                  asset={selectedAsset}
+                  disabled={amountIsReadOnly}
+                />
+                
+                {/* Percentage Buttons */}
+                {!amountIsReadOnly && availableBalance > 0 ? (
               <div style={{ marginTop: '-0.5rem' }}>
                 <FlexRow centered gap='0.5rem'>
                   {[25, 50, 75, 100].map((percent) => (
@@ -514,6 +516,28 @@ export default function SendForm() {
                     </button>
                   ))}
                 </FlexRow>
+              </div>
+            ) : null}
+            </>
+            ) : null}
+            
+            {/* Lightning Invoice Details */}
+            {selectedMethod === TRANSFER_METHOD.lightning && invoice && satoshis ? (
+              <div style={{
+                background: 'var(--dark20)',
+                border: '1px solid var(--dark50)',
+                borderRadius: '0.75rem',
+                padding: '1rem',
+              }}>
+                <Text small color='var(--white70)'>
+                  Invoice Details
+                </Text>
+                <FlexCol gap='0.5rem'>
+                  <FlexRow between gap='0.5rem'>
+                    <Text small color='var(--white50)'>Amount</Text>
+                    <Text small bold>{prettyAmount(satoshis)}</Text>
+                  </FlexRow>
+                </FlexCol>
               </div>
             ) : null}
             
@@ -555,8 +579,14 @@ export default function SendForm() {
                 openScan={() => setScan(true)}
                 value={recipient}
               />
-            <InfoContainer>
-              {termsAndConditions.map((item) => (
+            <InfoContainer>              {selectedMethod === TRANSFER_METHOD.lightning && !invoice ? (
+                <InfoLine
+                  compact
+                  color='neutral'
+                  icon={<InfoIcon />}
+                  text='Paste a Lightning invoice to send payment. The payment amount is encoded in the invoice.'
+                />
+              ) : null}              {termsAndConditions.map((item) => (
                 <InfoLine
                   key={item.text}
                   compact
