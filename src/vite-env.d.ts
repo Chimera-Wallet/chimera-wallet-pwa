@@ -6,6 +6,8 @@ interface ImportMetaEnv {
   readonly VITE_SENTRY_DSN?: string
   readonly VITE_ARK_SERVER?: string
   readonly VITE_BOLTZ_URL?: string
+  // Chimera API
+  readonly VITE_CHIMERA_API?: string
   // App URLs
   readonly VITE_GIFT_CARDS_URL?: string
   readonly VITE_CARD_RESERVATION_URL?: string
@@ -14,6 +16,12 @@ interface ImportMetaEnv {
   // KYC/IDFlow URLs
   readonly VITE_KYC_WEBVIEW_URL?: string
   readonly VITE_KYC_API_URL?: string
+  // ChatWoot
+  readonly VITE_CHATWOOT_WEBSITE_TOKEN?: string
+  readonly VITE_CHATWOOT_BASE_URL?: string
+  // Third-party integrations
+  readonly VITE_LENDASAT_IFRAME_URL?: string
+  readonly VITE_LENDASWAP_IFRAME_URL?: string
 }
 
 interface ImportMeta {

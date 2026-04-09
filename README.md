@@ -18,21 +18,51 @@ Arkade Wallet is the entry-point to the Arkade ecosystem—a self-custodial Bitc
 
 ## Environment Variables
 
+This project supports environment-specific configuration through `.env` files:
+
+- **`.env.production`** - Used for production/main branch deployments
+- **`.env.staging`** - Used for staging/dev branch deployments  
+- **`.env.example`** - Template showing all available variables
+- **`.env`** - Local overrides (gitignored, for development)
+
+### Core Service URLs
+
 | Variable                    | Description                                                         | Example Value                                     |
 | --------------------------- | ------------------------------------------------------------------- | ------------------------------------------------- |
-| `VITE_ARK_SERVER`           | Override the default Arkade server URL                              | `VITE_ARK_SERVER=http://localhost:7070`           |
-| `VITE_BOLTZ_URL`            | Override the default Boltz swap provider URL for Lightning          | `VITE_BOLTZ_URL=https://boltz-provider-url.com`   |
+| `VITE_ARK_SERVER`           | Override the default Arkade server URL                              | `VITE_ARK_SERVER=https://arkade.computer`         |
+| `VITE_BOLTZ_URL`            | Override the default Boltz swap provider URL for Lightning          | `VITE_BOLTZ_URL=https://api.ark.boltz.exchange`   |
+| `VITE_CHIMERA_API`          | Override the Chimera API URL                                        | `VITE_CHIMERA_API=https://api.chimerawallet.com/v1` |
+| `VITE_KYC_API_URL`          | IDFlow KYC API URL                                                  | `VITE_KYC_API_URL=https://api.idflow.ch`          |
+| `VITE_KYC_WEBVIEW_URL`      | IDFlow KYC webview URL                                              | `VITE_KYC_WEBVIEW_URL=https://demo.idflow.ch/`    |
+
+### Third-Party Integrations
+
+| Variable                    | Description                                                         | Example Value                                     |
+| --------------------------- | ------------------------------------------------------------------- | ------------------------------------------------- |
 | `VITE_CHATWOOT_WEBSITE_TOKEN` | ChatWoot website token for customer support integration           | `VITE_CHATWOOT_WEBSITE_TOKEN=your-token`          |
 | `VITE_CHATWOOT_BASE_URL`    | ChatWoot server base URL for customer support integration           | `VITE_CHATWOOT_BASE_URL=https://app.chatwoot.com` |
-| `VITE_PSA_MESSAGE`          | Manage message to show in wallet index page                         | `VITE_PSA_MESSAGE=@arkade_os on TG for support`   |
 | `VITE_SENTRY_DSN`           | Enable Sentry error tracking (only in production, not on localhost) | `VITE_SENTRY_DSN=your-sentry-dsn`                 |
+| `VITE_LENDASAT_IFRAME_URL`  | Overwrite the default LendaSat URL                                  | `VITE_LENDASAT_IFRAME_URL=https://iframe.lendasat.com` |
+| `VITE_LENDASWAP_IFRAME_URL` | Overwrite the default LendaSwap URL                                 | `VITE_LENDASWAP_IFRAME_URL=https://swap.lendasat.com` |
+
+### Other Configuration
+
+| Variable                    | Description                                                         | Example Value                                     |
+| --------------------------- | ------------------------------------------------------------------- | ------------------------------------------------- |
+| `VITE_PSA_MESSAGE`          | Manage message to show in wallet index page                         | `VITE_PSA_MESSAGE=@arkade_os on TG for support`   |
 | `CI`                        | Set to `true` for Continuous Integration environments               | `CI=true`                                         |
 | `GENERATE_SOURCEMAP`        | Disable source map generation during build                          | `GENERATE_SOURCEMAP=false`                        |
-| `VITE_LENDASAT_IFRAME_URL`  | Overwrite the default LendaSat URL                                  | `VITE_LENDASAT_IFRAME_URL=http://localhost:5173`  |
-| `VITE_LENDASWAP_IFRAME_URL` | Overwrite the default LendaSwap URL                                 | `VITE_LENDASWAP_IFRAME_URL=http://localhost:5174` |
 | `VITE_UTXO_MAX_AMOUNT`.     | Overwrite the server's utxoMaxAmount                                | `VITE_UTXO_MAX_AMOUNT=-1`                         |
 | `VITE_UTXO_MIN_AMOUNT`.     | Overwrite the server's utxoMinAmount                                | `VITE_UTXO_MIN_AMOUNT=330`                        |
 | `VITE_VTXO_MAX_AMOUNT`.     | Overwrite the server's vtxoMaxAmount                                | `VITE_VTXO_MAX_AMOUNT=-1`                         |
+
+### AWS Amplify Deployment
+
+When deploying to AWS Amplify, the `amplify.yml` configuration automatically loads the appropriate `.env` file based on the branch:
+- **main/production** branch → uses `.env.production`
+- **staging/dev** branches → uses `.env.staging`
+
+Sensitive values (like `VITE_SENTRY_DSN`, `VITE_CHATWOOT_WEBSITE_TOKEN`) should be set as **Environment variables** in the AWS Amplify Console, where they can be configured per-branch.
 | `VITE_VTXO_MIN_AMOUNT`.     | Overwrite the server's vtxoMinAmount                                | `VITE_VTXO_MIN_AMOUNT=330`                        |
 
 ## Getting Started

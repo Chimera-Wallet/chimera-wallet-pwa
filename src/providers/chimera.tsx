@@ -5,6 +5,10 @@ const CHIMERA_API_STAGING = 'https://api.staging.chimerawallet.com/v1'
 const CHIMERA_API_PRODUCTION = 'https://api.chimerawallet.com/v1'
 
 const getBaseUrl = (): string => {
+  // Check for environment variable override first
+  if (import.meta.env.VITE_CHIMERA_API) {
+    return import.meta.env.VITE_CHIMERA_API
+  }
   return isTestEnvironment() ? CHIMERA_API_STAGING : CHIMERA_API_PRODUCTION
 }
 

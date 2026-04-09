@@ -1,0 +1,40 @@
+version: 1
+applications:
+  - frontend:
+      phases:
+        preBuild:
+          commands:
+            - corepack enable
+            - corepack prepare pnpm@latest --activate
+            - pnpm install
+        build:
+          commands:
+            # Determine which environment file to use based on branch
+            - |
+              if [ "$AWS_BRANCH" = "main" ] || [ "$AWS_BRANCH" = "master" ]; then
+                export ENV_FILE=".env.production"
+                echo "Loading production environment configuration"
+              else
+                export ENV_FILE=".env.staging"
+                echo "Loading staging environment configuration"
+              fi
+            # Load environment-specific .env file
+            - |
+              if [ -f "$ENV_FILE" ]; then
+                echo "Using $ENV_FILE"
+                set -a
+                source $ENV_FILE
+                set +a
+              else
+                echo "Warning: $ENV_FILE not found"
+              fi
+            # Build the application
+            - pnpm git-info
+            - pnpm run build
+      artifacts:
+        baseDirectory: dist
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
