@@ -21,10 +21,11 @@ import NetworkSelector from '../../../components/NetworkSelector'
 import InlineAmountInput from '../../../components/InlineAmountInput'
 import BankTransferValidationMessages from '../../../components/BankTransferValidation'
 import type { AssetSymbol } from '../../../lib/assets'
-import { TRANSFER_METHOD, type TransferMethod } from '../../../lib/transferMethods'
+import { TRANSFER_METHOD, TERMS_AND_CONDITIONS, type TransferMethod, type InfoItemIcon } from '../../../lib/transferMethods'
 import { prettyNumber } from '../../../lib/format'
 import WhenIcon from '../../../icons/When'
 import FeesIcon from '../../../icons/Fees'
+import InfoIcon from '../../../icons/Info'
 import {
   SepaDataView,
   SwiftDataView,
@@ -269,12 +270,25 @@ export default function BankReceive() {
 
             {/* Bank Transfer Terms & Conditions */}
             <InfoContainer>
-              <InfoLine compact icon={<WhenIcon />} text='Transfer time: The transfer time might vary depending on the bank, from instant to 48 hours.' />
-              <InfoLine 
-                compact 
-                icon={<FeesIcon />} 
-                text='Fees: 0.5% + 10 CHF if over 1000 CHF, or 1% + 10 CHF if under 1000 CHF. Your bank might charge additional fees.' 
-              />
+              {TERMS_AND_CONDITIONS.receive.bank.map((item) => {
+                const getIcon = (iconType?: InfoItemIcon) => {
+                  switch (iconType) {
+                    case 'time': return <WhenIcon />
+                    case 'fees': return <FeesIcon />
+                    case 'info': return <InfoIcon />
+                    default: return <InfoIcon />
+                  }
+                }
+                return (
+                  <InfoLine
+                    key={item.text}
+                    compact
+                    color={item.color}
+                    icon={getIcon(item.icon)}
+                    text={item.text}
+                  />
+                )
+              })}
             </InfoContainer>
 
             {/* Validation and KYC messages */}

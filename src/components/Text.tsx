@@ -58,7 +58,7 @@ export default function Text({
     overflow: wrap ? undefined : 'hidden',
     textAlign: centered ? 'center' : right ? 'right' : undefined,
     textOverflow: wrap ? undefined : 'ellipsis',
-    whiteSpace: wrap ? undefined : 'nowrap',
+    whiteSpace: wrap ? 'pre-line' : 'nowrap',
     wordBreak: 'break-word',
   }
 
