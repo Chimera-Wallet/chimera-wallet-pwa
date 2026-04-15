@@ -8,7 +8,7 @@ import SelectorField from './SelectorField'
 interface NetworkSelectorProps {
   label?: string
   onSelect: (network: TransferMethod) => void
-  selected: TransferMethod
+  selected: TransferMethod | undefined
   isOpen?: boolean
   setIsOpen?: (isOpen: boolean) => void
 }
@@ -20,7 +20,7 @@ export default function NetworkSelector({ label, onSelect, selected, isOpen: ext
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen
   const setIsOpen = externalSetIsOpen || setInternalIsOpen
 
-  const selectedConfig = getNetworkConfig(selected)
+  const selectedConfig = selected ? getNetworkConfig(selected) : undefined
   const options = SEND_NETWORK_LIST.map((network) => ({
     id: network.id,
     label: network.name,
@@ -31,10 +31,10 @@ export default function NetworkSelector({ label, onSelect, selected, isOpen: ext
   return (
     <>
       <SelectorField
-        icon={<NetworkIcon network={selected} size={24} />}
+        icon={selected ? <NetworkIcon network={selected} size={24} /> : undefined}
         label={label || 'Network'}
         onClick={() => setIsOpen(true)}
-        value={selectedConfig?.name || selected}
+        value={selectedConfig?.name || selected || 'Select network'}
         sublabel={selectedConfig?.description}
       />
       <SelectSheet

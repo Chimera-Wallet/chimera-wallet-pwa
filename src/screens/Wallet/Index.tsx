@@ -45,7 +45,7 @@ export default function Wallet() {
   const [showAssetSelector, setShowAssetSelector] = useState(false)
   const [showNetworkSelector, setShowNetworkSelector] = useState(false)
   const [selectedFlowAsset, setSelectedFlowAsset] = useState<AssetSymbol>('BTC')
-  const [selectedNetwork, setSelectedNetwork] = useState<TransferMethod>(TRANSFER_METHOD.bitcoin)
+  const [selectedNetwork, setSelectedNetwork] = useState<TransferMethod | undefined>(undefined)
 
   useEffect(() => {
     setError(aspInfo.unreachable)
@@ -65,12 +65,12 @@ export default function Wallet() {
     // If on asset detail view, skip asset selection and go directly to network
     if (selectedAsset) {
       setSelectedFlowAsset(selectedAsset)
-      setSelectedNetwork(TRANSFER_METHOD.bitcoin)
+      setSelectedNetwork(undefined)
       setShowAssetSelector(false)
       setShowNetworkSelector(true)
     } else {
       setSelectedFlowAsset('BTC')
-      setSelectedNetwork(TRANSFER_METHOD.bitcoin)
+      setSelectedNetwork(undefined)
       setShowAssetSelector(true)
     }
   }
@@ -82,12 +82,12 @@ export default function Wallet() {
     // If on asset detail view, skip asset selection and go directly to network
     if (selectedAsset) {
       setSelectedFlowAsset(selectedAsset)
-      setSelectedNetwork(TRANSFER_METHOD.bitcoin)
+      setSelectedNetwork(undefined)
       setShowAssetSelector(false)
       setShowNetworkSelector(true)
     } else {
       setSelectedFlowAsset('BTC')
-      setSelectedNetwork(TRANSFER_METHOD.bitcoin)
+      setSelectedNetwork(undefined)
       setShowAssetSelector(true)
     }
   }
