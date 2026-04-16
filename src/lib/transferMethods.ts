@@ -84,7 +84,7 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
       },
       {
         icon: 'fees',
-        text: 'The fees for bank sends are 0.3% of the sent amount plus 10 CHF if over 1000 CHF.\nThe fees for bank sends are 1% of the sent amount plus 10 CHF if under 1000 CHF.\nYour bank might charge some additional fees we are not aware of.',
+        text: 'The fees for bank sends are 0.3% of the sent amount if over 1000 CHF.\nThe fees for bank sends are 1% of the sent amount if under 1000 CHF.\nYour bank might charge some additional fees we are not aware of.',
       },
     ],
   },
@@ -145,7 +145,7 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
       },
       {
         icon: 'fees',
-        text: 'The fees for bank receives are 0.6% of the received amount plus 10 CHF if over 1000 CHF.\nThe fees for bank receives are 1% of the received amount plus 10 CHF if under 1000 CHF.\nYour bank might charge some additional fees we are not aware of.',
+        text: 'The fees for bank receives are 0.6% of the received amount if over 1000 CHF.\nThe fees for bank receives are 1% of the received amount if under 1000 CHF.\nYour bank might charge some additional fees we are not aware of.',
       },
     ],
   },
