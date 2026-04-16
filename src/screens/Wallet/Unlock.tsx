@@ -105,6 +105,7 @@ export default function Unlock() {
   const handleRestore = async () => {
     await clearStorage()
     updateWallet({ network: '', nextRollover: 0 })
+    navigate(Pages.InitRestore)
   }
 
   return tried ? (

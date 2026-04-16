@@ -23,62 +23,86 @@ interface NeedsPasswordProps {
 export default function NeedsPassword({ error, onPassword, loading = false, onRestore }: NeedsPasswordProps) {
   const { wallet } = useContext(WalletContext)
   const [password, setPassword] = useState('')
-  const [usePasswordFallback, setUsePasswordFallback] = useState(false)
+  const [biometricFailed, setBiometricFailed] = useState(false)
 
   const handleBiometrics = () => {
+    setBiometricFailed(false)
     authenticateUser(wallet.passkeyId)
       .then(onPassword)
       .catch((err) => {
         consoleError(err, 'Biometric authentication failed')
-        // Automatically show password fallback on biometric failure
-        setUsePasswordFallback(true)
+        setBiometricFailed(true)
       })
   }
 
   const handleChange = (ev: any) => setPassword(ev.target.value)
   const handleClick = () => onPassword(password)
 
-  const showPasswordInput = !wallet.lockedByBiometrics || usePasswordFallback
-
-  return (
-    <>
-      <Content>
-        <Padded>
-          {showPasswordInput ? (
-            <FlexCol gap='1rem'>
-              <InputPassword
-                focus
-                label='Insert password'
-                onChange={handleChange}
-                onEnter={handleClick}
-                placeholder='password'
-              />
-              <ErrorMessage text={error} error={Boolean(error)} />
-              {wallet.lockedByBiometrics && usePasswordFallback ? (
-                <TextSecondary wrap>
-                  Your passkey could not be found on this device. Enter your password, or restore your wallet using your secret phrase.
+  // Biometrics active and failed → show restore-only message
+  if (wallet.lockedByBiometrics && biometricFailed) {
+    return (
+      <>
+        <Content>
+          <Padded>
+            <CenterScreen>
+              <LockIcon big />
+              <FlexCol gap='0.5rem'>
+                <Text centered heading>Passkey not found</Text>
+                <TextSecondary centered wrap>
+                  Your passkey could not be found on this device. You will need to restore your wallet using your secret phrase.
                 </TextSecondary>
-              ) : null}
-            </FlexCol>
-          ) : (
+              </FlexCol>
+            </CenterScreen>
+          </Padded>
+        </Content>
+        <ButtonsOnBottom>
+          <Button onClick={handleBiometrics} label='Try again' secondary disabled={loading} />
+          {onRestore ? (
+            <Button onClick={onRestore} label='Restore from secret phrase' disabled={loading} />
+          ) : null}
+        </ButtonsOnBottom>
+      </>
+    )
+  }
+
+  // Biometrics active and not yet failed → show biometric prompt
+  if (wallet.lockedByBiometrics) {
+    return (
+      <>
+        <Content>
+          <Padded>
             <CenterScreen onClick={handleBiometrics}>
               <LockIcon big />
               <Text centered>Unlock with your passkey</Text>
             </CenterScreen>
-          )}
+          </Padded>
+        </Content>
+        <ButtonsOnBottom>
+          <Button onClick={handleBiometrics} label='Unlock using biometrics' loading={loading} disabled={loading} />
+        </ButtonsOnBottom>
+      </>
+    )
+  }
+
+  // No biometrics → password input only
+  return (
+    <>
+      <Content>
+        <Padded>
+          <FlexCol gap='1rem'>
+            <InputPassword
+              focus
+              label='Insert password'
+              onChange={handleChange}
+              onEnter={handleClick}
+              placeholder='password'
+            />
+            <ErrorMessage text={error} error={Boolean(error)} />
+          </FlexCol>
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        {showPasswordInput ? (
-          <>
-            <Button onClick={handleClick} label='Unlock wallet' loading={loading} disabled={loading} />
-            {wallet.lockedByBiometrics && usePasswordFallback && onRestore ? (
-              <Button onClick={onRestore} label='Restore from secret phrase' secondary disabled={loading} />
-            ) : null}
-          </>
-        ) : (
-          <Button onClick={handleBiometrics} label='Unlock using biometrics' loading={loading} disabled={loading} />
-        )}
+        <Button onClick={handleClick} label='Unlock wallet' loading={loading} disabled={loading} />
       </ButtonsOnBottom>
     </>
   )

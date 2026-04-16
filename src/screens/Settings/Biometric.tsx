@@ -87,7 +87,11 @@ export default function Biometric() {
                 checked={biometricsEnabled}
                 onClick={handleToggle}
                 text='Use Biometrics'
-                subtext='When enabled, you can use fingerprint or face recognition to unlock your wallet instead of entering a password'
+                subtext={
+                  biometricsEnabled
+                    ? 'Biometric authentication is active. Disabling it will remove your current lock — you can then set a password from Advanced Settings.'
+                    : 'Enable fingerprint or face recognition to unlock your wallet. This will replace your current password.'
+                }
               />
             )}
           </FlexCol>
