@@ -1,4 +1,4 @@
-import { ReactNode, createContext, useContext, useEffect, useState } from 'react'
+import { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react'
 import { AspContext } from './asp'
 import { WalletContext } from './wallet'
 import {
@@ -10,6 +10,8 @@ import {
   PendingSubmarineSwap,
   setLogger,
   SwapManager,
+  isReverseFinalStatus,
+  isSubmarineFinalStatus,
 } from '@arkade-os/boltz-swap'
 import { ConfigContext } from './config'
 import { consoleError, consoleLog } from '../lib/logs'
@@ -73,6 +75,9 @@ export const LightningProvider = ({ children }: { children: ReactNode }) => {
   const [arkadeLightning, setArkadeLightning] = useState<ArkadeLightning | null>(null)
   const [fees, setFees] = useState<FeesResponse | null>(null)
   const [apiUrl, setApiUrl] = useState<string | null>(null)
+  // Track which URL fees have already been fetched for to avoid redundant network calls
+  // when arkadeLightning is recreated with the same server URL.
+  const feesFetchedForUrl = useRef<string | null>(null)
 
   const connected = config.apps.boltz.connected
 
@@ -95,8 +100,8 @@ export const LightningProvider = ({ children }: { children: ReactNode }) => {
       arkProvider,
       swapProvider,
       indexerProvider,
-      // Enable SwapManager with auto-start when boltz is connected
-      swapManager: config.apps.boltz.connected,
+      // Disable autoStart so we can clean up stale swaps before monitoring begins
+      swapManager: config.apps.boltz.connected ? { autoStart: false } : false,
     })
     setLogger({
       log: (...args: unknown[]) => consoleLog(...args),
@@ -105,20 +110,66 @@ export const LightningProvider = ({ children }: { children: ReactNode }) => {
     })
     setArkadeLightning(instance)
 
+    let cancelled = false
+
+    if (config.apps.boltz.connected) {
+      // Clean up stale non-final swaps before SwapManager starts polling them.
+      // Boltz expires swaps after ~24-48h; anything older with a non-final status
+      // would return 404 forever and cause non-stop polling.
+      const startWithCleanup = async () => {
+        try {
+          // createdAt is stored as Unix seconds (Math.floor(Date.now() / 1000))
+          const STALE_SECONDS = 48 * 60 * 60
+          const staleThreshold = Math.floor(Date.now() / 1000) - STALE_SECONDS
+          const swaps = await instance.getSwapHistory()
+          const staleSwaps = swaps.filter((s) => {
+            const isNonFinal =
+              s.type === 'reverse' ? !isReverseFinalStatus(s.status) : !isSubmarineFinalStatus(s.status)
+            return isNonFinal && s.createdAt < staleThreshold // both in Unix seconds
+          })
+          if (staleSwaps.length > 0) {
+            const storage = new IndexedDBStorageAdapter('arkade-service-worker')
+            const contractRepo = new ContractRepositoryImpl(storage)
+            for (const swap of staleSwaps) {
+              const collection = swap.type === 'reverse' ? 'reverseSwaps' : 'submarineSwaps'
+              await contractRepo.saveToContractCollection(collection, { ...swap, status: 'swap.expired' }, 'id')
+            }
+            consoleLog(`Marked ${staleSwaps.length} stale swap(s) as expired before SwapManager start`)
+          }
+        } catch (err) {
+          consoleError(err, 'Failed to clean up stale swaps')
+        }
+        if (!cancelled) await instance.startSwapManager()
+      }
+      startWithCleanup().catch(consoleError)
+    }
+
     // Cleanup on unmount
     return () => {
+      cancelled = true
       instance.dispose().catch(consoleError)
     }
-  }, [aspInfo, svcWallet, config.apps.boltz.connected])
+    // Only depend on primitive values from aspInfo, not the object reference itself.
+    // aspInfo is recreated as a new object on every setAspInfo call (even with identical data),
+    // which would otherwise recreate ArkadeLightning, open a new WebSocket, and re-fetch fees unnecessarily.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aspInfo.network, aspInfo.url, svcWallet, config.apps.boltz.connected])
 
-  // fetch fees when arkadeLightning is ready
+  // fetch fees when arkadeLightning is ready, but only if we haven't already
+  // fetched for this server URL. Prevents redundant /submarine + /reverse calls
+  // if arkadeLightning is recreated (e.g. service worker retry) with the same URL.
   useEffect(() => {
-    if (!arkadeLightning) return
+    if (!arkadeLightning || !apiUrl) return
+    if (feesFetchedForUrl.current === apiUrl) return
+    feesFetchedForUrl.current = apiUrl
     arkadeLightning
       .getFees()
       .then(setFees)
-      .catch((err) => consoleError(err, 'Failed to fetch fees'))
-  }, [arkadeLightning])
+      .catch((err) => {
+        feesFetchedForUrl.current = null // allow retry on next render
+        consoleError(err, 'Failed to fetch fees')
+      })
+  }, [arkadeLightning, apiUrl])
 
   const setConnected = (value: boolean, backup: boolean) => {
     const newConfig = { ...config }

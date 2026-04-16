@@ -38,6 +38,7 @@ interface WalletContextProps {
   vtxos: { spendable: Vtxo[]; spent: Vtxo[] }
   balance: number
   dataReady: boolean
+  synced: boolean
   initialized?: boolean
 }
 
@@ -54,6 +55,7 @@ export const WalletContext = createContext<WalletContextProps>({
   isLocked: () => Promise.resolve(true),
   balance: 0,
   dataReady: false,
+  synced: false,
   txs: [],
   vtxos: { spendable: [], spent: [] },
 })
@@ -72,10 +74,12 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [initialized, setInitialized] = useState<boolean>(false)
   const [svcWallet, setSvcWallet] = useState<ServiceWorkerWallet>()
   const [dataReady, setDataReady] = useState(false)
+  const [synced, setSynced] = useState(false)
   const [vtxos, setVtxos] = useState<{ spendable: Vtxo[]; spent: Vtxo[] }>({ spendable: [], spent: [] })
 
   const hasLoadedOnce = useRef(false)
   const listeningForServiceWorker = useRef(false)
+  const syncedRef = useRef(false)
 
   // read wallet from storage
   useEffect(() => {
@@ -88,6 +92,20 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (svcWallet) reloadWallet().catch(consoleError)
   }, [svcWallet])
+
+  // If the wallet loaded with no transactions and no balance, the service worker
+  // won't fire VTXO_UPDATE (nothing to report). Mark as synced after a short delay
+  // so we don't spin indefinitely on a genuinely empty wallet.
+  useEffect(() => {
+    if (!dataReady || synced || balance > 0 || txs.length > 0) return
+    const timer = setTimeout(() => {
+      if (!syncedRef.current) {
+        syncedRef.current = true
+        setSynced(true)
+      }
+    }, 5_000)
+    return () => clearTimeout(timer)
+  }, [dataReady, synced, balance, txs.length])
 
   // calculate thresholdMs and next rollover
   useEffect(() => {
@@ -164,9 +182,11 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const reloadWallet = async (swWallet = svcWallet) => {
     if (!swWallet) return
     try {
-      const vtxos = await getVtxos(swWallet)
-      const txs = await getTxHistory(swWallet)
-      const balance = await getBalance(swWallet)
+      const [vtxos, txs, balance] = await Promise.all([
+        getVtxos(swWallet),
+        getTxHistory(swWallet),
+        getBalance(swWallet),
+      ])
       setBalance(balance)
       setVtxos(vtxos)
       // Only replace existing transactions if we received data back.
@@ -213,8 +233,22 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
           reloadWallet(svcWallet)
           // reload again after a delay to give the indexer time to update its cache
           setTimeout(() => reloadWallet(svcWallet), 5000)
+          // Mark synced on first service worker update — the service worker has
+          // completed its initial sync with the indexer
+          if (!syncedRef.current) {
+            syncedRef.current = true
+            setSynced(true)
+          }
         }
       }
+
+      // Fallback: if no VTXO_UPDATE arrives within 15s, mark as synced anyway
+      setTimeout(() => {
+        if (!syncedRef.current) {
+          syncedRef.current = true
+          setSynced(true)
+        }
+      }, 15_000)
 
       // listen for messages from the service worker
       if (listeningForServiceWorker.current) {
@@ -294,6 +328,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     setSvcWallet(undefined)
     setInitialized(false)
     setDataReady(false)
+    setSynced(false)
+    syncedRef.current = false
     hasLoadedOnce.current = false
   }
 
@@ -303,6 +339,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     await svcWallet.clear()
     await svcWallet.contractRepository.clearContractData()
     setDataReady(false)
+    setSynced(false)
+    syncedRef.current = false
     hasLoadedOnce.current = false
   }
 
@@ -346,6 +384,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         txs,
         balance,
         dataReady,
+        synced,
         reloadWallet,
         vtxos: vtxos ?? { spendable: [], spent: [] },
       }}

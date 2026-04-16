@@ -48,6 +48,8 @@ export const LimitsProvider = ({ children }: { children: ReactNode }) => {
     utxo: { min: BigInt(0), max: BigInt(-1) },
     vtxo: { min: BigInt(0), max: BigInt(-1) },
   })
+  // Track whether swap limits have been fetched to avoid duplicate /submarine calls
+  const swapLimitsFetched = useRef(false)
 
   // update limits when aspInfo or svcWallet changes
   useEffect(() => {
@@ -69,6 +71,8 @@ export const LimitsProvider = ({ children }: { children: ReactNode }) => {
     if (!arkadeLightning) return
 
     if (connected) {
+      if (swapLimitsFetched.current) return
+      swapLimitsFetched.current = true
       arkadeLightning
         .getLimits()
         .then((res) => {
@@ -79,8 +83,12 @@ export const LimitsProvider = ({ children }: { children: ReactNode }) => {
             max: BigInt(res.max),
           }
         })
-        .catch(consoleError)
+        .catch((err) => {
+          swapLimitsFetched.current = false // allow retry
+          consoleError(err)
+        })
     } else {
+      swapLimitsFetched.current = false
       limits.current.swap = {
         ...limits.current.swap,
         min: BigInt(0),

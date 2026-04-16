@@ -33,7 +33,7 @@ export default function Wallet() {
   const { announcement } = useContext(AnnouncementContext)
   const { setRecvInfo, setSendInfo } = useContext(FlowContext)
   const { isInitialLoad, navigate, navigationCount, screen } = useContext(NavigationContext)
-  const { balance, txs } = useContext(WalletContext)
+  const { balance, dataReady, synced, txs } = useContext(WalletContext)
   const { nudge } = useContext(NudgeContext)
 
   const [error, setError] = useState(false)
@@ -226,7 +226,13 @@ export default function Wallet() {
                   {nudge ? nudge : psaMessage ? <InfoBox html={psaMessage} /> : null}
                 </WalletStaggerChild>
               </FlexCol>
-              {txs?.length === 0 ? (
+              {!dataReady || (!synced && txs.length === 0) ? (
+                <WalletStaggerChild animate={shouldStagger}>
+                  <div style={{ marginTop: '5rem', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                    <div className='spinner' />
+                  </div>
+                </WalletStaggerChild>
+              ) : txs.length === 0 ? (
                 <WalletStaggerChild animate={shouldStagger}>
                   <div style={{ marginTop: '5rem', width: '100%' }}>
                     <EmptyTxList />
