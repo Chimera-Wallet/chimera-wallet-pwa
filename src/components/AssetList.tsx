@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import AssetRow from './AssetRow'
 import { ASSET_LIST, type AssetSymbol } from '../lib/assets'
 import { CoinGeckoConversionService, type ConversionRateResult } from '../lib/coingecko/service'
 import { consoleError } from '../lib/logs'
+import { ConfigContext } from '../providers/config'
 
 // Filter icon component
 const FilterIcon = () => (
@@ -26,12 +27,10 @@ interface AssetListProps {
   onAssetClick?: (symbol: AssetSymbol) => void
 }
 
-interface AssetPriceData {
-  usd: number
-  usd_24h_change?: number
-}
-
 export default function AssetList({ balances = [], onAssetClick }: AssetListProps) {
+  const { config } = useContext(ConfigContext)
+  const currency = config.fiat.toLowerCase()
+
   const [prices, setPrices] = useState<ConversionRateResult>({})
   const [loading, setLoading] = useState(true)
 
@@ -40,7 +39,7 @@ export default function AssetList({ balances = [], onAssetClick }: AssetListProp
       try {
         const symbols = ASSET_LIST.map((a) => a.symbol)
         const rates = await CoinGeckoConversionService.getBulkConversionRates(symbols, {
-          vsCurrencies: ['usd'],
+          vsCurrencies: [currency],
           include24hChange: true,
         })
         setPrices(rates)
@@ -56,18 +55,18 @@ export default function AssetList({ balances = [], onAssetClick }: AssetListProp
     // Refresh prices every 60 seconds
     const interval = setInterval(fetchPrices, 60000)
     return () => clearInterval(interval)
-  }, [])
+  }, [currency])
 
   const getBalance = (symbol: AssetSymbol): number => {
     const found = balances.find((b) => b.symbol === symbol)
     return found?.balance || 0
   }
 
-  const getPriceData = (symbol: string): AssetPriceData => {
-    const data = prices[symbol]
+  const getPriceData = (symbol: string) => {
+    const data = prices[symbol] as Record<string, number> | undefined
     return {
-      usd: data?.usd || 0,
-      usd_24h_change: data?.usd_24h_change,
+      rate: data?.[currency] || 0,
+      change: data?.[`${currency}_24h_change`],
     }
   }
 
@@ -136,7 +135,7 @@ export default function AssetList({ balances = [], onAssetClick }: AssetListProp
             const symbol = asset.symbol as AssetSymbol
             const balance = getBalance(symbol)
             const priceData = getPriceData(asset.symbol)
-            const balanceUsd = balance * priceData.usd
+            const balanceFiat = balance * priceData.rate
 
             return (
               <AssetRow
@@ -144,8 +143,9 @@ export default function AssetList({ balances = [], onAssetClick }: AssetListProp
                 symbol={asset.symbol}
                 name={asset.name}
                 balance={balance}
-                balanceUsd={balanceUsd}
-                percentChange={priceData.usd_24h_change || 0}
+                balanceFiat={balanceFiat}
+                currency={config.fiat}
+                percentChange={priceData.change || 0}
                 onClick={onAssetClick ? () => onAssetClick(symbol) : undefined}
                 isLast={index === ASSET_LIST.length - 1}
               />

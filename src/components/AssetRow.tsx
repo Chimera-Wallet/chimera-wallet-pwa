@@ -1,11 +1,13 @@
 import AssetIcon from '../icons/AssetIcon'
 import { getAssetConfig, type AssetSymbol } from '../lib/assets'
+import { Fiats } from '../lib/types'
 
 interface AssetRowProps {
   symbol: AssetSymbol | string
   name: string
   balance?: number
-  balanceUsd?: number
+  balanceFiat?: number
+  currency?: string
   percentChange?: number
   badge?: string
   onClick?: () => void
@@ -16,7 +18,8 @@ export default function AssetRow({
   symbol,
   name,
   balance = 0,
-  balanceUsd = 0,
+  balanceFiat = 0,
+  currency = Fiats.USD,
   percentChange = 0,
   badge,
   onClick,
@@ -143,7 +146,7 @@ export default function AssetRow({
             fontWeight: 400,
           }}
         >
-          {formatUsd(balanceUsd)} USD
+          {formatUsd(balanceFiat)} {currency}
         </span>
       </div>
     </div>

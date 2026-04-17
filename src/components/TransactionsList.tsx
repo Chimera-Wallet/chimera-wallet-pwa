@@ -1,7 +1,7 @@
 import { useContext, useState } from 'react'
 import { WalletContext } from '../providers/wallet'
 import Text, { TextLabel } from './Text'
-import { Tx } from '../lib/types'
+import { Fiats, Tx } from '../lib/types'
 import { prettyDate, prettyHide } from '../lib/format'
 import { FlowContext } from '../providers/flow'
 import { NavigationContext, Pages } from '../providers/navigation'
@@ -25,11 +25,12 @@ const TransactionLine = ({ tx, onClick }: { tx: Tx; onClick: () => void }) => {
     ? `${prefix} ${btcAmount.toFixed(5)} ${ASSETS.BTC.symbol}`
     : prettyHide(btcAmount, ASSETS.BTC.symbol)
   
-  // Format USD amount
-  const usdAmount = toFiat(tx.amount)
+  // Format fiat amount using selected currency
+  const fiatAmount = toFiat(tx.amount)
+  const fiatSymbol = config.fiat === Fiats.EUR ? '€' : config.fiat === Fiats.CHF ? 'Fr.' : '$'
   const formattedUSD = config.showBalance 
-    ? `${prefix} $${usdAmount.toFixed(2)}`
-    : prettyHide(usdAmount, config.fiat)
+    ? `${prefix} ${fiatSymbol}${fiatAmount.toFixed(2)}`
+    : prettyHide(fiatAmount, config.fiat)
 
   // Get status
   const getStatus = () => {
