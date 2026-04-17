@@ -282,6 +282,8 @@ export default function ReceiveAmount() {
                   navigate(Pages.BankReceive)
                   return
                 }
+                setInvoice('')
+                setShowQrCode(false)
                 setRecvInfo({ ...recvInfo, method: network, invoice: undefined })
               }}
             />
