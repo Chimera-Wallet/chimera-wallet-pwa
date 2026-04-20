@@ -12936,7 +12936,7 @@ class Pn extends sn {
     if (t.amount <= 0)
       throw new Error("Amount must be positive");
     if (!rw(t.address))
-      throw new Error("Invalid Arkade address " + t.address);
+      throw new Error("Invalid Ark address " + t.address);
     const n = await this.getVirtualCoins({
       withRecoverable: !1
     });

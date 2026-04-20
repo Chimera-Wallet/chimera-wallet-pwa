@@ -142,8 +142,15 @@ export default function BankSend() {
       return
     }
 
-    const bankData = validateBankDetails()
-    if (!bankData) return
+    // When KYC email is present and transfer requires KYC, skip bank detail collection
+    const skipBankDetails = validation.kycRequired && validation.kycVerified
+
+    let bankData
+    if (!skipBankDetails) {
+      const validated = validateBankDetails()
+      if (!validated) return
+      bankData = validated
+    }
 
     try {
       setLoading(true)
@@ -351,7 +358,9 @@ export default function BankSend() {
     }
   }
 
-  const canSubmit = validation.canProceed && isBankDetailsComplete() && !loading
+  // When KYC email is present and transfer requires KYC, bank details are not needed
+  const skipBankDetails = validation.kycRequired && validation.kycVerified
+  const canSubmit = validation.canProceed && (skipBankDetails || isBankDetailsComplete()) && !loading
 
   return (
     <>
@@ -401,11 +410,13 @@ export default function BankSend() {
               />
             </FlexCol>
 
-            {/* Bank Details Section */}
-            <FlexCol gap='1rem'>
-              <TextLabel>Bank Details</TextLabel>
-              {renderBankInputs()}
-            </FlexCol>
+            {/* Bank Details Section - hidden when KYC email bypasses requirement */}
+            {!skipBankDetails && (
+              <FlexCol gap='1rem'>
+                <TextLabel>Bank Details</TextLabel>
+                {renderBankInputs()}
+              </FlexCol>
+            )}
 
             {/* Validation and KYC messages */}
             <BankTransferValidationMessages validation={validation} />

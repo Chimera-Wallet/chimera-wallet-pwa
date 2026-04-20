@@ -7,7 +7,7 @@
  * - Integration with existing KYC system
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   getBankTransferConfig,
   getBankTransferConfigSync,
@@ -16,7 +16,7 @@ import {
   type BankTransferConfig,
   type BankCurrency,
 } from '../lib/bankTransferConfig'
-import { getStoredKycStatus, type KycStatus } from '../lib/kyc'
+import { getKycEmail, type KycStatus } from '../lib/kyc'
 
 export interface BankTransferValidation {
   /** Whether the amount meets minimum requirements */
@@ -55,36 +55,37 @@ export function useBankTransferValidation({
   currency = 'EUR',
 }: UseBankTransferValidationParams): BankTransferValidation {
   const [config, setConfig] = useState<BankTransferConfig>(getBankTransferConfigSync())
-  const [kycStatus, setKycStatus] = useState<KycStatus>(getStoredKycStatus())
+  // Refresh counter triggers re-read of email from localStorage
+  const [refreshCount, setRefreshCount] = useState(0)
 
   // Load config on mount
   useEffect(() => {
     getBankTransferConfig().then(setConfig)
   }, [])
 
-  // Refresh KYC status
+  // Refresh KYC status (re-reads email from localStorage)
   const refreshKycStatus = useCallback(() => {
-    setKycStatus(getStoredKycStatus())
+    setRefreshCount((c) => c + 1)
   }, [])
+
+  // Email presence is the source of truth for KYC verification
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const kycEmail = useMemo(() => getKycEmail(), [refreshCount])
+  const kycVerified = !!kycEmail
+  // Derive kycStatus for interface compatibility
+  const kycStatus: KycStatus = kycVerified ? 'confirmed' : 'not_started'
 
   // Calculate validation state
   const isValidAmount = amount > 0 && meetsMinimumAmount(amount)
   const kycRequired = requiresKyc(amount)
-  const kycVerified = kycStatus === 'confirmed'
   const canProceed = isValidAmount && (!kycRequired || kycVerified)
 
-  // Generate error message
+  // Generate error message (user-facing messages unchanged)
   let errorMessage: string | null = null
   if (amount > 0 && !isValidAmount) {
     errorMessage = `Minimum amount is ${config.minimumOrderValue} ${currency}`
   } else if (kycRequired && !kycVerified) {
-    if (kycStatus === 'pending') {
-      errorMessage = `KYC verification is pending. Amounts over ${config.kycThreshold} ${currency} require verified KYC.`
-    } else if (kycStatus === 'rejected') {
-      errorMessage = `KYC verification was rejected. Please contact support.`
-    } else {
-      errorMessage = `Amounts over ${config.kycThreshold} ${currency} require KYC verification.`
-    }
+    errorMessage = `Amounts over ${config.kycThreshold} ${currency} require KYC verification.`
   }
 
   return {

@@ -256,10 +256,31 @@ export const createBankWithdraw = async (params: {
   fromAmount: number
   fromAsset: string
   toAsset: string
-  bankData: BankData
+  bankData?: BankData
 }): Promise<BankWithdrawResponse> => {
   const { email, fromAmount, fromAsset, toAsset, bankData } = params
   const baseUrl = getBaseUrl()
+
+  // When no bank data is provided (KYC email flow), send email-only payload
+  if (!bankData) {
+    const emailOnlyPayload = {
+      email,
+      from_amount: fromAmount,
+      from_asset: fromAsset,
+      to_asset: toAsset,
+    }
+    const emailOnlyResponse = await fetch(`${baseUrl}/otc/withdraw/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(emailOnlyPayload),
+    })
+    if (!emailOnlyResponse.ok) {
+      const errorData = await emailOnlyResponse.json().catch(() => ({}))
+      if (errorData.message) throw new Error(errorData.message)
+      throw new Error(`Failed to create withdraw order: ${emailOnlyResponse.status}`)
+    }
+    return emailOnlyResponse.json()
+  }
 
   let payload: BankWithdrawPayload
 
