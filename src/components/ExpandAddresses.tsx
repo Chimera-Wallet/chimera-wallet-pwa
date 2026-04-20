@@ -100,7 +100,7 @@ export default function ExpandAddresses({
         <div style={{ padding: '1rem 0 0 0.5rem', width: '100%' }}>
           <FlexCol gap='0.21rem'>
             {boardingAddr ? <ExpandLine testId='btc' title='BTC address' value={boardingAddr} /> : null}
-            {offchainAddr ? <ExpandLine testId='ark' title='Ark address' value={offchainAddr} /> : null}
+            {offchainAddr ? <ExpandLine testId='ark' title='Arkade address' value={offchainAddr} /> : null}
             {invoice ? <ExpandLine testId='invoice' title='Lightning invoice' value={invoice} /> : null}
           </FlexCol>
         </div>

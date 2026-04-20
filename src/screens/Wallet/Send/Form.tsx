@@ -87,7 +87,7 @@ export default function SendForm() {
   const selectedMethod: TransferMethod = sendInfo.method ?? TRANSFER_METHOD.bitcoin
 
   const smartSetError = (str: string) => {
-    setError(str === '' ? (aspInfo.unreachable ? 'Ark server unreachable' : '') : str)
+    setError(str === '' ? (aspInfo.unreachable ? 'Arkade server unreachable' : '') : str)
   }
 
   const setState = (info: SendInfo) => {
@@ -144,7 +144,7 @@ export default function SendForm() {
           return setState({ ...sendInfo, address, arkAddress: '', invoice: '', lnUrl: undefined, recipient, satoshis })
         }
         if (selectedMethod === TRANSFER_METHOD.ark) {
-          if (!arkAddress) return setError('Selected method requires an Ark address')
+          if (!arkAddress) return setError('Selected method requires an Arkade address')
           return setState({ ...sendInfo, address: '', arkAddress, invoice: '', lnUrl: undefined, recipient, satoshis })
         }
         if (selectedMethod === TRANSFER_METHOD.lightning) {
@@ -386,7 +386,7 @@ export default function SendForm() {
           }
           const arkResponse = await fetchArkAddress(sendInfo.lnUrl)
           if (!isArkAddress(arkResponse.address)) {
-            handleError('Invalid Ark address received from LNURL')
+            handleError('Invalid Arkade address received from LNURL')
             return
           }
           setState({ ...sendInfo, arkAddress: arkResponse.address, invoice: undefined })

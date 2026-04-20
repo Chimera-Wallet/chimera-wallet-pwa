@@ -36,30 +36,30 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
       {
         icon: 'warning',
         color: 'orange',
-        text: 'Please ensure you send only Bitcoin to a valid ARK or mainnet address. Any other address will cause the assets to be forever lost, and there is no option to recover it.',
+        text: 'Please ensure you send only Bitcoin to a valid Arkade or mainnet address. Any other address will cause the assets to be forever lost, and there is no option to recover it.',
       },
       {
         icon: 'time',
-        text: 'The transfer time for on-chain Bitcoin depends on network congestion and is, on average, 10 minutes for the first confirmation. If your wallet supports ARK VTXO the transaction will be instant.',
+        text: 'The transfer time for on-chain Bitcoin depends on network congestion and is, on average, 10 minutes for the first confirmation. If your wallet supports Arkade VTXO the transaction will be instant.',
       },
       {
         icon: 'fees',
-        text: 'Fees are dynamic on the Bitcoin network and are related to how fast you want to receive your transaction and how the sending wallet manages the transactions. Fees for ARK compatible wallets are close to 0.',
+        text: 'Fees are dynamic on the Bitcoin network and are related to how fast you want to receive your transaction and how the sending wallet manages the transactions. Fees for Arkade compatible wallets are close to 0.',
       },
     ],
     ark: [
       {
         icon: 'warning',
         color: 'orange',
-        text: 'Please ensure you send only Bitcoin to a valid ARK or mainnet address. Any other address will cause the assets to be forever lost, and there is no option to recover it.',
+        text: 'Please ensure you send only Bitcoin to a valid Arkade or mainnet address. Any other address will cause the assets to be forever lost, and there is no option to recover it.',
       },
       {
         icon: 'time',
-        text: 'The transfer time for on-chain Ark depends on network congestion and is, on average, 10 minutes for the first confirmation. If your wallet supports ARK VTXO the transaction will be instant.',
+        text: 'The transfer time for on-chain Arkade depends on network congestion and is, on average, 10 minutes for the first confirmation. If your wallet supports Arkade VTXO the transaction will be instant.',
       },
       {
         icon: 'fees',
-        text: 'Fees are dynamic on the Ark network and are related to how fast you want to receive your transaction and how the sending wallet manages the transactions. Fees for ARK compatible wallets are close to 0.',
+        text: 'Fees are dynamic on the Arkade network and are related to how fast you want to receive your transaction and how the sending wallet manages the transactions. Fees for Arkade compatible wallets are close to 0.',
       },
     ],
     lightning: [
@@ -93,7 +93,7 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
       {
         icon: 'warning',
         color: 'orange',
-        text: 'Please send only Bitcoin either using ARK or mainnet. Any other asset sent will be forever lost, and there is no option to recover it.',
+        text: 'Please send only Bitcoin either using Arkade or mainnet. Any other asset sent will be forever lost, and there is no option to recover it.',
       },
       {
         icon: 'time',
@@ -108,15 +108,15 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
       {
         icon: 'warning',
         color: 'orange',
-        text: 'Please send only Bitcoin using an ARK compatible wallet. Any other asset sent will be forever lost, and there is no option to recover it.',
+        text: 'Please send only Bitcoin using an Arkade compatible wallet. Any other asset sent will be forever lost, and there is no option to recover it.',
       },
       {
         icon: 'time',
-        text: 'If the sender supports ARK VTXO the transaction will be instant.',
+        text: 'If the sender supports Arkade VTXO the transaction will be instant.',
       },
       {
         icon: 'fees',
-        text: 'Fees for ARK compatible wallets are close to 0.',
+        text: 'Fees for Arkade compatible wallets are close to 0.',
       },
     ],
     lightning: [

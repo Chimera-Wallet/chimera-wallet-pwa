@@ -129,7 +129,7 @@ export function getMyAccounts(): AddressBookEntry[] {
 export function getAddressTypeName(type: AddressType): string {
   switch (type) {
     case AddressType.Ark:
-      return 'Ark Address'
+      return 'Arkade Address'
     case AddressType.Bitcoin:
       return 'Bitcoin Address'
     default:

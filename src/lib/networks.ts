@@ -14,10 +14,10 @@ export interface NetworkConfig {
 export const NETWORKS: Record<TransferMethod, NetworkConfig> = {
   [TRANSFER_METHOD.ark]: {
     id: TRANSFER_METHOD.ark,
-    name: 'ARK',
+    name: 'Arkade',
     description: 'Instant, low-fee Bitcoin transfers',
     icon: '/images/icons/network-ark.svg',
-    addressPlaceholder: 'Paste ARK address',
+    addressPlaceholder: 'Paste Arkade address',
   },
   [TRANSFER_METHOD.lightning]: {
     id: TRANSFER_METHOD.lightning,

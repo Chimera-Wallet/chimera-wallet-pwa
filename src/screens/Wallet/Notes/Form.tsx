@@ -53,7 +53,7 @@ export default function NotesForm() {
     navigate(Pages.Settings)
   }
 
-  if (scan) return <Scanner close={() => setScan(false)} label='Ark note' onData={setNote} onError={setError} />
+  if (scan) return <Scanner close={() => setScan(false)} label='Arkade note' onData={setNote} onError={setError} />
 
   return (
     <>
@@ -62,7 +62,7 @@ export default function NotesForm() {
         <Padded>
           <FlexCol gap='2rem'>
             <ErrorMessage error={Boolean(error)} text={error} />
-            <InputNote label='Ark note' onChange={setNote} openScan={() => setScan(true)} value={note} />
+            <InputNote label='Arkade note' onChange={setNote} openScan={() => setScan(true)} value={note} />
           </FlexCol>
         </Padded>
       </Content>
