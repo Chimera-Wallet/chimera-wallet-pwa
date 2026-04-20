@@ -44,46 +44,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Set environment file based on branch
-        run: |
-          BRANCH="${{ github.ref_name }}"
-          # For pull requests, use the base branch name
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BRANCH="${{ github.base_ref }}"
-          fi
-
-          if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
-            export ENV_FILE=".env.production"
-            echo "Loading production environment configuration"
-          else
-            export ENV_FILE=".env.staging"
-            echo "Loading staging environment configuration"
-          fi
-
-          if [ -f "$ENV_FILE" ]; then
-            echo "Using $ENV_FILE"
-            # Export vars to GitHub Actions environment
-            grep -v '^#' "$ENV_FILE" | grep '=' | while IFS= read -r line; do
-              echo "$line" >> $GITHUB_ENV
-            done
-          else
-            echo "Warning: $ENV_FILE not found"
-          fi
-
-      - name: Generate git info
-        run: pnpm git-info
-
       - name: Build application
         run: |
           BRANCH="${{ github.ref_name }}"
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             BRANCH="${{ github.base_ref }}"
           fi
-          if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
-            MODE="production"
-          else
-            MODE="staging"
-          fi
+          MODE=$([[ "$BRANCH" == "master" || "$BRANCH" == "main" ]] && echo "production" || echo "staging")
           pnpm git-info
           pnpm run build:worker -- --mode $MODE
           pnpm exec vite build --mode $MODE
