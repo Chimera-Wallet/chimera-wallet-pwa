@@ -52,7 +52,7 @@ jobs:
           fi
           MODE=$([[ "$BRANCH" == "master" || "$BRANCH" == "main" ]] && echo "production" || echo "staging")
           pnpm git-info
-          pnpm run build:worker -- --mode $MODE
+          pnpm exec vite build -c vite.worker.config.ts --mode $MODE
           pnpm exec vite build --mode $MODE
 
       - name: Install API dependencies
