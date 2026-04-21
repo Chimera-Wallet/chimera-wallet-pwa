@@ -4,8 +4,8 @@
   "private": true,
   "homepage": ".",
   "dependencies": {
-    "@arkade-os/boltz-swap": "0.3.17",
-    "@arkade-os/sdk": "0.4.16",
+    "@arkade-os/boltz-swap": "0.3.18",
+    "@arkade-os/sdk": "0.4.17",
     "@intercom/messenger-js-sdk": "^0.0.18",
     "@ionic/react": "^8.5.6",
     "@lendasat/lendasat-wallet-bridge": "^0.0.90",
@@ -107,5 +107,10 @@
   "engines": {
     "node": ">=20.19.0 || >=22.12.0",
     "pnpm": ">=8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@arkade-os/sdk"
+    ]
   }
 }
