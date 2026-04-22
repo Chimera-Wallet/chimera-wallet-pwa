@@ -286,14 +286,7 @@ export const fetchKycStatus = async (providedAccessToken?: string): Promise<KycS
     const data = await response.json()
 
     // Map API response to our status type
-    let status: KycStatus = 'pending'
-    if (data.status === 'confirmed' || data.status === 'approved') {
-      status = 'confirmed'
-    } else if (data.status === 'rejected') {
-      status = 'rejected'
-    } else if (data.status === 'expired') {
-      status = 'expired'
-    }
+    const status = mapVerificationStatus(data.status)
 
     saveKycStatus(status)
     return { status, message: data.message }
@@ -421,6 +414,8 @@ export const mapVerificationStatus = (status?: string): KycStatus => {
     case 'approved':
       return 'confirmed'
     case 'pending':
+    case 'moreinfoneeded':
+    case 'incomplete':
       return 'pending'
     case 'rejected':
       return 'rejected'
