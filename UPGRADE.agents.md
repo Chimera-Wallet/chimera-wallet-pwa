@@ -13,6 +13,8 @@ Reference wallet: `../wallet` (already on the target versions, uses the service-
 
 **Architectural constraint added:** follow `../wallet`'s pattern where all swap processing lives inside the service worker (`ArkadeSwapsMessageHandler` + `ServiceWorkerArkadeSwaps`) and main-thread code talks to it via the message bus. This eliminates the current main-thread `new ArkadeLightning({...})` + raw `ContractRepositoryImpl` cleanup loop in `providers/lightning.tsx`.
 
+**Prior art:** GitHub PR [Chimera-Wallet/chimera-wallet-pwa#4](https://github.com/Chimera-Wallet/chimera-wallet-pwa/pull/4) ("upgrade-sdk-v0.4" by tiero) attempted the same upgrade over 3 iterative commits ("upgrade-sdk-v0.4", "debounce", "fix loop in restart"). **It is reported broken** — unknown remaining failure modes — but its diff surfaces several real bugs the upgrade introduces that would otherwise have to be discovered the hard way. Findings from that PR are folded into the phases below (retry-storm fix, IndexedDB schema collision in `lib/indexer.ts`, broadcast payload shape change, new `BoltzSwapStatus` values, subscription APIs going async, response-field nullability). Do **not** copy PR #4 wholesale — start from our clean base, use `../wallet/src/providers/swaps.tsx` as the canonical reference, and fold in PR #4's specific fixes as deltas. After Phase 3 lands, consider checking out the PR branch to reproduce its failure mode so we don't recreate it.
+
 ## 2. Architecture — before and after
 
 ### Current (chimera, 0.2/0.3)
@@ -59,8 +61,8 @@ Main thread                           SW (wallet-service-worker.ts)
 ├── lib/backup.ts                     (swap polling, claim/refund, settlement
 │   └── IndexedDbSwapRepository         all runs inside the SW — survives tab sleep)
 └── lib/indexer.ts
-    └── IndexedDBStorageAdapter (raw, or keep deprecated ContractRepositoryImpl
-        for the commitmentTxs KV cache — it's unrelated to swap data)
+    └── IndexedDBStorageAdapter('arkade-indexer-cache')  (separate DB — the v0.4
+        repos own 'arkade-service-worker' now, schemas collide otherwise)
 ```
 
 Benefits: SW-resident swap polling survives tab sleep; unified repository layout; shared SW instance between wallet and swaps (one registration, one message channel).
@@ -84,7 +86,7 @@ Verified against `git diff v0.3.12..v0.4.17` (ts-sdk) and `git diff v0.2.19..v0.
 | # | Where | Old | New | Effort |
 |---|---|---|---|---|
 | 1 | `src/wallet-service-worker.ts` | `import { Worker } from '@arkade-os/sdk'; new Worker(); worker.start()/reload()` | `new MessageBus(walletRepo, contractRepo, { messageHandlers: [new WalletMessageHandler(), new ArkadeSwapsMessageHandler(swapRepo)], tickIntervalMs, messageTimeoutMs })` | **High** — full rewrite; use `../wallet/src/wallet-service-worker.ts` as the blueprint. |
-| 2 | `src/providers/lightning.tsx` | Main-thread `new ArkadeLightning({...})` + manual stale-swap cleanup + direct `IndexedDBStorageAdapter`/`ContractRepositoryImpl` usage for restore | `ServiceWorkerArkadeSwaps.create({ serviceWorker: svcWallet.serviceWorker, swapRepository: new IndexedDbSwapRepository(), swapProvider, network, arkServerUrl, swapManager: connected })`. Swap persistence through `arkadeSwaps.swapRepository.saveSwap(swap)`. Port the 48h stale-swap cleanup loop against the new `IndexedDbSwapRepository`. | **High** — port from `../wallet/src/providers/swaps.tsx`. ~330 lines, can be simplified because chimera has no chain-swap UI. |
+| 2 | `src/providers/lightning.tsx` | Main-thread `new ArkadeLightning({...})` + manual 48h stale-swap cleanup + direct `IndexedDBStorageAdapter`/`ContractRepositoryImpl` usage for restore | `ServiceWorkerArkadeSwaps.create({ serviceWorker: svcWallet.serviceWorker, swapRepository: new IndexedDbSwapRepository(), swapProvider, network, arkServerUrl, swapManager: connected })`. Swap persistence through `arkadeSwaps.swapRepository.saveSwap(swap)`. **Delete the 48h stale-swap cleanup loop** — match wallet/'s no-cleanup approach; trust the SW-hosted `SwapManager` to handle 404s with its built-in exponential backoff. | **High** — port from `../wallet/src/providers/swaps.tsx`. ~330 lines, can be simplified because chimera has no chain-swap UI. |
 | 3 | `src/lib/types.ts` + callers | `PendingReverseSwap`, `PendingSubmarineSwap` | `BoltzReverseSwap`, `BoltzSubmarineSwap`. Removed from exports. Runtime shape unchanged. | **Easy** — rename ~12 call sites. |
 | 4 | `src/providers/wallet.tsx:340` `resetWallet` | `svcWallet.contractRepository.clearContractData()` | `svcWallet.contractRepository.clear()` + `svcWallet.walletRepository.clear()` | **Trivial** — method rename. |
 | 5 | `src/lib/backup.ts` | `ContractRepositoryImpl.getContractCollection('reverseSwaps')`, `saveToContractCollection('reverseSwaps', swap, 'id')`, etc. | `IndexedDbSwapRepository.getSwaps()` (or filtered) and `.saveSwap(swap)`. Consume `BoltzReverseSwap`/`BoltzSubmarineSwap`. | **Medium** — rewrite read/write helpers in `BackupProvider`. |
@@ -171,34 +173,34 @@ Constraint: converge on wallet's SW-hosted architecture. No main-thread `ArkadeL
      })
      ```
    - Type the state as `ServiceWorkerArkadeSwaps | null`. Update the context method signatures to use `BoltzReverseSwap`/`BoltzSubmarineSwap`.
-   - **Port (don't delete)** the `startWithCleanup` stale-swap loop. Clarification on what it does: it is a **status rewrite, not DB eviction** — it iterates non-final swaps older than 48h and overwrites their `status` field to `'swap.expired'` (a terminal status the new `SwapManager` recognizes). Rows stay in the DB with the same key; only `status` changes. The swap remains visible in history as "expired/failed" and is correctly excluded from the monitor's pending set on next start.
-
-     Why keep it: the new `SwapManager` does *not* convert Boltz 404 responses into a local `'swap.expired'` write. A swap Boltz has purged continues to be polled with exponential backoff up to `maxPollRetryDelayMs` (5 min) — throttled, not stopped. Without the cleanup, such swaps also render as "pending forever" in the UI. Porting the cleanup is cheap and defensive.
-
-     New shape (runs in `providers/lightning.tsx` *before* calling `ServiceWorkerArkadeSwaps.create({ swapManager: connected })`, using a directly-instantiated repo):
-     ```ts
-     const swapRepository = new IndexedDbSwapRepository()
-     if (config.apps.boltz.connected) {
-       const STALE_SECONDS = 48 * 60 * 60
-       const staleThreshold = Math.floor(Date.now() / 1000) - STALE_SECONDS
-       const swaps = await swapRepository.getSwaps()
-       const staleSwaps = swaps.filter((s) => {
-         const isNonFinal =
-           s.type === 'reverse' ? !isReverseFinalStatus(s.status) : !isSubmarineFinalStatus(s.status)
-         return isNonFinal && s.createdAt < staleThreshold
-       })
-       for (const swap of staleSwaps) {
-         await swapRepository.saveSwap({ ...swap, status: 'swap.expired' })
-       }
-     }
-     // then: await ServiceWorkerArkadeSwaps.create({ ..., swapRepository, swapManager: connected })
-     ```
-     Pass the same `swapRepository` instance into `ServiceWorkerArkadeSwaps.create(...)` so the SW-resident manager sees the already-updated statuses at startup.
+   - **Delete the 48h `startWithCleanup` stale-swap loop entirely** — match `../wallet/src/providers/swaps.tsx`. No pre-init status rewrites. Trust the SW-hosted `SwapManager` to handle 404s via its built-in exponential backoff (capped at 5 min). Accepted trade-off: a purged-from-Boltz swap older than 48h will sit in history with its last-known non-final status and continue to be polled at 5-min intervals indefinitely; deemed low severity vs. the maintenance cost and the code divergence from wallet. Also drop the `isReverseFinalStatus` / `isSubmarineFinalStatus` imports — unused after this simplification.
+   - **Use `swapManager: config.apps.boltz.connected`** (plain boolean) instead of `{ autoStart: false }` + manual `startSwapManager()`. Without the pre-start cleanup there's no reason to defer auto-start. Matches wallet.
    - **Delete** the direct `IndexedDBStorageAdapter`/`ContractRepositoryImpl` usage. In `restoreSwaps`, use `arkadeSwaps.swapRepository.saveSwap(swap)` as wallet does.
    - Keep all chimera-specific context values (`calcSubmarineSwapFee`, `calcReverseSwapFee`, `toggleConnection`, `getApiUrl`, `payInvoice` 2-step flow with `sendOffChain` + `waitForSwapSettlement`) and the existing `LightningContext` shape so callers don't churn.
    - **Do not** add chain-swap methods (`createArkToBtcSwap`, `payBtc`, etc.) to the context — chimera has no UI for them. If we want to be defensive, filter out `swap.type === 'chain'` entries in `getSwapHistory` so a rogue chain swap can't crash `SwapsList`.
    - Retain the `feesFetchedForUrl` guard chimera added to prevent redundant fee fetches on re-renders.
    - `arkadeLightning` → `arkadeSwaps` internally, but keep the context property name `arkadeLightning` so `SwapsList` and `screens/Apps/Boltz/Swap.tsx` don't need to change. (Or rename context and update ~3 callers — either is fine; pick the smaller diff.)
+   - **`swapManager` lifecycle:** `instance.getSwapManager()` in the SW-hosted world returns a `SwapManagerClient` proxy. PR #4 stores it in React state (`setSwapManager(instance.getSwapManager())`) rather than deriving it inline each render — safer if the proxy identity matters downstream. Either pattern works; pick one and stay consistent.
+   - **Use `swap.id` not `swap.response.id`** for dedup in `restoreSwaps` — the new repo keys by top-level `id`.
+   - Use `swapRepo.getAllSwaps({ type: 'reverse' | 'submarine' })` (new typed filter API) instead of the old `getContractCollection('reverseSwaps')`. Needed in Phase 5 as well.
+
+   **Subscription APIs are now async (Phase 3/7 surface):**
+   - `swapManager.onSwapUpdate(cb)` and `swapManager.subscribeToSwapUpdates(id, cb)` now return `Promise<() => void>`, not `() => void` — they proxy across the message bus. Callers that `return unsubscribe` from a `useEffect` break. Required pattern:
+     ```ts
+     let unsubscribe: (() => void) | null = null
+     let cancelled = false
+     swapManager.onSwapUpdate((swap) => { /* ... */ })
+       .then((fn) => { if (cancelled) fn(); else unsubscribe = fn })
+       .catch(consoleError)
+     return () => { cancelled = true; if (unsubscribe) unsubscribe() }
+     ```
+     Affects `components/SwapsList.tsx` and `screens/Apps/Boltz/Swap.tsx` (Phase 7).
+
+   **New `BoltzSwapStatus` values (Phase 7 surface):**
+   - 0.3.18 adds `'transaction.server.mempool'` and `'transaction.server.confirmed'` to the `BoltzSwapStatus` union. `SwapsList.tsx`'s `statusDict satisfies Record<BoltzSwapStatus, statusUI>` fails TypeScript until both are mapped (both → `'Pending'`).
+
+   **Response field nullability (Phase 7 surface):**
+   - `response.onchainAmount`, `response.expectedAmount`, and `decodedInvoice.amountSats` are now `number | undefined` in 0.3.18/0.4.17. Every arithmetic/formatting call site needs `?? 0` or `?? satoshis`. Affects `components/SwapsList.tsx`, `screens/Apps/Boltz/Swap.tsx`, `screens/Wallet/Receive/QrCode.tsx`, `screens/Wallet/Receive/Amount.tsx`.
 
 ### Phase 4 — wire storage + migration into `providers/wallet.tsx` (~1h, low risk)
 
@@ -224,6 +226,22 @@ Constraint: converge on wallet's SW-hosted architecture. No main-thread `ArkadeL
    ```
    The helper is idempotent (writes `migration-from-storage-adapter-swaps: done`), safe to run every startup.
 
+### Phase 4b — SW init retry-storm hardening (~1-2h, high value, chimera-specific)
+
+The v0.4 SDK service worker **lazily initializes** on the first incoming message. Inside that bootstrap, `buildServices` does an eager, CORS-sensitive `GET /v1/info`. If that call fails (ASP unreachable, CORS block, offline), the worker does **not** latch the failure — every subsequent message retries the full init, which re-fires `GET /v1/info`. Combined with chimera's current 1s `getStatus()` polling loop in `providers/wallet.tsx`, and with `Unlock.tsx`'s unlock effect that re-fires on every `WalletProvider` render (because `initWallet` is a context function recreated each render), this produces a measured **~60 req/s** hammer loop against the ASP until Arkade returns 429 (documented via HAR capture in PR #4).
+
+This is not hypothetical — it will trigger on chimera as-is the first time a user opens the app with an unreachable ASP. Fixes below are required, not optional.
+
+8. `src/providers/wallet.tsx`:
+    - Export a new `ArkadeUnreachableError` class (`code = 'ARKADE_UNREACHABLE'`, carries the attempted URL).
+    - In `initWallet`, before any SW-touching work: `if (aspInfo.unreachable || !aspInfo.url || !aspInfo.network) throw new ArkadeUnreachableError(aspInfo.url ?? '')`. Throw, don't silently return — callers must see the failure, otherwise `unlocked` gets set while `svcWallet` is `undefined` and downstream screens crash with `Cannot read properties of undefined (reading 'getAddress')`.
+    - Replace the `setInterval(..., 1_000)` status ping with a backoff-aware loop: start at 1s until the first successful reading, then slow to 5s; track consecutive failures and `clearInterval` after 5 in a row. Log the halt reason ("Likely causes: ASP unreachable, CORS, or network offline") so triage is obvious.
+
+9. `src/screens/Wallet/Unlock.tsx`:
+    - Add a `useRef<boolean>(false)` re-entrancy guard (`unlockInFlight`) and flip it at the top of the unlock effect; release it in `.finally()`. `useState` is too slow — React's async commit lets the effect re-fire synchronously on the next render before the flag is observable.
+    - Catch `ArkadeUnreachableError` in the unlock `.catch` and set a dedicated error message ("Arkade server unreachable. Check Settings → Arkade Server.") — **do not** fall through to "Invalid password", which is the current default and will be misleading.
+    - **Drop `initWallet` from the effect's dependency array** (`eslint-disable-next-line react-hooks/exhaustive-deps`). It's a context function recreated on every `WalletProvider` render, so including it turns this effect into a render-rate loop that posts one `INITIALIZE_MESSAGE_BUS` per frame.
+
 ### Phase 5 — rewrite `lib/backup.ts` to read/write via `IndexedDbSwapRepository` (~1h, low risk)
 
 8. Replace the module-level `new IndexedDBStorageAdapter('arkade-service-worker')` + `new ContractRepositoryImpl(storage)` with `new IndexedDbSwapRepository()`.
@@ -232,40 +250,76 @@ Constraint: converge on wallet's SW-hosted architecture. No main-thread `ArkadeL
    - Same for submarine.
    - Update `NostrStorageData` type to use `BoltzReverseSwap`/`BoltzSubmarineSwap`.
 
-### Phase 6 — `lib/indexer.ts` commitment-tx cache (~15min, trivial)
+### Phase 6 — `lib/indexer.ts` commitment-tx cache: move to a dedicated DB (~30min, mandatory)
 
-9. This module caches txid → endedAt timestamps. It's **not swap data**. Recommended: keep using the deprecated `ContractRepositoryImpl` for now — it still ships and works. Accept the deprecation warning. File a follow-up ticket to replace with raw `IndexedDBStorageAdapter.getItem/setItem` (one key holds the full array).
+**Corrected from earlier plan.** Keeping the cache on `IndexedDBStorageAdapter('arkade-service-worker')` + deprecated `ContractRepositoryImpl` does **not** work in v0.4 — the new `IndexedDBWalletRepository` / `IndexedDBContractRepository` instantiated by the SW and the main thread take over the `'arkade-service-worker'` database with a different object-store schema. Calls to the old `getContractCollection('commitmentTxs')` will throw **"One of the specified object stores was not found."**. PR #4 hit this directly.
 
-### Phase 7 — update tests and peripheral touchpoints (~1h)
+10. `src/lib/indexer.ts`: change the storage DB name so the legacy schema and the new repositories don't collide:
+    ```ts
+    const storage = new IndexedDBStorageAdapter('arkade-indexer-cache')
+    this.contractRepo = new ContractRepositoryImpl(storage)
+    ```
+    Deprecation warning remains (we still use the V1 class on the new DB), but the cache is now isolated and will function. The cache is write-on-miss, so losing the old cache on first load after upgrade is fine — it rebuilds lazily.
 
-10. `src/test/screens/mocks.ts`: update the `svcWallet.contractRepository` mock to match the new `ContractRepository` interface (`clear()`, `saveContract()`, `getContracts()`, `deleteContract()`). Remove `getContractCollection`/`saveToContractCollection` unless some test still hits the legacy `ContractRepositoryImpl` path.
-11. `src/components/SwapsList.tsx`: confirm it consumes `BoltzReverseSwap | BoltzSubmarineSwap` shape (unchanged at runtime). If we filter chain swaps in `getSwapHistory` (Phase 3), nothing else changes.
-12. `src/screens/Apps/Boltz/Swap.tsx`: uses `isReverseClaimableStatus`, `isSubmarineSwapRefundable`, `subscribeToSwapUpdates`. All still exported. The `swapManager` now comes from `arkadeSwaps.getSwapManager()` which returns a `SwapManagerClient` (proxy over the SW), API-compatible.
-13. `src/test/lib/utxo.test.ts`: uses `VtxoScript`, `hasBoardingTxExpired` — both unchanged. Should pass unmodified.
+    (Alternative: replace the wrapper entirely with raw `storage.getItem(key)` / `storage.setItem(key, JSON.stringify(arr))`. Marginally cleaner, no deprecation. Optional — only do it if the rewrite is cheap.)
+
+### Phase 7 — update tests, screens, and peripheral touchpoints (~2-3h)
+
+11. `src/components/SwapsList.tsx`:
+    - Add `'transaction.server.mempool': 'Pending'` and `'transaction.server.confirmed': 'Pending'` to `statusDict` (required for `satisfies Record<BoltzSwapStatus, statusUI>`).
+    - `const sats = (swap.type === 'reverse' ? swap.response.onchainAmount : swap.response.expectedAmount) ?? 0` — nullable fallback.
+    - Rewrite the `useEffect` that calls `swapManager.onSwapUpdate(cb)` using the async-unsubscribe pattern from Phase 3.
+    - Filter `swap.type === 'chain'` out of the update handler (chimera has no chain-swap UI).
+
+12. `src/screens/Apps/Boltz/Swap.tsx`:
+    - Rewrite `swapManager.subscribeToSwapUpdates(swapInfo.id, cb)` using the async-unsubscribe pattern.
+    - Filter `updatedSwap.type === 'chain'` in the callback.
+    - `const amount = (isReverse ? swapInfo.response.onchainAmount : decodedInvoice.amountSats) ?? 0` — nullable fallback.
+
+13. `src/screens/Wallet/Receive/QrCode.tsx` and `src/screens/Wallet/Receive/Amount.tsx`:
+    - **Broadcast payload unwrap.** v0.4 wraps VTXO_UPDATE / UTXO_UPDATE data under `event.data.payload` instead of flat. Existing code reads `event.data.newVtxos` / `event.data.coins` directly (confirmed at `QrCode.tsx:101,105` and `Amount.tsx:204,208`) and will silently see `undefined`. Fix:
+      ```ts
+      const payload = event.data.payload ?? event.data
+      // then payload?.newVtxos / payload?.coins with (payload?.newVtxos ?? []) guards
+      ```
+    - `QrCode.tsx`: `setRecvInfo({ ...recvInfo, satoshis: pendingSwap.response.onchainAmount ?? satoshis })` — nullable fallback.
+    - `Amount.tsx`: same nullable fallback. Additionally, debounce `createReverseSwap(satoshis)` by ~700ms and invalidate any existing invoice when the amount changes — without this, each keystroke spawns a parallel swap and the first one to succeed (at Boltz's ≈10_000 sat minimum) wins, so the real amount is never requested. Pre-existing UX bug but clearly exposed by the SDK upgrade; worth fixing in the same PR.
+
+14. `src/test/screens/mocks.ts`: update the `svcWallet.contractRepository` mock to match the new `ContractRepository` interface (`clear()`, `saveContract()`, `getContracts()`, `deleteContract()`). Remove `getContractCollection`/`saveToContractCollection` unless some test still hits the legacy `ContractRepositoryImpl` path.
+
+15. `src/test/lib/utxo.test.ts`: uses `VtxoScript`, `hasBoardingTxExpired` — both unchanged. Should pass unmodified.
 
 ### Phase 8 — verification (~3-4h, do not skip)
 
-14. `pnpm install && pnpm build` — expect zero TS errors after Phases 1-7.
-15. **Fresh-wallet smoke test** (no legacy data): incognito window, onboard with a fresh mnemonic, confirm initial VTXO sync converges, balance appears. Send boarding tx on regtest, confirm settle works.
-16. **Legacy-wallet migration test** (critical): copy over an IndexedDB snapshot from a pre-upgrade build that has at least one pending reverse swap and one submarine swap, upgrade in-place, confirm swaps show up in history after load. Verify the `migration-from-storage-adapter-swaps: done` flag is set afterwards (via devtools → Application → IndexedDB).
-17. **Boltz end-to-end on regtest**:
+16. `pnpm install && pnpm build` — expect zero TS errors after Phases 1-7.
+17. **Fresh-wallet smoke test** (no legacy data): incognito window, onboard with a fresh mnemonic, confirm initial VTXO sync converges, balance appears. Send boarding tx on regtest, confirm settle works.
+18. **Legacy-wallet migration test** (critical): copy over an IndexedDB snapshot from a pre-upgrade build that has at least one pending reverse swap and one submarine swap, upgrade in-place, confirm swaps show up in history after load. Verify the `migration-from-storage-adapter-swaps: done` flag is set afterwards (via devtools → Application → IndexedDB).
+19. **Unreachable-ASP test** (regression guard for Phase 4b): set `VITE_ARK_SERVER` to a bogus URL and attempt unlock. Expected: `Unlock.tsx` shows "Arkade server unreachable" within a few seconds; network tab shows a small, bounded number of `/v1/info` requests (not ~60 req/s); ping loop halts after 5 failures with the telltale log line. **This is the specific failure mode PR #4 was trying to fix.**
+20. **Boltz end-to-end on regtest**:
     - Submarine swap: generate invoice externally, pay from chimera, confirm preimage arrives and swap marks success.
     - Reverse swap: generate invoice in chimera, pay it externally, confirm vHTLC claim succeeds.
     - Refund path: let a submarine swap time out; confirm the refund UI flow works.
-18. **SW lifecycle**:
+    - Incoming-payment notification on Receive screens: confirm the `event.data.payload` unwrap fires `notifyPaymentReceived` / updates the success route (regression guard for broadcast shape change).
+21. **SW lifecycle**:
     - Close tab for >5 minutes then reopen — swap polling should have continued in the SW and statuses should be current.
     - Reload during active swap — swap resumes watching.
     - `resetWallet` (Settings → Advanced → Reset): confirm `clear()` calls don't throw and the DB is empty afterwards.
-19. Run `pnpm test:e2e` (playwright). Fix any test that hits the old mock shape.
-20. Manual pass on non-Boltz flows (send on-chain, send Lightning, receive, notes, KYC link, deep links) — no SDK change there, but low-cost sanity check.
+22. Run `pnpm test:e2e` (playwright). Fix any test that hits the old mock shape.
+23. Manual pass on non-Boltz flows (send on-chain, send Lightning, receive, notes, KYC link, deep links) — no SDK change there, but low-cost sanity check.
+24. **Reproduce PR #4's broken state** (diagnostic): `git fetch origin pull/4/head:pr-4-upgrade-sdk && git checkout pr-4-upgrade-sdk && pnpm install && pnpm start`. Exercise the same flows as above and note what breaks that our implementation doesn't — gives us an early signal on the remaining unknown failure mode.
 
 ## 6. Risk register
 
 | Risk | Severity | Mitigation |
 |---|---|---|
 | SW message-bus activation flakiness on first cold start after upgrade | Medium | Keep chimera's existing retry-with-backoff in `initSvcWorkerWallet`. Add the `PING/PONG` health check from wallet so a dead SW is detected before `ServiceWorkerWallet.setup` times out (wallet does a `serviceWorker.getRegistration()` → PING → unregister-if-dead dance; worth porting if flakes appear). |
+| Retry storm: ~60 req/s to `/v1/info` when ASP is unreachable | **High** | Root cause is v0.4's lazy-init + chimera's 1s `getStatus` ping + `Unlock.tsx` effect re-firing on every render. Phase 4b adds `ArkadeUnreachableError`, ping-loop backoff (5s after success, stop after 5 failures), and an `unlockInFlight` `useRef` guard with `initWallet` dropped from the unlock effect's deps. **Do not skip Phase 4b** — this triggers on any user whose ASP is temporarily down. |
+| IndexedDB schema collision in `lib/indexer.ts` | **High** | v0.4 repos take over the `'arkade-service-worker'` database with a different schema; the legacy `getContractCollection` throws "object stores was not found". Phase 6 moves the commitment-tx cache to `'arkade-indexer-cache'`. Straightforward but non-optional. |
+| Broadcast payload shape change breaks payment detection | Medium | `VTXO_UPDATE` / `UTXO_UPDATE` messages now wrap data under `event.data.payload`. Silent failure mode: incoming-payment notifications stop firing on the Receive screens. Phase 7 step 13 adds the `event.data.payload ?? event.data` unwrap in both `QrCode.tsx` and `Amount.tsx`. |
+| Subscription APIs changed sync→async | Medium | `onSwapUpdate` and `subscribeToSwapUpdates` now return `Promise<() => void>`. Silent failure mode: components unmount with stale subscriptions, memory leak + stale UI. Phase 3 establishes the async-unsubscribe pattern; Phase 7 applies it to `SwapsList.tsx` and `Apps/Boltz/Swap.tsx`. |
+| New `BoltzSwapStatus` values break `satisfies` check | Low | Compile-time failure in `SwapsList.tsx`. Add `'transaction.server.mempool'` and `'transaction.server.confirmed'` (both → `'Pending'`). |
 | Legacy swap data loss on upgrade | High | Phase 4 step 7 runs `migrateToSwapRepository` on every init. Test with a real pre-upgrade IndexedDB snapshot (step 16). |
-| Stale-swap cleanup semantics | Low | The cleanup is a **status rewrite**, not DB eviction — it updates `status → 'swap.expired'` on rows older than 48h with non-final status. Ported to the new `IndexedDbSwapRepository` in Phase 3 (runs before `ServiceWorkerArkadeSwaps.create`). Reason for keeping: the new `SwapManager` backs off on 404s (5-min cap) but doesn't auto-expire purged swaps. Validate by leaving a forced-404 swap in the DB during testing and confirming it's marked expired on next load (not runaway polled). |
+| Purged-from-Boltz swaps sit as "pending" in history | Low | Chimera's old 48h status-rewrite cleanup is being **removed** in Phase 3 to match wallet/. The new `SwapManager` backs off 404s to a 5-min poll interval (not stopped, just throttled). Accepted trade-off: a swap Boltz purged after 24-48h will show "pending" in history forever and incur a 5-min background poll. Low user impact, high simplicity win from matching wallet. If the UX becomes a real complaint, reintroduce the cleanup against `swapRepository.saveSwap({ ...swap, status: 'swap.expired' })` — but only then. |
 | `svcWallet.contractRepository` interface is now the new `ContractRepository` not `ContractRepositoryImpl` | Low | Only one call site (`resetWallet`). Renamed in Phase 1 step 3. |
 | Chain swaps leaking into `SwapsList` | Low | Defensive filter in Phase 3 step 5. Chimera's UI has no chain-swap views. |
 | `lib/backup.ts` Nostr restore semantics change | Medium | Backup format still stores `{reverseSwaps, submarineSwaps}` arrays in JSON — we only change how they're persisted locally after decode. Verify round-trip: backup → wipe → restore → swap list non-empty. |
@@ -274,7 +328,8 @@ Constraint: converge on wallet's SW-hosted architecture. No main-thread `ArkadeL
 ## 7. Summary
 
 - **~90% of chimera's SDK surface is compatible** at the import level. The upgrade work is concentrated in three files: the SW entry, the swap provider, and the wallet provider.
-- **Architecturally, this matches wallet/** and removes the main-thread swap loop and its duplicate IndexedDB access. The 48h stale-swap status-rewrite is preserved (ported to the new repo) because the new `SwapManager` only backs off on 404s — it doesn't auto-expire purged swaps.
+- **Architecturally, this matches wallet/** — we remove the main-thread swap loop, its duplicate IndexedDB access, **and the 48h stale-swap cleanup hack**. The new SW-hosted `SwapManager` backs off 404s to 5-min polls; we accept the trade-off that purged-from-Boltz swaps render "pending forever" rather than maintaining custom cleanup that diverges from wallet/.
 - **Biggest risks:** (a) legacy swap data migration — solved by `migrateToSwapRepository`, (b) SW activation flakiness on the first cold start — solved by keeping the existing retry plus the PING health-check.
 - **UX/UI code is untouched** on the mandatory path. All fork-specific features (KYC, Apps, analytics, Intercom, price charts, etc.) live outside the SDK boundary and are not affected.
-- **Order matters:** Phase 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8. Phase 2 must land before Phase 3 because the SW handler is a prerequisite for `ServiceWorkerArkadeSwaps.create()` to have someone to talk to.
+- **Order matters:** Phase 1 → 2 → 3 → 4 → 4b → 5 → 6 → 7 → 8. Phase 2 must land before Phase 3 because the SW handler is a prerequisite for `ServiceWorkerArkadeSwaps.create()` to have someone to talk to. Phase 4b (retry-storm hardening) and Phase 6 (indexer DB split) are both non-optional — skipping them produces broken states that are either user-facing (retry storm) or compile-time (object-store-not-found thrown at runtime on first cache read).
+- **Known unknowns:** PR #4 is still broken after 3 iterative fix commits that cover every item in Phases 3–7 above. That means there is at least one more failure mode we haven't identified. Plan to allocate extra time in Phase 8 for diagnosing whatever surfaces, and consider checking out the PR branch to reproduce its broken state before committing to our own implementation, so we know what to look out for.
