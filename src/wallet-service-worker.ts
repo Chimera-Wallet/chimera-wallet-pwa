@@ -1,30 +1,41 @@
-import { Worker } from '@arkade-os/sdk'
+import {
+  MessageBus,
+  WalletMessageHandler,
+  IndexedDBWalletRepository,
+  IndexedDBContractRepository,
+} from '@arkade-os/sdk'
+import {
+  ArkadeSwapsMessageHandler,
+  IndexedDbSwapRepository,
+} from '@arkade-os/boltz-swap'
 
-const worker = new Worker()
-worker.start().catch(console.error)
+const walletRepository = new IndexedDBWalletRepository('arkade-service-worker')
+const contractRepository = new IndexedDBContractRepository('arkade-service-worker')
+const swapRepository = new IndexedDbSwapRepository('arkade-swaps')
+
+const bus = new MessageBus(walletRepository, contractRepository, {
+  messageHandlers: [
+    new WalletMessageHandler(),
+    new ArkadeSwapsMessageHandler(swapRepository),
+  ],
+})
+bus.start().catch(console.error)
 
 // Use build timestamp to ensure cache invalidation on each deployment
 const CACHE_VERSION = '__BUILD_TIME__' // Will be replaced during build
 const CACHE_NAME = `chimera-wallet-cache-${CACHE_VERSION}`
 declare const self: ServiceWorkerGlobalScope
 
-// The first event a service worker gets is install.
-// It's triggered as soon as the worker executes, and it's
-// only called once per service worker. If you alter your
-// service worker script the browser considers it a
-// different service worker, and it'll get its own install event.
-//
 // install event: activate service worker immediately
 self.addEventListener('install', (event: ExtendableEvent) => {
   event.waitUntil(caches.open(CACHE_NAME))
-  self.skipWaiting() // activate service worker immediately
+  self.skipWaiting()
 })
 
 // activate event: clean up old caches
 self.addEventListener('activate', (event: ExtendableEvent) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
-      // Delete ALL old caches, keeping only the current one
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName === CACHE_NAME) return
@@ -33,7 +44,6 @@ self.addEventListener('activate', (event: ExtendableEvent) => {
         }),
       )
     }).then(() => {
-      // Force reload all clients after cache cleanup
       return self.clients.matchAll({
         includeUncontrolled: true,
         type: 'window',
@@ -45,51 +55,11 @@ self.addEventListener('activate', (event: ExtendableEvent) => {
       })
     }),
   )
-  self.clients.claim() // take control of clients immediately
+  self.clients.claim()
 })
 
-// we can adopt two different strategies for caching:
-// 1. cache first: try to get the response from the cache first, then fetch from network
-// 2. network first: try to fetch from the network first, then get the response from the cache
-//
-// due to the fast development of the wallet sdk, we should use network first for now
-//
-// async function cacheFirst(request) {
-//   const cache = await caches.open(CACHE_NAME)
-//   const cachedResponse = await cache.match(request)
-//   if (cachedResponse) return cachedResponse
-//   const response = await fetch(request)
-//   cache.put(request, response.clone())
-//   return response
-// }
-// async function networkFirst(request: Request): Promise<Response> {
-//   const cache = await caches.open(CACHE_NAME)
-//   try {
-//     const response = await fetch(request)
-//     if (request.method === 'GET') {
-//       cache.put(request, response.clone())
-//     }
-//     return response
-//   } catch (error) {
-//     const cachedResponse = await cache.match(request)
-//     if (!cachedResponse) throw new Error('No cached response found')
-//     return cachedResponse
-//   }
-// }
-
-// fetch event: use network first, then cache
-// self.addEventListener('fetch', (event: FetchEvent) => {
-//   event.respondWith(networkFirst(event.request))
-// })
-
 self.addEventListener('message', (event: ExtendableMessageEvent) => {
-  if (event.data && event.data.type === 'RELOAD_WALLET') {
-    // reload the wallet when the service worker receives a message to reload
-    event.waitUntil(worker.reload().catch(console.error))
-  }
-  
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    // Skip waiting and activate immediately when requested
     self.skipWaiting()
   }
 })

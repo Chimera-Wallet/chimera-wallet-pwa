@@ -1,4 +1,4 @@
-import { PendingReverseSwap, PendingSubmarineSwap } from '@arkade-os/boltz-swap'
+import { BoltzReverseSwap, BoltzSubmarineSwap } from '@arkade-os/boltz-swap'
 import { NetworkName, type ExtendedVirtualCoin } from '@arkade-os/sdk'
 
 export type Addresses = {
@@ -37,7 +37,7 @@ export enum Fiats {
   CHF = 'CHF',
 }
 
-export type PendingSwap = PendingReverseSwap | PendingSubmarineSwap
+export type PendingSwap = BoltzReverseSwap | BoltzSubmarineSwap
 
 export type Satoshis = number
 

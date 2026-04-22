@@ -34,6 +34,8 @@ const statusDict = {
   'transaction.lockupFailed': 'Failed',
   'transaction.mempool': 'Pending',
   'transaction.refunded': 'Refunded',
+  'transaction.server.mempool': 'Pending',
+  'transaction.server.confirmed': 'Pending',
 } satisfies Record<BoltzSwapStatus, statusUI>
 
 const colorDict: Record<statusUI, string> = {
@@ -53,7 +55,7 @@ const iconDict: Record<statusUI, JSX.Element> = {
 const SwapLine = ({ onClick, swap }: { onClick: () => void; swap: PendingSwap }) => {
   const { config } = useContext(ConfigContext)
 
-  const sats = swap.type === 'reverse' ? swap.response.onchainAmount : swap.response.expectedAmount
+  const sats = (swap.type === 'reverse' ? swap.response.onchainAmount : swap.response.expectedAmount) ?? 0
   const direction = swap.type === 'reverse' ? 'Lightning to Arkade' : 'Arkade to Lightning'
   const status: statusUI = statusDict[swap.status] || 'Pending'
   const prefix = swap.type === 'reverse' ? '+' : '-'
@@ -119,19 +121,33 @@ export default function SwapsList() {
   // Subscribe to swap updates from SwapManager for real-time updates
   useEffect(() => {
     if (!swapManager) return
-    const unsubscribe = swapManager.onSwapUpdate((swap) => {
-      setSwapHistory((prev) => {
-        const existingIndex = prev.findIndex((s) => s.id === swap.id)
-        if (existingIndex >= 0) {
-          const updated = [...prev]
-          updated[existingIndex] = swap
-          return updated
-        }
-        // New swap, add to beginning
-        return [swap, ...prev]
+
+    let unsubscribe: (() => void) | null = null
+    let cancelled = false
+
+    swapManager
+      .onSwapUpdate((swap) => {
+        if (swap.type === 'chain') return
+        setSwapHistory((prev) => {
+          const existingIndex = prev.findIndex((s) => s.id === swap.id)
+          if (existingIndex >= 0) {
+            const updated = [...prev]
+            updated[existingIndex] = swap
+            return updated
+          }
+          return [swap, ...prev]
+        })
       })
-    })
-    return unsubscribe
+      .then((fn) => {
+        if (cancelled) fn()
+        else unsubscribe = fn
+      })
+      .catch(consoleError)
+
+    return () => {
+      cancelled = true
+      if (unsubscribe) unsubscribe()
+    }
   }, [swapManager])
 
   if (swapHistory.length === 0) return <EmptySwapList />

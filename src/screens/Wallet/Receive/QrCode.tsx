@@ -75,7 +75,7 @@ export default function ReceiveQRCode() {
           arkadeLightning
             .waitAndClaim(pendingSwap)
             .then(() => {
-              setRecvInfo({ ...recvInfo, satoshis: pendingSwap.response.onchainAmount })
+              setRecvInfo({ ...recvInfo, satoshis: pendingSwap.response.onchainAmount ?? satoshis })
               navigate(Pages.ReceiveSuccess)
             })
             .catch((error) => {
@@ -96,13 +96,17 @@ export default function ReceiveQRCode() {
     if (!svcWallet) return
 
     const listenForPayments = (event: MessageEvent) => {
+      if (!event.data) return
+      // v0.4 SDK wraps broadcast data under `payload`; fall back to the flat
+      // shape for safety in case an older worker build is still active.
+      const payload = event.data.payload ?? event.data
       let satoshis = 0
-      if (event.data && event.data.type === 'VTXO_UPDATE') {
-        const newVtxos = event.data.newVtxos as ExtendedVirtualCoin[]
+      if (event.data.type === 'VTXO_UPDATE') {
+        const newVtxos = (payload?.newVtxos ?? []) as ExtendedVirtualCoin[]
         satoshis = newVtxos.reduce((acc, v) => acc + v.value, 0)
       }
-      if (event.data && event.data.type === 'UTXO_UPDATE') {
-        const coins = event.data.coins as Coin[]
+      if (event.data.type === 'UTXO_UPDATE') {
+        const coins = (payload?.coins ?? []) as Coin[]
         satoshis = coins.reduce((acc, v) => acc + v.value, 0)
       }
       if (satoshis) {

@@ -35,11 +35,24 @@ export default function AppBoltzSwap() {
   useEffect(() => {
     if (!swapManager || !swapInfo) return
 
-    const unsubscribe = swapManager.subscribeToSwapUpdates(swapInfo.id, (updatedSwap) => {
-      setSwapInfo(updatedSwap)
-    })
+    let unsubscribe: (() => void) | null = null
+    let cancelled = false
 
-    return unsubscribe
+    swapManager
+      .subscribeToSwapUpdates(swapInfo.id, (updatedSwap) => {
+        if (updatedSwap.type === 'chain') return
+        setSwapInfo(updatedSwap)
+      })
+      .then((fn) => {
+        if (cancelled) fn()
+        else unsubscribe = fn
+      })
+      .catch(consoleError)
+
+    return () => {
+      cancelled = true
+      if (unsubscribe) unsubscribe()
+    }
   }, [swapManager, swapInfo?.id])
 
   if (!swapInfo) return null
@@ -53,7 +66,7 @@ export default function AppBoltzSwap() {
   const total = isReverse ? swapInfo.request.invoiceAmount : swapInfo.response.expectedAmount
   const invoice = isReverse ? swapInfo.response.invoice : swapInfo.request.invoice
   const decodedInvoice = invoice ? decodeInvoice(invoice) : { amountSats: total, note: '' }
-  const amount = isReverse ? swapInfo.response.onchainAmount : decodedInvoice.amountSats
+  const amount = (isReverse ? swapInfo.response.onchainAmount : decodedInvoice.amountSats) ?? 0
 
   const formatAmount = (amt: number) => (config.showBalance ? prettyAmount(amt) : prettyHide(amt))
 
