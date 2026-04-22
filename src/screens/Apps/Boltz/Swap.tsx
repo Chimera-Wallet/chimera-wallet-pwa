@@ -31,7 +31,9 @@ export default function AppBoltzSwap() {
   const [processing, setProcessing] = useState<boolean>(false)
   const [success, setSuccess] = useState<boolean>(false)
 
-  // Subscribe to real-time updates for this swap
+  // Subscribe to real-time updates for this swap. subscribeToSwapUpdates
+  // is now async (Promise<() => void>) and the callback may emit chain
+  // swaps — which FlowContext's SwapInfo doesn't model, so ignore them.
   useEffect(() => {
     if (!swapManager || !swapInfo) return
 

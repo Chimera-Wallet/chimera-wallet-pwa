@@ -118,7 +118,11 @@ export default function SwapsList() {
     loadHistory()
   }, [arkadeLightning])
 
-  // Subscribe to swap updates from SwapManager for real-time updates
+  // Subscribe to swap updates from SwapManager for real-time updates.
+  // In v0.3.18 onSwapUpdate returns Promise<() => void>, so we can't just
+  // `return unsubscribe` — we guard against the effect cleanup racing the
+  // promise with a `cancelled` flag and dispose either the already-resolved
+  // unsubscribe or the one that arrives afterwards.
   useEffect(() => {
     if (!swapManager) return
 
@@ -127,6 +131,7 @@ export default function SwapsList() {
 
     swapManager
       .onSwapUpdate((swap) => {
+        // Chain swaps aren't part of chimera's UI; ignore them defensively.
         if (swap.type === 'chain') return
         setSwapHistory((prev) => {
           const existingIndex = prev.findIndex((s) => s.id === swap.id)
