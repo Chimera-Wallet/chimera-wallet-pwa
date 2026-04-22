@@ -448,6 +448,77 @@ export const saveKycTokensFromLoginModel = (loginModel: CheckSessionLoginModel):
 
 // ─── Bank transfer helpers ────────────────────────────────────────────────────
 
+interface IdFlowWallet {
+  type: string
+  address: string
+}
+
+interface IdFlowUserProfile {
+  firstName?: string
+  lastName?: string
+  email?: string
+}
+
+export interface KycBankData {
+  iban?: string
+  accountHolderName?: string
+  accountNumber?: string  // US/SWIFT
+  routingNumber?: string  // US
+}
+
+/**
+ * Fetch the user's IDFlow wallets (IBAN, USAN, USRN etc.)
+ */
+const fetchKycWallets = async (accessToken: string): Promise<IdFlowWallet[]> => {
+  const apiUrl = getKycApiUrl()
+  const response = await fetch(`${apiUrl}/api/Entity/me/wallets`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+  })
+  if (!response.ok) throw new Error('Failed to fetch KYC wallets')
+  return response.json()
+}
+
+/**
+ * Fetch the user's IDFlow profile (name etc.)
+ */
+const fetchKycUserProfile = async (accessToken: string): Promise<IdFlowUserProfile> => {
+  const apiUrl = getKycApiUrl()
+  const response = await fetch(`${apiUrl}/api/Entity/me`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+  })
+  if (!response.ok) throw new Error('Failed to fetch KYC user profile')
+  return response.json()
+}
+
+/**
+ * Fetch and assemble bank data from IDFlow for use in withdraw requests.
+ * Returns null if no valid token or data is unavailable.
+ */
+export const fetchKycBankData = async (): Promise<KycBankData | null> => {
+  try {
+    const accessToken = await getValidAccessToken()
+    if (!accessToken) return null
+
+    const [wallets, profile] = await Promise.all([
+      fetchKycWallets(accessToken),
+      fetchKycUserProfile(accessToken),
+    ])
+
+    const iban = wallets.find((w) => w.type === 'IBAN')?.address
+    const accountNumber = wallets.find((w) => w.type === 'USAN')?.address
+    const routingNumber = wallets.find((w) => w.type === 'USRN')?.address
+
+    const nameParts = [profile.firstName, profile.lastName].filter(Boolean)
+    const accountHolderName = nameParts.length > 0 ? nameParts.join(' ') : undefined
+
+    return { iban, accountHolderName, accountNumber, routingNumber }
+  } catch {
+    return null
+  }
+}
+
 /**
  * Get user email for bank transfers
  * Returns KYC email if available, otherwise generates a dummy email

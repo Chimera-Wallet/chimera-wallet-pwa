@@ -1,5 +1,5 @@
 import { isTestEnvironment } from '../lib/appConfig'
-import { getKycApiUrl } from '../lib/kyc'
+import { getKycApiUrl, fetchKycBankData } from '../lib/kyc'
 
 // Base URLs
 const CHIMERA_API_STAGING = 'https://api.staging.chimerawallet.com/v1'
@@ -263,26 +263,50 @@ export const createBankWithdraw = async (params: {
   const { email, fromAmount, fromAsset, toAsset, circuit, bankData } = params
   const baseUrl = getBaseUrl()
 
-  // When no bank data is provided (KYC email flow), send email-only payload with destination_type
+  // When no bank data is provided (KYC email flow), fetch bank details from IDFlow
   if (!bankData) {
-    const emailOnlyPayload = {
+    const kycBankData = await fetchKycBankData()
+
+    const basePayload = {
       email,
       from_amount: fromAmount,
       from_asset: fromAsset,
       to_asset: toAsset,
-      ...(circuit ? { destination_type: circuit } : {}),
+      destination_type: circuit,
     }
-    const emailOnlyResponse = await fetch(`${baseUrl}/otc/withdraw/`, {
+
+    let kycPayload: Record<string, unknown>
+    if (circuit === 'us' && kycBankData?.accountNumber && kycBankData?.routingNumber) {
+      kycPayload = {
+        ...basePayload,
+        destination_bank_account_number: kycBankData.accountNumber,
+        destination_bank_routing_number: kycBankData.routingNumber,
+      }
+    } else if (kycBankData?.iban && kycBankData?.accountHolderName) {
+      kycPayload = {
+        ...basePayload,
+        destination_bank_address: kycBankData.iban,
+        destination_bank_name: kycBankData.accountHolderName,
+        ...(circuit === 'swift' && kycBankData.accountNumber
+          ? { destination_bank_account_number: kycBankData.accountNumber }
+          : {}),
+      }
+    } else {
+      // Fallback: send what we have, let API decide
+      kycPayload = { ...basePayload }
+    }
+
+    const kycResponse = await fetch(`${baseUrl}/otc/withdraw/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(emailOnlyPayload),
+      body: JSON.stringify(kycPayload),
     })
-    if (!emailOnlyResponse.ok) {
-      const errorData = await emailOnlyResponse.json().catch(() => ({}))
+    if (!kycResponse.ok) {
+      const errorData = await kycResponse.json().catch(() => ({}))
       if (errorData.message) throw new Error(errorData.message)
-      throw new Error(`Failed to create withdraw order: ${emailOnlyResponse.status}`)
+      throw new Error(`Failed to create withdraw order: ${kycResponse.status}`)
     }
-    return emailOnlyResponse.json()
+    return kycResponse.json()
   }
 
   let payload: BankWithdrawPayload
