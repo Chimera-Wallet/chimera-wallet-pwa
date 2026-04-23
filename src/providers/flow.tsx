@@ -1,4 +1,4 @@
-import { PendingReverseSwap, PendingSubmarineSwap } from '@arkade-os/boltz-swap'
+import { BoltzReverseSwap, BoltzSubmarineSwap } from '@arkade-os/boltz-swap'
 import { ReactNode, createContext, useState } from 'react'
 import { Tx } from '../lib/types'
 import type { TransferMethod } from '../lib/transferMethods'
@@ -63,7 +63,7 @@ export type SendInfo = {
   invoice?: string
   lnUrl?: string
   method?: TransferMethod
-  pendingSwap?: PendingSubmarineSwap
+  pendingSwap?: BoltzSubmarineSwap
   recipient?: string
   satoshis?: number
   swapId?: string
@@ -72,7 +72,7 @@ export type SendInfo = {
   txid?: string
 }
 
-export type SwapInfo = PendingSubmarineSwap | PendingReverseSwap | undefined
+export type SwapInfo = BoltzSubmarineSwap | BoltzReverseSwap | undefined
 
 export type SwapOrderInfo = ChimeraOrder | undefined
 

@@ -9,13 +9,7 @@ interface SheetModalProps {
 
 export default function SheetModal({ children, isOpen, onClose }: SheetModalProps) {
   return (
-    <IonModal 
-      isOpen={isOpen} 
-      onDidDismiss={onClose}
-      backdropDismiss
-      showBackdrop
-      className="sheet-modal-dark"
-    >
+    <IonModal isOpen={isOpen} onDidDismiss={onClose} backdropDismiss showBackdrop className='sheet-modal-dark'>
       <div
         style={{
           backgroundColor: '#101015',
@@ -27,7 +21,10 @@ export default function SheetModal({ children, isOpen, onClose }: SheetModalProp
           paddingBottom: 'calc(3rem + env(safe-area-inset-bottom))',
         }}
       >
-        <div style={{ cursor: 'pointer', position: 'absolute', right: '1rem', top: '1rem', zIndex: 10 }} onClick={onClose}>
+        <div
+          style={{ cursor: 'pointer', position: 'absolute', right: '1rem', top: '1rem', zIndex: 10 }}
+          onClick={onClose}
+        >
           <CloseIcon />
         </div>
         {children}

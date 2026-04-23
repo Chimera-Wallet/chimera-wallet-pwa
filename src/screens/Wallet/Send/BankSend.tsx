@@ -23,10 +23,7 @@ import BankTransferValidationMessages from '../../../components/BankTransferVali
 import { type AssetSymbol } from '../../../lib/assets'
 import { TRANSFER_METHOD, type TransferMethod } from '../../../lib/transferMethods'
 import TransactionsIcon from '../../../icons/Transactions'
-import {
-  BankCircuitSelector,
-  BankCurrencySelector,
-} from '../../../components/BankDetails'
+import { BankCircuitSelector, BankCurrencySelector } from '../../../components/BankDetails'
 import { NavigationContext, Pages } from '../../../providers/navigation'
 import { FlowContext } from '../../../providers/flow'
 import { WalletContext } from '../../../providers/wallet'
@@ -45,13 +42,7 @@ import { getUserEmailForBankTransfer } from '../../../lib/kyc'
 
 export default function BankSend() {
   const { navigate, goBack } = useContext(NavigationContext)
-  const { 
-    bankSendInfo, 
-    setBankSendInfo, 
-    sendInfo, 
-    setSendInfo,
-    setCurrentBankOrderType,
-  } = useContext(FlowContext)
+  const { bankSendInfo, setBankSendInfo, sendInfo, setSendInfo, setCurrentBankOrderType } = useContext(FlowContext)
   const { balance } = useContext(WalletContext)
 
   const bankConfig = getBankTransferConfigSync()
@@ -365,25 +356,22 @@ export default function BankSend() {
 
   return (
     <>
-      <Header text='Send' back={goBack} auxIcon={<TransactionsIcon />} auxFunc={handleOrderHistory} auxAriaLabel='View order history' />
+      <Header
+        text='Send'
+        back={goBack}
+        auxIcon={<TransactionsIcon />}
+        auxFunc={handleOrderHistory}
+        auxAriaLabel='View order history'
+      />
       <Content>
         <Padded>
           <FlexCol gap='1.5rem'>
             <ErrorMessage error={Boolean(error)} text={error} />
 
             {/* Inline Amount Input with swap functionality */}
-            <InlineAmountInput
-              value={amount}
-              onChange={setAmount}
-              asset={selectedAsset}
-              bankCurrency={currency}
-            />
+            <InlineAmountInput value={amount} onChange={setAmount} asset={selectedAsset} bankCurrency={currency} />
 
-            <AssetSelector
-              label='Asset'
-              selected={selectedAsset}
-              onSelect={setSelectedAsset}
-            />
+            <AssetSelector label='Asset' selected={selectedAsset} onSelect={setSelectedAsset} />
             <NetworkSelector
               label='Network'
               selected={selectedMethod}
@@ -404,11 +392,7 @@ export default function BankSend() {
             {/* Transfer Method */}
             <FlexCol gap='0.5rem'>
               <TextLabel>Transfer Method</TextLabel>
-              <BankCircuitSelector
-                currency={currency}
-                selectedCircuit={circuit}
-                onSelect={setCircuit}
-              />
+              <BankCircuitSelector currency={currency} selectedCircuit={circuit} onSelect={setCircuit} />
             </FlexCol>
 
             {/* Bank Details Section - hidden when KYC email bypasses requirement */}

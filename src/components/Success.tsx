@@ -11,13 +11,7 @@ interface SuccessProps {
 }
 
 export default function Success({ headline, text, icon }: SuccessProps) {
-  const defaultIcon = (
-    <img 
-      src='/arkade-icon.svg' 
-      alt='Chimera Wallet' 
-      style={{ width: '160px', height: '160px' }} 
-    />
-  )
+  const defaultIcon = <img src='/arkade-icon.svg' alt='Chimera Wallet' style={{ width: '160px', height: '160px' }} />
 
   return (
     <CenterScreen>

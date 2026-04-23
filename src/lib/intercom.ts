@@ -8,20 +8,20 @@ declare global {
 }
 
 export interface IntercomConfig {
-  app_id: string,
+  app_id: string
   hide_default_launcher: boolean
 }
 
 export const getIntercomConfig = (): IntercomConfig => {
   return {
     app_id: 'a7pgvcoj',
-    hide_default_launcher: true
+    hide_default_launcher: true,
   }
 }
 
 export const initializeIntercom = (): void => {
   const config = getIntercomConfig()
-  
+
   if (!config.app_id) {
     console.warn('Intercom app_id is not configured')
     return
@@ -30,7 +30,7 @@ export const initializeIntercom = (): void => {
   try {
     // Initialize using the SDK
     Intercom(config)
-    
+
     // Also set up the native window.Intercom if not already present
     // This provides a fallback for iOS
     if (typeof window.Intercom !== 'function') {
@@ -38,7 +38,7 @@ export const initializeIntercom = (): void => {
     }
   } catch (error) {
     console.error('Failed to initialize Intercom SDK:', error)
-    
+
     // Try to initialize using native API as fallback
     if (typeof window.Intercom === 'function') {
       try {
@@ -53,9 +53,9 @@ export const initializeIntercom = (): void => {
 export const showIntercom = (): void => {
   // On iOS, we must call this SYNCHRONOUSLY within the click handler
   // to maintain user interaction context. No setTimeout or async operations.
-  
+
   console.log('Attempting to show Intercom messenger...')
-  
+
   try {
     // Try the SDK method first
     showMessages()
@@ -64,7 +64,7 @@ export const showIntercom = (): void => {
   } catch (error) {
     console.warn('SDK showMessages failed:', error)
   }
-  
+
   try {
     // Fallback to SDK show() method
     show()
@@ -73,7 +73,7 @@ export const showIntercom = (): void => {
   } catch (error) {
     console.warn('SDK show failed:', error)
   }
-  
+
   // Final fallback: use native window.Intercom API if available
   if (typeof window.Intercom === 'function') {
     try {
@@ -83,7 +83,7 @@ export const showIntercom = (): void => {
     } catch (error) {
       console.error('Native Intercom API show failed:', error)
     }
-    
+
     // Try showMessages via native API
     try {
       window.Intercom('showMessages')
@@ -95,7 +95,7 @@ export const showIntercom = (): void => {
   } else {
     console.error('window.Intercom is not available')
   }
-  
+
   console.error('All Intercom methods failed to open messenger')
 }
 

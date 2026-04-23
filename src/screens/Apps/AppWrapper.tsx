@@ -28,7 +28,7 @@ export default function AppWrapper({ appId }: AppWrapperProps) {
     if (appConfig) {
       setConfig(appConfig)
       setAppUrl(getAppUrl(appConfig))
-      
+
       // Determine starting step based on config
       if (!appConfig.infoSlides || appConfig.infoSlides.length === 0) {
         if (appConfig.terms) {
@@ -88,21 +88,10 @@ export default function AppWrapper({ appId }: AppWrapperProps) {
       // Fall through to terms or webview if no info slides
       if (config.terms) {
         return (
-          <AppTermsPage
-            appName={config.name}
-            terms={config.terms}
-            onAccept={handleTermsAccept}
-            onBack={handleBack}
-          />
+          <AppTermsPage appName={config.name} terms={config.terms} onAccept={handleTermsAccept} onBack={handleBack} />
         )
       }
-      return (
-        <AppWebView
-          appName={config.name}
-          url={appUrl}
-          onBack={handleBack}
-        />
-      )
+      return <AppWebView appName={config.name} url={appUrl} onBack={handleBack} />
 
     case 'terms':
       if (config.terms) {
@@ -116,22 +105,10 @@ export default function AppWrapper({ appId }: AppWrapperProps) {
         )
       }
       // Fall through to webview if no terms
-      return (
-        <AppWebView
-          appName={config.name}
-          url={appUrl}
-          onBack={handleWebViewBack}
-        />
-      )
+      return <AppWebView appName={config.name} url={appUrl} onBack={handleWebViewBack} />
 
     case 'webview':
     default:
-      return (
-        <AppWebView
-          appName={config.name}
-          url={appUrl}
-          onBack={handleWebViewBack}
-        />
-      )
+      return <AppWebView appName={config.name} url={appUrl} onBack={handleWebViewBack} />
   }
 }

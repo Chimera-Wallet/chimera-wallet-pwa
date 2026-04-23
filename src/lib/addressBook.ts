@@ -142,7 +142,7 @@ export function getAddressTypeName(type: AddressType): string {
  */
 export function isValidAddress(address: string, type: AddressType): boolean {
   if (!address || address.trim().length === 0) return false
-  
+
   switch (type) {
     case AddressType.Ark:
       // Ark addresses typically start with 'ark1' or 'tark1' for testnet

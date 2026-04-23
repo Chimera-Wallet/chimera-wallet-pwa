@@ -79,7 +79,10 @@ body {
   color: inherit;
 }
 
-ion-app, ion-content, ion-page, ion-text {
+ion-app,
+ion-content,
+ion-page,
+ion-text {
   color: var(--white);
   background: transparent;
 }
@@ -297,12 +300,12 @@ button.reminder-button.action-sheet-button {
 @supports (-webkit-touch-callout: none) {
   /* iOS only */
   .intercom-messenger-frame,
-  iframe[name*="intercom-messenger"] {
+  iframe[name*='intercom-messenger'] {
     transform: translateY(env(safe-area-inset-top, 0px)) !important;
     height: calc(100% - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
     max-height: calc(90dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
   }
-  
+
   #intercom-container,
   .intercom-namespace .intercom-app > div {
     height: 100dvh !important;

@@ -13,9 +13,15 @@ interface NetworkSelectorProps {
   setIsOpen?: (isOpen: boolean) => void
 }
 
-export default function NetworkSelector({ label, onSelect, selected, isOpen: externalIsOpen, setIsOpen: externalSetIsOpen }: NetworkSelectorProps) {
+export default function NetworkSelector({
+  label,
+  onSelect,
+  selected,
+  isOpen: externalIsOpen,
+  setIsOpen: externalSetIsOpen,
+}: NetworkSelectorProps) {
   const [internalIsOpen, setInternalIsOpen] = useState(false)
-  
+
   // Use external state if provided, otherwise use internal state
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen
   const setIsOpen = externalSetIsOpen || setInternalIsOpen
@@ -43,7 +49,7 @@ export default function NetworkSelector({ label, onSelect, selected, isOpen: ext
         onSelect={(id) => onSelect(id as TransferMethod)}
         options={options}
         selected={selected}
-        title="Select Network"
+        title='Select Network'
       />
     </>
   )

@@ -56,7 +56,10 @@ export default function InputWithScanner({
           placeholder={placeholder}
           onKeyUp={(ev) => ev.key === 'Enter' && onEnter && onEnter()}
         >
-          <IonText slot='end' style={{ color: 'var(--white)', cursor: 'pointer', display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <IonText
+            slot='end'
+            style={{ color: 'var(--white)', cursor: 'pointer', display: 'flex', gap: '12px', alignItems: 'center' }}
+          >
             {openAddressBook ? (
               <div onClick={openAddressBook}>
                 <AddressBookIcon />

@@ -19,11 +19,7 @@ import ErrorMessage from '../../components/Error'
 import Info from '../../components/Info'
 import Table, { TableData } from '../../components/Table'
 import CheckMarkIcon from '../../icons/CheckMark'
-import {
-  SepaDataView,
-  SwiftDataView,
-  TransferReferenceBox,
-} from '../../components/BankDetails'
+import { SepaDataView, SwiftDataView, TransferReferenceBox } from '../../components/BankDetails'
 import { NavigationContext, Pages } from '../../providers/navigation'
 import { FlowContext } from '../../providers/flow'
 import { getOrderStatus, ChimeraOrder } from '../../providers/chimera'
@@ -37,11 +33,12 @@ export default function BankOrderStatus() {
   const { bankRecvInfo, bankSendInfo, currentBankOrderType } = useContext(FlowContext)
 
   // Determine which order we're tracking based on the current order type
-  const initialOrder = currentBankOrderType === 'receive' 
-    ? bankRecvInfo.order 
-    : currentBankOrderType === 'send'
-    ? bankSendInfo.order
-    : bankRecvInfo.order ?? bankSendInfo.order // Fallback to any available order
+  const initialOrder =
+    currentBankOrderType === 'receive'
+      ? bankRecvInfo.order
+      : currentBankOrderType === 'send'
+        ? bankSendInfo.order
+        : (bankRecvInfo.order ?? bankSendInfo.order) // Fallback to any available order
 
   const [loading, setLoading] = useState(!initialOrder)
   const [error, setError] = useState('')
@@ -214,9 +211,7 @@ export default function BankOrderStatus() {
             {isWaitingForDeposit && isDepositOrder && hasBankDetails ? (
               <FlexCol gap='1rem'>
                 {/* Transfer Reference */}
-                {order.transfer_code ? (
-                  <TransferReferenceBox reference={order.transfer_code} />
-                ) : null}
+                {order.transfer_code ? <TransferReferenceBox reference={order.transfer_code} /> : null}
 
                 {/* SEPA Details */}
                 {hasSepaDetails ? (
@@ -294,11 +289,7 @@ export default function BankOrderStatus() {
         ) : null}
         <Button onClick={handleBackToWallet} label='Back to Wallet' />
         {isCompleted || isExpired || isCancelled || isRejected ? (
-          <Button
-            onClick={() => navigate(Pages.ReceiveAmount)}
-            label='New Transfer'
-            secondary
-          />
+          <Button onClick={() => navigate(Pages.ReceiveAmount)} label='New Transfer' secondary />
         ) : null}
       </ButtonsOnBottom>
     </>

@@ -19,16 +19,19 @@ This implementation provides a complete CoinGecko API integration for fetching c
 This implementation follows **centralized configuration** with a single source of truth for all assets:
 
 **Crypto Assets**: [src/lib/assets.ts](../assets.ts)
+
 - Defines: BTC, USDT, ETH, TRX, MATIC
 - Contains: symbol, name, color (CSS var), precision
 - Type: `AssetSymbol` derived from object keys
 
 **Fiat Currencies**: [src/lib/fiatConfig.ts](../fiatConfig.ts)
-- Defines: CHF, EUR, USD  
+
+- Defines: CHF, EUR, USD
 - Contains: symbol, name, precision, exchange rates
 - Type: `FiatSymbol` derived from object keys
 
 **CoinGecko Mapping**: [mapping.ts](mapping.ts)
+
 - Imports from assets.ts and fiatConfig.ts
 - Adds only CoinGecko-specific info (API IDs)
 - Dynamically builds mappings from centralized configs
@@ -51,6 +54,7 @@ src/lib/coingecko/
 The API includes built-in caching and rate limiting to prevent hitting CoinGecko's API limits:
 
 **Cache Expiration Times:**
+
 - Current prices: 1 minute
 - Historical 1D: 5 minutes
 - Historical 1W: 15 minutes
@@ -59,6 +63,7 @@ The API includes built-in caching and rate limiting to prevent hitting CoinGecko
 - Historical MAX: 2 hours
 
 **Rate Limiting:**
+
 - Minimum 1.5 seconds between API requests
 - Maximum 30 requests per minute
 - Automatic request queuing when limits are reached
@@ -92,13 +97,10 @@ console.log(`BTC price: ${btcPrice} CHF`)
 import { CoinGeckoConversionService } from '../lib/coingecko/service'
 
 // Multiple assets, multiple currencies
-const rates = await CoinGeckoConversionService.getBulkConversionRates(
-  ['BTC', 'ETH', 'USDT'],
-  {
-    vsCurrencies: ['chf', 'eur', 'usd'],
-    include24hChange: true
-  }
-)
+const rates = await CoinGeckoConversionService.getBulkConversionRates(['BTC', 'ETH', 'USDT'], {
+  vsCurrencies: ['chf', 'eur', 'usd'],
+  include24hChange: true,
+})
 
 console.log('BTC:', rates.BTC)
 // Output: { chf: 85000, eur: 78000, usd: 92000, chf_24h_change: 2.5, ... }
@@ -163,7 +165,7 @@ export default function PriceDisplay() {
     }
 
     fetchPrice()
-    
+
     // Refresh every 60 seconds
     const interval = setInterval(fetchPrice, 60000)
     return () => clearInterval(interval)
@@ -188,9 +190,9 @@ interface Asset {
 }
 
 async function calculatePortfolioValue(assets: Asset[]): Promise<number> {
-  const symbols = assets.map(a => a.symbol)
+  const symbols = assets.map((a) => a.symbol)
   const rates = await CoinGeckoConversionService.getBulkConversionRates(symbols, {
-    vsCurrencies: ['chf']
+    vsCurrencies: ['chf'],
   })
 
   let totalValue = 0
@@ -206,7 +208,7 @@ async function calculatePortfolioValue(assets: Asset[]): Promise<number> {
 const portfolio = [
   { symbol: 'BTC', amount: 0.5 },
   { symbol: 'ETH', amount: 2.0 },
-  { symbol: 'USDT', amount: 1000 }
+  { symbol: 'USDT', amount: 1000 },
 ]
 
 const totalCHF = await calculatePortfolioValue(portfolio)
@@ -234,7 +236,7 @@ export const ASSETS = {
 2. Add the color to [src/ionic.css](../../ionic.css):
 
 ```css
---asset-ada: #0033AD;
+--asset-ada: #0033ad;
 ```
 
 3. Open [src/lib/coingecko/mapping.ts](src/lib/coingecko/mapping.ts) and add the CoinGecko ID to the map:
@@ -273,6 +275,7 @@ The asset configuration is now **centralized** in `src/lib/assets.ts` and refere
 ## Supported Assets
 
 Currently supported assets:
+
 - **BTC** (Bitcoin)
 - **USDT** (Tether)
 - **ETH** (Ethereum)
@@ -285,6 +288,7 @@ Currently supported assets:
 ## API Rate Limits
 
 CoinGecko free tier limits:
+
 - 10-50 calls/minute
 - **Built-in caching** automatically prevents excessive API calls
 - **Rate limiting** queues requests to stay within limits
@@ -322,14 +326,11 @@ console.log(prices) // { eur: 78000, usd: 92000, chf: 85000 }
 You can provide custom rates for testing or offline scenarios:
 
 ```typescript
-const rates = await CoinGeckoConversionService.getBulkConversionRates(
-  ['BTC', 'CUSTOM_TOKEN'],
-  {
-    customRates: {
-      CUSTOM_TOKEN: { chf: 1.5, eur: 1.4, usd: 1.6 }
-    }
-  }
-)
+const rates = await CoinGeckoConversionService.getBulkConversionRates(['BTC', 'CUSTOM_TOKEN'], {
+  customRates: {
+    CUSTOM_TOKEN: { chf: 1.5, eur: 1.4, usd: 1.6 },
+  },
+})
 ```
 
 ## Validation
@@ -337,10 +338,8 @@ const rates = await CoinGeckoConversionService.getBulkConversionRates(
 Validate symbols before making requests:
 
 ```typescript
-const { valid, invalid } = CoinGeckoConversionService.validateSymbols([
-  'BTC', 'ETH', 'UNKNOWN'
-])
+const { valid, invalid } = CoinGeckoConversionService.validateSymbols(['BTC', 'ETH', 'UNKNOWN'])
 
-console.log('Valid:', valid)     // ['BTC', 'ETH']
+console.log('Valid:', valid) // ['BTC', 'ETH']
 console.log('Invalid:', invalid) // ['UNKNOWN']
 ```

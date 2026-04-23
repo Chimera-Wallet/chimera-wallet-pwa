@@ -12,11 +12,33 @@ import { parseKycDeepLink } from '../lib/kyc'
 import { consoleError } from '../lib/logs'
 import { Tx, Vtxo, Wallet } from '../lib/types'
 import { calcBatchLifetimeMs, calcNextRollover } from '../lib/wallet'
-import { ArkNote, ServiceWorkerWallet, NetworkName, SingleKey } from '@arkade-os/sdk'
+import {
+  ArkNote,
+  IndexedDBContractRepository,
+  IndexedDBWalletRepository,
+  NetworkName,
+  ServiceWorkerWallet,
+  SingleKey,
+} from '@arkade-os/sdk'
+import { IndexedDBStorageAdapter } from '@arkade-os/sdk/adapters/indexedDB'
+import { IndexedDbSwapRepository, migrateToSwapRepository } from '@arkade-os/boltz-swap'
 import { hex } from '@scure/base'
 import * as secp from '@noble/secp256k1'
 import { ConfigContext } from './config'
 import { maxPercentage } from '../lib/constants'
+
+// Thrown by initWallet when we refuse to boot the service worker because the
+// Arkade server is unreachable. Unlock.tsx inspects this to show a useful
+// error instead of a misleading "Invalid password". Not an SDK/crypto
+// failure, so we keep a stable `code` for callers rather than relying on
+// message-matching.
+export class ArkadeUnreachableError extends Error {
+  readonly code = 'ARKADE_UNREACHABLE'
+  constructor(url: string) {
+    super(`Arkade server unreachable at ${url || '(no url)'}`)
+    this.name = 'ArkadeUnreachableError'
+  }
+}
 
 const defaultWallet: Wallet = {
   network: '',
@@ -153,7 +175,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }
     // if no deep link, don't navigate (let other effects handle default navigation)
     if (!deepLinkInfo?.appId) return
-    
+
     // if app url is present, navigate to it
     switch (deepLinkInfo.appId) {
       case 'boltz':
@@ -217,13 +239,37 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     maxRetries?: number
   }) => {
     try {
+      // Main-thread repositories kept consistent with the ones the service
+      // worker constructs (same IndexedDB). Passed in via `storage` so
+      // svcWallet.walletRepository / contractRepository read the same data.
+      const walletRepository = new IndexedDBWalletRepository()
+      const contractRepository = new IndexedDBContractRepository()
+
       // create service worker wallet
       const svcWallet = await ServiceWorkerWallet.setup({
         serviceWorkerPath: '/wallet-service-worker.mjs',
         identity: SingleKey.fromHex(privateKey),
         arkServerUrl,
         esploraUrl,
+        storage: { walletRepository, contractRepository },
+        settlementConfig: {
+          vtxoThreshold: wallet.thresholdMs ? Math.floor(wallet.thresholdMs / 1000) : 1,
+        },
+        messageTimeouts: { SETTLE: 60_000, SEND: 60_000 },
       })
+
+      // Migrate legacy swap data (V1 ContractRepositoryImpl collections under
+      // the 'arkade-service-worker' DB) into the new IndexedDbSwapRepository
+      // before LightningProvider reads from it. Idempotent — writes a
+      // done-flag on first successful run and no-ops thereafter. Catches the
+      // "object stores was not found" case internally for fresh wallets.
+      try {
+        const oldStorage = new IndexedDBStorageAdapter('arkade-service-worker')
+        await migrateToSwapRepository(oldStorage, new IndexedDbSwapRepository())
+      } catch (err) {
+        consoleError(err, 'Error migrating swap repository')
+      }
+
       setSvcWallet(svcWallet)
 
       // handle messages from the service worker
@@ -263,15 +309,33 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       const { walletInitialized } = await svcWallet.getStatus()
       setInitialized(walletInitialized)
 
-      // ping the service worker wallet status every 1 second
-      setInterval(async () => {
+      // Ping the service worker wallet status. In v0.4 the worker lazily
+      // initializes on the first message (getStatus included) and re-runs the
+      // full init — including a CORS-sensitive GET /v1/info — every time init
+      // previously failed. A tight 1s loop would hammer that until rate-limited.
+      // Stop pinging after a handful of consecutive failures so a bad ASP URL
+      // or CORS block doesn't produce a forever-retry storm, and slow the
+      // cadence to 5s once we have at least one successful reading.
+      let consecutiveFailures = 0
+      const MAX_FAILURES = 5
+      const pingIntervalMs = walletInitialized ? 5_000 : 1_000
+      const pingHandle = setInterval(async () => {
         try {
           const { walletInitialized } = await svcWallet.getStatus()
           setInitialized(walletInitialized)
+          consecutiveFailures = 0
         } catch (err) {
           consoleError(err, 'Error pinging wallet status')
+          consecutiveFailures += 1
+          if (consecutiveFailures >= MAX_FAILURES) {
+            clearInterval(pingHandle)
+            consoleError(
+              new Error('Wallet status ping halted after repeated failures'),
+              'Likely causes: ASP unreachable, CORS, or network offline',
+            )
+          }
         }
-      }, 1_000)
+      }, pingIntervalMs)
 
       // renew expiring coins on startup
       renewCoins(svcWallet, aspInfo.dust, wallet.thresholdMs).catch(() => {})
@@ -308,6 +372,21 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const initWallet = async (privateKey: Uint8Array) => {
+    // Don't kick off the service worker when the Arkade server is
+    // unreachable: the worker's v0.4 bootstrap does an eager GET /v1/info
+    // inside buildServices and will retry that call on every subsequent
+    // message if it fails, producing a CORS/fetch loop driven by our
+    // status-ping interval.
+    //
+    // Throw (rather than silently return) so Unlock.tsx's .catch fires and
+    // the caller doesn't proceed into a half-initialized state where
+    // svcWallet is undefined but `unlocked` was set to true — that cascaded
+    // into `Cannot read properties of undefined (reading 'getAddress')`
+    // in the v0.4 SDK message handler when downstream screens called into
+    // the worker expecting a ready wallet.
+    if (aspInfo.unreachable || !aspInfo.url || !aspInfo.network) {
+      throw new ArkadeUnreachableError(aspInfo.url ?? '')
+    }
     const arkServerUrl = aspInfo.url
     const network = aspInfo.network as NetworkName
     const esploraUrl = getRestApiExplorerURL(network) ?? ''
@@ -337,7 +416,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     if (!svcWallet) throw new Error('Service worker not initialized')
     await clearStorage()
     await svcWallet.clear()
-    await svcWallet.contractRepository.clearContractData()
+    await svcWallet.walletRepository.clear()
+    await svcWallet.contractRepository.clear()
     setDataReady(false)
     setSynced(false)
     syncedRef.current = false

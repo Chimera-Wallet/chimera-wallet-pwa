@@ -8,10 +8,7 @@ export const trackPageView = (pageName: string): void => {
   }
 }
 
-export const trackEvent = (
-  eventName: string,
-  props?: Record<string, string>
-): void => {
+export const trackEvent = (eventName: string, props?: Record<string, string>): void => {
   try {
     track(eventName, { props })
   } catch (err) {

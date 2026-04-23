@@ -19,16 +19,16 @@ const TransactionLine = ({ tx, onClick }: { tx: Tx; onClick: () => void }) => {
   const btcAmount = tx.amount / Math.pow(10, ASSETS.BTC.precision)
 
   const prefix = tx.type === 'sent' ? '-' : '+'
-  
+
   // Format BTC amount with up to 5 decimal places
-  const formattedBTC = config.showBalance 
+  const formattedBTC = config.showBalance
     ? `${prefix} ${btcAmount.toFixed(5)} ${ASSETS.BTC.symbol}`
     : prettyHide(btcAmount, ASSETS.BTC.symbol)
-  
+
   // Format fiat amount using selected currency
   const fiatAmount = toFiat(tx.amount)
   const fiatSymbol = config.fiat === Fiats.EUR ? '€' : config.fiat === Fiats.CHF ? 'Fr.' : '$'
-  const formattedUSD = config.showBalance 
+  const formattedUSD = config.showBalance
     ? `${prefix} ${fiatSymbol}${fiatAmount.toFixed(2)}`
     : prettyHide(fiatAmount, config.fiat)
 
@@ -68,42 +68,32 @@ const TransactionLine = ({ tx, onClick }: { tx: Tx; onClick: () => void }) => {
     >
       {/* Left Section - Icon */}
       <div style={{ marginRight: '12px' }}>
-        <img 
-          src={iconSrc} 
-          alt={iconAlt}
-          width={24}
-          height={24}
-          style={{ display: 'block' }}
-        />
+        <img src={iconSrc} alt={iconAlt} width={24} height={24} style={{ display: 'block' }} />
       </div>
 
       {/* Middle Section - Date, Action, Status */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <div style={{ fontSize: '11px', color: 'var(--grey)', fontWeight: 400 }}>
-          {date}
-        </div>
-        <div style={{ fontSize: '14px', color: 'white', fontWeight: 500 }}>
-          {action}
-        </div>
-        <div style={{ fontSize: '12px', color: status.color, fontWeight: 500 }}>
-          {status.text}
-        </div>
+        <div style={{ fontSize: '11px', color: 'var(--grey)', fontWeight: 400 }}>{date}</div>
+        <div style={{ fontSize: '14px', color: 'white', fontWeight: 500 }}>{action}</div>
+        <div style={{ fontSize: '12px', color: status.color, fontWeight: 500 }}>{status.text}</div>
       </div>
 
       {/* Right Section - Amount */}
       <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <div style={{ fontSize: '14px', color: 'white', fontWeight: 500, fontFamily: 'monospace' }}>
-          {formattedBTC}
-        </div>
-        <div style={{ fontSize: '12px', color: 'var(--grey)', fontWeight: 400 }}>
-          {formattedUSD}
-        </div>
+        <div style={{ fontSize: '14px', color: 'white', fontWeight: 500, fontFamily: 'monospace' }}>{formattedBTC}</div>
+        <div style={{ fontSize: '12px', color: 'var(--grey)', fontWeight: 400 }}>{formattedUSD}</div>
       </div>
     </div>
   )
 }
 
-export default function TransactionsList({ filterAsset, maxItems }: { filterAsset?: AssetSymbol | string; maxItems?: number }) {
+export default function TransactionsList({
+  filterAsset,
+  maxItems,
+}: {
+  filterAsset?: AssetSymbol | string
+  maxItems?: number
+}) {
   const { setTxInfo } = useContext(FlowContext)
   const { navigate } = useContext(NavigationContext)
   const { txs } = useContext(WalletContext)
@@ -160,9 +150,7 @@ export default function TransactionsList({ filterAsset, maxItems }: { filterAsse
   return (
     <div style={{ marginTop: '1.5rem', width: '100%' }}>
       <div style={{ marginBottom: '8px' }}>
-        <TextLabel>
-          {filterAsset ? `${filterAsset} transactions` : 'Recent Transactions'}
-        </TextLabel>
+        <TextLabel>{filterAsset ? `${filterAsset} transactions` : 'Recent Transactions'}</TextLabel>
       </div>
       <div
         style={{
@@ -192,7 +180,7 @@ export default function TransactionsList({ filterAsset, maxItems }: { filterAsse
             })}
           </div>
         </Focusable>
-        
+
         {hasMore ? (
           <div
             onClick={handleViewAll}

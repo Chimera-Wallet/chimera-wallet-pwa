@@ -14,16 +14,21 @@ export default function AppWebView({ appName, url, onBack }: AppWebViewProps) {
   if (!url) {
     return (
       <>
-        <Header 
-          text={appName} 
-          back={onBack}
-        />
+        <Header text={appName} back={onBack} />
         <Content>
           <Padded>
-            <div style={{ height: '100%', minHeight: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-              <Text centered>
-                This app is not yet available.
-              </Text>
+            <div
+              style={{
+                height: '100%',
+                minHeight: '300px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '1rem',
+              }}
+            >
+              <Text centered>This app is not yet available.</Text>
               <Text small centered>
                 Please check back later.
               </Text>
@@ -36,10 +41,7 @@ export default function AppWebView({ appName, url, onBack }: AppWebViewProps) {
 
   return (
     <>
-      <Header 
-        text={appName} 
-        back={onBack}
-      />
+      <Header text={appName} back={onBack} />
       <Content>
         <Padded>
           <FlexCol gap='0'>

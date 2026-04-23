@@ -25,7 +25,7 @@ export class CoinGeckoConversionService {
    */
   static async getBulkConversionRates(
     identifiers: string[],
-    options: BulkConversionOptions = {}
+    options: BulkConversionOptions = {},
   ): Promise<ConversionRateResult> {
     const { vsCurrencies = ['chf', 'eur', 'usd'], include24hChange = true, customRates = {} } = options
 
@@ -62,7 +62,7 @@ export class CoinGeckoConversionService {
 
     // Filter identifiers that need API calls
     const identifiersNeedingApi = identifiers.filter(
-      (identifier) => !requiresSpecialHandling(identifier) && !customRates[identifier] && !result[identifier]
+      (identifier) => !requiresSpecialHandling(identifier) && !customRates[identifier] && !result[identifier],
     )
 
     if (identifiersNeedingApi.length === 0) {
@@ -124,11 +124,7 @@ export class CoinGeckoConversionService {
   /**
    * Convert an amount from one asset to target currency
    */
-  static async convertAmount(
-    amount: number,
-    fromSymbol: string,
-    toCurrency: string = 'chf'
-  ): Promise<number | null> {
+  static async convertAmount(amount: number, fromSymbol: string, toCurrency: string = 'chf'): Promise<number | null> {
     const rate = await this.getSingleConversionRate(fromSymbol, toCurrency)
 
     if (rate === null) {

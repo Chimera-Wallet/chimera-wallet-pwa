@@ -47,7 +47,7 @@ export const ASSET_COINGECKO_MAPPING: AssetMapping[] = [...CRYPTO_ASSET_MAPPINGS
 
 // Create a map for quick lookup by symbol
 export const SYMBOL_TO_MAPPING_MAP = new Map<string, AssetMapping>(
-  ASSET_COINGECKO_MAPPING.map((mapping) => [mapping.symbol, mapping])
+  ASSET_COINGECKO_MAPPING.map((mapping) => [mapping.symbol, mapping]),
 )
 
 /**

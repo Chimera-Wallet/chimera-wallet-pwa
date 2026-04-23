@@ -40,7 +40,7 @@ function CopyButton({ value }: { value: string }) {
 export default function SwapOrderDetails() {
   const { navigate } = useContext(NavigationContext)
   const { swapOrderInfo } = useContext(FlowContext) as any // Extended FlowContext
-  
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [order, setOrder] = useState<ChimeraOrder | null>(swapOrderInfo || null)
@@ -190,7 +190,7 @@ export default function SwapOrderDetails() {
             {isWaitingForDeposit ? (
               <FlexCol gap='1rem'>
                 <TextLabel>Deposit Instructions</TextLabel>
-                
+
                 {/* Crypto Deposit */}
                 {hasCryptoDeposit && depositAddress ? (
                   <FlexCol gap='0.75rem'>
@@ -214,7 +214,7 @@ export default function SwapOrderDetails() {
                   <Shadow fat>
                     <FlexCol gap='0.5rem'>
                       <Text bold>SEPA Bank Transfer</Text>
-                      
+
                       {order.deposit_sepa_address ? (
                         <FlexRow between>
                           <TextSecondary>IBAN:</TextSecondary>
@@ -224,7 +224,7 @@ export default function SwapOrderDetails() {
                           </FlexRow>
                         </FlexRow>
                       ) : null}
-                      
+
                       {order.deposit_sepa_bic ? (
                         <FlexRow between>
                           <TextSecondary>BIC:</TextSecondary>
@@ -234,14 +234,14 @@ export default function SwapOrderDetails() {
                           </FlexRow>
                         </FlexRow>
                       ) : null}
-                      
+
                       {order.deposit_sepa_beneficiary ? (
                         <FlexRow between>
                           <TextSecondary>Beneficiary:</TextSecondary>
                           <Text small>{order.deposit_sepa_beneficiary}</Text>
                         </FlexRow>
                       ) : null}
-                      
+
                       {order.deposit_sepa_bank_name ? (
                         <FlexRow between>
                           <TextSecondary>Bank:</TextSecondary>
@@ -257,7 +257,7 @@ export default function SwapOrderDetails() {
                   <Shadow fat>
                     <FlexCol gap='0.5rem'>
                       <Text bold>SWIFT Bank Transfer</Text>
-                      
+
                       {order.deposit_swift_address ? (
                         <FlexRow between>
                           <TextSecondary>IBAN:</TextSecondary>
@@ -267,7 +267,7 @@ export default function SwapOrderDetails() {
                           </FlexRow>
                         </FlexRow>
                       ) : null}
-                      
+
                       {order.deposit_swift_bic ? (
                         <FlexRow between>
                           <TextSecondary>BIC:</TextSecondary>
@@ -277,14 +277,14 @@ export default function SwapOrderDetails() {
                           </FlexRow>
                         </FlexRow>
                       ) : null}
-                      
+
                       {order.deposit_swift_beneficiary ? (
                         <FlexRow between>
                           <TextSecondary>Beneficiary:</TextSecondary>
                           <Text small>{order.deposit_swift_beneficiary}</Text>
                         </FlexRow>
                       ) : null}
-                      
+
                       {order.deposit_swift_bank_name ? (
                         <FlexRow between>
                           <TextSecondary>Bank:</TextSecondary>
@@ -300,7 +300,9 @@ export default function SwapOrderDetails() {
                   <Shadow fat border>
                     <FlexCol gap='0.5rem'>
                       <FlexRow between>
-                        <Text bold color='red'>Reference (Required)</Text>
+                        <Text bold color='red'>
+                          Reference (Required)
+                        </Text>
                         <CopyButton value={order.transfer_code} />
                       </FlexRow>
                       <Text>{order.transfer_code}</Text>
@@ -324,18 +326,11 @@ export default function SwapOrderDetails() {
                   loading={refreshing}
                 />
               ) : null}
-              
-              <Button
-                onClick={handleBackToWallet}
-                label='Back to Wallet'
-              />
 
-              {(isCompleted || isExpired || isCancelled) ? (
-                <Button
-                  onClick={() => navigate(Pages.AppSwap)}
-                  label='Create New Swap'
-                  secondary
-                />
+              <Button onClick={handleBackToWallet} label='Back to Wallet' />
+
+              {isCompleted || isExpired || isCancelled ? (
+                <Button onClick={() => navigate(Pages.AppSwap)} label='Create New Swap' secondary />
               ) : null}
             </FlexCol>
           </FlexCol>

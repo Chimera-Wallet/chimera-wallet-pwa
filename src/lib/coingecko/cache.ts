@@ -94,11 +94,7 @@ class CoinGeckoCache {
   /**
    * Set cached price data
    */
-  setCachedPrices(
-    symbols: string[],
-    vsCurrencies: string[],
-    data: Record<string, CoinGeckoPriceData>
-  ): void {
+  setCachedPrices(symbols: string[], vsCurrencies: string[], data: Record<string, CoinGeckoPriceData>): void {
     const key = this.getPriceCacheKey(symbols, vsCurrencies)
     const now = Date.now()
 
@@ -114,11 +110,7 @@ class CoinGeckoCache {
   /**
    * Get cached historical data
    */
-  getCachedHistorical(
-    symbol: string,
-    vsCurrency: string,
-    days: number
-  ): CoinGeckoHistoricalData | null {
+  getCachedHistorical(symbol: string, vsCurrency: string, days: number): CoinGeckoHistoricalData | null {
     const key = this.getHistoricalCacheKey(symbol, vsCurrency, days)
     const entry = this.historicalCache.get(key)
 
@@ -133,12 +125,7 @@ class CoinGeckoCache {
   /**
    * Set cached historical data
    */
-  setCachedHistorical(
-    symbol: string,
-    vsCurrency: string,
-    days: number,
-    data: CoinGeckoHistoricalData
-  ): void {
+  setCachedHistorical(symbol: string, vsCurrency: string, days: number, data: CoinGeckoHistoricalData): void {
     const key = this.getHistoricalCacheKey(symbol, vsCurrency, days)
     const now = Date.now()
     const expiry = this.getHistoricalExpiry(days)
@@ -271,6 +258,9 @@ class CoinGeckoCache {
 export const coingeckoCache = new CoinGeckoCache()
 
 // Clear expired entries periodically
-setInterval(() => {
-  coingeckoCache.clearExpired()
-}, 5 * 60 * 1000) // Every 5 minutes
+setInterval(
+  () => {
+    coingeckoCache.clearExpired()
+  },
+  5 * 60 * 1000,
+) // Every 5 minutes

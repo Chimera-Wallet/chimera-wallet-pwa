@@ -57,7 +57,13 @@ interface BankFieldBoxProps {
   multiline?: boolean
 }
 
-export function BankFieldBox({ label, value, copyable = false, required = false, multiline = false }: BankFieldBoxProps) {
+export function BankFieldBox({
+  label,
+  value,
+  copyable = false,
+  required = false,
+  multiline = false,
+}: BankFieldBoxProps) {
   if (!value) return null
 
   return (
@@ -101,14 +107,7 @@ interface SepaDataViewProps {
   bankAddress?: string
 }
 
-export function SepaDataView({
-  iban,
-  bic,
-  beneficiary,
-  beneficiaryAddress,
-  bankName,
-  bankAddress,
-}: SepaDataViewProps) {
+export function SepaDataView({ iban, bic, beneficiary, beneficiaryAddress, bankName, bankAddress }: SepaDataViewProps) {
   return (
     <FlexCol gap='0.75rem'>
       <BankFieldBox label='IBAN' value={iban ?? ''} copyable />
@@ -148,9 +147,7 @@ export function SwiftDataView({
     <FlexCol gap='0.75rem'>
       <BankFieldBox label='IBAN' value={iban ?? ''} copyable />
       <BankFieldBox label='BIC / SWIFT Code' value={bic ?? ''} copyable />
-      {intermediaryBic ? (
-        <BankFieldBox label='Intermediary BIC' value={intermediaryBic} copyable />
-      ) : null}
+      {intermediaryBic ? <BankFieldBox label='Intermediary BIC' value={intermediaryBic} copyable /> : null}
       <BankFieldBox label='Beneficiary' value={beneficiary ?? ''} />
       <BankFieldBox label='Beneficiary Address' value={beneficiaryAddress ?? ''} multiline />
       <BankFieldBox label='Bank Name' value={bankName ?? ''} />
@@ -212,12 +209,9 @@ export function TransferReferenceBox({ reference }: TransferReferenceBoxProps) {
           </Text>
           <CopyButton value={reference} />
         </FlexRow>
-        <div style={{ fontFamily: 'monospace', fontSize: '1.1rem', color: 'var(--white)' }}>
-          {reference}
-        </div>
+        <div style={{ fontFamily: 'monospace', fontSize: '1.1rem', color: 'var(--white)' }}>{reference}</div>
         <TextSecondary>
-          You MUST include this reference in your bank transfer description for it to be processed
-          correctly.
+          You MUST include this reference in your bank transfer description for it to be processed correctly.
         </TextSecondary>
       </FlexCol>
     </Shadow>

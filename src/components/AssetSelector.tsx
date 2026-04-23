@@ -12,9 +12,15 @@ interface AssetSelectorProps {
   setIsOpen?: (isOpen: boolean) => void
 }
 
-export default function AssetSelector({ label, onSelect, selected, isOpen: externalIsOpen, setIsOpen: externalSetIsOpen }: AssetSelectorProps) {
+export default function AssetSelector({
+  label,
+  onSelect,
+  selected,
+  isOpen: externalIsOpen,
+  setIsOpen: externalSetIsOpen,
+}: AssetSelectorProps) {
   const [internalIsOpen, setInternalIsOpen] = useState(false)
-  
+
   // Use external state if provided, otherwise use internal state
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen
   const setIsOpen = externalSetIsOpen || setInternalIsOpen
@@ -42,7 +48,7 @@ export default function AssetSelector({ label, onSelect, selected, isOpen: exter
         onSelect={(id) => onSelect(id as AssetSymbol)}
         options={options}
         selected={selected}
-        title="Select Asset"
+        title='Select Asset'
       />
     </>
   )

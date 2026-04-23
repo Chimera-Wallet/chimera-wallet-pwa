@@ -75,7 +75,8 @@ export const appConfigs: Record<string, AppConfig> = {
     infoSlides: [
       {
         title: 'Your Financial Overview',
-        description: 'Access detailed statements of all your transactions, balances, and account activity in one place.',
+        description:
+          'Access detailed statements of all your transactions, balances, and account activity in one place.',
         image: '/images/apps/statement.png',
       },
     ],
@@ -93,7 +94,8 @@ export const appConfigs: Record<string, AppConfig> = {
     infoSlides: [
       {
         title: 'What is the Referral Program?',
-        description: "You're at the centre, and the rewards are endless!\n\nEarn 20% of all fees from every friend who signs up with your link—forever.\nNo caps,no limits, no expiration; just continuous rewards. The more you share, the more you earn. Ready?\n\nCopy your link, spread the word, and let the rewards roll in!",
+        description:
+          "You're at the centre, and the rewards are endless!\n\nEarn 20% of all fees from every friend who signs up with your link—forever.\nNo caps,no limits, no expiration; just continuous rewards. The more you share, the more you earn. Ready?\n\nCopy your link, spread the word, and let the rewards roll in!",
         image: '/rocket.png',
       },
     ],

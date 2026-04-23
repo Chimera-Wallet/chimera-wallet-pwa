@@ -21,7 +21,12 @@ import NetworkSelector from '../../../components/NetworkSelector'
 import InlineAmountInput from '../../../components/InlineAmountInput'
 import BankTransferValidationMessages from '../../../components/BankTransferValidation'
 import type { AssetSymbol } from '../../../lib/assets'
-import { TRANSFER_METHOD, TERMS_AND_CONDITIONS, type TransferMethod, type InfoItemIcon } from '../../../lib/transferMethods'
+import {
+  TRANSFER_METHOD,
+  TERMS_AND_CONDITIONS,
+  type TransferMethod,
+  type InfoItemIcon,
+} from '../../../lib/transferMethods'
 import { prettyNumber } from '../../../lib/format'
 import WhenIcon from '../../../icons/When'
 import FeesIcon from '../../../icons/Fees'
@@ -51,13 +56,7 @@ import { getUserEmailForBankTransfer } from '../../../lib/kyc'
 
 export default function BankReceive() {
   const { navigate, goBack } = useContext(NavigationContext)
-  const { 
-    bankRecvInfo, 
-    setBankRecvInfo, 
-    recvInfo, 
-    setRecvInfo,
-    setCurrentBankOrderType,
-  } = useContext(FlowContext)
+  const { bankRecvInfo, setBankRecvInfo, recvInfo, setRecvInfo, setCurrentBankOrderType } = useContext(FlowContext)
   const { svcWallet } = useContext(WalletContext)
 
   const bankConfig = getBankTransferConfigSync()
@@ -70,7 +69,7 @@ export default function BankReceive() {
   const [currency, setCurrency] = useState<BankCurrency>(bankRecvInfo.currency || bankConfig.defaultCurrency)
   const [circuit, setCircuit] = useState<BankCircuit>(bankRecvInfo.circuit || getDefaultCircuit(currency))
   const [amount, setAmount] = useState<number>(bankRecvInfo.amount || 0)
-  
+
   // API state
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -177,31 +176,31 @@ export default function BankReceive() {
 
     return (
       <>
-        <Header text='Bank Deposit' back={goBack} auxIcon={<TransactionsIcon />} auxFunc={handleOrderHistory} auxAriaLabel='View order history' />
+        <Header
+          text='Bank Deposit'
+          back={goBack}
+          auxIcon={<TransactionsIcon />}
+          auxFunc={handleOrderHistory}
+          auxAriaLabel='View order history'
+        />
         <Content>
           <Padded>
             <FlexCol gap='1.5rem'>
               <Info color='blue' title='Send Bank Transfer'>
                 <TextSecondary>
-                  Transfer {prettyNumber(numAmount, 2)} {currency} to the bank details below.
-                  Your Bitcoin will be credited once the transfer is confirmed.
+                  Transfer {prettyNumber(numAmount, 2)} {currency} to the bank details below. Your Bitcoin will be
+                  credited once the transfer is confirmed.
                 </TextSecondary>
               </Info>
 
               {/* Transfer Reference - Most Important */}
-              {order.transfer_code ? (
-                <TransferReferenceBox reference={order.transfer_code} />
-              ) : null}
+              {order.transfer_code ? <TransferReferenceBox reference={order.transfer_code} /> : null}
 
               {/* Circuit Selection */}
               {hasSepaDetails && hasSwiftDetails ? (
                 <FlexCol gap='0.5rem'>
                   <TextLabel>Transfer Method</TextLabel>
-                  <BankCircuitSelector
-                    currency={currency}
-                    selectedCircuit={circuit}
-                    onSelect={setCircuit}
-                  />
+                  <BankCircuitSelector currency={currency} selectedCircuit={circuit} onSelect={setCircuit} />
                 </FlexCol>
               ) : null}
 
@@ -248,25 +247,22 @@ export default function BankReceive() {
   // Show form if no order yet
   return (
     <>
-      <Header text='Receive' back={goBack} auxIcon={<TransactionsIcon />} auxFunc={handleOrderHistory} auxAriaLabel='View order history' />
+      <Header
+        text='Receive'
+        back={goBack}
+        auxIcon={<TransactionsIcon />}
+        auxFunc={handleOrderHistory}
+        auxAriaLabel='View order history'
+      />
       <Content>
         <Padded>
           <FlexCol gap='1.5rem'>
             <ErrorMessage error={Boolean(error)} text={error} />
 
             {/* Amount Input */}
-            <InlineAmountInput
-              value={amount}
-              onChange={setAmount}
-              asset={selectedAsset}
-              bankCurrency={currency}
-            />
+            <InlineAmountInput value={amount} onChange={setAmount} asset={selectedAsset} bankCurrency={currency} />
 
-            <AssetSelector
-              label='Asset'
-              selected={selectedAsset}
-              onSelect={setSelectedAsset}
-            />
+            <AssetSelector label='Asset' selected={selectedAsset} onSelect={setSelectedAsset} />
             <NetworkSelector
               label='Network'
               selected={selectedMethod}
@@ -289,20 +285,18 @@ export default function BankReceive() {
               {TERMS_AND_CONDITIONS.receive.bank.map((item) => {
                 const getIcon = (iconType?: InfoItemIcon) => {
                   switch (iconType) {
-                    case 'time': return <WhenIcon />
-                    case 'fees': return <FeesIcon />
-                    case 'info': return <InfoIcon />
-                    default: return <InfoIcon />
+                    case 'time':
+                      return <WhenIcon />
+                    case 'fees':
+                      return <FeesIcon />
+                    case 'info':
+                      return <InfoIcon />
+                    default:
+                      return <InfoIcon />
                   }
                 }
                 return (
-                  <InfoLine
-                    key={item.text}
-                    compact
-                    color={item.color}
-                    icon={getIcon(item.icon)}
-                    text={item.text}
-                  />
+                  <InfoLine key={item.text} compact color={item.color} icon={getIcon(item.icon)} text={item.text} />
                 )
               })}
             </InfoContainer>

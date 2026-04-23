@@ -53,7 +53,7 @@ export default function AssetBalanceView({ symbol, balance }: AssetBalanceViewPr
       </div>
 
       {/* Price Chart */}
-      <PriceChart symbol={symbol} vsCurrency="usd" />
+      <PriceChart symbol={symbol} vsCurrency='usd' />
     </div>
   )
 }

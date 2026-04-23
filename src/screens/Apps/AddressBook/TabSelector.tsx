@@ -43,10 +43,7 @@ export default function TabSelector({ options, selected, onChange }: TabSelector
       {options.map((option) => (
         <div key={option.value} style={focusableWrapperStyle}>
           <Focusable onEnter={() => onChange(option.value)}>
-            <div
-              style={buttonStyle(selected === option.value)}
-              onClick={() => onChange(option.value)}
-            >
+            <div style={buttonStyle(selected === option.value)} onClick={() => onChange(option.value)}>
               {option.label}
             </div>
           </Focusable>

@@ -33,13 +33,7 @@ export default function ReferralIcon({ big = false }: { big?: boolean }) {
         fillOpacity='0.6'
       />
       {/* Connection lines */}
-      <path
-        d='M31 36L24 42M47 36L54 42'
-        stroke='white'
-        strokeWidth='2'
-        strokeLinecap='round'
-        strokeOpacity='0.5'
-      />
+      <path d='M31 36L24 42M47 36L54 42' stroke='white' strokeWidth='2' strokeLinecap='round' strokeOpacity='0.5' />
     </svg>
   )
 }

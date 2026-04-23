@@ -2,22 +2,19 @@ import { ReactNode, createContext, useContext, useEffect, useRef, useState } fro
 import { AspContext } from './asp'
 import { WalletContext } from './wallet'
 import {
-  ArkadeLightning,
+  BoltzReverseSwap,
+  BoltzSubmarineSwap,
   BoltzSwapProvider,
   FeesResponse,
+  IndexedDbSwapRepository,
   Network,
-  PendingReverseSwap,
-  PendingSubmarineSwap,
+  ServiceWorkerArkadeSwaps,
+  SwapManagerClient,
   setLogger,
-  SwapManager,
-  isReverseFinalStatus,
-  isSubmarineFinalStatus,
 } from '@arkade-os/boltz-swap'
 import { ConfigContext } from './config'
 import { consoleError, consoleLog } from '../lib/logs'
-import { ContractRepositoryImpl, RestArkProvider, RestIndexerProvider } from '@arkade-os/sdk'
 import { sendOffChain } from '../lib/asp'
-import { IndexedDBStorageAdapter } from '@arkade-os/sdk/adapters/indexedDB'
 import { PendingSwap } from '../lib/types'
 
 const BASE_URLS: Record<Network, string | null> = {
@@ -32,15 +29,14 @@ interface LightningContextProps {
   connected: boolean
   calcSubmarineSwapFee: (satoshis: number) => number
   calcReverseSwapFee: (satoshis: number) => number
-  arkadeLightning: ArkadeLightning | null
-  swapManager: SwapManager | null
+  arkadeLightning: ServiceWorkerArkadeSwaps | null
+  swapManager: SwapManagerClient | null
   toggleConnection: () => void
-  // Helper methods that delegate to arkadeLightning
-  createSubmarineSwap: (invoice: string) => Promise<PendingSubmarineSwap | null>
-  createReverseSwap: (sats: number) => Promise<PendingReverseSwap | null>
-  claimVHTLC: (swap: PendingReverseSwap) => Promise<void>
-  refundVHTLC: (swap: PendingSubmarineSwap) => Promise<void>
-  payInvoice: (swap: PendingSubmarineSwap) => Promise<{ txid: string; preimage: string }>
+  createSubmarineSwap: (invoice: string) => Promise<BoltzSubmarineSwap | null>
+  createReverseSwap: (sats: number) => Promise<BoltzReverseSwap | null>
+  claimVHTLC: (swap: BoltzReverseSwap) => Promise<void>
+  refundVHTLC: (swap: BoltzSubmarineSwap) => Promise<void>
+  payInvoice: (swap: BoltzSubmarineSwap) => Promise<{ txid: string; preimage: string }>
   getSwapHistory: () => Promise<PendingSwap[]>
   getFees: () => Promise<FeesResponse | null>
   getApiUrl: () => string | null
@@ -72,7 +68,7 @@ export const LightningProvider = ({ children }: { children: ReactNode }) => {
   const { svcWallet } = useContext(WalletContext)
   const { config, updateConfig, backupConfig } = useContext(ConfigContext)
 
-  const [arkadeLightning, setArkadeLightning] = useState<ArkadeLightning | null>(null)
+  const [arkadeLightning, setArkadeLightning] = useState<ServiceWorkerArkadeSwaps | null>(null)
   const [fees, setFees] = useState<FeesResponse | null>(null)
   const [apiUrl, setApiUrl] = useState<string | null>(null)
   // Track which URL fees have already been fetched for to avoid redundant network calls
@@ -81,7 +77,8 @@ export const LightningProvider = ({ children }: { children: ReactNode }) => {
 
   const connected = config.apps.boltz.connected
 
-  // create ArkadeLightning with SwapManager on first run with svcWallet
+  // Create ServiceWorkerArkadeSwaps when svcWallet and network are ready.
+  // Swap processing, polling, claim/refund all live inside the service worker.
   useEffect(() => {
     if (!aspInfo.network || !svcWallet) return
 
@@ -91,67 +88,44 @@ export const LightningProvider = ({ children }: { children: ReactNode }) => {
     setApiUrl(baseUrl)
 
     const network = aspInfo.network as Network
-    const arkProvider = new RestArkProvider(aspInfo.url)
     const swapProvider = new BoltzSwapProvider({ apiUrl: baseUrl, network })
-    const indexerProvider = new RestIndexerProvider(aspInfo.url)
 
-    const instance = new ArkadeLightning({
-      wallet: svcWallet,
-      arkProvider,
-      swapProvider,
-      indexerProvider,
-      // Disable autoStart so we can clean up stale swaps before monitoring begins
-      swapManager: config.apps.boltz.connected ? { autoStart: false } : false,
-    })
     setLogger({
       log: (...args: unknown[]) => consoleLog(...args),
       error: (...args: unknown[]) => consoleError(args[0], args.slice(1).join(' ')),
       warn: (...args: unknown[]) => consoleLog(...args),
     })
-    setArkadeLightning(instance)
 
+    let disposeArkadeSwaps: (() => Promise<void>) | null = null
     let cancelled = false
 
-    if (config.apps.boltz.connected) {
-      // Clean up stale non-final swaps before SwapManager starts polling them.
-      // Boltz expires swaps after ~24-48h; anything older with a non-final status
-      // would return 404 forever and cause non-stop polling.
-      const startWithCleanup = async () => {
-        try {
-          // createdAt is stored as Unix seconds (Math.floor(Date.now() / 1000))
-          const STALE_SECONDS = 48 * 60 * 60
-          const staleThreshold = Math.floor(Date.now() / 1000) - STALE_SECONDS
-          const swaps = await instance.getSwapHistory()
-          const staleSwaps = swaps.filter((s) => {
-            const isNonFinal =
-              s.type === 'reverse' ? !isReverseFinalStatus(s.status) : !isSubmarineFinalStatus(s.status)
-            return isNonFinal && s.createdAt < staleThreshold // both in Unix seconds
-          })
-          if (staleSwaps.length > 0) {
-            const storage = new IndexedDBStorageAdapter('arkade-service-worker')
-            const contractRepo = new ContractRepositoryImpl(storage)
-            for (const swap of staleSwaps) {
-              const collection = swap.type === 'reverse' ? 'reverseSwaps' : 'submarineSwaps'
-              await contractRepo.saveToContractCollection(collection, { ...swap, status: 'swap.expired' }, 'id')
-            }
-            consoleLog(`Marked ${staleSwaps.length} stale swap(s) as expired before SwapManager start`)
-          }
-        } catch (err) {
-          consoleError(err, 'Failed to clean up stale swaps')
+    ServiceWorkerArkadeSwaps.create({
+      serviceWorker: svcWallet.serviceWorker,
+      swapRepository: new IndexedDbSwapRepository(),
+      swapProvider,
+      network,
+      arkServerUrl: aspInfo.url,
+      swapManager: config.apps.boltz.connected,
+    })
+      .then((instance) => {
+        if (cancelled) {
+          instance.dispose().catch(consoleError)
+          return
         }
-        if (!cancelled) await instance.startSwapManager()
-      }
-      startWithCleanup().catch(consoleError)
-    }
+        disposeArkadeSwaps = () => instance.dispose().catch(consoleError)
+        setArkadeLightning(instance)
+      })
+      .catch((err) => {
+        consoleError(err, 'Failed to initialize arkade swaps')
+      })
 
-    // Cleanup on unmount
     return () => {
       cancelled = true
-      instance.dispose().catch(consoleError)
+      if (disposeArkadeSwaps) disposeArkadeSwaps().catch(consoleError)
     }
     // Only depend on primitive values from aspInfo, not the object reference itself.
     // aspInfo is recreated as a new object on every setAspInfo call (even with identical data),
-    // which would otherwise recreate ArkadeLightning, open a new WebSocket, and re-fetch fees unnecessarily.
+    // which would otherwise recreate ServiceWorkerArkadeSwaps and re-fetch fees unnecessarily.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aspInfo.network, aspInfo.url, svcWallet, config.apps.boltz.connected])
 
@@ -193,27 +167,27 @@ export const LightningProvider = ({ children }: { children: ReactNode }) => {
   const toggleConnection = () => setConnected(!connected, true)
 
   // Helper methods that delegate to arkadeLightning
-  const createSubmarineSwap = async (invoice: string): Promise<PendingSubmarineSwap | null> => {
+  const createSubmarineSwap = async (invoice: string): Promise<BoltzSubmarineSwap | null> => {
     if (!arkadeLightning) return null
     return arkadeLightning.createSubmarineSwap({ invoice })
   }
 
-  const createReverseSwap = async (sats: number): Promise<PendingReverseSwap | null> => {
+  const createReverseSwap = async (sats: number): Promise<BoltzReverseSwap | null> => {
     if (!arkadeLightning) return null
     return arkadeLightning.createReverseSwap({ amount: sats, description: 'Lightning Invoice' })
   }
 
-  const claimVHTLC = async (swap: PendingReverseSwap): Promise<void> => {
+  const claimVHTLC = async (swap: BoltzReverseSwap): Promise<void> => {
     if (!arkadeLightning) return
     await arkadeLightning.claimVHTLC(swap)
   }
 
-  const refundVHTLC = async (swap: PendingSubmarineSwap): Promise<void> => {
+  const refundVHTLC = async (swap: BoltzSubmarineSwap): Promise<void> => {
     if (!arkadeLightning) return
     await arkadeLightning.refundVHTLC(swap)
   }
 
-  const payInvoice = async (pendingSwap: PendingSubmarineSwap): Promise<{ txid: string; preimage: string }> => {
+  const payInvoice = async (pendingSwap: BoltzSubmarineSwap): Promise<{ txid: string; preimage: string }> => {
     if (!arkadeLightning || !svcWallet) throw new Error('Lightning not initialized')
     if (!pendingSwap) throw new Error('No pending swap found')
     if (!pendingSwap.response.address) throw new Error('No swap address found')
@@ -234,9 +208,12 @@ export const LightningProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  // Chimera has no chain-swap UI; filter chain swaps out so the history list
+  // (and anything that narrows to reverse|submarine) doesn't trip over them.
   const getSwapHistory = async (): Promise<PendingSwap[]> => {
     if (!arkadeLightning) return []
-    return arkadeLightning.getSwapHistory()
+    const history = await arkadeLightning.getSwapHistory()
+    return history.filter((s): s is BoltzReverseSwap | BoltzSubmarineSwap => s.type !== 'chain')
   }
 
   const getFees = async (): Promise<FeesResponse | null> => {
@@ -249,12 +226,10 @@ export const LightningProvider = ({ children }: { children: ReactNode }) => {
   const restoreSwaps = async (): Promise<number> => {
     if (!arkadeLightning) return 0
 
-    // Counter for restored swaps
     let counter = 0
 
-    // Restore swaps from Boltz endpoint
-    let reverseSwaps: PendingReverseSwap[] = []
-    let submarineSwaps: PendingSubmarineSwap[] = []
+    let reverseSwaps: BoltzReverseSwap[] = []
+    let submarineSwaps: BoltzSubmarineSwap[] = []
     try {
       const result = await arkadeLightning.restoreSwaps()
       reverseSwaps = result.reverseSwaps
@@ -265,33 +240,17 @@ export const LightningProvider = ({ children }: { children: ReactNode }) => {
     }
     if (reverseSwaps.length === 0 && submarineSwaps.length === 0) return 0
 
-    // Get existing swap history to avoid duplicates
+    // Dedup against persisted history using top-level swap.id (the new repo's key).
     const history = await arkadeLightning.getSwapHistory()
-    const historyIds = new Set(history.map((s) => s.response.id))
+    const historyIds = new Set(history.map((s) => s.id))
 
-    // Save new swaps to IndexedDB
-    const storage = new IndexedDBStorageAdapter('arkade-service-worker')
-    const contractRepo = new ContractRepositoryImpl(storage)
-
-    for (const swap of reverseSwaps) {
-      if (!historyIds.has(swap.response.id)) {
-        try {
-          await contractRepo.saveToContractCollection('reverseSwaps', swap, 'id')
-          counter++
-        } catch (err) {
-          consoleError(err, `Failed to save reverse swap ${swap.response.id}`)
-        }
-      }
-    }
-
-    for (const swap of submarineSwaps) {
-      if (!historyIds.has(swap.response.id)) {
-        try {
-          await contractRepo.saveToContractCollection('submarineSwaps', swap, 'id')
-          counter++
-        } catch (err) {
-          consoleError(err, `Failed to save submarine swap ${swap.response.id}`)
-        }
+    for (const swap of [...reverseSwaps, ...submarineSwaps]) {
+      if (historyIds.has(swap.id)) continue
+      try {
+        await arkadeLightning.swapRepository.saveSwap(swap)
+        counter++
+      } catch (err) {
+        consoleError(err, `Failed to save restored swap ${swap.id}`)
       }
     }
 

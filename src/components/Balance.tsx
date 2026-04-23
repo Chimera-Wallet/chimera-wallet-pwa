@@ -28,10 +28,14 @@ export default function Balance({ amount, centered = false, usdOnly = false }: B
   const fiatBalance = config.showBalance ? prettyNumber(fiatAmount, 2) : prettyHide(fiatAmount, '')
 
   // If usdOnly is true, force fiat display
-  const otherBalance = usdOnly ? '' : (config.currencyDisplay === CurrencyDisplay.Fiat ? btcBalance : fiatBalance)
-  const mainBalance = usdOnly ? fiatBalance : (config.currencyDisplay === CurrencyDisplay.Fiat ? fiatBalance : btcBalance)
-  const otherUnit = usdOnly ? '' : (config.currencyDisplay === CurrencyDisplay.Fiat ? ASSETS.BTC.symbol : config.fiat)
-  const mainUnit = usdOnly ? config.fiat : (config.currencyDisplay === CurrencyDisplay.Fiat ? config.fiat : ASSETS.BTC.symbol)
+  const otherBalance = usdOnly ? '' : config.currencyDisplay === CurrencyDisplay.Fiat ? btcBalance : fiatBalance
+  const mainBalance = usdOnly ? fiatBalance : config.currencyDisplay === CurrencyDisplay.Fiat ? fiatBalance : btcBalance
+  const otherUnit = usdOnly ? '' : config.currencyDisplay === CurrencyDisplay.Fiat ? ASSETS.BTC.symbol : config.fiat
+  const mainUnit = usdOnly
+    ? config.fiat
+    : config.currencyDisplay === CurrencyDisplay.Fiat
+      ? config.fiat
+      : ASSETS.BTC.symbol
   const showBoth = usdOnly ? false : config.currencyDisplay === CurrencyDisplay.Both
 
   const toggleShow = () => updateConfig({ ...config, showBalance: !config.showBalance })
@@ -39,9 +43,7 @@ export default function Balance({ amount, centered = false, usdOnly = false }: B
   if (centered) {
     return (
       <div style={{ textAlign: 'center', marginBottom: 24, marginTop: 24 }}>
-        <div style={{ fontSize: 14, color: 'var(--white50)', marginBottom: 8 }}>
-          Wallet balance
-        </div>
+        <div style={{ fontSize: 14, color: 'var(--white50)', marginBottom: 8 }}>Wallet balance</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           <div
             style={{
@@ -53,9 +55,7 @@ export default function Balance({ amount, centered = false, usdOnly = false }: B
           >
             {mainBalance}
           </div>
-          <div style={{ fontSize: 20, fontWeight: 600, color: 'white', paddingTop: 8 }}>
-            {mainUnit}
-          </div>
+          <div style={{ fontSize: 20, fontWeight: 600, color: 'white', paddingTop: 8 }}>{mainUnit}</div>
           <div onClick={toggleShow} style={{ cursor: 'pointer', paddingTop: 8 }}>
             <EyeIcon />
           </div>
@@ -66,9 +66,7 @@ export default function Balance({ amount, centered = false, usdOnly = false }: B
 
   return (
     <FlexCol gap='0' margin='3rem 0 2rem 0'>
-      <Text smaller>
-        Wallet balance
-      </Text>
+      <Text smaller>Wallet balance</Text>
       <FlexRow>
         <Text bigger heading medium>
           {mainBalance}

@@ -36,7 +36,7 @@ class CoinGeckoApi {
   async getConversionRates(
     coinIds: CoinGeckoAssetID[],
     vsCurrencies: string[] = ['chf', 'eur', 'usd'],
-    include24hChange: boolean = true
+    include24hChange: boolean = true,
   ): Promise<Record<string, CoinGeckoPriceData>> {
     // Check cache first
     const cached = coingeckoCache.getCachedPrices(coinIds, vsCurrencies)
@@ -95,7 +95,7 @@ class CoinGeckoApi {
   async getHistoricalPrices(
     coinId: CoinGeckoAssetID,
     vsCurrency: string = 'usd',
-    days: number = 30
+    days: number = 30,
   ): Promise<CoinGeckoHistoricalData> {
     // Check cache first
     const cached = coingeckoCache.getCachedHistorical(coinId, vsCurrency, days)
@@ -116,7 +116,7 @@ class CoinGeckoApi {
           throw new Error(`CoinGecko API error: ${response.status} ${response.statusText}`)
         }
 
-        const data = await response.json() as CoinGeckoHistoricalData
+        const data = (await response.json()) as CoinGeckoHistoricalData
 
         // Cache the result
         coingeckoCache.setCachedHistorical(coinId, vsCurrency, days, data)
@@ -132,10 +132,7 @@ class CoinGeckoApi {
   /**
    * Get market data for multiple assets
    */
-  async getMarketData(
-    coinIds: CoinGeckoAssetID[],
-    vsCurrency: string = 'usd'
-  ): Promise<CoinGeckoMarketData[]> {
+  async getMarketData(coinIds: CoinGeckoAssetID[], vsCurrency: string = 'usd'): Promise<CoinGeckoMarketData[]> {
     try {
       const ids = coinIds.join(',')
       const url = `${COINGECKO_API_BASE}/coins/markets?vs_currency=${vsCurrency}&ids=${ids}&order=market_cap_desc&sparkline=false`

@@ -21,13 +21,8 @@ import { getBankOrderHistory, BankOrderHistoryEntry, type BankOrderType } from '
 
 export default function BankOrderHistory() {
   const { navigate, goBack } = useContext(NavigationContext)
-  const { 
-    bankRecvInfo,
-    bankSendInfo,
-    setCurrentBankOrderType, 
-    setBankRecvInfo, 
-    setBankSendInfo 
-  } = useContext(FlowContext)
+  const { bankRecvInfo, bankSendInfo, setCurrentBankOrderType, setBankRecvInfo, setBankSendInfo } =
+    useContext(FlowContext)
 
   // Load order history from localStorage
   const [orderHistory, setOrderHistory] = useState<BankOrderHistoryEntry[]>([])
@@ -38,7 +33,7 @@ export default function BankOrderHistory() {
   }, [])
 
   const handleOrderClick = (orderId: string, orderType: BankOrderType) => {
-    const historyEntry = orderHistory.find(h => h.order.id === orderId)
+    const historyEntry = orderHistory.find((h) => h.order.id === orderId)
     if (!historyEntry) return
 
     // Set the appropriate order in context
@@ -90,17 +85,12 @@ export default function BankOrderHistory() {
         <Padded>
           <FlexCol gap='1rem'>
             {orderHistory.map((entry) => (
-              <Shadow
-                key={entry.order.id}
-                onClick={() => handleOrderClick(entry.order.id, entry.type)}
-              >
+              <Shadow key={entry.order.id} onClick={() => handleOrderClick(entry.order.id, entry.type)}>
                 <FlexCol gap='0.5rem'>
                   <FlexRow gap='0.5rem'>
                     <FlexCol gap='0.25rem'>
                       <Text bold>{getOrderTypeLabel(entry.type)}</Text>
-                      <TextSecondary small>
-                        {prettyDate(entry.timestamp)}
-                      </TextSecondary>
+                      <TextSecondary small>{prettyDate(entry.timestamp)}</TextSecondary>
                     </FlexCol>
                     <FlexCol gap='0.25rem'>
                       <Text bold>
@@ -112,12 +102,8 @@ export default function BankOrderHistory() {
                     </FlexCol>
                   </FlexRow>
                   <FlexRow gap='0.5rem'>
-                    <TextSecondary small>
-                      Order #{entry.order.id.slice(0, 8)}...
-                    </TextSecondary>
-                    <TextSecondary small>
-                      → {entry.order.to_asset}
-                    </TextSecondary>
+                    <TextSecondary small>Order #{entry.order.id.slice(0, 8)}...</TextSecondary>
+                    <TextSecondary small>→ {entry.order.to_asset}</TextSecondary>
                   </FlexRow>
                 </FlexCol>
               </Shadow>

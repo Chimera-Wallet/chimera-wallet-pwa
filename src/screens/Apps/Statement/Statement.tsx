@@ -19,7 +19,7 @@ export default function Statement() {
   // Initialize dates: default to last 30 days
   const today = new Date()
   today.setHours(23, 59, 59, 999) // End of today
-  
+
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
   thirtyDaysAgo.setHours(0, 0, 0, 0) // Start of that day
@@ -46,7 +46,7 @@ export default function Statement() {
 
   const handleStartDateChange = (newStartDate: Date) => {
     setError('')
-    
+
     // If start date is after end date, update end date too
     if (newStartDate > endDate) {
       setEndDate(newStartDate)
@@ -56,7 +56,7 @@ export default function Statement() {
 
   const handleEndDateChange = (newEndDate: Date) => {
     setError('')
-    
+
     // Validate end date is not before start date
     if (newEndDate < startDate) {
       setError('End date cannot be before start date')
@@ -113,40 +113,24 @@ export default function Statement() {
       <Content>
         <Padded>
           <FlexCol gap='1rem'>
-            <Text wrap>
-              Generate a PDF statement of your transaction history for a specified date range.
-            </Text>
+            <Text wrap>Generate a PDF statement of your transaction history for a specified date range.</Text>
 
-            <InputDate
-              label='Starting Date'
-              value={startDate}
-              onChange={handleStartDateChange}
-              max={todayString}
-            />
+            <InputDate label='Starting Date' value={startDate} onChange={handleStartDateChange} max={todayString} />
 
-            <InputDate
-              label='Ending Date'
-              value={endDate}
-              onChange={handleEndDateChange}
-              max={todayString}
-            />
+            <InputDate label='Ending Date' value={endDate} onChange={handleEndDateChange} max={todayString} />
 
             {filteredData.length > 0 && (
               <InfoContainer>
-                <InfoLine 
-                  compact 
-                  text={`${filteredData.length} transaction${filteredData.length === 1 ? '' : 's'} found in selected period`} 
+                <InfoLine
+                  compact
+                  text={`${filteredData.length} transaction${filteredData.length === 1 ? '' : 's'} found in selected period`}
                 />
               </InfoContainer>
             )}
 
             {filteredData.length === 0 && !isGenerating && (
               <InfoContainer>
-                <InfoLine 
-                  compact 
-                  color='orange'
-                  text='No transactions found in selected period' 
-                />
+                <InfoLine compact color='orange' text='No transactions found in selected period' />
               </InfoContainer>
             )}
 

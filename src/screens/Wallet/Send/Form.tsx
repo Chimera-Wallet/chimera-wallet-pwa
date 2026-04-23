@@ -48,11 +48,7 @@ import InlineAmountInput from '../../../components/InlineAmountInput'
 import WhenIcon from '../../../icons/When'
 import FeesIcon from '../../../icons/Fees'
 import InfoIcon from '../../../icons/Info'
-import {
-  TERMS_AND_CONDITIONS,
-  TRANSFER_METHOD,
-  type InfoItemIcon,
-} from '../../../lib/transferMethods'
+import { TERMS_AND_CONDITIONS, TRANSFER_METHOD, type InfoItemIcon } from '../../../lib/transferMethods'
 
 export default function SendForm() {
   const { aspInfo } = useContext(AspContext)
@@ -270,8 +266,6 @@ export default function SendForm() {
     setError('')
   }, [receivingAddresses, sendInfo.address, sendInfo.arkAddress, sendInfo.invoice])
 
-
-
   // manage button label and errors
   useEffect(() => {
     if (selectedMethod === TRANSFER_METHOD.bank) {
@@ -437,12 +431,18 @@ export default function SendForm() {
   // Helper to get icon component
   const getIconComponent = (iconType?: InfoItemIcon) => {
     switch (iconType) {
-      case 'time': return <WhenIcon />
-      case 'fees': return <FeesIcon />
-      case 'warning': return undefined
-      case 'instruction': return undefined
-      case 'info': return <InfoIcon />
-      default: return <InfoIcon />
+      case 'time':
+        return <WhenIcon />
+      case 'fees':
+        return <FeesIcon />
+      case 'warning':
+        return undefined
+      case 'instruction':
+        return undefined
+      case 'info':
+        return <InfoIcon />
+      default:
+        return <InfoIcon />
     }
   }
 
@@ -473,7 +473,7 @@ export default function SendForm() {
         <Padded>
           <FlexCol gap='2rem'>
             <ErrorMessage error={Boolean(error)} text={error} />
-            
+
             {/* Amount Input - Hidden for Lightning since amount is in invoice */}
             {selectedMethod !== TRANSFER_METHOD.lightning ? (
               <>
@@ -483,69 +483,71 @@ export default function SendForm() {
                   asset={selectedAsset}
                   disabled={amountIsReadOnly}
                 />
-                
+
                 {/* Percentage Buttons */}
                 {!amountIsReadOnly && availableBalance > 0 ? (
-              <div style={{ marginTop: '-0.5rem' }}>
-                <FlexRow centered gap='0.5rem'>
-                  {[25, 50, 75, 100].map((percent) => (
-                    <button
-                      key={percent}
-                      onClick={() => handlePercentage(percent)}
-                      style={{
-                        background: 'var(--dark20)',
-                        border: '1px solid var(--dark50)',
-                        borderRadius: '0.5rem',
-                        color: 'var(--white70)',
-                        cursor: 'pointer',
-                        fontSize: '0.875rem',
-                        fontWeight: 500,
-                        padding: '0.5rem 1rem',
-                        transition: 'all 0.2s ease',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'var(--dark50)'
-                        e.currentTarget.style.color = 'var(--white)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'var(--dark20)'
-                        e.currentTarget.style.color = 'var(--white70)'
-                      }}
-                    >
-                      {percent}%
-                    </button>
-                  ))}
-                </FlexRow>
-              </div>
+                  <div style={{ marginTop: '-0.5rem' }}>
+                    <FlexRow centered gap='0.5rem'>
+                      {[25, 50, 75, 100].map((percent) => (
+                        <button
+                          key={percent}
+                          onClick={() => handlePercentage(percent)}
+                          style={{
+                            background: 'var(--dark20)',
+                            border: '1px solid var(--dark50)',
+                            borderRadius: '0.5rem',
+                            color: 'var(--white70)',
+                            cursor: 'pointer',
+                            fontSize: '0.875rem',
+                            fontWeight: 500,
+                            padding: '0.5rem 1rem',
+                            transition: 'all 0.2s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'var(--dark50)'
+                            e.currentTarget.style.color = 'var(--white)'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'var(--dark20)'
+                            e.currentTarget.style.color = 'var(--white70)'
+                          }}
+                        >
+                          {percent}%
+                        </button>
+                      ))}
+                    </FlexRow>
+                  </div>
+                ) : null}
+              </>
             ) : null}
-            </>
-            ) : null}
-            
+
             {/* Lightning Invoice Details */}
             {selectedMethod === TRANSFER_METHOD.lightning && invoice && satoshis ? (
-              <div style={{
-                background: 'var(--dark20)',
-                border: '1px solid var(--dark50)',
-                borderRadius: '0.75rem',
-                padding: '1rem',
-              }}>
+              <div
+                style={{
+                  background: 'var(--dark20)',
+                  border: '1px solid var(--dark50)',
+                  borderRadius: '0.75rem',
+                  padding: '1rem',
+                }}
+              >
                 <Text small color='var(--white70)'>
                   Invoice Details
                 </Text>
                 <FlexCol gap='0.5rem'>
                   <FlexRow between gap='0.5rem'>
-                    <Text small color='var(--white50)'>Amount</Text>
-                    <Text small bold>{prettyAmount(satoshis)}</Text>
+                    <Text small color='var(--white50)'>
+                      Amount
+                    </Text>
+                    <Text small bold>
+                      {prettyAmount(satoshis)}
+                    </Text>
                   </FlexRow>
                 </FlexCol>
               </div>
             ) : null}
-            
-            <AssetSelector
-              label='Asset'
-              selected={selectedAsset}
-              onSelect={setSelectedAsset}
-            />
+
+            <AssetSelector label='Asset' selected={selectedAsset} onSelect={setSelectedAsset} />
             <NetworkSelector
               label='Network'
               selected={selectedMethod}
@@ -569,24 +571,27 @@ export default function SendForm() {
               }}
             />
             <InputAddress
-                name='send-address'
-                focus={focus === 'recipient'}
-                label='Recipient address'
-                placeholder={getNetworkConfig(selectedMethod)?.addressPlaceholder || 'Paste address'}
-                onChange={handleRecipientChange}
-                onEnter={handleEnter}
-                openAddressBook={() => navigate(Pages.AppAddressBook, { selectionMode: true, returnTo: Pages.SendForm })}
-                openScan={() => setScan(true)}
-                value={recipient}
-              />
-            <InfoContainer>              {selectedMethod === TRANSFER_METHOD.lightning && !invoice ? (
+              name='send-address'
+              focus={focus === 'recipient'}
+              label='Recipient address'
+              placeholder={getNetworkConfig(selectedMethod)?.addressPlaceholder || 'Paste address'}
+              onChange={handleRecipientChange}
+              onEnter={handleEnter}
+              openAddressBook={() => navigate(Pages.AppAddressBook, { selectionMode: true, returnTo: Pages.SendForm })}
+              openScan={() => setScan(true)}
+              value={recipient}
+            />
+            <InfoContainer>
+              {' '}
+              {selectedMethod === TRANSFER_METHOD.lightning && !invoice ? (
                 <InfoLine
                   compact
                   color='neutral'
                   icon={<InfoIcon />}
                   text='Paste a Lightning invoice to send payment. The payment amount is encoded in the invoice.'
                 />
-              ) : null}              {termsAndConditions.map((item) => (
+              ) : null}{' '}
+              {termsAndConditions.map((item) => (
                 <InfoLine
                   key={item.text}
                   compact
@@ -595,20 +600,9 @@ export default function SendForm() {
                   text={item.text}
                 />
               ))}
-              {methodFeeText ? (
-                <InfoLine
-                  compact
-                  color='orange'
-                  icon={<FeesIcon />}
-                  text={methodFeeText}
-                />
-              ) : null}
+              {methodFeeText ? <InfoLine compact color='orange' icon={<FeesIcon />} text={methodFeeText} /> : null}
               {deductFromAmount ? (
-                <InfoLine
-                  compact
-                  color='orange'
-                  text='Fees will be deducted from the amount sent'
-                />
+                <InfoLine compact color='orange' text='Fees will be deducted from the amount sent' />
               ) : null}
             </InfoContainer>
             {tryingToSelfSend ? (

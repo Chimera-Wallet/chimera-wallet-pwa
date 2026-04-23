@@ -30,8 +30,7 @@ export default function AppReferral() {
   const [step, setStep] = useState<Step>(config.referralSlideShowSeen ? 'main' : 'info')
   const [kycConfirmed, setKycConfirmed] = useState<boolean | null>(null)
 
-  const { link, rewardChf, isLoading, error, refetch, claim, claiming, claimError, claimSuccess } =
-    useReferral()
+  const { link, rewardChf, isLoading, error, refetch, claim, claiming, claimError, claimSuccess } = useReferral()
 
   // Check KYC status on mount when in main step
   useEffect(() => {
@@ -65,14 +64,7 @@ export default function AppReferral() {
   if (step === 'info') {
     const appConfig = getAppConfig('referral')
     const slides = appConfig?.infoSlides ?? []
-    return (
-      <AppInfoPage
-        appName='Referral'
-        slides={slides}
-        onContinue={handleInfoContinue}
-        onBack={handleBack}
-      />
-    )
+    return <AppInfoPage appName='Referral' slides={slides} onContinue={handleInfoContinue} onBack={handleBack} />
   }
 
   // Main referral screen
@@ -94,13 +86,9 @@ export default function AppReferral() {
                 Identity Verification Required
               </Text>
               <Text centered wrap>
-                To access the Referral Program and earn rewards, you need to complete identity
-                verification first.
+                To access the Referral Program and earn rewards, you need to complete identity verification first.
               </Text>
-              <Button
-                label='Go to Verification'
-                onClick={() => navigate(Pages.SettingsKYC)}
-              />
+              <Button label='Go to Verification' onClick={() => navigate(Pages.SettingsKYC)} />
             </FlexCol>
           ) : (
             <FlexCol gap='2rem'>
@@ -114,25 +102,17 @@ export default function AppReferral() {
                 ) : (
                   <>
                     <Text big bold>
-                      {rewardFiat != null
-                        ? `${rewardFiat.toFixed(2)} ${config.fiat}`
-                        : '— ' + config.fiat}
+                      {rewardFiat != null ? `${rewardFiat.toFixed(2)} ${config.fiat}` : '— ' + config.fiat}
                     </Text>
-                    <Text small>
-                      {rewardBtc != null ? `${rewardBtc.toFixed(8)} BTC` : '—'}
-                    </Text>
+                    <Text small>{rewardBtc != null ? `${rewardBtc.toFixed(8)} BTC` : '—'}</Text>
                   </>
                 )}
               </FlexCol>
 
               {/* Claim button */}
               <FlexCol gap='0.5rem'>
-                {claimSuccess ? (
-                  <Text centered>Reward claimed successfully!</Text>
-                ) : null}
-                {claimError ? (
-                  <Text centered>{claimError}</Text>
-                ) : null}
+                {claimSuccess ? <Text centered>Reward claimed successfully!</Text> : null}
+                {claimError ? <Text centered>{claimError}</Text> : null}
                 <Button
                   label='Claim Reward'
                   disabled={!canClaim || claiming || !svcWallet}
@@ -178,4 +158,3 @@ export default function AppReferral() {
     </>
   )
 }
-

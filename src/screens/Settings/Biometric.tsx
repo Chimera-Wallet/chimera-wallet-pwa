@@ -40,7 +40,7 @@ export default function Biometric() {
 
   const handleToggle = async () => {
     hapticSubtle()
-    
+
     if (biometricsEnabled) {
       // Disable biometrics - re-encrypt with default password
       try {
@@ -79,9 +79,7 @@ export default function Biometric() {
         <Padded>
           <FlexCol gap='1.5rem'>
             {!biometricsSupported ? (
-              <TextSecondary>
-                Biometric authentication is not supported on this device
-              </TextSecondary>
+              <TextSecondary>Biometric authentication is not supported on this device</TextSecondary>
             ) : (
               <Toggle
                 checked={biometricsEnabled}

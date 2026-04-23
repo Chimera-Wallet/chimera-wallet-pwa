@@ -50,9 +50,12 @@ export default function Password() {
           <Padded>
             <CenterScreen>
               <LockIcon big />
-              <Text centered heading>Password unavailable</Text>
+              <Text centered heading>
+                Password unavailable
+              </Text>
               <TextSecondary centered wrap>
-                Biometric authentication is active. Disable it from Settings &gt; Biometric Authentication before setting a password.
+                Biometric authentication is active. Disable it from Settings &gt; Biometric Authentication before
+                setting a password.
               </TextSecondary>
             </CenterScreen>
           </Padded>

@@ -122,7 +122,7 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
     lightning: [
       {
         icon: 'instruction',
-        text: 'Please send only Bitcoin using the Lighting network. Any other asset sent will be forever lost, and there is no option to recover it.'
+        text: 'Please send only Bitcoin using the Lighting network. Any other asset sent will be forever lost, and there is no option to recover it.',
       },
       {
         icon: 'warning',
@@ -150,5 +150,3 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
     ],
   },
 }
-
-

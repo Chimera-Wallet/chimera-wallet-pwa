@@ -16,9 +16,7 @@ interface BankTransferValidationMessagesProps {
   validation: BankTransferValidation
 }
 
-export default function BankTransferValidationMessages({
-  validation,
-}: BankTransferValidationMessagesProps) {
+export default function BankTransferValidationMessages({ validation }: BankTransferValidationMessagesProps) {
   const { navigate } = useContext(NavigationContext)
 
   // No error message to display
@@ -37,11 +35,7 @@ export default function BankTransferValidationMessages({
         {validation.errorMessage}
       </Text>
       {isKycError ? (
-        <Button
-          label='Complete Verification'
-          onClick={() => navigate(Pages.SettingsKYC)}
-          secondary
-        />
+        <Button label='Complete Verification' onClick={() => navigate(Pages.SettingsKYC)} secondary />
       ) : null}
     </Info>
   )

@@ -155,7 +155,12 @@ export interface SectionResponse {
   options: Option[]
 }
 
-const allOptions: SectionResponse[] = [SettingsSections.Account, SettingsSections.Security, SettingsSections.App, SettingsSections.Advanced].map((section) => {
+const allOptions: SectionResponse[] = [
+  SettingsSections.Account,
+  SettingsSections.Security,
+  SettingsSections.App,
+  SettingsSections.Advanced,
+].map((section) => {
   return {
     section,
     options: options.filter((o) => o.section === section),
@@ -205,15 +210,17 @@ export const OptionsProvider = ({ children }: { children: ReactNode }) => {
       if (current === SettingsOptions.Menu) {
         return SettingsOptions.Menu // Already at top level
       }
-      
+
       const section = optionSection(current)
-      
+
       // Handle Config section items (these are sub-items within other sections)
       if (section === SettingsSections.Config) {
         // Items like Theme, Display, Haptics are under General (if still used)
-        if (current === SettingsOptions.Theme || 
-            current === SettingsOptions.Display || 
-            current === SettingsOptions.Haptics) {
+        if (
+          current === SettingsOptions.Theme ||
+          current === SettingsOptions.Display ||
+          current === SettingsOptions.Haptics
+        ) {
           return SettingsOptions.General
         }
         // Fiat goes directly from App > Currency, so back goes to menu
@@ -221,19 +228,21 @@ export const OptionsProvider = ({ children }: { children: ReactNode }) => {
           return SettingsOptions.Menu
         }
         // Items like Lock, Reset, Server, Logs, Vtxos, Password are under Advanced
-        if (current === SettingsOptions.Lock || 
-            current === SettingsOptions.Reset || 
-            current === SettingsOptions.Server || 
-            current === SettingsOptions.Logs || 
-            current === SettingsOptions.Vtxos ||
-            current === SettingsOptions.Password) {
+        if (
+          current === SettingsOptions.Lock ||
+          current === SettingsOptions.Reset ||
+          current === SettingsOptions.Server ||
+          current === SettingsOptions.Logs ||
+          current === SettingsOptions.Vtxos ||
+          current === SettingsOptions.Password
+        ) {
           return SettingsOptions.Advanced
         }
         // Items like Backup are standalone in Security but kept in Config for routing
         // Go back to menu for these
         return SettingsOptions.Menu
       }
-      
+
       // For items in Account, Security, App, Advanced sections, go back to menu
       return SettingsOptions.Menu
     })

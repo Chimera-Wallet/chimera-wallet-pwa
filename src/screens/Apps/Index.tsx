@@ -75,25 +75,38 @@ function App({ icon, image, link, name, page, backgroundImage, comingSoon }: App
                 style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'contain' }}
               />
             ) : (
-              <div style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', transform: 'scale(0.7)' }}>
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transform: 'scale(0.7)',
+                }}
+              >
                 {icon}
               </div>
             )}
-            
+
             {/* Title */}
-            <Text bold centered>{name}</Text>
-            
+            <Text bold centered>
+              {name}
+            </Text>
+
             {/* Coming Soon tag */}
             {comingSoon ? (
-              <div style={{
-                marginTop: 4,
-                padding: '2px 8px',
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                borderRadius: 12,
-                fontSize: 10,
-                color: '#fff',
-                fontWeight: 500,
-              }}>
+              <div
+                style={{
+                  marginTop: 4,
+                  padding: '2px 8px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: 12,
+                  fontSize: 10,
+                  color: '#fff',
+                  fontWeight: 500,
+                }}
+              >
                 Coming Soon
               </div>
             ) : null}
@@ -110,11 +123,13 @@ export default function Apps() {
       <Header text='Apps' />
       <Content>
         <Padded>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(2, 1fr)', 
-            width: '100%'
-          }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              width: '100%',
+            }}
+          >
             <App
               name='Swap'
               image='/images/apps/Transfer.svg'
@@ -160,15 +175,19 @@ export default function Apps() {
 
           {/* Third Party Apps Section */}
           <div style={{ marginTop: '2rem', marginBottom: '1rem' }}>
-            <Text bold large>Third Party Apps</Text>
+            <Text bold large>
+              Third Party Apps
+            </Text>
           </div>
 
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(2, 1fr)', 
-            width: '100%'
-          }}>
-{/* 
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              width: '100%',
+            }}
+          >
+            {/* 
             <App
               name='Boltz'
               icon={<BoltzIcon />}

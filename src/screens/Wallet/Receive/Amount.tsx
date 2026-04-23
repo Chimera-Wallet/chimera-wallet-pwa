@@ -47,13 +47,7 @@ export default function ReceiveAmount() {
   const { navigate } = useContext(NavigationContext)
   const { notifyPaymentReceived } = useContext(NotificationsContext)
   const { arkadeLightning, createReverseSwap, calcReverseSwapFee } = useContext(LightningContext)
-  const {
-    validLnSwap,
-    validUtxoTx,
-    validVtxoTx,
-    utxoTxsAllowed,
-    vtxoTxsAllowed,
-  } = useContext(LimitsContext)
+  const { validLnSwap, validUtxoTx, validVtxoTx, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
   const { balance, svcWallet, wallet } = useContext(WalletContext)
 
   const [error, setError] = useState('')
@@ -132,7 +126,7 @@ export default function ReceiveAmount() {
   const showFaucetButton = balance === 0 && faucetAvailable
   const showLightningFees = satoshis && isLightningMethod
   const reverseSwapFee = calcReverseSwapFee(satoshis)
-  
+
   // For Lightning, require amount before showing QR code
   const needsAmountInput = isLightningMethod && !satoshis
 
@@ -142,12 +136,18 @@ export default function ReceiveAmount() {
   // Helper to get icon component
   const getIconComponent = (iconType?: InfoItemIcon) => {
     switch (iconType) {
-      case 'time': return <WhenIcon />
-      case 'fees': return <FeesIcon />
-      case 'warning': return undefined
-      case 'instruction': return undefined
-      case 'info': return <InfoIcon />
-      default: return <InfoIcon />
+      case 'time':
+        return <WhenIcon />
+      case 'fees':
+        return <FeesIcon />
+      case 'warning':
+        return undefined
+      case 'instruction':
+        return undefined
+      case 'info':
+        return <InfoIcon />
+      default:
+        return <InfoIcon />
     }
   }
 
@@ -163,8 +163,8 @@ export default function ReceiveAmount() {
   }, [invoice, address, arkAddress, satoshis])
 
   // Invalidate any existing invoice when the user edits the Lightning amount,
-  // so the swap-creation effect below regenerates at the new amount instead
-  // of leaving a stale invoice pinned at whatever amount won the first race.
+  // so the swap-creation effect below regenerates at the new amount instead of
+  // leaving a stale invoice pinned at whatever amount won the first race.
   const isFirstSatoshisRender = useRef(true)
   useEffect(() => {
     if (isFirstSatoshisRender.current) {
@@ -189,8 +189,8 @@ export default function ReceiveAmount() {
     }
 
     // Debounce: wait until the user stops typing before hitting Boltz.
-    // Without this, each keystroke (1 → 10 → 100 → 10_000 → 100_000) fires
-    // a parallel createReverseSwap; the first one to succeed (at Boltz's min
+    // Without this, each keystroke (1 → 10 → 100 → 10_000 → 100_000) fires a
+    // parallel createReverseSwap; the first one to succeed (at Boltz's min
     // ≈10_000 sats) wins and the real amount is never requested.
     let cancelled = false
     const handle = setTimeout(() => {
@@ -205,8 +205,9 @@ export default function ReceiveAmount() {
             .waitAndClaim(pendingSwap)
             .then(() => {
               if (cancelled) return
-              setRecvInfo({ ...recvInfo, satoshis: pendingSwap.response.onchainAmount })
-              notifyPaymentReceived(pendingSwap.response.onchainAmount)
+              const onchainSats = pendingSwap.response.onchainAmount ?? satoshis
+              setRecvInfo({ ...recvInfo, satoshis: onchainSats })
+              notifyPaymentReceived(onchainSats)
             })
             .catch((error) => {
               if (cancelled) return
@@ -231,13 +232,17 @@ export default function ReceiveAmount() {
     if (!svcWallet) return
 
     const listenForPayments = (event: MessageEvent) => {
+      if (!event.data) return
+      // v0.4 SDK wraps broadcast data under `payload`; fall back to the flat
+      // shape for safety in case an older worker build is still active.
+      const payload = event.data.payload ?? event.data
       let incomingSats = 0
-      if (event.data && event.data.type === 'VTXO_UPDATE') {
-        const newVtxos = event.data.newVtxos as { value: number }[]
+      if (event.data.type === 'VTXO_UPDATE') {
+        const newVtxos = (payload?.newVtxos ?? []) as { value: number }[]
         incomingSats = newVtxos.reduce((acc, v) => acc + v.value, 0)
       }
-      if (event.data && event.data.type === 'UTXO_UPDATE') {
-        const coins = event.data.coins as { value: number }[]
+      if (event.data.type === 'UTXO_UPDATE') {
+        const coins = (payload?.coins ?? []) as { value: number }[]
         incomingSats = coins.reduce((acc, v) => acc + v.value, 0)
       }
       if (incomingSats) {
@@ -291,21 +296,13 @@ export default function ReceiveAmount() {
         <Padded>
           <FlexCol>
             <ErrorMessage error={Boolean(error)} text={error} />
-            
+
             {/* Amount Input for Lightning */}
             {isLightningMethod ? (
-              <InlineAmountInput
-                value={satoshis}
-                onChange={setSatoshis}
-                asset={selectedAsset}
-              />
+              <InlineAmountInput value={satoshis} onChange={setSatoshis} asset={selectedAsset} />
             ) : null}
-            
-            <AssetSelector
-              label='Asset'
-              selected={selectedAsset}
-              onSelect={setSelectedAsset}
-            />
+
+            <AssetSelector label='Asset' selected={selectedAsset} onSelect={setSelectedAsset} />
             <NetworkSelector
               label='Network'
               selected={selectedMethod}

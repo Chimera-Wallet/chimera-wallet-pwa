@@ -61,7 +61,7 @@ export default function Wallet() {
   const handleReceive = () => {
     setRecvInfo(emptyRecvInfo)
     setFlowMode('receive')
-    
+
     // If on asset detail view, skip asset selection and go directly to network
     if (selectedAsset) {
       setSelectedFlowAsset(selectedAsset)
@@ -78,7 +78,7 @@ export default function Wallet() {
   const handleSend = () => {
     setSendInfo(emptySendInfo)
     setFlowMode('send')
-    
+
     // If on asset detail view, skip asset selection and go directly to network
     if (selectedAsset) {
       setSelectedFlowAsset(selectedAsset)
@@ -107,7 +107,7 @@ export default function Wallet() {
     // Update flow context and navigate based on mode and network
     if (flowMode === 'send') {
       setSendInfo({ ...emptySendInfo, method: network })
-      
+
       if (network === TRANSFER_METHOD.bank) {
         navigate(Pages.BankSend)
       } else {
@@ -115,7 +115,7 @@ export default function Wallet() {
       }
     } else {
       setRecvInfo({ ...emptyRecvInfo, method: network })
-      
+
       if (network === TRANSFER_METHOD.bank) {
         navigate(Pages.BankReceive)
       } else {
@@ -154,18 +154,12 @@ export default function Wallet() {
   if (selectedAsset) {
     return (
       <>
-        <Header 
-          text={selectedAsset} 
-          back={handleBackToAll}
-        />
+        <Header text={selectedAsset} back={handleBackToAll} />
         {announcement}
         <Content>
           <Padded>
             <FlexCol>
-              <AssetBalanceView
-                symbol={selectedAsset}
-                balance={getAssetBalance(selectedAsset)}
-              />
+              <AssetBalanceView symbol={selectedAsset} balance={getAssetBalance(selectedAsset)} />
               <FlexRow padding='0.5rem 0'>
                 <Button main icon={<SendIcon />} iconPosition='right' label='Send' onClick={handleSend} />
                 <Button main icon={<ReceiveIcon />} iconPosition='right' label='Receive' onClick={handleReceive} />
@@ -198,8 +192,8 @@ export default function Wallet() {
   // Render default wallet view
   return (
     <>
-      <Header 
-        text='Wallet' 
+      <Header
+        text='Wallet'
         auxIcon={<TransactionsIcon />}
         auxFunc={handleTransactions}
         auxAriaLabel='View all transactions'
@@ -244,9 +238,9 @@ export default function Wallet() {
                 </WalletStaggerChild>
               )}
               <WalletStaggerChild animate={shouldStagger}>
-                <AssetList 
-                  balances={[{ symbol: ASSETS.BTC.symbol, balance: balance / Math.pow(10, ASSETS.BTC.precision) }]} 
-                  onAssetClick={handleAssetClick} 
+                <AssetList
+                  balances={[{ symbol: ASSETS.BTC.symbol, balance: balance / Math.pow(10, ASSETS.BTC.precision) }]}
+                  onAssetClick={handleAssetClick}
                 />
               </WalletStaggerChild>
             </FlexCol>

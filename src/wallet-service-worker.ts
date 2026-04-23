@@ -1,6 +1,29 @@
-import { Worker } from '@arkade-os/sdk'
+import { ArkadeSwapsMessageHandler, IndexedDbSwapRepository } from '@arkade-os/boltz-swap'
+import {
+  IndexedDBWalletRepository,
+  IndexedDBContractRepository,
+  MessageBus,
+  WalletMessageHandler,
+} from '@arkade-os/sdk'
 
-const worker = new Worker()
+// Health-check ping: responds via MessageChannel so the main thread can detect
+// if this worker is alive before attempting full initialization. Must be
+// registered before any other code that could fail.
+self.addEventListener('message', (event: ExtendableMessageEvent) => {
+  if (event.data?.type === 'PING' && event.ports?.[0]) {
+    event.ports[0].postMessage({ type: 'PONG' })
+  }
+})
+
+const walletRepository = new IndexedDBWalletRepository()
+const contractRepository = new IndexedDBContractRepository()
+const swapRepository = new IndexedDbSwapRepository()
+
+const worker = new MessageBus(walletRepository, contractRepository, {
+  messageHandlers: [new WalletMessageHandler(), new ArkadeSwapsMessageHandler(swapRepository)],
+  tickIntervalMs: 5000,
+  messageTimeoutMs: 60_000,
+})
 worker.start().catch(console.error)
 
 // Use build timestamp to ensure cache invalidation on each deployment
@@ -23,27 +46,31 @@ self.addEventListener('install', (event: ExtendableEvent) => {
 // activate event: clean up old caches
 self.addEventListener('activate', (event: ExtendableEvent) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      // Delete ALL old caches, keeping only the current one
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName === CACHE_NAME) return
-          console.log('Deleting old cache:', cacheName)
-          return caches.delete(cacheName)
-        }),
-      )
-    }).then(() => {
-      // Force reload all clients after cache cleanup
-      return self.clients.matchAll({
-        includeUncontrolled: true,
-        type: 'window',
+    caches
+      .keys()
+      .then((cacheNames) => {
+        // Delete ALL old caches, keeping only the current one
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName === CACHE_NAME) return
+            console.log('Deleting old cache:', cacheName)
+            return caches.delete(cacheName)
+          }),
+        )
       })
-    }).then((clients) => {
-      clients.forEach((client) => {
-        console.log('Sending reload message to client')
-        client.postMessage({ type: 'RELOAD_PAGE' })
+      .then(() => {
+        // Force reload all clients after cache cleanup
+        return self.clients.matchAll({
+          includeUncontrolled: true,
+          type: 'window',
+        })
       })
-    }),
+      .then((clients) => {
+        clients.forEach((client) => {
+          console.log('Sending reload message to client')
+          client.postMessage({ type: 'RELOAD_PAGE' })
+        })
+      }),
   )
   self.clients.claim() // take control of clients immediately
 })
@@ -83,11 +110,6 @@ self.addEventListener('activate', (event: ExtendableEvent) => {
 // })
 
 self.addEventListener('message', (event: ExtendableMessageEvent) => {
-  if (event.data && event.data.type === 'RELOAD_WALLET') {
-    // reload the wallet when the service worker receives a message to reload
-    event.waitUntil(worker.reload().catch(console.error))
-  }
-  
   if (event.data && event.data.type === 'SKIP_WAITING') {
     // Skip waiting and activate immediately when requested
     self.skipWaiting()

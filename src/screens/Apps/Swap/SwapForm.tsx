@@ -13,12 +13,7 @@ import SheetModal from '../../../components/SheetModal'
 import Select from '../../../components/Select'
 import { NavigationContext, Pages } from '../../../providers/navigation'
 import { FlowContext } from '../../../providers/flow'
-import { 
-  getSupportedAssets, 
-  createOrder, 
-  SupportedAsset, 
-  CreateOrderPayload 
-} from '../../../providers/chimera'
+import { getSupportedAssets, createOrder, SupportedAsset, CreateOrderPayload } from '../../../providers/chimera'
 import { getStoredKycStatus, KycStatus } from '../../../lib/kyc'
 import { WalletContext } from '../../../providers/wallet'
 import { prettyNumber } from '../../../lib/format'
@@ -35,7 +30,7 @@ export default function SwapForm({ onBack }: SwapFormProps) {
   const { navigate } = useContext(NavigationContext)
   const { recvInfo, setSwapOrderInfo } = useContext(FlowContext)
   const { svcWallet } = useContext(WalletContext)
-  
+
   // State
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -70,12 +65,10 @@ export default function SwapForm({ onBack }: SwapFormProps) {
         setLoading(true)
         setError('')
         const response = await getSupportedAssets()
-        
+
         // Filter out BTC from "from" assets since we're converting TO BTC
-        const fromAssets = response.from_assets.filter(
-          (asset) => asset.symbol !== FIXED_TO_ASSET
-        )
-        
+        const fromAssets = response.from_assets.filter((asset) => asset.symbol !== FIXED_TO_ASSET)
+
         setAssets(fromAssets)
         if (fromAssets.length > 0) {
           setSelectedAsset(fromAssets[0])
@@ -144,7 +137,7 @@ export default function SwapForm({ onBack }: SwapFormProps) {
 
       // Get destination address from wallet
       const destinationAddress = recvInfo?.offchainAddr || arkAddress
-      
+
       if (!destinationAddress) {
         setError('Unable to get destination address')
         return
@@ -161,7 +154,7 @@ export default function SwapForm({ onBack }: SwapFormProps) {
       }
 
       const orderResponse = await createOrder(payload)
-      
+
       // Store order in flow context and navigate to details page
       setSwapOrderInfo(orderResponse)
       navigate(Pages.AppSwapOrderDetails)
@@ -201,9 +194,7 @@ export default function SwapForm({ onBack }: SwapFormProps) {
                 <FlexRow between>
                   <FlexRow gap='0.5rem'>
                     <Text bold>{selectedAsset?.symbol || 'Select asset'}</Text>
-                    {selectedAsset?.name ? (
-                      <TextSecondary>{selectedAsset.name}</TextSecondary>
-                    ) : null}
+                    {selectedAsset?.name ? <TextSecondary>{selectedAsset.name}</TextSecondary> : null}
                   </FlexRow>
                   <Text color='purple'>Change</Text>
                 </FlexRow>
@@ -243,9 +234,7 @@ export default function SwapForm({ onBack }: SwapFormProps) {
                 />
               </Shadow>
               {parseFloat(amount) > KYC_THRESHOLD_EUR ? (
-                <Text small>
-                  Amounts over {prettyNumber(KYC_THRESHOLD_EUR)} EUR require KYC verification
-                </Text>
+                <Text small>Amounts over {prettyNumber(KYC_THRESHOLD_EUR)} EUR require KYC verification</Text>
               ) : null}
             </FlexCol>
 
@@ -259,12 +248,7 @@ export default function SwapForm({ onBack }: SwapFormProps) {
                   <TextSecondary>
                     Transactions over {prettyNumber(KYC_THRESHOLD_EUR)} EUR require identity verification.
                   </TextSecondary>
-                  <Button
-                    onClick={handleKycNavigate}
-                    label='Complete KYC'
-                    secondary
-                    small
-                  />
+                  <Button onClick={handleKycNavigate} label='Complete KYC' secondary small />
                 </FlexCol>
               </Shadow>
             ) : null}
@@ -281,12 +265,11 @@ export default function SwapForm({ onBack }: SwapFormProps) {
       </Content>
 
       {/* Asset Selection Modal */}
-      <SheetModal
-        isOpen={showAssetModal}
-        onClose={() => setShowAssetModal(false)}
-      >
+      <SheetModal isOpen={showAssetModal} onClose={() => setShowAssetModal(false)}>
         <FlexCol gap='1rem'>
-          <Text bold large>Select Asset</Text>
+          <Text bold large>
+            Select Asset
+          </Text>
           <div style={{ maxHeight: '60vh', overflowY: 'auto', width: '100%' }}>
             <Select
               options={assets.map((a) => a.symbol)}

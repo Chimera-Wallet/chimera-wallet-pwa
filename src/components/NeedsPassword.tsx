@@ -47,9 +47,12 @@ export default function NeedsPassword({ error, onPassword, loading = false, onRe
             <CenterScreen>
               <LockIcon big />
               <FlexCol gap='0.5rem'>
-                <Text centered heading>Passkey not found</Text>
+                <Text centered heading>
+                  Passkey not found
+                </Text>
                 <TextSecondary centered wrap>
-                  Your passkey could not be found on this device. You will need to restore your wallet using your secret phrase.
+                  Your passkey could not be found on this device. You will need to restore your wallet using your secret
+                  phrase.
                 </TextSecondary>
               </FlexCol>
             </CenterScreen>
@@ -57,9 +60,7 @@ export default function NeedsPassword({ error, onPassword, loading = false, onRe
         </Content>
         <ButtonsOnBottom>
           <Button onClick={handleBiometrics} label='Try again' secondary disabled={loading} />
-          {onRestore ? (
-            <Button onClick={onRestore} label='Restore from secret phrase' disabled={loading} />
-          ) : null}
+          {onRestore ? <Button onClick={onRestore} label='Restore from secret phrase' disabled={loading} /> : null}
         </ButtonsOnBottom>
       </>
     )

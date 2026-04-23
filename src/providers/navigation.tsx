@@ -347,14 +347,16 @@ export const NavigationProvider = ({ children }: { children: ReactNode }) => {
     setScreen(page)
     setTab(nextTab)
     setNavigationData(data)
-    setNavigationCount(prev => prev + 1)
-    
+    setNavigationCount((prev) => prev + 1)
+
     // Track page view for analytics
     trackPageView(Pages[page])
   }
 
   return (
-    <NavigationContext.Provider value={{ direction, goBack, isInitialLoad, navigate, navigationCount, navigationData, screen, tab }}>
+    <NavigationContext.Provider
+      value={{ direction, goBack, isInitialLoad, navigate, navigationCount, navigationData, screen, tab }}
+    >
       {children}
     </NavigationContext.Provider>
   )

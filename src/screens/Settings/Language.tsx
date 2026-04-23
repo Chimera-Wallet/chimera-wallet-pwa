@@ -11,7 +11,9 @@ export default function Language() {
       <Content>
         <Padded>
           <FlexCol centered gap='2rem'>
-            <Text large bold centered>Coming Soon</Text>
+            <Text large bold centered>
+              Coming Soon
+            </Text>
             <Text centered thin>
               Multi-language support will be available in a future update.
             </Text>

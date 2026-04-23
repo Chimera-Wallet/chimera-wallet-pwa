@@ -8,13 +8,7 @@ interface SelectorFieldProps {
   value: string
 }
 
-export default function SelectorField({
-  icon,
-  label,
-  onClick,
-  sublabel,
-  value,
-}: SelectorFieldProps) {
+export default function SelectorField({ icon, label, onClick, sublabel, value }: SelectorFieldProps) {
   return (
     <div style={{ width: '100%' }}>
       {label ? (

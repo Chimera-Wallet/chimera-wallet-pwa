@@ -1,9 +1,9 @@
 :root {
   --white: #fbfbfb;
   --black-bg: #101015;
-  --blue-primary: #1F3BDB;
-  --blue-medium: #061A8E;
-  --blue-dark: #030E4E;
+  --blue-primary: #1f3bdb;
+  --blue-medium: #061a8e;
+  --blue-dark: #030e4e;
   --cream: #391998;
   --dark80: rgba(var(--ion-color-dark-rgb), 0.8);
   --dark70: rgba(var(--ion-color-dark-rgb), 0.7);
@@ -21,9 +21,9 @@
   --white07: rgba(255, 255, 255, 0.07);
   --white05: rgba(255, 255, 255, 0.05);
   --white03: rgba(255, 255, 255, 0.03);
-  --green: #1DFF78;
-  --green-positive: #2ECC71;
-  --greenbg: #16BF5A;
+  --green: #1dff78;
+  --green-positive: #2ecc71;
+  --greenbg: #16bf5a;
   --grey: #747474;
   --liz: #d5c6ff;
   --logo-color: #391998;
@@ -34,18 +34,18 @@
   --purple20: #39199833;
   --purplebg: #391998;
   --purpletext: #7043f4;
-  --red: #FF5A50;
-  --red-negative: #E74C3C;
+  --red: #ff5a50;
+  --red-negative: #e74c3c;
   --redbg: #68222b;
   --white: #fbfbfb;
   --yellow: #e2c542;
   --yellowoutlier: #debb20;
   /* Asset colors */
-  --asset-btc: #F7931A;
-  --asset-usdt: #26A17B;
-  --asset-eth: #627EEA;
-  --asset-trx: #EF0027;
-  --asset-matic: #8247E5;
+  --asset-btc: #f7931a;
+  --asset-usdt: #26a17b;
+  --asset-eth: #627eea;
+  --asset-trx: #ef0027;
+  --asset-matic: #8247e5;
   --qr-background: #ffffff;
   --reminder-button-bg: #222222;
   --reminder-button-color: #f7fafc;
@@ -87,7 +87,7 @@
   --toggle-background: #fbfbfb;
   --danger: #a51515;
   --warning: #c3730a;
-  --success: #1DFF78;
+  --success: #1dff78;
   --ion-font-family:
     'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans',
     'Droid Sans', 'Helvetica Neue', sans-serif;

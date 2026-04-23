@@ -15,18 +15,10 @@ interface DropdownProps {
   selected: string
 }
 
-export default function Dropdown({
-  label,
-  labels,
-  onChange,
-  options,
-  placeholder,
-  selected,
-}: DropdownProps) {
+export default function Dropdown({ label, labels, onChange, options, placeholder, selected }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const selectedIndex = options.indexOf(selected)
-  const displayValue =
-    selectedIndex >= 0 ? labels?.[selectedIndex] ?? selected : placeholder ?? 'Select'
+  const displayValue = selectedIndex >= 0 ? (labels?.[selectedIndex] ?? selected) : (placeholder ?? 'Select')
 
   return (
     <>

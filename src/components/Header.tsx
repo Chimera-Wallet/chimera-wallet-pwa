@@ -35,16 +35,17 @@ export default function Header({ auxAriaLabel, auxFunc, auxText, back, text, aux
 
   const handleSupport = () => {
     hapticLight()
-    
+
     // Try to show Intercom
     try {
       showIntercom()
-      
+
       // On iOS, verify Intercom actually opened after a brief moment
       // If not, provide fallback to knowledge base
-      const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent) || 
-                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-      
+      const isIos =
+        /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+
       if (isIos) {
         // Use requestAnimationFrame to check after next paint
         requestAnimationFrame(() => {
@@ -52,10 +53,11 @@ export default function Header({ auxAriaLabel, auxFunc, auxText, back, text, aux
             // Check if Intercom messenger is actually visible
             const intercomContainer = document.querySelector('#intercom-container')
             const intercomFrame = document.querySelector('iframe[name*="intercom"]')
-            const isVisible = (intercomContainer || intercomFrame) &&
-                             ((intercomContainer && window.getComputedStyle(intercomContainer).display !== 'none') ||
-                              (intercomFrame && window.getComputedStyle(intercomFrame).display !== 'none'))
-            
+            const isVisible =
+              (intercomContainer || intercomFrame) &&
+              ((intercomContainer && window.getComputedStyle(intercomContainer).display !== 'none') ||
+                (intercomFrame && window.getComputedStyle(intercomFrame).display !== 'none'))
+
             if (!isVisible) {
               console.log('Intercom not available on iOS, opening knowledge base')
               window.open(KNOWLEDGE_BASE_URL, '_blank', 'noopener,noreferrer')

@@ -66,15 +66,18 @@ export const activateNewServiceWorker = async (): Promise<void> => {
  * @param intervalMinutes How often to check for updates (default: 60 minutes)
  */
 export const setupPeriodicUpdateCheck = (intervalMinutes: number = 60): (() => void) => {
-  const checkInterval = setInterval(async () => {
-    console.log('Checking for service worker updates...')
-    const hasUpdate = await checkForServiceWorkerUpdate()
-    if (hasUpdate) {
-      console.log('Service worker update available')
-      // You could show a notification to the user here
-      // For now, we'll auto-update on next full page reload
-    }
-  }, intervalMinutes * 60 * 1000)
+  const checkInterval = setInterval(
+    async () => {
+      console.log('Checking for service worker updates...')
+      const hasUpdate = await checkForServiceWorkerUpdate()
+      if (hasUpdate) {
+        console.log('Service worker update available')
+        // You could show a notification to the user here
+        // For now, we'll auto-update on next full page reload
+      }
+    },
+    intervalMinutes * 60 * 1000,
+  )
 
   // Return cleanup function
   return () => clearInterval(checkInterval)

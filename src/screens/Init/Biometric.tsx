@@ -66,11 +66,13 @@ export default function InitBiometric() {
                 <FlexCol gap='1.5rem'>
                   {!biometricsSupported ? (
                     <TextSecondary centered wrap>
-                      Biometric authentication is not supported on this device. You'll need to use your password to unlock your wallet.
+                      Biometric authentication is not supported on this device. You'll need to use your password to
+                      unlock your wallet.
                     </TextSecondary>
                   ) : (
                     <TextSecondary centered wrap>
-                      For your security, enable biometric authentication to unlock your wallet using fingerprint or face recognition.
+                      For your security, enable biometric authentication to unlock your wallet using fingerprint or face
+                      recognition.
                     </TextSecondary>
                   )}
                 </FlexCol>

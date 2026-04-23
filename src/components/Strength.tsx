@@ -23,9 +23,7 @@ export const calcStrength = (pass: string): number => {
 
 export const StrengthLabel = ({ strength }: { strength: number }): JSX.Element => (
   <FlexRow gap='0.25rem'>
-    <Text smaller>
-      Strength:
-    </Text>
+    <Text smaller>Strength:</Text>
     <Text smaller color={getColor(strength)}>
       {getWord(strength)}
     </Text>

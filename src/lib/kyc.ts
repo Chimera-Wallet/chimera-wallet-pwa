@@ -45,18 +45,14 @@ export const getKycWebviewUrl = (): string => {
   if (import.meta.env.VITE_KYC_WEBVIEW_URL) {
     return import.meta.env.VITE_KYC_WEBVIEW_URL
   }
-  return isTestEnvironment()
-    ? 'https://demo-staging.idflow.ch/'
-    : 'https://demo.idflow.ch/'
+  return isTestEnvironment() ? 'https://demo-staging.idflow.ch/' : 'https://demo.idflow.ch/'
 }
 
 export const getKycApiUrl = (): string => {
   if (import.meta.env.VITE_KYC_API_URL) {
     return import.meta.env.VITE_KYC_API_URL
   }
-  return isTestEnvironment()
-    ? 'https://idflow-staging.azurewebsites.net'
-    : 'https://api.idflow.ch'
+  return isTestEnvironment() ? 'https://idflow-staging.azurewebsites.net' : 'https://api.idflow.ch'
 }
 
 /**
@@ -165,7 +161,7 @@ export const confirmMagicLink = async (params: KycAuthParams): Promise<KycTokens
   }
 
   const data = await response.json()
-  
+
   // Token data is nested inside a 'token' object
   const tokenData = data.token
   if (!tokenData || !tokenData.accessToken) {
@@ -258,7 +254,7 @@ export const getValidAccessToken = async (): Promise<string | null> => {
  * @param providedAccessToken - Optional access token to use directly (bypasses storage lookup)
  */
 export const fetchKycStatus = async (providedAccessToken?: string): Promise<KycStatusResponse> => {
-  const accessToken = providedAccessToken || await getValidAccessToken()
+  const accessToken = providedAccessToken || (await getValidAccessToken())
 
   if (!accessToken) {
     return { status: 'not_started', message: 'No valid authentication' }
@@ -304,7 +300,7 @@ export const fetchKycStatus = async (providedAccessToken?: string): Promise<KycS
 export const parseKycDeepLink = (hashOrQuery: string): KycAuthParams | null => {
   // Remove leading # if present
   const cleanInput = hashOrQuery.startsWith('#') ? hashOrQuery.slice(1) : hashOrQuery
-  
+
   // Check if it starts with kyc?
   if (cleanInput.startsWith('kyc?')) {
     const queryString = cleanInput.slice(4) // Remove 'kyc?'
@@ -387,10 +383,7 @@ export const requestMagicLink = async (email: string, sessionId: string): Promis
 /**
  * Poll to check whether the user has clicked the magic link
  */
-export const checkSessionVerified = async (
-  email: string,
-  sessionId: string,
-): Promise<CheckSessionResponse> => {
+export const checkSessionVerified = async (email: string, sessionId: string): Promise<CheckSessionResponse> => {
   const apiUrl = getKycApiUrl()
   const response = await fetch(`${apiUrl}/api/auth/check-session-verified`, {
     method: 'POST',
@@ -436,10 +429,7 @@ export const saveKycTokensFromLoginModel = (loginModel: CheckSessionLoginModel):
     const expiryDate = new Date(token.expiryTime)
     expiresIn = Math.max(0, Math.floor((expiryDate.getTime() - Date.now()) / 1000))
   }
-  saveKycTokens(
-    { accessToken: token.accessToken, refreshToken: token.refreshToken, expiresIn },
-    userId,
-  )
+  saveKycTokens({ accessToken: token.accessToken, refreshToken: token.refreshToken, expiresIn }, userId)
   if (loginModel.email) saveKycEmail(loginModel.email)
   if (loginModel.verificationStatus?.status) {
     saveKycStatus(mapVerificationStatus(loginModel.verificationStatus.status))
@@ -462,8 +452,8 @@ interface IdFlowUserProfile {
 export interface KycBankData {
   iban?: string
   accountHolderName?: string
-  accountNumber?: string  // US/SWIFT
-  routingNumber?: string  // US
+  accountNumber?: string // US/SWIFT
+  routingNumber?: string // US
 }
 
 /**
@@ -501,10 +491,7 @@ export const fetchKycBankData = async (): Promise<KycBankData | null> => {
     const accessToken = await getValidAccessToken()
     if (!accessToken) return null
 
-    const [wallets, profile] = await Promise.all([
-      fetchKycWallets(accessToken),
-      fetchKycUserProfile(accessToken),
-    ])
+    const [wallets, profile] = await Promise.all([fetchKycWallets(accessToken), fetchKycUserProfile(accessToken)])
 
     const iban = wallets.find((w) => w.type === 'IBAN')?.address
     const accountNumber = wallets.find((w) => w.type === 'USAN')?.address

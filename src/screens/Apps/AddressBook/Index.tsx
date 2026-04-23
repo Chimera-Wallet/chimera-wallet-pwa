@@ -42,10 +42,10 @@ function AddressEntry({ entry, onDelete, onSelect, selectionMode }: AddressEntry
   return (
     <Shadow>
       <FlexRow between>
-        <Focusable onEnter={() => selectionMode && onSelect ? onSelect(entry.address) : undefined}>
-          <div 
-            onClick={() => selectionMode && onSelect ? onSelect(entry.address) : undefined}
-            style={{ 
+        <Focusable onEnter={() => (selectionMode && onSelect ? onSelect(entry.address) : undefined)}>
+          <div
+            onClick={() => (selectionMode && onSelect ? onSelect(entry.address) : undefined)}
+            style={{
               cursor: selectionMode ? 'pointer' : 'default',
               flex: 1,
               padding: '0.5rem 0',
@@ -55,9 +55,7 @@ function AddressEntry({ entry, onDelete, onSelect, selectionMode }: AddressEntry
               <Text bold small>
                 {entry.label || getAddressTypeName(entry.type)}
               </Text>
-              <Text tiny>
-                {truncateAddress(entry.address)}
-              </Text>
+              <Text tiny>{truncateAddress(entry.address)}</Text>
             </FlexCol>
           </div>
         </Focusable>
@@ -130,7 +128,7 @@ export default function AppAddressBook() {
   const { sendInfo, setSendInfo } = useContext(FlowContext)
   const [currentTab, setCurrentTab] = useState<TabType>('myaccounts')
   const [refreshKey, setRefreshKey] = useState(0)
-  
+
   const selectionMode = navigationData?.selectionMode === true
   const returnTo = navigationData?.returnTo as Pages | undefined
 
@@ -141,7 +139,7 @@ export default function AppAddressBook() {
   const handleSelectAddress = (address: string) => {
     // Update sendInfo with the selected address
     setSendInfo({ ...sendInfo, address, recipient: address })
-    
+
     // Use goBack to avoid duplicate entries in navigation stack
     goBack()
   }
@@ -174,10 +172,10 @@ export default function AppAddressBook() {
   }
 
   const handleViewContact = (name: string) => {
-    navigate(Pages.AppAddressBookContact, { 
+    navigate(Pages.AppAddressBookContact, {
       contactName: name,
       selectionMode,
-      returnTo 
+      returnTo,
     })
   }
 
@@ -215,9 +213,9 @@ export default function AppAddressBook() {
                     <EmptyState message='No saved accounts yet. Add your addresses to easily access them later.' />
                   ) : (
                     myAccounts.map((entry) => (
-                      <AddressEntry 
-                        key={entry.id} 
-                        entry={entry} 
+                      <AddressEntry
+                        key={entry.id}
+                        entry={entry}
                         onDelete={handleDeleteAddress}
                         onSelect={handleSelectAddress}
                         selectionMode={selectionMode}

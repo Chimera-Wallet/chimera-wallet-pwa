@@ -28,10 +28,7 @@ export function useReferral() {
       return
     }
     try {
-      const [linkRes, rewardRes] = await Promise.all([
-        getReferralLink(accessToken),
-        getReferralReward(accessToken),
-      ])
+      const [linkRes, rewardRes] = await Promise.all([getReferralLink(accessToken), getReferralReward(accessToken)])
       setState({ link: linkRes.link, rewardChf: rewardRes.balance, isLoading: false, error: null })
     } catch (err) {
       setState((prev) => ({
@@ -46,22 +43,25 @@ export function useReferral() {
     fetchData()
   }, [fetchData])
 
-  const claim = useCallback(async (address: string) => {
-    setClaimError(null)
-    setClaimSuccess(false)
-    setClaiming(true)
-    try {
-      const accessToken = await getValidAccessToken()
-      if (!accessToken) throw new Error('Not authenticated')
-      await claimReferralReward(accessToken, address)
-      setClaimSuccess(true)
-      await fetchData()
-    } catch (err) {
-      setClaimError(err instanceof Error ? err.message : 'Failed to claim reward')
-    } finally {
-      setClaiming(false)
-    }
-  }, [fetchData])
+  const claim = useCallback(
+    async (address: string) => {
+      setClaimError(null)
+      setClaimSuccess(false)
+      setClaiming(true)
+      try {
+        const accessToken = await getValidAccessToken()
+        if (!accessToken) throw new Error('Not authenticated')
+        await claimReferralReward(accessToken, address)
+        setClaimSuccess(true)
+        await fetchData()
+      } catch (err) {
+        setClaimError(err instanceof Error ? err.message : 'Failed to claim reward')
+      } finally {
+        setClaiming(false)
+      }
+    },
+    [fetchData],
+  )
 
   return { ...state, refetch: fetchData, claim, claiming, claimError, claimSuccess }
 }

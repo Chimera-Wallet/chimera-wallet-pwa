@@ -39,13 +39,7 @@ export function CardReservationIconBig() {
       <circle cx='55' cy='50' r='1.5' fill='#8B5CF6' fillOpacity='0.5' />
       {/* Reservation badge */}
       <circle cx='56' cy='22' r='10' fill='#10B981' />
-      <path
-        d='M52 22L55 25L60 19'
-        stroke='white'
-        strokeWidth='2'
-        strokeLinecap='round'
-        strokeLinejoin='round'
-      />
+      <path d='M52 22L55 25L60 19' stroke='white' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' />
     </svg>
   )
 }

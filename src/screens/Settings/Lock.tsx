@@ -54,9 +54,7 @@ export default function Lock() {
           <ErrorMessage error={Boolean(error)} text={error} />
           <CenterScreen>
             <LockIcon big />
-            <Text centered>
-              {!canLock ? 'No password or biometrics defined' : 'Lock your wallet'}
-            </Text>
+            <Text centered>{!canLock ? 'No password or biometrics defined' : 'Lock your wallet'}</Text>
             <TextSecondary centered>
               {!canLock
                 ? 'You need to set a password or enable biometrics to lock.'

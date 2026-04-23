@@ -12,7 +12,11 @@ export interface FiatPrices {
 export const getPriceFeed = async (): Promise<FiatPrices | undefined> => {
   try {
     // Try CoinGecko first
-    const vsCurrencies = [FIATS.EUR.symbol.toLowerCase(), FIATS.USD.symbol.toLowerCase(), FIATS.CHF.symbol.toLowerCase()]
+    const vsCurrencies = [
+      FIATS.EUR.symbol.toLowerCase(),
+      FIATS.USD.symbol.toLowerCase(),
+      FIATS.CHF.symbol.toLowerCase(),
+    ]
     const rates = await CoinGeckoConversionService.getBulkConversionRates([ASSETS.BTC.symbol], {
       vsCurrencies,
       include24hChange: false,

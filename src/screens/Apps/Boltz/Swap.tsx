@@ -31,15 +31,30 @@ export default function AppBoltzSwap() {
   const [processing, setProcessing] = useState<boolean>(false)
   const [success, setSuccess] = useState<boolean>(false)
 
-  // Subscribe to real-time updates for this swap
+  // Subscribe to real-time updates for this swap. subscribeToSwapUpdates
+  // is now async (Promise<() => void>) and the callback may emit chain
+  // swaps — which FlowContext's SwapInfo doesn't model, so ignore them.
   useEffect(() => {
     if (!swapManager || !swapInfo) return
 
-    const unsubscribe = swapManager.subscribeToSwapUpdates(swapInfo.id, (updatedSwap) => {
-      setSwapInfo(updatedSwap)
-    })
+    let unsubscribe: (() => void) | null = null
+    let cancelled = false
 
-    return unsubscribe
+    swapManager
+      .subscribeToSwapUpdates(swapInfo.id, (updatedSwap) => {
+        if (updatedSwap.type === 'chain') return
+        setSwapInfo(updatedSwap)
+      })
+      .then((fn) => {
+        if (cancelled) fn()
+        else unsubscribe = fn
+      })
+      .catch(consoleError)
+
+    return () => {
+      cancelled = true
+      if (unsubscribe) unsubscribe()
+    }
   }, [swapManager, swapInfo?.id])
 
   if (!swapInfo) return null
@@ -53,7 +68,7 @@ export default function AppBoltzSwap() {
   const total = isReverse ? swapInfo.request.invoiceAmount : swapInfo.response.expectedAmount
   const invoice = isReverse ? swapInfo.response.invoice : swapInfo.request.invoice
   const decodedInvoice = invoice ? decodeInvoice(invoice) : { amountSats: total, note: '' }
-  const amount = isReverse ? swapInfo.response.onchainAmount : decodedInvoice.amountSats
+  const amount = (isReverse ? swapInfo.response.onchainAmount : decodedInvoice.amountSats) ?? 0
 
   const formatAmount = (amt: number) => (config.showBalance ? prettyAmount(amt) : prettyHide(amt))
 

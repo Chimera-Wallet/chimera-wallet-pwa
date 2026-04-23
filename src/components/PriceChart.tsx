@@ -25,7 +25,7 @@ export default function PriceChart({ symbol, vsCurrency = 'usd' }: PriceChartPro
   const [prices, setPrices] = useState<[number, number][]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
+
   // Track if we have cached data to show while loading new data
   const hasCachedData = useRef(false)
 
@@ -33,7 +33,7 @@ export default function PriceChart({ symbol, vsCurrency = 'usd' }: PriceChartPro
 
   useEffect(() => {
     let isMounted = true
-    
+
     const fetchPrices = async () => {
       // Only show loading spinner if we don't have cached data
       if (!hasCachedData.current) {
@@ -44,7 +44,7 @@ export default function PriceChart({ symbol, vsCurrency = 'usd' }: PriceChartPro
       try {
         const days = TIMEFRAME_DAYS[timeframe]
         const data = await CoinGeckoConversionService.getHistoricalPrices(symbol, vsCurrency, days)
-        
+
         if (isMounted) {
           setPrices(data.prices)
           hasCachedData.current = true
@@ -62,7 +62,7 @@ export default function PriceChart({ symbol, vsCurrency = 'usd' }: PriceChartPro
     }
 
     fetchPrices()
-    
+
     return () => {
       isMounted = false
     }
@@ -128,11 +128,11 @@ export default function PriceChart({ symbol, vsCurrency = 'usd' }: PriceChartPro
         ) : (
           <div style={{ position: 'relative', width: '100%', height: '100%' }}>
             <svg
-              width="100%"
+              width='100%'
               height={chartHeight}
               viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-              preserveAspectRatio="none"
-              style={{ 
+              preserveAspectRatio='none'
+              style={{
                 overflow: 'visible',
                 opacity: loading ? 0.6 : 1,
                 transition: 'opacity 0.2s ease',
@@ -140,9 +140,9 @@ export default function PriceChart({ symbol, vsCurrency = 'usd' }: PriceChartPro
             >
               {/* Gradient fill under the line */}
               <defs>
-                <linearGradient id={`gradient-${symbol}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor={`var(--${colorVar})`} stopOpacity="0.3" />
-                  <stop offset="100%" stopColor={`var(--${colorVar})`} stopOpacity="0" />
+                <linearGradient id={`gradient-${symbol}`} x1='0%' y1='0%' x2='0%' y2='100%'>
+                  <stop offset='0%' stopColor={`var(--${colorVar})`} stopOpacity='0.3' />
+                  <stop offset='100%' stopColor={`var(--${colorVar})`} stopOpacity='0' />
                 </linearGradient>
               </defs>
 
@@ -157,11 +157,11 @@ export default function PriceChart({ symbol, vsCurrency = 'usd' }: PriceChartPro
               {/* Line */}
               <path
                 d={getChartPath()}
-                fill="none"
+                fill='none'
                 stroke={`var(--${colorVar})`}
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                strokeWidth='2'
+                strokeLinecap='round'
+                strokeLinejoin='round'
               />
             </svg>
             {loading ? (

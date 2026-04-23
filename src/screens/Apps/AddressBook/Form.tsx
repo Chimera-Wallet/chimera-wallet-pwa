@@ -16,12 +16,7 @@ import TabSelector from './TabSelector'
 import ScanIcon from '../../../icons/Scan'
 import PasteIcon from '../../../icons/Paste'
 import { pasteFromClipboard } from '../../../lib/clipboard'
-import {
-  addAddress,
-  AddressType,
-  getAddressTypeName,
-  isValidAddress,
-} from '../../../lib/addressBook'
+import { addAddress, AddressType, getAddressTypeName, isValidAddress } from '../../../lib/addressBook'
 
 interface AddressTypeOptionProps {
   type: AddressType
@@ -50,11 +45,11 @@ function AddressTypeOption({ type, selected, onSelect }: AddressTypeOptionProps)
 
 export default function AddressBookForm() {
   const { navigate, navigationData } = useContext(NavigationContext)
-  
+
   // Check if we're adding to an existing contact
   const existingContactName = navigationData?.contactName as string | undefined
   const forceContact = navigationData?.isContact as boolean | undefined
-  
+
   const [addressType, setAddressType] = useState<AddressType>(AddressType.Ark)
   const [address, setAddress] = useState('')
   const [label, setLabel] = useState('')
@@ -232,12 +227,7 @@ export default function AddressBookForm() {
         </Padded>
       </Content>
       {scan ? (
-        <Scanner
-          close={() => setScan(false)}
-          label='Scan address'
-          onData={setAddress}
-          onError={setError}
-        />
+        <Scanner close={() => setScan(false)} label='Scan address' onData={setAddress} onError={setError} />
       ) : null}
     </>
   )

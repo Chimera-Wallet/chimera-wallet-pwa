@@ -1,6 +1,6 @@
 export default function SwapIcon({ big = false }: { big?: boolean }) {
   const size = big ? 55 : 24
-  
+
   if (big) {
     return (
       <svg
@@ -58,7 +58,7 @@ export default function SwapIcon({ big = false }: { big?: boolean }) {
       </svg>
     )
   }
-  
+
   return (
     <svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 25' fill='none'>
       <path

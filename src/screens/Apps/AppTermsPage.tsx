@@ -24,18 +24,24 @@ export default function AppTermsPage({ appName, terms, onAccept, onBack }: AppTe
 
   return (
     <>
-      <Header 
-        text={terms.title} 
-        back={onBack}
-      />
+      <Header text={terms.title} back={onBack} />
       <Content>
         <Padded>
-          <div style={{ height: '100%', minHeight: '400px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1.5rem' }}>
+          <div
+            style={{
+              height: '100%',
+              minHeight: '400px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '1.5rem',
+            }}
+          >
             <FlexCol gap='1rem'>
               <Text bold large>
                 {appName}
               </Text>
-              
+
               <div
                 style={{
                   maxHeight: '300px',
@@ -47,24 +53,15 @@ export default function AppTermsPage({ appName, terms, onAccept, onBack }: AppTe
                 }}
               >
                 <div style={{ whiteSpace: 'pre-wrap' }}>
-                  <Text wrap>
-                    {terms.content}
-                  </Text>
+                  <Text wrap>{terms.content}</Text>
                 </div>
               </div>
             </FlexCol>
 
             <FlexCol gap='1rem'>
-              <Checkbox
-                onChange={handleToggle}
-                text={terms.checkboxLabel}
-              />
+              <Checkbox onChange={handleToggle} text={terms.checkboxLabel} />
 
-              <Button
-                onClick={onAccept}
-                label='Continue'
-                disabled={!accepted}
-              />
+              <Button onClick={onAccept} label='Continue' disabled={!accepted} />
             </FlexCol>
           </div>
         </Padded>

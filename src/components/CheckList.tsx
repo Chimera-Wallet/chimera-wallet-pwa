@@ -25,9 +25,7 @@ const Line = ({ row }: { row: CheckListData }) => (
     ) : (
       <FlexRow>
         <UnheckedIcon />
-        <Text small>
-          {row.text}
-        </Text>
+        <Text small>{row.text}</Text>
       </FlexRow>
     )}
   </>
