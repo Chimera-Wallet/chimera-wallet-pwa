@@ -75,5 +75,9 @@ export const FiatProvider = ({ children }: { children: ReactNode }) => {
     updateFiatPrices()
   }, [])
 
-  return <FiatContext.Provider value={{ fromFiat, toFiat, fromCurrency, toCurrency, updateFiatPrices }}>{children}</FiatContext.Provider>
+  return (
+    <FiatContext.Provider value={{ fromFiat, toFiat, fromCurrency, toCurrency, updateFiatPrices }}>
+      {children}
+    </FiatContext.Provider>
+  )
 }

@@ -383,10 +383,7 @@ export const requestMagicLink = async (email: string, sessionId: string): Promis
 /**
  * Poll to check whether the user has clicked the magic link
  */
-export const checkSessionVerified = async (
-  email: string,
-  sessionId: string,
-): Promise<CheckSessionResponse> => {
+export const checkSessionVerified = async (email: string, sessionId: string): Promise<CheckSessionResponse> => {
   const apiUrl = getKycApiUrl()
   const response = await fetch(`${apiUrl}/api/auth/check-session-verified`, {
     method: 'POST',
@@ -432,10 +429,7 @@ export const saveKycTokensFromLoginModel = (loginModel: CheckSessionLoginModel):
     const expiryDate = new Date(token.expiryTime)
     expiresIn = Math.max(0, Math.floor((expiryDate.getTime() - Date.now()) / 1000))
   }
-  saveKycTokens(
-    { accessToken: token.accessToken, refreshToken: token.refreshToken, expiresIn },
-    userId,
-  )
+  saveKycTokens({ accessToken: token.accessToken, refreshToken: token.refreshToken, expiresIn }, userId)
   if (loginModel.email) saveKycEmail(loginModel.email)
   if (loginModel.verificationStatus?.status) {
     saveKycStatus(mapVerificationStatus(loginModel.verificationStatus.status))
@@ -458,8 +452,8 @@ interface IdFlowUserProfile {
 export interface KycBankData {
   iban?: string
   accountHolderName?: string
-  accountNumber?: string  // US/SWIFT
-  routingNumber?: string  // US
+  accountNumber?: string // US/SWIFT
+  routingNumber?: string // US
 }
 
 /**
@@ -497,10 +491,7 @@ export const fetchKycBankData = async (): Promise<KycBankData | null> => {
     const accessToken = await getValidAccessToken()
     if (!accessToken) return null
 
-    const [wallets, profile] = await Promise.all([
-      fetchKycWallets(accessToken),
-      fetchKycUserProfile(accessToken),
-    ])
+    const [wallets, profile] = await Promise.all([fetchKycWallets(accessToken), fetchKycUserProfile(accessToken)])
 
     const iban = wallets.find((w) => w.type === 'IBAN')?.address
     const accountNumber = wallets.find((w) => w.type === 'USAN')?.address

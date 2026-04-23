@@ -407,10 +407,7 @@ export const getReferralLink = async (accessToken: string): Promise<ReferralLink
   }
   const data = await response.json()
   // Handle various C# API response shapes
-  const link: string =
-    typeof data === 'string'
-      ? data
-      : data.referralLink ?? ''
+  const link: string = typeof data === 'string' ? data : (data.referralLink ?? '')
   return { link }
 }
 
@@ -428,10 +425,7 @@ export const getReferralReward = async (accessToken: string): Promise<ReferralRe
   }
   const data = await response.json()
   // Handle various C# API response shapes
-  const balance: number =
-    typeof data === 'number'
-      ? data
-      : data.rewardBalance ?? 0
+  const balance: number = typeof data === 'number' ? data : (data.rewardBalance ?? 0)
   return { balance }
 }
 
