@@ -38,6 +38,7 @@ import SwapIcon from './icons/Swap'
 import Focusable from './components/Focusable'
 import { useReducedMotion } from './hooks/useReducedMotion'
 import IntercomMessenger from './components/IntercomMessenger'
+import Verification from './screens/Settings/Verification'
 import { setupPeriodicUpdateCheck } from './lib/serviceWorkerUpdate'
 
 setupIonicReact()
@@ -379,8 +380,20 @@ export default function App() {
             </IonTabBar>
           </IonTabs>
         )}
-      </IonPage>
-      <IntercomMessenger />
+      </IonPage>      {/* Verification is mounted at IonPage level so it's never unmounted by tab/page changes */}
+      {page !== Pages.Loading && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: screen === Pages.SettingsKYC ? 999 : -1,
+            visibility: screen === Pages.SettingsKYC ? 'visible' : 'hidden',
+            pointerEvents: screen === Pages.SettingsKYC ? 'auto' : 'none',
+          }}
+        >
+          <Verification />
+        </div>
+      )}      <IntercomMessenger />
     </IonApp>
   )
 }

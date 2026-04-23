@@ -225,7 +225,7 @@ export const pageComponent = (page: Pages, navigationData?: Record<string, unkno
     case Pages.Settings:
       return <Settings />
     case Pages.SettingsKYC:
-      return <Verification />
+      return <></> // Verification is rendered persistently in App.tsx to keep iframe alive
     case Pages.Transaction:
       return <Transaction />
     case Pages.Transactions:

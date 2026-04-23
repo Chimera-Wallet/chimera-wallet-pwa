@@ -28,6 +28,9 @@ import {
   checkSessionVerified,
   saveKycTokensFromLoginModel,
   mapVerificationStatus,
+  saveKycLastView,
+  getKycLastView,
+  clearKycLastView,
 } from '../../lib/kyc'
 import { isIOS } from '../../lib/browser'
 
@@ -101,11 +104,14 @@ export default function Verification() {
             setKycStatus(mapped)
             setStatusMessage(result.loginModel.verificationStatus?.notes || '')
             if (mapped === 'confirmed' || mapped === 'pending' || mapped === 'rejected') {
+              clearKycLastView()
               setViewState('status')
             } else {
               // incomplete or more_info_needed — open webview to continue
               const baseUrl = getKycWebviewUrl()
-              setWebviewUrl(`${baseUrl}?email=${encodeURIComponent(pollEmail)}`)
+              const url = `${baseUrl}?email=${encodeURIComponent(pollEmail)}`
+              setWebviewUrl(url)
+              saveKycLastView('webview', url)
               setViewState('webview')
             }
           }
@@ -117,6 +123,7 @@ export default function Verification() {
       pollIntervalRef.current = setInterval(tick, POLL_INTERVAL_MS)
       pollTimeoutRef.current = setTimeout(() => {
         stopPolling()
+        clearKycLastView()
         setPollingTimedOut(true)
       }, POLL_TIMEOUT_MS)
     },
@@ -171,11 +178,20 @@ export default function Verification() {
         }
         const savedEmail = getKycEmail()
         if (savedEmail) {
-          // Returning user - show their registered email
           setEmail(savedEmail)
-          setViewState('registered')
+          // Restore last view if the user was mid-session
+          const { view, webviewUrl: savedWebviewUrl, sessionId: savedSessionId } = getKycLastView()
+          if (view === 'webview' && savedWebviewUrl) {
+            setWebviewUrl(savedWebviewUrl)
+            setViewState('webview')
+          } else if (view === 'magic-link-sent' && savedSessionId) {
+            setSessionId(savedSessionId)
+            startPolling(savedEmail, savedSessionId)
+            setViewState('magic-link-sent')
+          } else {
+            setViewState('registered')
+          }
         } else {
-          // First time - collect email before showing webview
           setViewState('email')
         }
       } catch {
@@ -184,7 +200,7 @@ export default function Verification() {
       }
     }
     initializeView()
-  }, [kycAuthParams, setKycAuthParams])
+  }, [kycAuthParams, setKycAuthParams, startPolling])
 
   useEffect(() => {
     if (viewState === 'webview' && isIOS() && !iframeLoaded) {
@@ -263,6 +279,7 @@ export default function Verification() {
       setResendCount(0)
       startCooldown()
       setPollingTimedOut(false)
+      saveKycLastView('magic-link-sent', undefined, newSessionId)
       startPolling(email, newSessionId)
       setViewState('magic-link-sent')
     } catch {
@@ -308,12 +325,14 @@ export default function Verification() {
         setKycStatus(statusResponse.status)
         setStatusMessage(statusResponse.message || '')
         if (statusResponse.status === 'incomplete' || statusResponse.status === 'more_info_needed') {
-          // Open webview so user can continue/provide more info
           const savedEmail = getKycEmail() || email
           const baseUrl = getKycWebviewUrl()
-          setWebviewUrl(`${baseUrl}?email=${encodeURIComponent(savedEmail)}`)
+          const url = `${baseUrl}?email=${encodeURIComponent(savedEmail)}`
+          setWebviewUrl(url)
+          saveKycLastView('webview', url)
           setViewState('webview')
         } else {
+          clearKycLastView()
           setViewState('status')
         }
         return
@@ -328,6 +347,7 @@ export default function Verification() {
   }
 
   const handleRetry = () => {
+    clearKycLastView()
     setShowIosFallback(false)
     setIframeLoaded(false)
     setEmail('')
@@ -666,6 +686,34 @@ export default function Verification() {
       <Header text='KYC - Verification' backFunc={handleBack} />
       <Content>
         <div style={{ height: '100%', position: 'relative' }}>
+          {/* Close button — collapses webview back to registered view without unmounting iframe */}
+          <button
+            onClick={() => {
+              clearKycLastView()
+              setViewState('registered')
+            }}
+            aria-label='Close verification'
+            style={{
+              position: 'absolute',
+              top: '8px',
+              right: '8px',
+              zIndex: 10,
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              border: 'none',
+              background: 'rgba(0,0,0,0.45)',
+              color: '#fff',
+              fontSize: '16px',
+              lineHeight: 1,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            ✕
+          </button>
           <FlexCol gap='0'>
             {/* iOS fallback banner */}
             {showIosFallback ? (
