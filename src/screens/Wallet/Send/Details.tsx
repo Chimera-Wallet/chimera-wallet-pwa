@@ -77,7 +77,7 @@ export default function SendDetails() {
     } else {
       setButtonLabel('Tap to Sign')
     }
-  }, [sendInfo])
+  }, [sendInfo, balance])
 
   const handlePreimage = ({ txid }: { preimage: string; txid: string }) => {
     handleTxid(txid)
