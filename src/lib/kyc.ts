@@ -282,14 +282,7 @@ export const fetchKycStatus = async (providedAccessToken?: string): Promise<KycS
     const data = await response.json()
 
     // Map API response to our status type
-    let status: KycStatus = 'pending'
-    if (data.status === 'confirmed' || data.status === 'approved') {
-      status = 'confirmed'
-    } else if (data.status === 'rejected') {
-      status = 'rejected'
-    } else if (data.status === 'expired') {
-      status = 'expired'
-    }
+    const status = mapVerificationStatus(data.status)
 
     saveKycStatus(status)
     return { status, message: data.message }
@@ -342,6 +335,184 @@ export const parseKycDeepLink = (hashOrQuery: string): KycAuthParams | null => {
   }
 
   return null
+}
+
+// ─── Magic Link / Session Polling ────────────────────────────────────────────
+
+export interface CheckSessionLoginModel {
+  userId: string
+  entityId: string
+  email: string
+  username: string
+  hasVerifiedEmail: boolean
+  tfaEnabled: boolean
+  phoneConfirmed: boolean
+  token: {
+    accessToken: string
+    expiryTime: string
+    refreshToken: string
+  }
+  verificationStatus: {
+    status: string
+    notes: string
+    veriffStatus: string
+    documentsSubmitted: string[]
+  }
+}
+
+export interface CheckSessionResponse {
+  isVerified: boolean
+  loginModel?: CheckSessionLoginModel
+}
+
+/**
+ * Send a magic link email to start the KYC authentication flow
+ */
+export const requestMagicLink = async (email: string, sessionId: string): Promise<void> => {
+  const apiUrl = getKycApiUrl()
+  const response = await fetch(`${apiUrl}/api/auth/magic-link`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, sessionId }),
+  })
+  if (!response.ok) {
+    throw new Error('Failed to send magic link')
+  }
+}
+
+/**
+ * Poll to check whether the user has clicked the magic link
+ */
+export const checkSessionVerified = async (
+  email: string,
+  sessionId: string,
+): Promise<CheckSessionResponse> => {
+  const apiUrl = getKycApiUrl()
+  const response = await fetch(`${apiUrl}/api/auth/check-session-verified`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, sessionId }),
+  })
+  if (!response.ok) {
+    throw new Error('Failed to check session')
+  }
+  return response.json()
+}
+
+/**
+ * Map IDFlow's verification status string to our KycStatus type
+ */
+export const mapVerificationStatus = (status?: string): KycStatus => {
+  if (!status) return 'not_started'
+  switch (status.toLowerCase()) {
+    case 'verified':
+    case 'confirmed':
+    case 'approved':
+      return 'confirmed'
+    case 'pending':
+    case 'moreinfoneeded':
+    case 'incomplete':
+      return 'pending'
+    case 'rejected':
+      return 'rejected'
+    case 'expired':
+      return 'expired'
+    default:
+      return 'not_started'
+  }
+}
+
+/**
+ * Persist tokens and status from a verified session's loginModel
+ */
+export const saveKycTokensFromLoginModel = (loginModel: CheckSessionLoginModel): void => {
+  const { token, userId } = loginModel
+  let expiresIn = 3600
+  if (token.expiryTime) {
+    const expiryDate = new Date(token.expiryTime)
+    expiresIn = Math.max(0, Math.floor((expiryDate.getTime() - Date.now()) / 1000))
+  }
+  saveKycTokens(
+    { accessToken: token.accessToken, refreshToken: token.refreshToken, expiresIn },
+    userId,
+  )
+  if (loginModel.email) saveKycEmail(loginModel.email)
+  if (loginModel.verificationStatus?.status) {
+    saveKycStatus(mapVerificationStatus(loginModel.verificationStatus.status))
+  }
+}
+
+// ─── Bank transfer helpers ────────────────────────────────────────────────────
+
+interface IdFlowWallet {
+  type: string
+  address: string
+}
+
+interface IdFlowUserProfile {
+  firstName?: string
+  lastName?: string
+  email?: string
+}
+
+export interface KycBankData {
+  iban?: string
+  accountHolderName?: string
+  accountNumber?: string  // US/SWIFT
+  routingNumber?: string  // US
+}
+
+/**
+ * Fetch the user's IDFlow wallets (IBAN, USAN, USRN etc.)
+ */
+const fetchKycWallets = async (accessToken: string): Promise<IdFlowWallet[]> => {
+  const apiUrl = getKycApiUrl()
+  const response = await fetch(`${apiUrl}/api/Entity/me/wallets`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+  })
+  if (!response.ok) throw new Error('Failed to fetch KYC wallets')
+  return response.json()
+}
+
+/**
+ * Fetch the user's IDFlow profile (name etc.)
+ */
+const fetchKycUserProfile = async (accessToken: string): Promise<IdFlowUserProfile> => {
+  const apiUrl = getKycApiUrl()
+  const response = await fetch(`${apiUrl}/api/Entity/me`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+  })
+  if (!response.ok) throw new Error('Failed to fetch KYC user profile')
+  return response.json()
+}
+
+/**
+ * Fetch and assemble bank data from IDFlow for use in withdraw requests.
+ * Returns null if no valid token or data is unavailable.
+ */
+export const fetchKycBankData = async (): Promise<KycBankData | null> => {
+  try {
+    const accessToken = await getValidAccessToken()
+    if (!accessToken) return null
+
+    const [wallets, profile] = await Promise.all([
+      fetchKycWallets(accessToken),
+      fetchKycUserProfile(accessToken),
+    ])
+
+    const iban = wallets.find((w) => w.type === 'IBAN')?.address
+    const accountNumber = wallets.find((w) => w.type === 'USAN')?.address
+    const routingNumber = wallets.find((w) => w.type === 'USRN')?.address
+
+    const nameParts = [profile.firstName, profile.lastName].filter(Boolean)
+    const accountHolderName = nameParts.length > 0 ? nameParts.join(' ') : undefined
+
+    return { iban, accountHolderName, accountNumber, routingNumber }
+  } catch {
+    return null
+  }
 }
 
 /**

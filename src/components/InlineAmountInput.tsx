@@ -52,7 +52,10 @@ export default function InlineAmountInput({
     : toFiat(value)
 
   // Use inputString while typing, or calculated value when empty/switching modes
-  const displayValue = inputString || (inputMode === 'crypto' ? cryptoValue || '' : fiatValue || '')
+  // Fiat values are always displayed to 2 decimal places
+  const displayValue = inputString || (inputMode === 'crypto'
+    ? (cryptoValue || '')
+    : (fiatValue ? parseFloat(fiatValue.toFixed(2)) : ''))
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value

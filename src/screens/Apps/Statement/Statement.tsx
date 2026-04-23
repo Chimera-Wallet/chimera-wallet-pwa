@@ -100,7 +100,7 @@ export default function Statement() {
         <Header back text='Account Statement' />
         <Content>
           <Padded>
-            <Loading />
+            <Loading simple />
           </Padded>
         </Content>
       </>

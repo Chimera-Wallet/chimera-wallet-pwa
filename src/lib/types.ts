@@ -20,6 +20,7 @@ export type Config = {
   nostrBackup: boolean
   notifications: boolean
   pubkey: string
+  referralSlideShowSeen: boolean
   showBalance: boolean
   theme: Themes
   unit: Unit

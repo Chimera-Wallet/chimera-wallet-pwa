@@ -16,6 +16,7 @@ const defaultConfig: Config = {
   nostrBackup: false,
   notifications: false,
   pubkey: '',
+  referralSlideShowSeen: false,
   showBalance: true,
   theme: Themes.Auto,
   unit: Unit.BTC,
