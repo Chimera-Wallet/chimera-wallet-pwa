@@ -124,7 +124,7 @@ function EmptyState({ message }: { message: string }) {
 }
 
 export default function AppAddressBook() {
-  const { navigate, navigationData, goBack } = useContext(NavigationContext)
+  const { navigate, navigationData, goBack, popTo } = useContext(NavigationContext)
   const { sendInfo, setSendInfo } = useContext(FlowContext)
   const [currentTab, setCurrentTab] = useState<TabType>('myaccounts')
   const [refreshKey, setRefreshKey] = useState(0)
@@ -140,8 +140,12 @@ export default function AppAddressBook() {
     // Update sendInfo with the selected address
     setSendInfo({ ...sendInfo, address, recipient: address })
 
-    // Use goBack to avoid duplicate entries in navigation stack
-    goBack()
+    // Navigate directly back to the originating screen if returnTo is set
+    if (returnTo !== undefined) {
+      popTo(returnTo)
+    } else {
+      goBack()
+    }
   }
 
   const handleBack = () => {

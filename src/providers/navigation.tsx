@@ -248,6 +248,7 @@ interface NavigationContextProps {
   navigationData?: Record<string, unknown>
   direction: NavigationDirection
   goBack: () => void
+  popTo: (page: Pages) => void
   isInitialLoad: boolean
   navigationCount: number
   screen: Pages
@@ -257,6 +258,7 @@ interface NavigationContextProps {
 export const NavigationContext = createContext<NavigationContextProps>({
   direction: 'none',
   goBack: () => {},
+  popTo: () => {},
   isInitialLoad: false,
   navigate: () => {},
   navigationCount: 0,
@@ -320,7 +322,13 @@ export const NavigationProvider = ({ children }: { children: ReactNode }) => {
   }, [screen])
 
   useEffect(() => {
-    const handlePopState = () => pop()
+    const handlePopState = () => {
+      if (ignorePops.current > 0) {
+        ignorePops.current -= 1
+        return
+      }
+      pop()
+    }
     if (typeof window !== 'undefined') {
       addEntryToBrowserHistory()
       window.addEventListener('popstate', handlePopState)
@@ -336,6 +344,37 @@ export const NavigationProvider = ({ children }: { children: ReactNode }) => {
   const goBack = useCallback(() => {
     history.back()
   }, [])
+
+  // ignorePops is used to prevent popstate from re-triggering pop() when we
+  // manually unwind the internal stack via popTo()
+  const ignorePops = useRef(0)
+
+  const popTo = useCallback(
+    (page: Pages) => {
+      const stack = navigationHistory.current
+      const idx = stack.lastIndexOf(page)
+      if (idx === -1) return // target not in stack; do nothing
+
+      const steps = stack.length - 1 - idx
+      if (steps <= 0) return
+
+      // Unwind internal stack
+      navigationHistory.current = stack.slice(0, idx + 1)
+
+      // Update UI
+      previousPage.current = screen
+      setDirection('back')
+      setTab(pageTab[page])
+      setScreen(page)
+      setNavigationData(undefined)
+      setNavigationCount((prev) => prev + 1)
+
+      // history.go(-N) fires exactly one popstate event regardless of N; suppress it
+      ignorePops.current = 1
+      history.go(-steps)
+    },
+    [screen],
+  )
 
   const navigate = (page: Pages, data?: Record<string, unknown>) => {
     const nextTab = pageTab[page]
@@ -355,7 +394,7 @@ export const NavigationProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <NavigationContext.Provider
-      value={{ direction, goBack, isInitialLoad, navigate, navigationCount, navigationData, screen, tab }}
+      value={{ direction, goBack, popTo, isInitialLoad, navigate, navigationCount, navigationData, screen, tab }}
     >
       {children}
     </NavigationContext.Provider>

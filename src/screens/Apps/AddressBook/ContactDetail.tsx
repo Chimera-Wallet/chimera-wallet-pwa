@@ -70,7 +70,7 @@ function AddressEntry({ entry, onDelete, onSelect, selectionMode }: AddressEntry
 }
 
 export default function ContactDetail() {
-  const { navigate, navigationData, goBack } = useContext(NavigationContext)
+  const { navigate, navigationData, goBack, popTo } = useContext(NavigationContext)
   const { sendInfo, setSendInfo } = useContext(FlowContext)
   const contactName = (navigationData?.contactName as string) || 'Unknown'
   const selectionMode = navigationData?.selectionMode === true
@@ -83,8 +83,13 @@ export default function ContactDetail() {
     // Update sendInfo with the selected address
     setSendInfo({ ...sendInfo, address, recipient: address })
 
-    // Use goBack to avoid duplicate entries in navigation stack
-    goBack()
+    // Navigate directly back to the originating screen if returnTo is set,
+    // skipping the intermediate AppAddressBook screen
+    if (returnTo !== undefined) {
+      popTo(returnTo)
+    } else {
+      goBack()
+    }
   }
 
   const handleBack = () => {
