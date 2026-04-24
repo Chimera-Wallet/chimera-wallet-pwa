@@ -218,6 +218,9 @@ export const refreshKycToken = async (): Promise<KycTokens | null> => {
   const refreshToken = getKycRefreshToken()
   if (!refreshToken) return null
 
+  const accessToken = getKycAccessToken()
+  if (!accessToken) return null
+
   const apiUrl = getKycApiUrl()
   try {
     const response = await fetch(`${apiUrl}/api/auth/refresh-token`, {
@@ -226,6 +229,7 @@ export const refreshKycToken = async (): Promise<KycTokens | null> => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        accessToken,
         refreshToken,
       }),
     })
