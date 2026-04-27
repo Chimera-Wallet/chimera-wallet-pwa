@@ -1,7 +1,7 @@
 import { ReactNode, createContext, useContext, useEffect, useRef } from 'react'
 import { ConfigContext } from './config'
 import { sendNotification } from '../lib/notifications'
-import { prettyNumber } from '../lib/format'
+import { fromSatoshis, prettyNumber } from '../lib/format'
 import { Relay } from 'nostr-tools'
 
 interface NotificationsContextProps {
@@ -32,13 +32,13 @@ export const NotificationsProvider = ({ children }: { children: ReactNode }) => 
   }
 
   const notifyPaymentReceived = (sats: number) => {
-    const body = `You received ${prettyNumber(sats)} sats`
+    const body = `You received ${prettyNumber(fromSatoshis(sats), 8)} BTC`
     const title = 'Payment received'
     sendSystemNotification(title, body)
   }
 
   const notifyPaymentSent = (sats: number) => {
-    const body = `You sent ${prettyNumber(sats)} sats`
+    const body = `You sent ${prettyNumber(fromSatoshis(sats), 8)} BTC`
     const title = 'Payment sent'
     sendSystemNotification(title, body)
   }
