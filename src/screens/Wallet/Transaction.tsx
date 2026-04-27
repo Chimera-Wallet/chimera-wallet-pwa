@@ -22,6 +22,7 @@ import { AspContext } from '../../providers/asp'
 import Reminder from '../../components/Reminder'
 import { LimitsContext } from '../../providers/limits'
 import { getInputsToSettle } from '../../lib/asp'
+import { getTxStatus } from '../../lib/txStatus'
 
 export default function Transaction() {
   const { utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
@@ -102,15 +103,7 @@ export default function Transaction() {
     direction: tx.type === 'sent' ? 'Sent' : 'Received',
     when: tx.createdAt ? prettyAgo(tx.createdAt) : !unconfirmedBoardingTx ? 'Unknown' : 'Unconfirmed',
     date: tx.createdAt ? prettyDate(tx.createdAt) : !unconfirmedBoardingTx ? 'Unknown' : 'Unconfirmed',
-    status: expiredBoardingTx
-      ? 'Expired'
-      : unconfirmedBoardingTx
-        ? 'Unconfirmed'
-        : boardingTx && tx.preconfirmed
-          ? 'Pending boarding'
-          : tx.settled
-            ? 'Settled'
-            : 'Preconfirmed',
+    status: getTxStatus(tx, boardingExitDelay),
     type: boardingTx ? 'Boarding' : 'Offchain',
     txid: tx.boardingTxid || '',
     satoshis: tx.type === 'sent' ? tx.amount - defaultFee : tx.amount,

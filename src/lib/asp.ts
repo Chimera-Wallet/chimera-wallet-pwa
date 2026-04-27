@@ -160,6 +160,8 @@ export const getTxHistory = async (wallet: IWallet): Promise<Tx[]> => {
       const unix = Math.floor(date.getTime() / 1000)
       const { key, settled, type, amount } = tx
       const explorable = key.boardingTxid ? key.boardingTxid : key.commitmentTxid ? key.commitmentTxid : undefined
+      const isSentTx = type === 'SENT'
+      const txSettled = isSentTx ? true : settled // show all sent tx as settled
       txs.push({
         amount: Math.abs(amount),
         boardingTxid: key.boardingTxid,
@@ -167,8 +169,8 @@ export const getTxHistory = async (wallet: IWallet): Promise<Tx[]> => {
         roundTxid: key.commitmentTxid,
         createdAt: unix,
         explorable,
-        preconfirmed: !settled,
-        settled: type === 'SENT' ? true : settled, // show all sent tx as settled
+        preconfirmed: !txSettled,
+        settled: txSettled,
         type: type.toLowerCase(),
       })
     }
