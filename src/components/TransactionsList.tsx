@@ -13,12 +13,12 @@ import { ASSETS, type AssetSymbol } from '../lib/assets'
 import { getTxStatus, TxStatus } from '../lib/txStatus'
 import { AspContext } from '../providers/asp'
 
-const STATUS_COLORS: Record<TxStatus, string> = {
-  Settled: 'var(--green-positive)',
-  Preconfirmed: 'var(--green-positive)',
-  'Pending boarding': 'var(--yellow)',
-  Unconfirmed: 'var(--yellow)',
-  Expired: 'var(--red)',
+const LIST_STATUS: Record<TxStatus, { text: string; color: string }> = {
+  Settled: { text: 'Confirmed', color: 'var(--green-positive)' },
+  Preconfirmed: { text: 'Confirmed', color: 'var(--green-positive)' },
+  'Pending boarding': { text: 'Pending', color: 'var(--orange)' },
+  Unconfirmed: { text: 'Pending', color: 'var(--orange)' },
+  Expired: { text: 'Failed', color: 'var(--red)' },
 }
 
 const TransactionLine = ({ tx, onClick }: { tx: Tx; onClick: () => void }) => {
@@ -45,7 +45,7 @@ const TransactionLine = ({ tx, onClick }: { tx: Tx; onClick: () => void }) => {
     : prettyHide(fiatAmount, config.fiat)
 
   const statusText = getTxStatus(tx, boardingExitDelay)
-  const status = { text: statusText, color: STATUS_COLORS[statusText] ?? 'var(--grey)' }
+  const status = LIST_STATUS[statusText] ?? { text: statusText, color: 'var(--grey)' }
   const date = tx.createdAt ? prettyDate(tx.createdAt) : 'Unknown date'
   const action = tx.type === 'sent' ? `Sent ${ASSETS.BTC.symbol}` : `Received ${ASSETS.BTC.symbol}`
 
