@@ -262,6 +262,7 @@ export default function Verification() {
     }
     setEmailError('')
     saveKycEmail(email)
+    clearKycLastView()
     setPrivacyAccepted(false)
     setTermsAccepted(false)
     setSendError('')
