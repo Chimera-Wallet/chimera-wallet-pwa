@@ -10,6 +10,8 @@ interface ImportMetaEnv {
   readonly VITE_CHIMERA_API?: string
   // App URLs
   readonly VITE_GIFT_CARDS_URL?: string
+  readonly VITE_GIFT_CARDS_BUY_URL?: string
+  readonly VITE_GIFT_CARDS_REDEEM_URL?: string
   readonly VITE_CARD_RESERVATION_URL?: string
   readonly VITE_STATEMENT_URL?: string
   readonly VITE_REFERRAL_URL?: string
