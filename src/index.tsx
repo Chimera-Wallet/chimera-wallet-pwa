@@ -19,6 +19,19 @@ import { shouldInitializeSentry } from './lib/sentry'
 import { FeesProvider } from './providers/fees'
 import { AnnouncementProvider } from './providers/announcements'
 
+// Capture ?subid= from URL and store in localStorage
+(() => {
+  try {
+    const url = new URL(window.location.href);
+    const subid = url.searchParams.get('subid');
+    if (subid) {
+      localStorage.setItem('subid', subid);
+    }
+  } catch (e) {
+    console.error('Failed to store subid:', e);
+  }
+})();
+
 // Initialize Plausible analytics when domain is configured
 const plausibleDomain = import.meta.env.VITE_PLAUSIBLE_DOMAIN
 if (plausibleDomain) {

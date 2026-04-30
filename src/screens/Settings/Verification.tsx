@@ -26,6 +26,7 @@ import {
   getValidAccessToken,
   requestMagicLink,
   checkSessionVerified,
+  setIdFlowExternalId,
   saveKycTokensFromLoginModel,
   mapVerificationStatus,
   saveKycLastView,
@@ -100,6 +101,18 @@ export default function Verification() {
           if (result.isVerified && result.loginModel) {
             stopPolling()
             saveKycTokensFromLoginModel(result.loginModel)
+
+            // --- SUBID LOGIC: Attach subid to IDFlow registration if present ---
+            try {
+              const subid = localStorage.getItem('subid')
+              const accessToken = result.loginModel.token?.accessToken
+              if (subid && accessToken) {
+                setIdFlowExternalId(accessToken, subid)
+              }
+            } catch (e) {
+              console.error('Failed to set externalId:', e);
+            }
+
             const mapped = mapVerificationStatus(result.loginModel.verificationStatus?.status)
             setKycStatus(mapped)
             setStatusMessage(result.loginModel.verificationStatus?.notes || '')

@@ -462,6 +462,25 @@ export const saveKycTokensFromLoginModel = (loginModel: CheckSessionLoginModel):
   }
 }
 
+/**
+ * Attach externalId (subid) to IDFlow registration
+ */
+export const setIdFlowExternalId = async (accessToken: string, subid: string): Promise<void> => {
+  try {
+    const apiUrl = getKycApiUrl();
+    await fetch(`${apiUrl}/api/Registration/externalId`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ externalId: subid }),
+    });
+  } catch (e) {
+    console.error('Failed to set externalId:', e);
+  }
+};
+
 // ─── Bank transfer helpers ────────────────────────────────────────────────────
 
 interface IdFlowWallet {
