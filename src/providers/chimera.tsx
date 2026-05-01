@@ -172,6 +172,7 @@ export interface BankDepositPayload {
   from_asset: string // Fiat currency (EUR, CHF, USD)
   to_asset: string // Crypto asset (BTC)
   destination_address: string // User's crypto receive address
+  sub_id?: string
 }
 
 // Bank Deposit Response includes bank details to send fiat to

@@ -122,12 +122,14 @@ export default function BankReceive() {
       setLoading(true)
       setError('')
 
+      const subid = localStorage.getItem('subid')
       const response = await createBankDeposit({
         email: getUserEmailForBankTransfer(),
         from_amount: numAmount,
         from_asset: currency,
         to_asset: 'BTC-ARK',
         destination_address: arkAddress,
+        ...(subid ? { sub_id: subid } : {}),
       })
 
       if (response.kycError) {
