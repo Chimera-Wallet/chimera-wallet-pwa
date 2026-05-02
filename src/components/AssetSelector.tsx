@@ -26,7 +26,7 @@ export default function AssetSelector({
   const setIsOpen = externalSetIsOpen || setInternalIsOpen
 
   const selectedConfig = getAssetConfig(selected)
-  const options = ASSET_LIST.map((asset) => ({
+  const options = ASSET_LIST.filter((asset) => !asset.comingSoon).map((asset) => ({
     id: asset.symbol,
     label: asset.name,
     description: asset.symbol,

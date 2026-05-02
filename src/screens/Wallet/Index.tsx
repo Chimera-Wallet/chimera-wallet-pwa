@@ -27,6 +27,7 @@ import TransactionsIcon from '../../icons/Transactions'
 import AssetSelector from '../../components/AssetSelector'
 import NetworkSelector from '../../components/NetworkSelector'
 import { TRANSFER_METHOD, type TransferMethod } from '../../lib/transferMethods'
+import StakingBanner from '../../components/StakingBanner'
 
 export default function Wallet() {
   const { aspInfo } = useContext(AspContext)
@@ -215,6 +216,9 @@ export default function Wallet() {
                     <Button main icon={<SendIcon />} iconPosition='right' label='Send' onClick={handleSend} />
                     <Button main icon={<ReceiveIcon />} iconPosition='right' label='Receive' onClick={handleReceive} />
                   </FlexRow>
+                </WalletStaggerChild>
+                <WalletStaggerChild animate={shouldStagger}>
+                  <StakingBanner variant='home' />
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
                   {nudge ? nudge : psaMessage ? <InfoBox html={psaMessage} /> : null}

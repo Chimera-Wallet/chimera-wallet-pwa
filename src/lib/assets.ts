@@ -6,6 +6,7 @@ export interface AssetConfig {
   name: string
   color: string // CSS variable name (without var())
   precision: number
+  comingSoon?: boolean
 }
 
 export const ASSETS = {
@@ -39,12 +40,19 @@ export const ASSETS = {
     color: 'asset-matic',
     precision: 18,
   },
+  CEXT: {
+    symbol: 'CEXT',
+    name: 'Chimera',
+    color: 'asset-cext',
+    precision: 18,
+    comingSoon: true,
+  },
 } as const
 
 export type AssetSymbol = keyof typeof ASSETS
 
 // TEMPORARY: Only show BTC
-export const ASSET_LIST: AssetConfig[] = [ASSETS.BTC]
+export const ASSET_LIST: AssetConfig[] = [ASSETS.BTC, ASSETS.CEXT]
 // export const ASSET_LIST: AssetConfig[] = Object.values(ASSETS)
 
 export const getAssetConfig = (symbol: string): AssetConfig | undefined => {

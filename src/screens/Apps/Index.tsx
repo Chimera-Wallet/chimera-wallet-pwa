@@ -171,6 +171,13 @@ export default function Apps() {
               page={Pages.AppCardReservation}
               backgroundImage='/images/apps_backgrounds/card_reservation.png'
             />
+
+            <App
+              name='Staking'
+              image='/images/apps/Transfer.svg'
+              backgroundImage='/images/apps_backgrounds/transfer.png'
+              comingSoon
+            />
           </div>
 
           {/* Third Party Apps Section */}

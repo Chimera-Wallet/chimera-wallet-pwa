@@ -8,6 +8,7 @@ interface ButtonProps {
   clear?: boolean
   disabled?: boolean
   fancy?: boolean
+  fullWidth?: boolean
   icon?: ReactElement
   iconPosition?: 'left' | 'right'
   label: string
@@ -23,6 +24,7 @@ export default function Button({
   clear,
   disabled,
   fancy,
+  fullWidth,
   icon,
   iconPosition = 'left',
   label,
@@ -59,6 +61,7 @@ export default function Button({
     <IonButton
       className={className}
       disabled={disabled}
+      expand={fullWidth ? 'block' : undefined}
       fill={clear ? 'clear' : outline ? 'outline' : 'solid'}
       onClick={handleClick}
       onMouseDown={handlePressStart}

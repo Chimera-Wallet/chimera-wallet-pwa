@@ -141,7 +141,8 @@ export default function AssetList({ balances = [], onAssetClick }: AssetListProp
                 balanceFiat={balanceFiat}
                 currency={config.fiat}
                 percentChange={priceData.change || 0}
-                onClick={onAssetClick ? () => onAssetClick(symbol) : undefined}
+                badge={asset.comingSoon ? 'Coming Soon' : undefined}
+                onClick={!asset.comingSoon && onAssetClick ? () => onAssetClick(symbol) : undefined}
                 isLast={index === ASSET_LIST.length - 1}
               />
             )
