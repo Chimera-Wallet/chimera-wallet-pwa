@@ -28,6 +28,7 @@ import Apps from '../screens/Apps/Index'
 import AppBoltz from '../screens/Apps/Boltz/Index'
 import AppBoltzSettings from '../screens/Apps/Boltz/Settings'
 import InitSuccess from '../screens/Init/Success'
+import InitBackupKey from '../screens/Init/BackupKey'
 import AppBoltzSwap from '../screens/Apps/Boltz/Swap'
 import AppLendasat from '../screens/Apps/Lendasat/Index'
 import AppLendaswap from '../screens/Apps/Lendaswap/Index'
@@ -68,6 +69,7 @@ export enum Pages {
   InitBiometric,
   InitConnect,
   InitSuccess,
+  InitBackupKey,
   Loading,
   NotesRedeem,
   NotesForm,
@@ -123,6 +125,7 @@ const pageTab: Record<Pages, Tabs> = {
   [Pages.InitBiometric]: Tabs.None,
   [Pages.InitConnect]: Tabs.None,
   [Pages.InitSuccess]: Tabs.None,
+  [Pages.InitBackupKey]: Tabs.None,
   [Pages.Loading]: Tabs.None,
   [Pages.NotesRedeem]: Tabs.Settings,
   [Pages.NotesForm]: Tabs.Settings,
@@ -194,6 +197,8 @@ export const pageComponent = (page: Pages, navigationData?: Record<string, unkno
       return <InitBiometric />
     case Pages.InitSuccess:
       return <InitSuccess />
+    case Pages.InitBackupKey:
+      return <InitBackupKey />
     case Pages.Loading:
       return <Loading />
     case Pages.NotesRedeem:

@@ -99,6 +99,22 @@ export default function NeedsPassword({ error, onPassword, loading = false, onRe
               placeholder='password'
             />
             <ErrorMessage text={error} error={Boolean(error)} />
+            {onRestore ? (
+              <span
+                onClick={onRestore}
+                style={{
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  fontSize: '14px',
+                  fontWeight: 300,
+                  color: 'var(--ion-color-medium)',
+                  textDecoration: 'underline',
+                  display: 'block',
+                }}
+              >
+                Forgot password? Restore with private key
+              </span>
+            ) : null}
           </FlexCol>
         </Padded>
       </Content>

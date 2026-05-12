@@ -9,10 +9,7 @@ import ErrorMessage from '../../components/Error'
 import { FlowContext } from '../../providers/flow'
 import Content from '../../components/Content'
 import CenterScreen from '../../components/CenterScreen'
-import Text from '../../components/Text'
-import FlexCol from '../../components/FlexCol'
 import { deriveKeyFromSeed } from '../../lib/wallet'
-import SheetModal from '../../components/SheetModal'
 import WalletNewIcon from '../../icons/WalletNew'
 import { defaultPassword } from '../../lib/constants'
 import { OnboardStaggerContainer, OnboardStaggerChild } from '../../components/OnboardLoadIn'
@@ -23,7 +20,6 @@ export default function Init() {
   const { navigate } = useContext(NavigationContext)
 
   const [error, setError] = useState(false)
-  const [showOptions, setShowOptions] = useState(false)
 
   useEffect(() => {
     setError(aspInfo.unreachable)
@@ -55,14 +51,8 @@ export default function Init() {
       </Content>
       <ButtonsOnBottom>
         <Button disabled={error} onClick={handleNewWallet} label='+ Create wallet' />
-        <Button disabled={error} onClick={() => setShowOptions(true)} label='Other login options' clear />
+        <Button disabled={error} onClick={handleOldWallet} label='Restore Wallet' clear />
       </ButtonsOnBottom>
-      <SheetModal isOpen={showOptions} onClose={() => setShowOptions(false)}>
-        <FlexCol gap='1rem'>
-          <Text>Other login options</Text>
-          <Button fancy disabled={error} onClick={handleOldWallet} label='Restore wallet' secondary />
-        </FlexCol>
-      </SheetModal>
     </>
   )
 }

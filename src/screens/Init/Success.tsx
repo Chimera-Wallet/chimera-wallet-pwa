@@ -32,7 +32,10 @@ export default function InitSuccess() {
         />
       </Content>
       <ButtonsOnBottom>
-        <Button onClick={() => navigate(Pages.InitBiometric)} label='Go to wallet' />
+        <Button
+          onClick={() => navigate(initInfo.restoring ? Pages.InitBiometric : Pages.InitBackupKey)}
+          label='Go to wallet'
+        />
       </ButtonsOnBottom>
     </>
   )
