@@ -1,4 +1,4 @@
-import { useContext, useMemo } from 'react'
+import { useContext, useMemo, useState } from 'react'
 import Button from '../../components/Button'
 import ButtonsOnBottom from '../../components/ButtonsOnBottom'
 import Content from '../../components/Content'
@@ -25,6 +25,7 @@ export default function InitBackupKey() {
   const [present] = useIonToast()
 
   const nsec = useMemo(() => (initInfo.privateKey ? privateKeyToNsec(initInfo.privateKey) : ''), [initInfo.privateKey])
+  const [revealed, setRevealed] = useState(false)
 
   const handleCopy = async () => {
     if (!nsec) return
@@ -51,8 +52,11 @@ export default function InitBackupKey() {
             </FlexCol>
             <Shadow lighter>
               <FlexCol gap='10px'>
-                <InputFake testId='onboarding-private-key' text={nsec} />
-                <Button onClick={handleCopy} label='Copy to clipboard' />
+                <InputFake testId='onboarding-private-key' text={revealed ? nsec : '••••••••••••••••••••••••••••••••••••••••••••'} />
+                <FlexRow>
+                  <Button onClick={() => setRevealed((v) => !v)} label={revealed ? 'Hide key' : 'Reveal key'} secondary />
+                  <Button onClick={handleCopy} label='Copy' />
+                </FlexRow>
               </FlexCol>
             </Shadow>
             <FlexCol gap='0.5rem'>
