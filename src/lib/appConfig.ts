@@ -124,7 +124,7 @@ export const appConfigs: Record<string, AppConfig> = {
     live: true,
     infoSlides: [],
     urls: {
-      production: 'https://chimerawallet.com/card-reservation-app/',
+      production: 'https://chimerawallet.com/card',
       // No staging URL for card reservation
     },
   },
