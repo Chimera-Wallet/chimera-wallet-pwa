@@ -9,7 +9,7 @@ import ErrorMessage from '../../../components/Error'
 import { WalletContext } from '../../../providers/wallet'
 import Header from '../../../components/Header'
 import { defaultFee } from '../../../lib/constants'
-import { prettyNumber } from '../../../lib/format'
+import { prettyNumber, fromSatoshis } from '../../../lib/format'
 import Content from '../../../components/Content'
 import FlexCol from '../../../components/FlexCol'
 import { collaborativeExitWithFees, sendOffChain } from '../../../lib/asp'
@@ -73,7 +73,7 @@ export default function SendDetails() {
     })
     if (balance < total) {
       setButtonLabel('Insufficient funds')
-      setError(`Insufficient funds, you just have ${prettyNumber(balance)} sats`)
+      setError(`Insufficient funds, you just have ${prettyNumber(fromSatoshis(balance), 8)} BTC`)
     } else {
       setButtonLabel('Tap to Sign')
     }

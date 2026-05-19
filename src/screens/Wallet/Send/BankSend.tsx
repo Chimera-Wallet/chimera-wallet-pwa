@@ -30,7 +30,7 @@ import { FlowContext } from '../../../providers/flow'
 import { WalletContext } from '../../../providers/wallet'
 import { FiatContext } from '../../../providers/fiat'
 import { sendOffChain } from '../../../lib/asp'
-import { prettyNumber } from '../../../lib/format'
+import { prettyNumber, fromSatoshis } from '../../../lib/format'
 import { createBankWithdraw } from '../../../providers/chimera'
 import { addOrderToHistory } from '../../../lib/bankOrderHistory'
 import { useBankTransferValidation } from '../../../hooks/useBankTransferValidation'
@@ -38,6 +38,8 @@ import {
   getBankTransferConfigSync,
   getDefaultCircuit,
   getSupportedCircuits,
+  getSupportedSendCurrencies,
+  SWIFT_SEND_FEE,
   type BankCircuit,
   type BankCurrency,
   type BankData,
@@ -66,6 +68,7 @@ export default function BankSend() {
 
   // Bank details form state
   const [iban, setIban] = useState<string>('')
+  const [bic, setBic] = useState<string>('')
   const [accountHolderName, setAccountHolderName] = useState<string>('')
   const [accountNumber, setAccountNumber] = useState<string>('')
   const [routingNumber, setRoutingNumber] = useState<string>('')
@@ -77,7 +80,7 @@ export default function BankSend() {
 
   // Validation
   const numAmount = amount
-  const validation = useBankTransferValidation({ amount: numAmount, currency })
+  const validation = useBankTransferValidation({ amount: numAmount, currency, circuit })
 
   const handleOrderHistory = () => {
     navigate(Pages.BankOrderHistory)
@@ -105,13 +108,13 @@ export default function BankSend() {
         }
 
       case 'swift':
-        if (!iban || !accountHolderName || !accountNumber) {
-          setError('Please enter your IBAN, account holder name, and account number')
+        if (!bic || !accountHolderName || !accountNumber) {
+          setError('Please enter your BIC/SWIFT code, account holder name, and account number')
           return null
         }
         return {
           circuit: 'swift',
-          destinationBankAddress: iban,
+          bic,
           accountHolderName,
           accountNumber,
         }
@@ -162,7 +165,7 @@ export default function BankSend() {
       // Check balance before doing anything
       if (balance < requiredSats) {
         setError(
-          `Insufficient balance. You need ~${prettyNumber(requiredSats)} sats but only have ${prettyNumber(balance)} sats`,
+          `Insufficient balance. You need ~${prettyNumber(fromSatoshis(requiredSats), 8)} BTC but only have ${prettyNumber(fromSatoshis(balance), 8)} BTC`,
         )
         return
       }
@@ -180,7 +183,7 @@ export default function BankSend() {
       // Register the withdrawal order with the backend
       const response = await createBankWithdraw({
         email: getUserEmailForBankTransfer(),
-        fromAmount: numAmount,
+        fromAmount: requiredSats,
         fromAsset: 'BTC-ARK',
         toAsset: currency,
         circuit,
@@ -263,13 +266,13 @@ export default function BankSend() {
         return (
           <>
             <FlexCol gap='0.5rem'>
-              <TextLabel>IBAN</TextLabel>
+              <TextLabel>BIC / SWIFT Code</TextLabel>
               <Shadow input>
                 <input
                   type='text'
-                  value={iban}
-                  onChange={(e) => setIban(e.target.value.toUpperCase())}
-                  placeholder='DE89 3704 0044 0532 0130 00'
+                  value={bic}
+                  onChange={(e) => setBic(e.target.value.toUpperCase())}
+                  placeholder='DEUTDEDB'
                   style={{
                     width: '100%',
                     background: 'transparent',
@@ -377,7 +380,7 @@ export default function BankSend() {
       case 'sepa':
         return Boolean(iban && accountHolderName)
       case 'swift':
-        return Boolean(iban && accountHolderName && accountNumber)
+        return Boolean(bic && accountHolderName && accountNumber)
       case 'us':
         return Boolean(accountNumber && routingNumber)
       default:
@@ -432,7 +435,7 @@ export default function BankSend() {
             {/* Currency Selection */}
             <FlexCol gap='0.5rem'>
               <TextLabel>Receive Currency</TextLabel>
-              <BankCurrencySelector selectedCurrency={currency} onSelect={setCurrency} />
+              <BankCurrencySelector selectedCurrency={currency} onSelect={setCurrency} currencies={getSupportedSendCurrencies()} />
             </FlexCol>
 
             {/* Transfer Method */}
@@ -440,6 +443,16 @@ export default function BankSend() {
               <TextLabel>Transfer Method</TextLabel>
               <BankCircuitSelector currency={currency} selectedCircuit={circuit} onSelect={setCircuit} />
             </FlexCol>
+
+            {/* SWIFT fee notice */}
+            {circuit === 'swift' ? (
+              <Info color='orange' title={`SWIFT Transfer Fee: ${SWIFT_SEND_FEE} ${currency}`}>
+                <TextSecondary>
+                  A flat fee of {SWIFT_SEND_FEE} {currency} applies to all outgoing SWIFT withdrawals and will be
+                  deducted from the received amount.
+                </TextSecondary>
+              </Info>
+            ) : null}
 
             {/* Bank Details Section - hidden when KYC email bypasses requirement */}
             {!skipBankDetails && (

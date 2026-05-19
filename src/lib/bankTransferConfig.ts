@@ -8,11 +8,14 @@
  * When ready to integrate with backend, replace fetchBankTransferConfig() implementation.
  */
 
-// Bank circuit types for different transfer methods
-export type BankCircuit = 'sepa' | 'swift' | 'us'
+import { FIATS, type FiatSymbol } from './fiatConfig'
 
-// Fiat currency type for bank transfers
-export type BankCurrency = 'EUR' | 'CHF' | 'USD'
+// Bank circuit types for different transfer methods
+export const BANK_CIRCUITS = ['sepa', 'swift', 'us'] as const
+export type BankCircuit = (typeof BANK_CIRCUITS)[number]
+
+// Re-export FiatSymbol as BankCurrency — FIATS in fiatConfig.ts is the single source of truth
+export type BankCurrency = FiatSymbol
 
 // Bank data interfaces for withdrawals
 export interface BankDataSepa {
@@ -23,7 +26,7 @@ export interface BankDataSepa {
 
 export interface BankDataSwift {
   circuit: 'swift'
-  destinationBankAddress: string // IBAN
+  bic: string // BIC/SWIFT code
   accountHolderName: string
   accountNumber: string
 }
@@ -41,8 +44,10 @@ export type BankData = BankDataSepa | BankDataSwift | BankDataUs
  * Structured to support future backend integration
  */
 export interface BankTransferConfig {
-  /** List of supported fiat currencies for bank transfers */
-  supportedCurrencies: BankCurrency[]
+  /** List of currencies supported for receiving (deposit) */
+  supportedReceiveCurrencies: BankCurrency[]
+  /** List of currencies supported for sending (withdrawal) */
+  supportedSendCurrencies: BankCurrency[]
   /** Minimum order value in the selected currency (e.g., 15 EUR) */
   minimumOrderValue: number
   /** Threshold above which KYC verification is required (e.g., 1000 EUR) */
@@ -62,25 +67,27 @@ export interface BankTransferConfig {
  * Will be replaced by backend response in future
  */
 const DEFAULT_CONFIG: BankTransferConfig = {
-  supportedCurrencies: ['EUR'],
+  // Receive (deposit): SEPA and SWIFT, EUR only
+  supportedReceiveCurrencies: [FIATS.EUR.symbol],
+  // Send (withdrawal): SWIFT for EUR/CHF/USD; SEPA for EUR; US Wire for USD
+  supportedSendCurrencies: [FIATS.EUR.symbol, FIATS.CHF.symbol, FIATS.USD.symbol],
   minimumOrderValue: 15,
   kycThreshold: 1000,
-  defaultCurrency: 'EUR',
+  defaultCurrency: FIATS.EUR.symbol,
   circuitsPerCurrency: {
     EUR: ['sepa', 'swift'],
-    CHF: ['sepa', 'swift'],
-    USD: ['swift', 'us'],
+    CHF: ['swift'],
+    USD: ['swift'],
   },
   circuitLabels: {
     sepa: 'SEPA Transfer',
     swift: 'SWIFT Transfer',
     us: 'US Wire Transfer',
   },
-  currencyLabels: {
-    EUR: 'Euro (EUR)',
-    CHF: 'Swiss Franc (CHF)',
-    USD: 'US Dollar (USD)',
-  },
+  // Derived from FIATS so names stay consistent with fiatConfig.ts
+  currencyLabels: Object.fromEntries(
+    Object.values(FIATS).map((f) => [f.symbol, `${f.name} (${f.symbol})`]),
+  ) as Record<BankCurrency, string>,
 }
 
 // Cached configuration
@@ -149,14 +156,42 @@ export const getDefaultCircuit = (currency: BankCurrency): BankCircuit => {
 }
 
 /**
+ * Get currencies supported for receiving (deposit)
+ */
+export const getSupportedReceiveCurrencies = (): BankCurrency[] => {
+  return getBankTransferConfigSync().supportedReceiveCurrencies
+}
+
+/**
+ * Get currencies supported for sending (withdrawal)
+ */
+export const getSupportedSendCurrencies = (): BankCurrency[] => {
+  return getBankTransferConfigSync().supportedSendCurrencies
+}
+
+/** Convenience constant for the default bank transfer currency */
+export const DEFAULT_BANK_CURRENCY: BankCurrency = DEFAULT_CONFIG.defaultCurrency
+
+/** Convenience constant for the default bank transfer circuit */
+export const DEFAULT_BANK_CIRCUIT: BankCircuit = DEFAULT_CONFIG.circuitsPerCurrency[DEFAULT_CONFIG.defaultCurrency][0]
+
+/** Fixed SWIFT fee charged to the sender on incoming (receive/deposit) transfers */
+export const SWIFT_RECEIVE_FEE = 30
+
+/** Fixed SWIFT fee charged on outgoing (send/withdrawal) transfers */
+export const SWIFT_SEND_FEE = 50
+
+/** Fixed minimum amount for SWIFT transfers (in selected currency) */
+export const SWIFT_MINIMUM_ORDER_VALUE = 100
+
+/**
  * Check if a currency is supported for bank transfers
  *
  * @param currency - The currency to check
  * @returns Boolean indicating if currency is supported
  */
 export const isCurrencySupported = (currency: string): currency is BankCurrency => {
-  const config = getBankTransferConfigSync()
-  return config.supportedCurrencies.includes(currency as BankCurrency)
+  return currency in FIATS
 }
 
 /**
@@ -165,9 +200,14 @@ export const isCurrencySupported = (currency: string): currency is BankCurrency 
  * @param amount - The amount to validate
  * @returns Boolean indicating if amount meets minimum
  */
-export const meetsMinimumAmount = (amount: number): boolean => {
+export const getMinimumOrderValue = (circuit?: BankCircuit): number => {
   const config = getBankTransferConfigSync()
-  return amount >= config.minimumOrderValue
+  if (circuit === 'swift') return SWIFT_MINIMUM_ORDER_VALUE
+  return config.minimumOrderValue
+}
+
+export const meetsMinimumAmount = (amount: number, circuit?: BankCircuit): boolean => {
+  return amount >= getMinimumOrderValue(circuit)
 }
 
 /**

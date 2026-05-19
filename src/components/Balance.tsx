@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import { prettyHide, prettyNumber } from '../lib/format'
+import { fromSatoshis, prettyHide, prettyNumber } from '../lib/format'
 import { CurrencyDisplay, Satoshis } from '../lib/types'
 import { FiatContext } from '../providers/fiat'
 import Text from './Text'
@@ -22,7 +22,7 @@ export default function Balance({ amount, centered = false, usdOnly = false }: B
   const fiatAmount = toFiat(amount)
 
   // Convert satoshis to BTC
-  const btcAmount = amount / Math.pow(10, ASSETS.BTC.precision)
+  const btcAmount = fromSatoshis(amount)
 
   const btcBalance = config.showBalance ? prettyNumber(btcAmount, ASSETS.BTC.precision) : prettyHide(btcAmount, '')
   const fiatBalance = config.showBalance ? prettyNumber(fiatAmount, 2) : prettyHide(fiatAmount, '')

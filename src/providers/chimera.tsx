@@ -1,4 +1,5 @@
 import { isTestEnvironment } from '../lib/appConfig'
+import { fromSatoshis } from '../lib/format'
 import { getKycApiUrl, fetchKycBankData } from '../lib/kyc'
 
 // Base URLs
@@ -185,7 +186,7 @@ export interface BankDepositResponse {
 // Bank Withdraw Request (Crypto → Fiat)
 interface BankWithdrawBasePayload {
   email: string
-  from_amount: number
+  from_amount: number // Amount in crypto 
   from_asset: string // Crypto asset (BTC)
   to_asset: string // Fiat currency (EUR, CHF, USD)
   destination_type: BankCircuit
@@ -199,7 +200,7 @@ type BankWithdrawSepaPayload = BankWithdrawBasePayload & {
 
 type BankWithdrawSwiftPayload = BankWithdrawBasePayload & {
   destination_type: 'swift'
-  destination_bank_address: string // IBAN
+  destination_bank_address: string // BIC/SWIFT code
   destination_bank_name: string // Account holder name
   destination_bank_account_number: string
 }
@@ -255,13 +256,14 @@ export const createBankDeposit = async (payload: BankDepositPayload): Promise<Ba
  */
 export const createBankWithdraw = async (params: {
   email: string
-  fromAmount: number
+  fromAmount: number  // sats (converted to BTC before sending to API)
   fromAsset: string
   toAsset: string
   circuit?: BankCircuit
   bankData?: BankData
 }): Promise<BankWithdrawResponse> => {
   const { email, fromAmount, fromAsset, toAsset, circuit, bankData } = params
+  const fromAmountBtc = fromSatoshis(fromAmount)
   const baseUrl = getBaseUrl()
 
   // When no bank data is provided (KYC email flow), fetch bank details from IDFlow
@@ -270,7 +272,7 @@ export const createBankWithdraw = async (params: {
 
     const basePayload = {
       email,
-      from_amount: fromAmount,
+      from_amount: fromAmountBtc,
       from_asset: fromAsset,
       to_asset: toAsset,
       destination_type: circuit,
@@ -283,14 +285,18 @@ export const createBankWithdraw = async (params: {
         destination_bank_account_number: kycBankData.accountNumber,
         destination_bank_routing_number: kycBankData.routingNumber,
       }
+    } else if (circuit === 'swift' && kycBankData?.iban && kycBankData?.accountHolderName) {
+      kycPayload = {
+        ...basePayload,
+        destination_bank_address: kycBankData.iban,
+        destination_bank_name: kycBankData.accountHolderName,
+        ...(kycBankData.accountNumber ? { destination_bank_account_number: kycBankData.accountNumber } : {}),
+      }
     } else if (kycBankData?.iban && kycBankData?.accountHolderName) {
       kycPayload = {
         ...basePayload,
         destination_bank_address: kycBankData.iban,
         destination_bank_name: kycBankData.accountHolderName,
-        ...(circuit === 'swift' && kycBankData.accountNumber
-          ? { destination_bank_account_number: kycBankData.accountNumber }
-          : {}),
       }
     } else {
       // Fallback: send what we have, let API decide
@@ -319,7 +325,7 @@ export const createBankWithdraw = async (params: {
       }
       payload = {
         email,
-        from_amount: fromAmount,
+        from_amount: fromAmountBtc,
         from_asset: fromAsset,
         to_asset: toAsset,
         destination_type: 'sepa',
@@ -329,16 +335,16 @@ export const createBankWithdraw = async (params: {
       break
 
     case 'swift':
-      if (!bankData.destinationBankAddress || !bankData.accountHolderName || !bankData.accountNumber) {
-        throw new Error('SWIFT transfer requires IBAN, account holder name, and account number')
+      if (!bankData.bic || !bankData.accountHolderName || !bankData.accountNumber) {
+        throw new Error('SWIFT transfer requires BIC/SWIFT code, account holder name, and account number')
       }
       payload = {
         email,
-        from_amount: fromAmount,
+        from_amount: fromAmountBtc,
         from_asset: fromAsset,
         to_asset: toAsset,
         destination_type: 'swift',
-        destination_bank_address: bankData.destinationBankAddress,
+        destination_bank_address: bankData.bic,
         destination_bank_name: bankData.accountHolderName,
         destination_bank_account_number: bankData.accountNumber,
       }
@@ -350,7 +356,7 @@ export const createBankWithdraw = async (params: {
       }
       payload = {
         email,
-        from_amount: fromAmount,
+        from_amount: fromAmountBtc,
         from_asset: fromAsset,
         to_asset: toAsset,
         destination_type: 'us',

@@ -2,7 +2,7 @@ import { useContext, useState } from 'react'
 import { WalletContext } from '../providers/wallet'
 import Text, { TextLabel } from './Text'
 import { Fiats, Tx } from '../lib/types'
-import { prettyDate, prettyHide } from '../lib/format'
+import { fromSatoshis, prettyDate, prettyHide } from '../lib/format'
 import { FlowContext } from '../providers/flow'
 import { NavigationContext, Pages } from '../providers/navigation'
 import { ConfigContext } from '../providers/config'
@@ -28,7 +28,7 @@ const TransactionLine = ({ tx, onClick }: { tx: Tx; onClick: () => void }) => {
   const boardingExitDelay = Number(aspInfo?.boardingExitDelay || 0)
 
   // Convert satoshis to BTC
-  const btcAmount = tx.amount / Math.pow(10, ASSETS.BTC.precision)
+  const btcAmount = fromSatoshis(tx.amount)
 
   const prefix = tx.type === 'sent' ? '-' : '+'
 

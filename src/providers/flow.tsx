@@ -3,7 +3,7 @@ import { ReactNode, createContext, useState } from 'react'
 import { Tx } from '../lib/types'
 import type { TransferMethod } from '../lib/transferMethods'
 import { ChimeraOrder } from './chimera'
-import type { BankCircuit, BankCurrency, BankData } from '../lib/bankTransferConfig'
+import { DEFAULT_BANK_CURRENCY, DEFAULT_BANK_CIRCUIT, type BankCircuit, type BankCurrency, type BankData } from '../lib/bankTransferConfig'
 export type { TransferMethod } from '../lib/transferMethods'
 
 export interface InitInfo {
@@ -133,14 +133,14 @@ export const emptySendInfo: SendInfo = {
 }
 
 export const emptyBankRecvInfo: BankRecvInfo = {
-  currency: 'EUR',
-  circuit: 'sepa',
+  currency: DEFAULT_BANK_CURRENCY,
+  circuit: DEFAULT_BANK_CIRCUIT,
   amount: 0,
 }
 
 export const emptyBankSendInfo: BankSendInfo = {
-  currency: 'EUR',
-  circuit: 'sepa',
+  currency: DEFAULT_BANK_CURRENCY,
+  circuit: DEFAULT_BANK_CIRCUIT,
   amount: 0,
 }
 

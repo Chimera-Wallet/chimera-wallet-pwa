@@ -272,13 +272,16 @@ export function BankCircuitSelector({ currency, selectedCircuit, onSelect }: Ban
 interface BankCurrencySelectorProps {
   selectedCurrency: BankCurrency
   onSelect: (currency: BankCurrency) => void
+  /** Explicit list of currencies to show. Defaults to all supported currencies. */
+  currencies?: BankCurrency[]
 }
 
-export function BankCurrencySelector({ selectedCurrency, onSelect }: BankCurrencySelectorProps) {
+export function BankCurrencySelector({ selectedCurrency, onSelect, currencies }: BankCurrencySelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
   const config = getBankTransferConfigSync()
+  const availableCurrencies = currencies ?? config.supportedReceiveCurrencies
 
-  if (config.supportedCurrencies.length <= 1) {
+  if (availableCurrencies.length <= 1) {
     // Only one option, no need for selector
     return (
       <Shadow input>
@@ -299,7 +302,7 @@ export function BankCurrencySelector({ selectedCurrency, onSelect }: BankCurrenc
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         onSelect={(id) => onSelect(id as BankCurrency)}
-        options={config.supportedCurrencies.map((currency) => ({
+        options={availableCurrencies.map((currency) => ({
           id: currency,
           label: config.currencyLabels[currency],
         }))}

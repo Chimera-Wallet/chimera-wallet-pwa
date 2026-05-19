@@ -11,9 +11,12 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   getBankTransferConfig,
   getBankTransferConfigSync,
+  getMinimumOrderValue,
   meetsMinimumAmount,
   requiresKyc,
+  DEFAULT_BANK_CURRENCY,
   type BankTransferConfig,
+  type BankCircuit,
   type BankCurrency,
 } from '../lib/bankTransferConfig'
 import { getKycEmail, type KycStatus } from '../lib/kyc'
@@ -42,6 +45,7 @@ export interface BankTransferValidation {
 interface UseBankTransferValidationParams {
   amount: number
   currency?: BankCurrency
+  circuit?: BankCircuit
 }
 
 /**
@@ -52,7 +56,8 @@ interface UseBankTransferValidationParams {
  */
 export function useBankTransferValidation({
   amount,
-  currency = 'EUR',
+  currency = DEFAULT_BANK_CURRENCY,
+  circuit,
 }: UseBankTransferValidationParams): BankTransferValidation {
   const [config, setConfig] = useState<BankTransferConfig>(getBankTransferConfigSync())
   // Refresh counter triggers re-read of email from localStorage
@@ -76,14 +81,15 @@ export function useBankTransferValidation({
   const kycStatus: KycStatus = kycVerified ? 'confirmed' : 'not_started'
 
   // Calculate validation state
-  const isValidAmount = amount > 0 && meetsMinimumAmount(amount)
+  const minimumAmount = getMinimumOrderValue(circuit)
+  const isValidAmount = amount > 0 && meetsMinimumAmount(amount, circuit)
   const kycRequired = requiresKyc(amount)
   const canProceed = isValidAmount && (!kycRequired || kycVerified)
 
   // Generate error message (user-facing messages unchanged)
   let errorMessage: string | null = null
   if (amount > 0 && !isValidAmount) {
-    errorMessage = `Minimum amount is ${config.minimumOrderValue} ${currency}`
+    errorMessage = `Minimum amount is ${minimumAmount} ${currency}`
   } else if (kycRequired && !kycVerified) {
     errorMessage = `Amounts over ${config.kycThreshold} ${currency} require KYC verification.`
   }
@@ -95,7 +101,7 @@ export function useBankTransferValidation({
     kycVerified,
     canProceed,
     errorMessage,
-    minimumAmount: config.minimumOrderValue,
+    minimumAmount,
     kycThreshold: config.kycThreshold,
     refreshKycStatus,
   }

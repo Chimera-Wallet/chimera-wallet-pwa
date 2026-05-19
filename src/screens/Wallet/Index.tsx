@@ -21,6 +21,7 @@ import { InfoBox } from '../../components/AlertBox'
 import { psaMessage } from '../../lib/constants'
 import { AnnouncementContext } from '../../providers/announcements'
 import { WalletStaggerContainer, WalletStaggerChild } from '../../components/WalletLoadIn'
+import { fromSatoshis } from '../../lib/format'
 import { ASSETS, type AssetSymbol } from '../../lib/assets'
 import Header from '../../components/Header'
 import TransactionsIcon from '../../icons/Transactions'
@@ -144,8 +145,7 @@ export default function Wallet() {
   const getAssetBalance = (symbol: AssetSymbol): number => {
     // Currently all balance is BTC, so return the wallet balance only for BTC
     if (symbol === ASSETS.BTC.symbol) {
-      const divisor = Math.pow(10, ASSETS.BTC.precision)
-      return balance / divisor
+      return fromSatoshis(balance)
     }
     // Other assets return 0 for now (would come from multi-asset wallet support)
     return 0
@@ -243,7 +243,7 @@ export default function Wallet() {
               )}
               <WalletStaggerChild animate={shouldStagger}>
                 <AssetList
-                  balances={[{ symbol: ASSETS.BTC.symbol, balance: balance / Math.pow(10, ASSETS.BTC.precision) }]}
+                  balances={[{ symbol: ASSETS.BTC.symbol, balance: fromSatoshis(balance) }]}
                   onAssetClick={handleAssetClick}
                 />
               </WalletStaggerChild>

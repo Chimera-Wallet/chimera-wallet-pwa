@@ -1,5 +1,5 @@
 import { Tx } from './types'
-import { prettyDate, prettyNumber } from './format'
+import { fromSatoshis, prettyDate, prettyNumber } from './format'
 import { ASSETS } from './assets'
 
 export type StatementData = {
@@ -12,7 +12,7 @@ export type StatementData = {
 }
 
 export const formatTransactionForStatement = (tx: Tx): StatementData => {
-  const btcAmount = tx.amount / Math.pow(10, ASSETS.BTC.precision)
+  const btcAmount = fromSatoshis(tx.amount)
   const type = tx.type === 'sent' ? 'Withdrawal' : 'Deposit'
   const amount = tx.type === 'sent' ? `-${btcAmount}` : `${btcAmount}`
 

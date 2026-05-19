@@ -49,6 +49,8 @@ import { useBankTransferValidation } from '../../../hooks/useBankTransferValidat
 import {
   getBankTransferConfigSync,
   getDefaultCircuit,
+  getSupportedReceiveCurrencies,
+  SWIFT_RECEIVE_FEE,
   type BankCircuit,
   type BankCurrency,
 } from '../../../lib/bankTransferConfig'
@@ -78,7 +80,7 @@ export default function BankReceive() {
 
   // Validation
   const numAmount = amount
-  const validation = useBankTransferValidation({ amount: numAmount, currency })
+  const validation = useBankTransferValidation({ amount: numAmount, currency, circuit })
 
   const handleOrderHistory = () => {
     navigate(Pages.BankOrderHistory)
@@ -279,8 +281,24 @@ export default function BankReceive() {
             {/* Currency Selection */}
             <FlexCol gap='0.5rem'>
               <TextLabel>Currency</TextLabel>
-              <BankCurrencySelector selectedCurrency={currency} onSelect={setCurrency} />
+              <BankCurrencySelector selectedCurrency={currency} onSelect={setCurrency} currencies={getSupportedReceiveCurrencies()} />
             </FlexCol>
+
+            {/* Transfer Method */}
+            <FlexCol gap='0.5rem'>
+              <TextLabel>Transfer Method</TextLabel>
+              <BankCircuitSelector currency={currency} selectedCircuit={circuit} onSelect={setCircuit} />
+            </FlexCol>
+
+            {/* SWIFT fee notice */}
+            {circuit === 'swift' ? (
+              <Info color='orange' title={`SWIFT Transfer Fee: ${SWIFT_RECEIVE_FEE} ${currency}`}>
+                <TextSecondary>
+                  A flat fee of {SWIFT_RECEIVE_FEE} {currency} applies to all incoming SWIFT transfers and will be
+                  deducted from the received amount.
+                </TextSecondary>
+              </Info>
+            ) : null}
 
             {/* Bank Transfer Terms & Conditions */}
             <InfoContainer>
