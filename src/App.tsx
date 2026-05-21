@@ -27,7 +27,7 @@ import { SettingsOptions } from './lib/types'
 import { AspContext } from './providers/asp'
 import { hapticLight } from './lib/haptics'
 import PageTransition from './components/PageTransition'
-import SettingsIcon from './icons/Settings'
+import { SettingsIconLight } from './icons/Settings'
 import Loading from './components/Loading'
 import { pwaIsInstalled } from './lib/pwa'
 import FlexCol from './components/FlexCol'
@@ -328,34 +328,7 @@ export default function App() {
                 </Focusable>
               </IonTabButton>
               <IonTabButton tab={Tabs.Wallet} onClick={handleWallet} selected={tab === Tabs.Wallet}>
-                <Focusable fit>
-                  <FlexCol centered gap='6px' padding='5px' testId='tab-wallet'>
-                    <div
-                      style={{
-                        width: '56px',
-                        height: '56px',
-                        borderRadius: '50%',
-                        overflow: 'hidden',
-                        border: '3px solid var(--ion-tabbar-background-color)',
-                        backgroundColor: 'var(--ion-tabbar-background-color)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <img
-                        src='/arkade-icon.svg'
-                        alt='Wallet'
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          opacity: tab === Tabs.Wallet ? 1 : 0.5,
-                          transition: 'opacity 0.2s ease',
-                        }}
-                      />
-                    </div>
-                  </FlexCol>
-                </Focusable>
+                {/* Transparent placeholder — visual is rendered as a fixed overlay above the tab bar */}
               </IonTabButton>
               <IonTabButton tab={Tabs.Apps} onClick={handleApps} selected={tab === Tabs.Apps}>
                 <Focusable fit>
@@ -371,7 +344,7 @@ export default function App() {
                 <Focusable fit>
                   <FlexCol centered gap='6px' padding='5px' testId='tab-settings'>
                     <AnimatedTabIcon animating={animatingTab === 'settings'}>
-                      <SettingsIcon />
+                      <SettingsIconLight />
                     </AnimatedTabIcon>
                     Settings
                   </FlexCol>
@@ -380,7 +353,44 @@ export default function App() {
             </IonTabBar>
           </IonTabs>
         )}
-      </IonPage>      {/* Verification is mounted at IonPage level so it's never unmounted by tab/page changes */}
+      </IonPage>      {/* Wallet floating icon — fixed overlay so it appears above tab bar & page content */}
+      {tab !== Tabs.None && (
+        <div
+          onClick={handleWallet}
+          style={{
+            position: 'fixed',
+            bottom: 'calc(20px + env(safe-area-inset-bottom))',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 200,
+            cursor: 'pointer',
+            width: '70px',
+            height: '70px',
+            borderRadius: '50%',
+            border: `3px solid ${tab === Tabs.Wallet ? 'var(--blue-primary)' : 'var(--ion-tabbar-background-color)'}`,
+            backgroundColor: 'var(--ion-tabbar-background-color)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: tab === Tabs.Wallet ? '0 0 18px 4px rgba(31, 59, 219, 0.55)' : 'none',
+            transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
+            overflow: 'hidden',
+          }}
+          aria-label='Wallet'
+        >
+          <img
+            src='/arkade-icon.svg'
+            alt='Wallet'
+            style={{
+              width: '100%',
+              height: '100%',
+              opacity: tab === Tabs.Wallet ? 1 : 0.5,
+              transition: 'opacity 0.2s ease',
+            }}
+          />
+        </div>
+      )}
+      {/* Verification is mounted at IonPage level so it's never unmounted by tab/page changes */}
       {page !== Pages.Loading && (
         <div
           style={{

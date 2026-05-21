@@ -90,6 +90,7 @@ interface FlowContextProps {
   txInfo: TxInfo
   bankRecvInfo: BankRecvInfo
   bankSendInfo: BankSendInfo
+  bankStatusOrder: ChimeraOrder | undefined
   currentBankOrderType?: BankOrderType
   setInitInfo: (arg0: InitInfo) => void
   setKycAuthParams: (arg0: KycAuthParams | undefined) => void
@@ -102,6 +103,7 @@ interface FlowContextProps {
   setTxInfo: (arg0: TxInfo) => void
   setBankRecvInfo: (arg0: BankRecvInfo) => void
   setBankSendInfo: (arg0: BankSendInfo) => void
+  setBankStatusOrder: (order: ChimeraOrder | undefined) => void
   setCurrentBankOrderType: (type: BankOrderType | undefined) => void
 }
 
@@ -156,6 +158,7 @@ export const FlowContext = createContext<FlowContextProps>({
   txInfo: undefined,
   bankRecvInfo: emptyBankRecvInfo,
   bankSendInfo: emptyBankSendInfo,
+  bankStatusOrder: undefined,
   currentBankOrderType: undefined,
   setInitInfo: () => {},
   setKycAuthParams: () => {},
@@ -168,6 +171,7 @@ export const FlowContext = createContext<FlowContextProps>({
   setTxInfo: () => {},
   setBankRecvInfo: () => {},
   setBankSendInfo: () => {},
+  setBankStatusOrder: () => {},
   setCurrentBankOrderType: () => {},
 })
 
@@ -183,6 +187,7 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
   const [txInfo, setTxInfo] = useState<TxInfo>()
   const [bankRecvInfo, setBankRecvInfo] = useState<BankRecvInfo>(emptyBankRecvInfo)
   const [bankSendInfo, setBankSendInfo] = useState<BankSendInfo>(emptyBankSendInfo)
+  const [bankStatusOrder, setBankStatusOrder] = useState<ChimeraOrder | undefined>()
   const [currentBankOrderType, setCurrentBankOrderType] = useState<BankOrderType | undefined>()
 
   return (
@@ -199,6 +204,7 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
         txInfo,
         bankRecvInfo,
         bankSendInfo,
+        bankStatusOrder,
         currentBankOrderType,
         setInitInfo,
         setKycAuthParams,
@@ -211,6 +217,7 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
         setTxInfo,
         setBankRecvInfo,
         setBankSendInfo,
+        setBankStatusOrder,
         setCurrentBankOrderType,
       }}
     >

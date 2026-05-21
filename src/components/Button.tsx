@@ -1,40 +1,20 @@
 import { IonButton } from '@ionic/react'
 import { ReactElement, useCallback, useState } from 'react'
-import FlexRow from './FlexRow'
-import ArrowIcon from '../icons/Arrow'
 import { hapticTap } from '../lib/haptics'
 
 interface ButtonProps {
   clear?: boolean
   disabled?: boolean
-  fancy?: boolean
-  fullWidth?: boolean
   icon?: ReactElement
-  iconPosition?: 'left' | 'right'
   label: string
   loading?: boolean
-  main?: boolean
   onClick: (event: any) => void
   outline?: boolean
   red?: boolean
   secondary?: boolean
 }
 
-export default function Button({
-  clear,
-  disabled,
-  fancy,
-  fullWidth,
-  icon,
-  iconPosition = 'left',
-  label,
-  loading,
-  main,
-  onClick,
-  outline,
-  red,
-  secondary,
-}: ButtonProps) {
+export default function Button({ clear, disabled, icon, label, loading, onClick, outline, red, secondary }: ButtonProps) {
   const [pressed, setPressed] = useState(false)
 
   const variant = red ? 'red' : secondary ? 'secondary' : clear ? 'clear' : outline ? 'outline' : 'primary'
@@ -61,7 +41,7 @@ export default function Button({
     <IonButton
       className={className}
       disabled={disabled}
-      expand={fullWidth ? 'block' : undefined}
+      expand='block'
       fill={clear ? 'clear' : outline ? 'outline' : 'solid'}
       onClick={handleClick}
       onMouseDown={handlePressStart}
@@ -73,29 +53,34 @@ export default function Button({
       style={{ margin: '4px 0' }}
     >
       {loading ? (
-        <FlexRow centered>
+        <ButtonCentered>
           <div className='spinner' />
-        </FlexRow>
-      ) : fancy ? (
-        <FlexRow between>
-          <FlexRow>
-            {icon}
-            <Label label={label} />
-          </FlexRow>
-          <ArrowIcon />
-        </FlexRow>
-      ) : iconPosition === 'right' ? (
-        <FlexRow main={main} between>
-          <Label label={label} />
-          {icon}
-        </FlexRow>
+        </ButtonCentered>
+      ) : icon ? (
+        <ButtonWithIcon icon={icon} label={label} />
       ) : (
-        <FlexRow main={main} centered>
-          {icon}
+        <ButtonCentered>
           <Label label={label} />
-        </FlexRow>
+        </ButtonCentered>
       )}
     </IonButton>
+  )
+}
+
+function ButtonCentered({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', gap: '0.5rem' }}>
+      {children}
+    </div>
+  )
+}
+
+function ButtonWithIcon({ icon, label }: { icon: ReactElement; label: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', width: '100%', gap: '0.5rem' }}>
+      <span style={{ opacity: 0.5, display: 'flex', alignItems: 'center' }}>{icon}</span>
+      <Label label={label} />
+    </div>
   )
 }
 

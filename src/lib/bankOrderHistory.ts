@@ -3,6 +3,7 @@
  */
 
 import { ChimeraOrder } from '../providers/chimera'
+import { type BankCircuit } from './bankTransferConfig'
 
 // Bank Order Type
 export type BankOrderType = 'receive' | 'send'
@@ -12,6 +13,7 @@ export interface BankOrderHistoryEntry {
   order: ChimeraOrder
   type: BankOrderType
   timestamp: number
+  circuit?: BankCircuit
 }
 
 // Storage key for bank order history
@@ -39,12 +41,13 @@ export function saveBankOrderHistory(entries: BankOrderHistoryEntry[]): void {
 /**
  * Add a new order to history
  */
-export function addOrderToHistory(order: ChimeraOrder, type: BankOrderType): BankOrderHistoryEntry {
+export function addOrderToHistory(order: ChimeraOrder, type: BankOrderType, circuit?: BankCircuit): BankOrderHistoryEntry {
   const entries = getBankOrderHistory()
   const newEntry: BankOrderHistoryEntry = {
     order,
     type,
     timestamp: Date.now(),
+    circuit,
   }
   // Add to beginning of array (most recent first)
   entries.unshift(newEntry)

@@ -9,7 +9,7 @@ const DESCRIPTION =
 
 const TELEGRAM_URL = 'https://t.me/Chimera_Community'
 
-const FONT = "'Titillium Web', 'Geist', sans-serif"
+const FONT = "'Titillium Web', sans-serif"
 
 interface CountdownParts {
   days: number
@@ -209,8 +209,6 @@ export default function StakingBanner({ variant }: StakingBannerProps) {
           <CountdownDisplay parts={parts} />
         </div>
         <Button
-          main
-          fullWidth
           label='Join The Community'
           onClick={() => window.open(TELEGRAM_URL, '_blank', 'noopener,noreferrer')}
         />

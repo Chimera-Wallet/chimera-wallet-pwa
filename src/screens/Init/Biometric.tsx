@@ -53,7 +53,9 @@ export default function InitBiometric() {
           <CenterScreen>
             <OnboardStaggerContainer centered>
               <OnboardStaggerChild>
-                <LockIcon big />
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <LockIcon big />
+                </div>
               </OnboardStaggerChild>
               <OnboardStaggerChild>
                 <FlexCol gap='1rem'>

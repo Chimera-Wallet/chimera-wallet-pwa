@@ -250,7 +250,7 @@ export default function AppAddressBook() {
 
             {/* Bottom button */}
             {!selectionMode && (
-              <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}>
+              <div style={{ marginTop: '1rem' }}>
                 <Button
                   onClick={handleAddNew}
                   label={currentTab === 'myaccounts' ? 'Add New Account' : 'Add New Contact'}

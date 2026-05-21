@@ -10,7 +10,7 @@ import Content from '../../components/Content'
 import FlexCol from '../../components/FlexCol'
 import Header from '../../components/Header'
 import Padded from '../../components/Padded'
-import Text, { TextSecondary } from '../../components/Text'
+import Text, { TextLabel, TextSecondary } from '../../components/Text'
 import Button from '../../components/Button'
 import ButtonsOnBottom from '../../components/ButtonsOnBottom'
 import Shadow from '../../components/Shadow'
@@ -19,26 +19,28 @@ import ErrorMessage from '../../components/Error'
 import Info from '../../components/Info'
 import Table, { TableData } from '../../components/Table'
 import CheckMarkIcon from '../../icons/CheckMark'
-import { SepaDataView, SwiftDataView, TransferReferenceBox } from '../../components/BankDetails'
+import { SepaDataView, SwiftDataView, TransferReferenceBox, BankCircuitSelector } from '../../components/BankDetails'
 import { NavigationContext, Pages } from '../../providers/navigation'
 import { FlowContext } from '../../providers/flow'
 import { getOrderStatus, ChimeraOrder } from '../../providers/chimera'
 import { prettyDate } from '../../lib/format'
+import { type BankCircuit } from '../../lib/bankTransferConfig'
 
 // Polling interval in milliseconds
 const POLL_INTERVAL = 30000
 
 export default function BankOrderStatus() {
   const { navigate, goBack } = useContext(NavigationContext)
-  const { bankRecvInfo, bankSendInfo, currentBankOrderType } = useContext(FlowContext)
+  const { bankRecvInfo, bankSendInfo, bankStatusOrder, currentBankOrderType } = useContext(FlowContext)
 
-  // Determine which order we're tracking based on the current order type
+  // bankStatusOrder is set when coming from history; fall back to the active flow order
   const initialOrder =
-    currentBankOrderType === 'receive'
+    bankStatusOrder ??
+    (currentBankOrderType === 'receive'
       ? bankRecvInfo.order
       : currentBankOrderType === 'send'
         ? bankSendInfo.order
-        : (bankRecvInfo.order ?? bankSendInfo.order) // Fallback to any available order
+        : (bankRecvInfo.order ?? bankSendInfo.order))
 
   const [loading, setLoading] = useState(!initialOrder)
   const [error, setError] = useState('')
@@ -163,6 +165,17 @@ export default function BankOrderStatus() {
   const hasSwiftDetails = Boolean(order.deposit_swift_address)
   const hasBankDetails = hasSepaDetails || hasSwiftDetails
 
+  // Active circuit state: default to what the user originally selected, fall back to whatever is available
+  const defaultCircuit: BankCircuit =
+    bankRecvInfo.circuit === 'swift' && hasSwiftDetails
+      ? 'swift'
+      : bankRecvInfo.circuit === 'sepa' && hasSepaDetails
+        ? 'sepa'
+        : hasSepaDetails
+          ? 'sepa'
+          : 'swift'
+  const [activeCircuit, setActiveCircuit] = useState<BankCircuit>(defaultCircuit)
+
   return (
     <>
       <Header text='Order Status' back={goBack} />
@@ -223,8 +236,20 @@ export default function BankOrderStatus() {
                 {/* Transfer Reference */}
                 {order.transfer_code ? <TransferReferenceBox reference={order.transfer_code} /> : null}
 
+                {/* Circuit switcher when both are available */}
+                {hasSepaDetails && hasSwiftDetails ? (
+                  <FlexCol gap='0.5rem'>
+                    <TextLabel>Transfer Method</TextLabel>
+                    <BankCircuitSelector
+                      currency={bankRecvInfo.currency}
+                      selectedCircuit={activeCircuit}
+                      onSelect={setActiveCircuit}
+                    />
+                  </FlexCol>
+                ) : null}
+
                 {/* SEPA Details */}
-                {hasSepaDetails ? (
+                {activeCircuit === 'sepa' && hasSepaDetails ? (
                   <Shadow fat>
                     <FlexCol gap='0.5rem'>
                       <Text bold>SEPA Bank Details</Text>
@@ -241,7 +266,7 @@ export default function BankOrderStatus() {
                 ) : null}
 
                 {/* SWIFT Details */}
-                {hasSwiftDetails && !hasSepaDetails ? (
+                {activeCircuit === 'swift' && hasSwiftDetails ? (
                   <Shadow fat>
                     <FlexCol gap='0.5rem'>
                       <Text bold>SWIFT Bank Details</Text>

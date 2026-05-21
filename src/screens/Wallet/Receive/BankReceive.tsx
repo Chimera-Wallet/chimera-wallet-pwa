@@ -5,7 +5,7 @@
  * Shows bank details (SEPA/SWIFT) where user should send their fiat.
  */
 
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import Content from '../../../components/Content'
 import FlexCol from '../../../components/FlexCol'
 import Header from '../../../components/Header'
@@ -70,6 +70,7 @@ export default function BankReceive() {
   // Form state
   const [currency, setCurrency] = useState<BankCurrency>(bankRecvInfo.currency || bankConfig.defaultCurrency)
   const [circuit, setCircuit] = useState<BankCircuit>(bankRecvInfo.circuit || getDefaultCircuit(currency))
+  const isCurrencyFirstRender = useRef(true)
   const [amount, setAmount] = useState<number>(bankRecvInfo.amount || 0)
 
   // API state
@@ -101,8 +102,12 @@ export default function BankReceive() {
     loadAddress()
   }, [svcWallet])
 
-  // Update circuit when currency changes
+  // Update circuit when currency changes (skip on mount to preserve restored circuit)
   useEffect(() => {
+    if (isCurrencyFirstRender.current) {
+      isCurrencyFirstRender.current = false
+      return
+    }
     setCircuit(getDefaultCircuit(currency))
   }, [currency])
 
@@ -150,7 +155,7 @@ export default function BankReceive() {
         })
         // Track this as the current order and add to history
         setCurrentBankOrderType('receive')
-        addOrderToHistory(response.order, 'receive')
+        addOrderToHistory(response.order, 'receive', circuit)
       } else {
         setError('Failed to create order - no order returned')
       }

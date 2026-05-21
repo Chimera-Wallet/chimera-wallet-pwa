@@ -21,7 +21,7 @@ import { getBankOrderHistory, BankOrderHistoryEntry, type BankOrderType } from '
 
 export default function BankOrderHistory() {
   const { navigate, goBack } = useContext(NavigationContext)
-  const { bankRecvInfo, bankSendInfo, setCurrentBankOrderType, setBankRecvInfo, setBankSendInfo } =
+  const { bankRecvInfo, bankSendInfo, setCurrentBankOrderType, setBankRecvInfo, setBankStatusOrder } =
     useContext(FlowContext)
 
   // Load order history from localStorage
@@ -36,12 +36,12 @@ export default function BankOrderHistory() {
     const historyEntry = orderHistory.find((h) => h.order.id === orderId)
     if (!historyEntry) return
 
-    // Set the appropriate order in context
+    // Store the order in the dedicated status-view field (not bankRecvInfo) so
+    // BankReceive is not affected when the user navigates back to it.
+    setBankStatusOrder(historyEntry.order)
     setCurrentBankOrderType(orderType)
-    if (orderType === 'receive') {
-      setBankRecvInfo({ ...bankRecvInfo, order: historyEntry.order })
-    } else {
-      setBankSendInfo({ ...bankSendInfo, order: historyEntry.order })
+    if (orderType === 'receive' && historyEntry.circuit) {
+      setBankRecvInfo({ ...bankRecvInfo, circuit: historyEntry.circuit })
     }
 
     navigate(Pages.BankOrderStatus)
