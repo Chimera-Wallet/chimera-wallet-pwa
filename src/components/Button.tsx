@@ -77,9 +77,9 @@ function ButtonCentered({ children }: { children: React.ReactNode }) {
 
 function ButtonWithIcon({ icon, label }: { icon: ReactElement; label: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', width: '100%', gap: '0.5rem' }}>
-      <span style={{ opacity: 0.5, display: 'flex', alignItems: 'center' }}>{icon}</span>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '0.5rem' }}>
       <Label label={label} />
+      <span style={{ opacity: 0.5, display: 'flex', alignItems: 'center' }}>{icon}</span>
     </div>
   )
 }

@@ -9,6 +9,7 @@ import Padded from '../../../components/Padded'
 import Text from '../../../components/Text'
 import Shadow from '../../../components/Shadow'
 import Button from '../../../components/Button'
+import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import Focusable from '../../../components/Focusable'
 import AddIcon from '../../../icons/Add'
 import TabSelector from './TabSelector'
@@ -198,68 +199,64 @@ export default function AppAddressBook() {
       />
       <Content>
         <Padded>
-          <FlexCol between>
-            <FlexCol gap='1rem'>
-              {/* Tab selector */}
-              <TabSelector
-                options={[
-                  { value: 'myaccounts', label: 'My Accounts' },
-                  { value: 'contacts', label: 'Contacts' },
-                ]}
-                selected={currentTab}
-                onChange={(value) => setCurrentTab(value as TabType)}
-              />
+          <FlexCol gap='1rem'>
+            {/* Tab selector */}
+            <TabSelector
+              options={[
+                { value: 'myaccounts', label: 'My Accounts' },
+                { value: 'contacts', label: 'Contacts' },
+              ]}
+              selected={currentTab}
+              onChange={(value) => setCurrentTab(value as TabType)}
+            />
 
-              {/* Content based on selected tab */}
-              {currentTab === 'myaccounts' && (
-                <FlexCol gap='0.5rem'>
-                  {myAccounts.length === 0 ? (
-                    <EmptyState message='No saved accounts yet. Add your addresses to easily access them later.' />
-                  ) : (
-                    myAccounts.map((entry) => (
-                      <AddressEntry
-                        key={entry.id}
-                        entry={entry}
-                        onDelete={handleDeleteAddress}
-                        onSelect={handleSelectAddress}
-                        selectionMode={selectionMode}
-                      />
-                    ))
-                  )}
-                </FlexCol>
-              )}
+            {/* Content based on selected tab */}
+            {currentTab === 'myaccounts' && (
+              <FlexCol gap='0.5rem'>
+                {myAccounts.length === 0 ? (
+                  <EmptyState message='No saved accounts yet. Add your addresses to easily access them later.' />
+                ) : (
+                  myAccounts.map((entry) => (
+                    <AddressEntry
+                      key={entry.id}
+                      entry={entry}
+                      onDelete={handleDeleteAddress}
+                      onSelect={handleSelectAddress}
+                      selectionMode={selectionMode}
+                    />
+                  ))
+                )}
+              </FlexCol>
+            )}
 
-              {currentTab === 'contacts' && (
-                <FlexCol gap='0.5rem'>
-                  {contacts.length === 0 ? (
-                    <EmptyState message='No contacts yet. Add contact addresses to send funds quickly.' />
-                  ) : (
-                    contacts.map((name) => (
-                      <ContactEntry
-                        key={name}
-                        name={name}
-                        addressCount={getContactAddressCount(name)}
-                        onClick={() => handleViewContact(name)}
-                        onDelete={() => handleDeleteContact(name)}
-                      />
-                    ))
-                  )}
-                </FlexCol>
-              )}
-            </FlexCol>
-
-            {/* Bottom button */}
-            {!selectionMode && (
-              <div style={{ marginTop: '1rem' }}>
-                <Button
-                  onClick={handleAddNew}
-                  label={currentTab === 'myaccounts' ? 'Add New Account' : 'Add New Contact'}
-                />
-              </div>
+            {currentTab === 'contacts' && (
+              <FlexCol gap='0.5rem'>
+                {contacts.length === 0 ? (
+                  <EmptyState message='No contacts yet. Add contact addresses to send funds quickly.' />
+                ) : (
+                  contacts.map((name) => (
+                    <ContactEntry
+                      key={name}
+                      name={name}
+                      addressCount={getContactAddressCount(name)}
+                      onClick={() => handleViewContact(name)}
+                      onDelete={() => handleDeleteContact(name)}
+                    />
+                  ))
+                )}
+              </FlexCol>
             )}
           </FlexCol>
         </Padded>
       </Content>
+      {!selectionMode && (
+        <ButtonsOnBottom>
+          <Button
+            onClick={handleAddNew}
+            label={currentTab === 'myaccounts' ? 'Add New Account' : 'Add New Contact'}
+          />
+        </ButtonsOnBottom>
+      )}
     </>
   )
 }

@@ -9,6 +9,7 @@ import Padded from '../../../components/Padded'
 import Text from '../../../components/Text'
 import Shadow from '../../../components/Shadow'
 import Button from '../../../components/Button'
+import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import Focusable from '../../../components/Focusable'
 import AddIcon from '../../../icons/Add'
 import TrashIcon from '../../../icons/X'
@@ -129,49 +130,45 @@ export default function ContactDetail() {
       />
       <Content>
         <Padded>
-          <FlexCol between>
-            <FlexCol gap='1rem'>
-              {/* Contact info */}
-              <Shadow>
-                <FlexCol gap='0.25rem'>
-                  <Text tiny>Contact Name</Text>
-                  <Text bold>{contactName}</Text>
-                </FlexCol>
-              </Shadow>
-
-              {/* Addresses */}
-              <FlexCol gap='0.5rem'>
-                <Text bold small>
-                  Addresses ({addresses.length})
-                </Text>
-                {addresses.length === 0 ? (
-                  <div style={{ padding: '1rem', textAlign: 'center' }}>
-                    <Text>No addresses for this contact.</Text>
-                  </div>
-                ) : (
-                  addresses.map((entry) => (
-                    <AddressEntry
-                      key={entry.id}
-                      entry={entry}
-                      onDelete={handleDeleteAddress}
-                      onSelect={handleSelectAddress}
-                      selectionMode={selectionMode}
-                    />
-                  ))
-                )}
+          <FlexCol gap='1rem'>
+            {/* Contact info */}
+            <Shadow>
+              <FlexCol gap='0.25rem'>
+                <Text tiny>Contact Name</Text>
+                <Text bold>{contactName}</Text>
               </FlexCol>
+            </Shadow>
+
+            {/* Addresses */}
+            <FlexCol gap='0.5rem'>
+              <Text bold small>
+                Addresses ({addresses.length})
+              </Text>
+              {addresses.length === 0 ? (
+                <div style={{ padding: '1rem', textAlign: 'center' }}>
+                  <Text>No addresses for this contact.</Text>
+                </div>
+              ) : (
+                addresses.map((entry) => (
+                  <AddressEntry
+                    key={entry.id}
+                    entry={entry}
+                    onDelete={handleDeleteAddress}
+                    onSelect={handleSelectAddress}
+                    selectionMode={selectionMode}
+                  />
+                ))
+              )}
             </FlexCol>
-
-            {/* Bottom buttons */}
-            {!selectionMode && (
-              <FlexCol gap='0.5rem' margin='1rem 0 0 0'>
-                <Button onClick={handleAddAddress} label='Add Address' />
-                <Button onClick={handleDeleteContact} label='Delete Contact' red />
-              </FlexCol>
-            )}
           </FlexCol>
         </Padded>
       </Content>
+      {!selectionMode && (
+        <ButtonsOnBottom>
+          <Button onClick={handleAddAddress} label='Add Address' />
+          <Button onClick={handleDeleteContact} label='Delete Contact' red />
+        </ButtonsOnBottom>
+      )}
     </>
   )
 }

@@ -8,6 +8,7 @@ import Padded from '../../../components/Padded'
 import Text from '../../../components/Text'
 import Shadow from '../../../components/Shadow'
 import Button from '../../../components/Button'
+import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import InputContainer from '../../../components/InputContainer'
 import Scanner from '../../../components/Scanner'
 import Focusable from '../../../components/Focusable'
@@ -103,8 +104,7 @@ export default function AddressBookForm() {
       <Header text={existingContactName ? 'Add Address' : 'New Address'} back={handleBack} />
       <Content>
         <Padded>
-          <FlexCol between>
-            <FlexCol gap='1.5rem'>
+          <FlexCol gap='1.5rem'>
               {/* Address type selector */}
               <FlexCol gap='0.5rem'>
                 <Text bold small>
@@ -215,17 +215,14 @@ export default function AddressBookForm() {
                 </Text>
               ) : null}
             </FlexCol>
-
-            {/* Submit button */}
-            <div style={{ marginTop: '2rem' }}>
-              <Button
-                onClick={handleSubmit}
-                label={isContact || existingContactName ? 'Add Contact Address' : 'Add Account'}
-              />
-            </div>
-          </FlexCol>
-        </Padded>
-      </Content>
+          </Padded>
+        </Content>
+        <ButtonsOnBottom>
+          <Button
+            onClick={handleSubmit}
+            label={isContact || existingContactName ? 'Add Contact Address' : 'Add Account'}
+          />
+        </ButtonsOnBottom>
       {scan ? (
         <Scanner close={() => setScan(false)} label='Scan address' onData={setAddress} onError={setError} />
       ) : null}
