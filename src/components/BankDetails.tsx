@@ -127,31 +127,22 @@ export function SepaDataView({ iban, bic, beneficiary, beneficiaryAddress, bankN
 interface SwiftDataViewProps {
   iban?: string
   bic?: string
-  intermediaryBic?: string
   beneficiary?: string
-  beneficiaryAddress?: string
   bankName?: string
-  bankAddress?: string
 }
 
 export function SwiftDataView({
   iban,
   bic,
-  intermediaryBic,
   beneficiary,
-  beneficiaryAddress,
   bankName,
-  bankAddress,
 }: SwiftDataViewProps) {
   return (
     <FlexCol gap='0.75rem'>
       <BankFieldBox label='IBAN' value={iban ?? ''} copyable />
       <BankFieldBox label='BIC / SWIFT Code' value={bic ?? ''} copyable />
-      {intermediaryBic ? <BankFieldBox label='Intermediary BIC' value={intermediaryBic} copyable /> : null}
       <BankFieldBox label='Beneficiary' value={beneficiary ?? ''} />
-      <BankFieldBox label='Beneficiary Address' value={beneficiaryAddress ?? ''} multiline />
       <BankFieldBox label='Bank Name' value={bankName ?? ''} />
-      <BankFieldBox label='Bank Address' value={bankAddress ?? ''} multiline />
     </FlexCol>
   )
 }

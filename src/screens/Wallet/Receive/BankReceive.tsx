@@ -234,11 +234,8 @@ export default function BankReceive() {
                   <SwiftDataView
                     iban={order.deposit_swift_address}
                     bic={order.deposit_swift_bic}
-                    intermediaryBic={order.deposit_swift_intermediary_address}
                     beneficiary={order.deposit_swift_beneficiary}
-                    beneficiaryAddress={order.deposit_swift_beneficiary_address}
                     bankName={order.deposit_swift_bank_name}
-                    bankAddress={order.deposit_swift_bank_address}
                   />
                 </FlexCol>
               ) : null}
