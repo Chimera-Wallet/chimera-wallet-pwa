@@ -102,20 +102,16 @@ interface SepaDataViewProps {
   iban?: string
   bic?: string
   beneficiary?: string
-  beneficiaryAddress?: string
   bankName?: string
-  bankAddress?: string
 }
 
-export function SepaDataView({ iban, bic, beneficiary, beneficiaryAddress, bankName, bankAddress }: SepaDataViewProps) {
+export function SepaDataView({ iban, bic, beneficiary, bankName }: SepaDataViewProps) {
   return (
     <FlexCol gap='0.75rem'>
       <BankFieldBox label='IBAN' value={iban ?? ''} copyable />
       <BankFieldBox label='BIC / SWIFT Code' value={bic ?? ''} copyable />
       <BankFieldBox label='Beneficiary' value={beneficiary ?? ''} />
-      <BankFieldBox label='Beneficiary Address' value={beneficiaryAddress ?? ''} multiline />
       <BankFieldBox label='Bank Name' value={bankName ?? ''} />
-      <BankFieldBox label='Bank Address' value={bankAddress ?? ''} multiline />
     </FlexCol>
   )
 }

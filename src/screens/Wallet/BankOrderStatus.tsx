@@ -257,9 +257,7 @@ export default function BankOrderStatus() {
                         iban={order.deposit_sepa_address}
                         bic={order.deposit_sepa_bic}
                         beneficiary={order.deposit_sepa_beneficiary}
-                        beneficiaryAddress={order.deposit_sepa_beneficiary_address}
                         bankName={order.deposit_sepa_bank_name}
-                        bankAddress={order.deposit_sepa_bank_address}
                       />
                     </FlexCol>
                   </Shadow>
