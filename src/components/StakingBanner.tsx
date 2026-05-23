@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import Button from './Button'
 
-const LAUNCH_DATE = new Date('2026-05-27T14:12:00+02:00')
+const LAUNCH_DATE = new Date('2026-07-07T12:00:00+00:00')
 
 const TITLE = 'Be ready for the Chimera Token TGE'
 const DESCRIPTION =

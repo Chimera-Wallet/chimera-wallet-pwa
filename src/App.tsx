@@ -359,7 +359,7 @@ export default function App() {
           onClick={handleWallet}
           style={{
             position: 'fixed',
-            bottom: 'calc(20px + env(safe-area-inset-bottom))',
+            bottom: '15px',
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 200,
