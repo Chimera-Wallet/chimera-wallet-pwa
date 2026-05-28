@@ -16,11 +16,10 @@ interface AppProps {
   name: string
   link?: string
   page?: Pages
-  backgroundImage?: string
   comingSoon?: boolean
 }
 
-function App({ icon, image, link, name, page, backgroundImage, comingSoon }: AppProps) {
+function App({ icon, image, link, name, page, comingSoon }: AppProps) {
   const { navigate } = useContext(NavigationContext)
 
   const handleClick = () => {
@@ -35,25 +34,10 @@ function App({ icon, image, link, name, page, backgroundImage, comingSoon }: App
   const cardStyle: React.CSSProperties = {
     position: 'relative',
     minHeight: '100px',
-    backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-  }
-
-  const overlayStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: backgroundImage ? 'rgba(0, 0, 0, 0.3)' : 'transparent',
     borderRadius: '0.5rem',
   }
 
   const contentStyle: React.CSSProperties = {
-    position: 'relative',
-    zIndex: 1,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -65,7 +49,6 @@ function App({ icon, image, link, name, page, backgroundImage, comingSoon }: App
     <Focusable onEnter={handleClick}>
       <Shadow border onClick={handleClick}>
         <div style={cardStyle}>
-          {backgroundImage ? <div style={overlayStyle} /> : null}
           <div style={contentStyle} data-testid={testId}>
             {/* Icon centered */}
             {image ? (
@@ -127,6 +110,7 @@ export default function Apps() {
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '0.75rem',
               width: '100%',
             }}
           >
@@ -134,48 +118,41 @@ export default function Apps() {
               name='Swap'
               image='/images/apps/Transfer.svg'
               page={Pages.AppSwap}
-              backgroundImage='/images/apps_backgrounds/transfer.png'
             />
 
             <App
               name='Address Book'
               image='/images/apps/AddressBook.svg'
               page={Pages.AppAddressBook}
-              backgroundImage='/images/apps_backgrounds/address_book.png'
             />
 
             <App
               name='Statement'
               image='/images/apps/Statement.svg'
               page={Pages.AppStatement}
-              backgroundImage='/images/apps_backgrounds/statements.png'
             />
 
             <App
               name='Referral'
               image='/images/apps/Referral.svg'
               page={Pages.AppReferral}
-              backgroundImage='/images/apps_backgrounds/referral.png'
             />
 
             <App
               name='Gift Cards'
               image='/images/apps/GiftCards.svg'
               page={Pages.AppGiftCards}
-              backgroundImage='/images/apps_backgrounds/gift_cards.png'
             />
 
             <App
               name='Card Reservation'
               image='/images/apps/CardReservation.svg'
               page={Pages.AppCardReservation}
-              backgroundImage='/images/apps_backgrounds/card_reservation.png'
             />
 
             <App
               name='Staking'
               image='/images/apps/Transfer.svg'
-              backgroundImage='/images/apps_backgrounds/transfer.png'
               comingSoon
             />
           </div>
@@ -191,6 +168,7 @@ export default function Apps() {
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '0.75rem',
               width: '100%',
             }}
           >
@@ -209,7 +187,6 @@ export default function Apps() {
               icon={<LendasatIcon />}
               link='https://lendasat.com'
               page={Pages.AppLendasat}
-              backgroundImage='/images/apps_backgrounds/transfer.png'
             />
 
             <App
@@ -217,7 +194,6 @@ export default function Apps() {
               icon={<LendaswapIcon />}
               link='https://swap.lendasat.com'
               page={Pages.AppLendaswap}
-              backgroundImage='/images/apps_backgrounds/transfer.png'
             />
           </div>
         </Padded>

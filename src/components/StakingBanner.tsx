@@ -91,9 +91,9 @@ function CoinStack() {
     >
       {/* Relative container so both images stack at same origin */}
       <div style={{ position: 'relative', width: 90, height: 110 }}>
-        {/* Back coin (Token_02) — offset further down-right for depth */}
+        {/* Back coin — offset further down-right for depth */}
         <img
-          src='/images/Token_02.png'
+          src='/images/coin-3-2.png'
           alt=''
           style={{
             position: 'absolute',
@@ -105,9 +105,9 @@ function CoinStack() {
             opacity: 0.85,
           }}
         />
-        {/* Front coin (Token_01) */}
+        {/* Front coin */}
         <img
-          src='/images/Token_01.png'
+          src='/images/coin-3-1.png'
           alt=''
           style={{
             position: 'absolute',

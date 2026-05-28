@@ -633,7 +633,7 @@ export default function Verification() {
         <Header text='KYC - Verification' backFunc={handleBack} />
         <Content>
           <Padded>
-            <FlexCol gap='1.5rem'>
+            <FlexCol gap='1.5rem' centered>
               {kycStatus === 'confirmed' && (
                 <>
                   <SuccessMessage />

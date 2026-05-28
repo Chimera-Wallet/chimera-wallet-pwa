@@ -4,7 +4,7 @@ import { NotificationsContext } from '../../../providers/notifications'
 import Header from '../../../components/Header'
 import Content from '../../../components/Content'
 import Success from '../../../components/Success'
-import { prettyAmount } from '../../../lib/format'
+import { fromSatoshis, prettyAmount, prettyNumber } from '../../../lib/format'
 import { ConfigContext } from '../../../providers/config'
 import { FiatContext } from '../../../providers/fiat'
 
@@ -20,7 +20,9 @@ export default function SendSuccess() {
   }, [sendInfo.total])
 
   const totalSats = sendInfo.total ?? 0
-  const displayAmount = useFiat ? prettyAmount(toFiat(totalSats), config.fiat) : prettyAmount(totalSats)
+  const displayAmount = useFiat
+    ? prettyAmount(toFiat(totalSats), config.fiat)
+    : `${prettyNumber(fromSatoshis(totalSats), 8)} BTC`
 
   return (
     <>
