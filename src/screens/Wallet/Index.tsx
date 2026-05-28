@@ -16,7 +16,6 @@ import FlexRow from '../../components/FlexRow'
 import { emptyRecvInfo, emptySendInfo, FlowContext } from '../../providers/flow'
 import { NavigationContext, Pages } from '../../providers/navigation'
 import { NudgeContext } from '../../providers/nudge'
-import { EmptyTxList } from '../../components/Empty'
 import { InfoBox } from '../../components/AlertBox'
 import { psaMessage } from '../../lib/constants'
 import { AnnouncementContext } from '../../providers/announcements'
@@ -230,17 +229,11 @@ export default function Wallet() {
                     <div className='spinner' />
                   </div>
                 </WalletStaggerChild>
-              ) : txs.length === 0 ? (
-                <WalletStaggerChild animate={shouldStagger}>
-                  <div style={{ marginTop: '5rem', width: '100%' }}>
-                    <EmptyTxList />
-                  </div>
-                </WalletStaggerChild>
-              ) : (
+              ) : txs.length > 0 ? (
                 <WalletStaggerChild animate={shouldStagger}>
                   <TransactionsList maxItems={4} />
                 </WalletStaggerChild>
-              )}
+              ) : null}
               <WalletStaggerChild animate={shouldStagger}>
                 <AssetList
                   balances={[{ symbol: ASSETS.BTC.symbol, balance: fromSatoshis(balance) }]}

@@ -41,7 +41,7 @@ export default function AppWebView({ appName, url, onBack }: AppWebViewProps) {
 
   return (
     <>
-      <Header text={appName} back={onBack} />
+      <Header text={appName} />
       <Content>
         <Padded>
           <FlexCol gap='0'>
