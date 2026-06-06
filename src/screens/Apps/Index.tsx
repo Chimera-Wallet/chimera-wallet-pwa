@@ -120,7 +120,6 @@ export default function Apps() {
 
           <div style={gridStyle}>
             <App name='LendaSat' icon={<LendasatIcon />} link='https://lendasat.com' page={Pages.AppLendasat} />
-            <App name='Boltz' image='/images/apps/Transfer.svg' page={Pages.AppBoltz} />
             <App name='DFX' image='/images/apps/Transfer.svg' page={Pages.AppDfx} />
             <App name='Satora' image='/images/apps/Transfer.svg' page={Pages.AppSatora} />
           </div>

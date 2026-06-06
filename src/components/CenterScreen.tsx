@@ -13,7 +13,7 @@ export default function CenterScreen({ children, gap, onClick }: CenterScreenPro
     display: 'flex',
     flexDirection: 'column',
     gap: gap ?? '1rem',
-    height: '100%',
+    flex: 1,
     justifyContent: 'center',
     margin: 'auto',
     maxWidth: '18rem',

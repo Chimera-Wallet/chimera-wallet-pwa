@@ -30,17 +30,17 @@ export default function SelectorField({ icon, label, onClick, sublabel, value }:
           gap: '12px',
           padding: '12px 16px',
           borderRadius: 'var(--info-container-radius)',
-          border: '1px solid var(--white10)',
+          border: '1px solid var(--neutral-100)',
           cursor: 'pointer',
-          backgroundColor: 'var(--white05)',
+          backgroundColor: 'var(--surface)',
           transition: 'all 0.15s ease',
           width: '100%',
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = 'var(--white07)'
+          e.currentTarget.style.backgroundColor = 'var(--neutral-50)'
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = 'var(--white05)'
+          e.currentTarget.style.backgroundColor = 'var(--surface)'
         }}
       >
         {icon ? <div style={{ flexShrink: 0 }}>{icon}</div> : null}

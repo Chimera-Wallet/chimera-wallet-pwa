@@ -493,10 +493,10 @@ export default function SendForm() {
                           key={percent}
                           onClick={() => handlePercentage(percent)}
                           style={{
-                            background: 'var(--dark20)',
-                            border: '1px solid var(--dark50)',
+                            background: 'var(--surface)',
+                            border: '1px solid var(--neutral-100)',
                             borderRadius: '0.5rem',
-                            color: 'var(--white70)',
+                            color: 'var(--neutral-700)',
                             cursor: 'pointer',
                             fontSize: '0.875rem',
                             fontWeight: 500,
@@ -504,12 +504,12 @@ export default function SendForm() {
                             transition: 'all 0.2s ease',
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'var(--dark50)'
-                            e.currentTarget.style.color = 'var(--white)'
+                            e.currentTarget.style.background = 'var(--neutral-100)'
+                            e.currentTarget.style.color = 'var(--black)'
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'var(--dark20)'
-                            e.currentTarget.style.color = 'var(--white70)'
+                            e.currentTarget.style.background = 'var(--surface)'
+                            e.currentTarget.style.color = 'var(--neutral-700)'
                           }}
                         >
                           {percent}%

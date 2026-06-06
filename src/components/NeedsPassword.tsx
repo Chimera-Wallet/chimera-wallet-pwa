@@ -46,7 +46,7 @@ export default function NeedsPassword({ error, onPassword, loading = false, onRe
           <Padded>
             <CenterScreen>
               <LockIcon big />
-              <FlexCol gap='0.5rem'>
+              <FlexCol centered gap='0.5rem'>
                 <Text centered heading>
                   Passkey not found
                 </Text>
@@ -73,7 +73,7 @@ export default function NeedsPassword({ error, onPassword, loading = false, onRe
         <Content>
           <CenterScreen onClick={handleBiometrics}>
             <LockIcon big />
-            <FlexCol gap='0.5rem'>
+            <FlexCol centered gap='0.5rem'>
               <Text centered heading>
                 Welcome back
               </Text>
@@ -97,7 +97,7 @@ export default function NeedsPassword({ error, onPassword, loading = false, onRe
         <Padded>
           <CenterScreen>
             <LockIcon big />
-            <FlexCol gap='1rem'>
+            <FlexCol centered gap='1rem'>
               <InputPassword
                 focus
                 label='Insert password'

@@ -120,29 +120,9 @@ export const options: Option[] = [
     section: SettingsSections.Config,
   },
   {
-    icon: <></>,
-    option: SettingsOptions.Delegates,
-    section: SettingsSections.Advanced,
-  },
-  {
-    icon: <></>,
-    option: SettingsOptions.Delegates,
-    section: SettingsSections.Advanced,
-  },
-  {
     icon: <VtxosIcon />,
     option: SettingsOptions.Vtxos,
     section: SettingsSections.Config,
-  },
-  {
-    icon: <></>,
-    option: SettingsOptions.Contracts,
-    section: SettingsSections.Config,
-  },
-  {
-    icon: <></>,
-    option: SettingsOptions.Contracts,
-    section: SettingsSections.Advanced,
   },
   {
     icon: <></>,

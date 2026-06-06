@@ -31,6 +31,16 @@ export default function Advanced() {
       section: SettingsSections.Advanced,
     },
     {
+      icon: <></>,
+      option: SettingsOptions.Delegates,
+      section: SettingsSections.Advanced,
+    },
+    {
+      icon: <></>,
+      option: SettingsOptions.Contracts,
+      section: SettingsSections.Advanced,
+    },
+    {
       icon: <CogIcon />,
       option: SettingsOptions.Password,
       section: SettingsSections.Advanced,

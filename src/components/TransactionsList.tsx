@@ -1,4 +1,3 @@
-import { useVirtualizer } from '@tanstack/react-virtual'
 import { useContext, useRef } from 'react'
 import { WalletContext } from '../providers/wallet'
 import { TextLabel, TextSecondary } from './Text'
@@ -111,14 +110,6 @@ export default function TransactionsList({
 
   const focusedRef = useRef(false)
   const focusedIndexRef = useRef(0)
-  const parentRef = useRef<HTMLDivElement>(null)
-
-  const virtualizer = useVirtualizer({
-    count: txs.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 72,
-    overscan: 5,
-  })
 
   const key = (tx: Tx, index: number) =>
     [tx.roundTxid, tx.redeemTxid, tx.boardingTxid].filter(Boolean).join('-') || `tx-${index}`
@@ -126,7 +117,6 @@ export default function TransactionsList({
   const focusRow = (index: number) => {
     if (index < 0 || index >= txs.length) return
     focusedIndexRef.current = index
-    virtualizer.scrollToIndex(index)
     requestAnimationFrame(() => {
       const el = document.getElementById(key(txs[index], index)) as HTMLElement
       if (el) el.focus()
@@ -183,50 +173,22 @@ export default function TransactionsList({
       </div>
       <div style={containerStyle}>
         <Focusable id='outer' onEnter={focusOnFirstRow} ariaLabel={ariaLabel()}>
-          <div
-            ref={parentRef}
-            onKeyDown={handleListKeyDown}
-            className='hide-scrollbar'
-            style={{
-              height: typeof maxItems === 'number' ? `${virtualizer.getTotalSize()}px` : 'calc(100dvh - 300px)',
-              minHeight: typeof maxItems === 'number' ? undefined : '200px',
-              overflowY: typeof maxItems === 'number' ? 'visible' : 'auto',
-              position: 'relative',
-            }}
-          >
-            <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative', width: '100%' }}>
-              {virtualizer.getVirtualItems().map((virtualItem) => {
-                const tx = txs[virtualItem.index]
-                const k = key(tx, virtualItem.index)
-                return (
-                  <div
-                    key={k}
-                    data-index={virtualItem.index}
-                    onFocus={() => {
-                      focusedIndexRef.current = virtualItem.index
-                      focusedRef.current = true
-                    }}
-                    style={{
-                      left: 0,
-                      position: 'absolute',
-                      top: 0,
-                      transform: `translateY(${virtualItem.start}px)`,
-                      width: '100%',
-                    }}
-                  >
-                    <Focusable
-                      id={k}
-                      inactive={!focusedRef.current}
-                      onEnter={() => handleClick(tx)}
-                      onEscape={focusOnOuterShell}
-                      ariaLabel={ariaLabel(tx)}
-                    >
-                      <TransactionLine onClick={() => handleClick(tx)} tx={tx} isFirst={virtualItem.index === 0} />
-                    </Focusable>
-                  </div>
-                )
-              })}
-            </div>
+          <div onKeyDown={handleListKeyDown}>
+            {txs.map((tx, index) => {
+              const k = key(tx, index)
+              return (
+                <Focusable
+                  key={k}
+                  id={k}
+                  inactive={!focusedRef.current}
+                  onEnter={() => handleClick(tx)}
+                  onEscape={focusOnOuterShell}
+                  ariaLabel={ariaLabel(tx)}
+                >
+                  <TransactionLine onClick={() => handleClick(tx)} tx={tx} isFirst={index === 0} />
+                </Focusable>
+              )
+            })}
           </div>
         </Focusable>
       </div>

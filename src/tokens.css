@@ -133,6 +133,22 @@
   --text-color: var(--fg);
   --heading-font: var(--font-family-heading);
 
+  /* Surface — very subtle elevated background for cards, inputs, etc.
+     Uses fg color at low opacity so it works in both light and dark themes. */
+  --surface: rgba(var(--fg-rgb), 0.05);
+
+  /* Component aliases */
+  --input-bg: var(--surface);
+  --input-border-color: var(--neutral-100);
+  --input-border-radius: 0.5rem;
+  --input-height: 3rem;
+  --dark05: var(--surface);
+  --dark10: var(--surface);
+  --info-container-bg: var(--surface);
+  --info-container-radius: 0.5rem;
+  --info-container-padding: 0.75rem 1rem;
+  --info-container-gap: 0.5rem;
+
   /* Typography families — named --font-family-* (not --font-*) so Tailwind's
    * @theme can expose --font-sans/heading/mono without creating a CSS var
    * cycle. Inline usage goes through var(--font-sans) which @theme emits. */
