@@ -10,6 +10,12 @@ export interface CoinGeckoPriceData {
   eur_24h_change?: number
   usd?: number
   usd_24h_change?: number
+  jpy?: number
+  jpy_24h_change?: number
+  gbp?: number
+  gbp_24h_change?: number
+  cny?: number
+  cny_24h_change?: number
 }
 
 export interface CoinGeckoHistoricalData {

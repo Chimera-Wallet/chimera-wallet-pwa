@@ -58,7 +58,7 @@ export default function AssetList({ balances = [], onAssetClick }: AssetListProp
   }
 
   const getPriceData = (symbol: string) => {
-    const data = prices[symbol] as Record<string, number> | undefined
+    const data = prices[symbol] as unknown as Record<string, number> | undefined
     return {
       rate: data?.[currency] || 0,
       change: data?.[`${currency}_24h_change`],

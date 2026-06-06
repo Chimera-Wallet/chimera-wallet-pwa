@@ -78,6 +78,9 @@ const DEFAULT_CONFIG: BankTransferConfig = {
     EUR: ['sepa', 'swift'],
     CHF: ['swift'],
     USD: ['swift'],
+    JPY: [],
+    GBP: [],
+    CNY: [],
   },
   circuitLabels: {
     sepa: 'SEPA Transfer',

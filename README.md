@@ -21,33 +21,65 @@ This project supports environment-specific configuration through `.env` files:
 
 ### Third-Party Integrations
 
-| Variable                    | Description                                                         | Example Value                                     |
-| --------------------------- | ------------------------------------------------------------------- | ------------------------------------------------- |
-| `VITE_CHATWOOT_WEBSITE_TOKEN` | ChatWoot website token for customer support integration           | `VITE_CHATWOOT_WEBSITE_TOKEN=your-token`          |
-| `VITE_CHATWOOT_BASE_URL`    | ChatWoot server base URL for customer support integration           | `VITE_CHATWOOT_BASE_URL=https://app.chatwoot.com` |
-| `VITE_SENTRY_DSN`           | Enable Sentry error tracking (only in production, not on localhost) | `VITE_SENTRY_DSN=your-sentry-dsn`                 |
-| `VITE_LENDASAT_IFRAME_URL`  | Overwrite the default LendaSat URL                                  | `VITE_LENDASAT_IFRAME_URL=https://iframe.lendasat.com` |
-| `VITE_LENDASWAP_IFRAME_URL` | Overwrite the default LendaSwap URL                                 | `VITE_LENDASWAP_IFRAME_URL=https://swap.lendasat.com` |
+| Variable                      | Description                                                         | Example Value                                                                        |
+|-------------------------------|---------------------------------------------------------------------|--------------------------------------------------------------------------------------|
+| `VITE_ARK_SERVER`             | Override the default Arkade server URL                              | `VITE_ARK_SERVER=http://localhost:7070`                                              |
+| `VITE_APP_VERSION`            | App version string shown in support diagnostics                     | `VITE_APP_VERSION=1.2.3`                                                             |
+| `VITE_BOLTZ_URL`              | Override the default Boltz swap provider URL for Lightning          | `VITE_BOLTZ_URL=https://boltz-provider-url.com`                                      |
+| `VITE_CHATWOOT_WEBSITE_TOKEN` | ChatWoot website token for customer support integration             | `VITE_CHATWOOT_WEBSITE_TOKEN=your-token`                                             |
+| `VITE_CHATWOOT_BASE_URL`      | ChatWoot server base URL for customer support integration           | `VITE_CHATWOOT_BASE_URL=https://app.chatwoot.com`                                    |
+| `VITE_DELEGATOR_URL`          | Delegator service URL for the wallet service worker                 | `VITE_DELEGATOR_URL=https://delegator.example.com`                                   |
+| `VITE_LENDASAT_IFRAME_URL`    | Override the default LendaSat URL                                   | `VITE_LENDASAT_IFRAME_URL=http://localhost:5173`                                     |
+| `VITE_SATORA_IFRAME_URL`      | Override the default Satora URL                                     | `VITE_SATORA_IFRAME_URL=http://localhost:5174`                                       |
+| `VITE_MAX_PERCENTAGE`         | Override the max fee percentage (default 10)                        | `VITE_MAX_PERCENTAGE=5`                                                              |
+| `VITE_NOSTR_RELAY_URL`        | Override the default Nostr relay URLs for backup                    | `VITE_NOSTR_RELAY_URL=wss://relay.example.com`                                       |
+| `VITE_PSA_MESSAGE`            | Message to show on the wallet index page                            | `VITE_PSA_MESSAGE=@arkade_os on TG for support`                                      |
+| `VITE_SENTRY_DSN`             | Enable Sentry error tracking (only in production, not on localhost) | `VITE_SENTRY_DSN=your-sentry-dsn`                                                    |
+| `VITE_UTXO_MAX_AMOUNT`        | Override the server's utxoMaxAmount                                 | `VITE_UTXO_MAX_AMOUNT=-1`                                                            |
+| `VITE_UTXO_MIN_AMOUNT`        | Override the server's utxoMinAmount                                 | `VITE_UTXO_MIN_AMOUNT=330`                                                           |
+| `VITE_VERIFIED_ASSETS_URL`    | URL to fetch the verified assets list                               | `VITE_VERIFIED_ASSETS_URL=https://arklabshq.github.io/asset-registry/mutinynet.json` |
+| `VITE_VTXO_MAX_AMOUNT`        | Override the server's vtxoMaxAmount                                 | `VITE_VTXO_MAX_AMOUNT=-1`                                                            |
+| `VITE_VTXO_MIN_AMOUNT`        | Override the server's vtxoMinAmount                                 | `VITE_VTXO_MIN_AMOUNT=330`                                                           |
+| `CI`                          | Set to `true` for Continuous Integration environments               | `CI=true`                                                                            |
+| `GENERATE_SOURCEMAP`          | Disable source map generation during build                          | `GENERATE_SOURCEMAP=false`                                                           |
 
-### Other Configuration
+## Docker
 
-| Variable                    | Description                                                         | Example Value                                     |
-| --------------------------- | ------------------------------------------------------------------- | ------------------------------------------------- |
-| `VITE_PSA_MESSAGE`          | Manage message to show in wallet index page                         | `VITE_PSA_MESSAGE=@arkade_os on TG for support`   |
-| `CI`                        | Set to `true` for Continuous Integration environments               | `CI=true`                                         |
-| `GENERATE_SOURCEMAP`        | Disable source map generation during build                          | `GENERATE_SOURCEMAP=false`                        |
-| `VITE_UTXO_MAX_AMOUNT`.     | Overwrite the server's utxoMaxAmount                                | `VITE_UTXO_MAX_AMOUNT=-1`                         |
-| `VITE_UTXO_MIN_AMOUNT`.     | Overwrite the server's utxoMinAmount                                | `VITE_UTXO_MIN_AMOUNT=330`                        |
-| `VITE_VTXO_MAX_AMOUNT`.     | Overwrite the server's vtxoMaxAmount                                | `VITE_VTXO_MAX_AMOUNT=-1`                         |
+The wallet is available as a Docker image on GitHub Container Registry.
 
-### AWS Amplify Deployment
+### Pull and run
 
-When deploying to AWS Amplify, the `amplify.yml` configuration automatically loads the appropriate `.env` file based on the branch:
-- **main/production** branch → uses `.env.production`
-- **staging/dev** branches → uses `.env.staging`
+```bash
+docker pull ghcr.io/arkade-os/wallet:latest
+docker run -p 8080:80 ghcr.io/arkade-os/wallet:latest
+```
 
-Sensitive values (like `VITE_SENTRY_DSN`, `VITE_CHATWOOT_WEBSITE_TOKEN`) should be set as **Environment variables** in the AWS Amplify Console, where they can be configured per-branch.
-| `VITE_VTXO_MIN_AMOUNT`.     | Overwrite the server's vtxoMinAmount                                | `VITE_VTXO_MIN_AMOUNT=330`                        |
+Open [http://localhost:8080](http://localhost:8080) to view the wallet.
+
+### Runtime configuration
+
+Environment variables can be passed at runtime to configure the wallet without rebuilding the image:
+
+```bash
+docker run -p 8080:80 \
+  -e VITE_ARK_SERVER=https://arkade.computer \
+  -e VITE_BOLTZ_URL=https://api.boltz.exchange \
+  ghcr.io/arkade-os/wallet:latest
+```
+
+See the [Environment Variables](#environment-variables) table for all supported variables.
+
+### Build locally
+
+```bash
+docker build -t arkade-wallet .
+
+# With build-time configuration
+docker build \
+  --build-arg VITE_ARK_SERVER=https://arkade.computer \
+  --build-arg VITE_BOLTZ_URL=https://api.boltz.exchange \
+  -t arkade-wallet .
+```
 
 ## Getting Started
 

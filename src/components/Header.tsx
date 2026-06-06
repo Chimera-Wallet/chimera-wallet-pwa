@@ -1,4 +1,3 @@
-import { IonHeader, IonTitle } from '@ionic/react'
 import React, { useContext } from 'react'
 import { NavigationContext } from '../providers/navigation'
 import BackIcon from '../icons/Back'
@@ -22,7 +21,7 @@ interface HeaderProps {
   text: string
 }
 
-export default function Header({ auxAriaLabel, auxFunc, auxText, back, text, auxIcon, heading = true }: HeaderProps) {
+export default function Header({ auxAriaLabel, auxFunc, auxText, back, text, auxIcon }: HeaderProps) {
   const { goBack } = useContext(NavigationContext)
 
   const handleBack = back
@@ -88,7 +87,7 @@ export default function Header({ auxAriaLabel, auxFunc, auxText, back, text, aux
   }
 
   return (
-    <IonHeader style={{ boxShadow: 'none' }}>
+    <div className='header'>
       <FlexRow between>
         <div style={{ minWidth: '4rem', marginLeft: '0.5rem' }}>
           {handleBack ? (
@@ -105,15 +104,8 @@ export default function Header({ auxAriaLabel, auxFunc, auxText, back, text, aux
             </Focusable>
           )}
         </div>
-        <IonTitle
-          className='ion-text-center'
-          style={
-            heading ? { fontFamily: 'var(--heading-font)', letterSpacing: '-0.5px', fontWeight: '500' } : undefined
-          }
-        >
-          {text}
-        </IonTitle>
-        <div style={style} onClick={auxFunc} aria-label={auxAriaLabel}>
+        <p className='title'>{text}</p>
+        <div style={style} onClick={auxFunc} aria-label={auxAriaLabel} data-testid='header-aux-btn'>
           {auxText || auxIcon ? (
             <Focusable onEnter={auxFunc} fit round>
               {auxText ? SideButton(auxText) : <div style={{ padding: '0.5rem' }}>{auxIcon}</div>}
@@ -123,6 +115,6 @@ export default function Header({ auxAriaLabel, auxFunc, auxText, back, text, aux
           )}
         </div>
       </FlexRow>
-    </IonHeader>
+    </div>
   )
 }

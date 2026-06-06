@@ -1,5 +1,5 @@
-import { IonModal } from '@ionic/react'
-import CloseIcon from '../icons/Close'
+import { hapticLight } from '../lib/haptics'
+import { Drawer, DrawerContent } from '@/components/ui/drawer'
 
 interface SheetModalProps {
   children?: React.ReactNode
@@ -8,27 +8,18 @@ interface SheetModalProps {
 }
 
 export default function SheetModal({ children, isOpen, onClose }: SheetModalProps) {
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      hapticLight()
+      onClose()
+    }
+  }
+
   return (
-    <IonModal isOpen={isOpen} onDidDismiss={onClose} backdropDismiss showBackdrop className='sheet-modal-dark'>
-      <div
-        style={{
-          backgroundColor: '#101015',
-          borderTop: '1px solid var(--dark50)',
-          borderTopLeftRadius: '1rem',
-          borderTopRightRadius: '1rem',
-          height: '100%',
-          padding: '1rem',
-          paddingBottom: 'calc(3rem + env(safe-area-inset-bottom))',
-        }}
-      >
-        <div
-          style={{ cursor: 'pointer', position: 'absolute', right: '1rem', top: '1rem', zIndex: 10 }}
-          onClick={onClose}
-        >
-          <CloseIcon />
-        </div>
-        {children}
-      </div>
-    </IonModal>
+    <Drawer open={isOpen} onOpenChange={handleOpenChange}>
+      <DrawerContent className='mx-auto max-w-[640px]'>
+        <div className='w-full px-5 pb-[calc(2rem+env(safe-area-inset-bottom,0px))]'>{children}</div>
+      </DrawerContent>
+    </Drawer>
   )
 }

@@ -20,7 +20,7 @@ export default function Info({ children, color, icon, title }: InfoProps) {
           {title}
         </Text>
       </FlexRow>
-      <hr style={{ backgroundColor: 'var(--dark20)', width: '100%' }} />
+      <hr style={{ backgroundColor: 'var(--neutral-200)', width: '100%' }} />
       <FlexRow alignItems='flex-start'>
         <div style={{ marginTop: '2px' }}>
           <InfoIconDark />
@@ -49,8 +49,8 @@ export function InfoLine({
   return (
     <FlexCol margin={compact ? '0' : '0 0 1rem 0'}>
       <FlexRow centered={centered}>
-        <div style={{ color: color ? `var(--${color})` : 'currentColor' }}>{defaultIcon}</div>
-        <Text small wrap>
+        <InfoIcon color={color ?? 'neutral-500'} />
+        <Text color={color ?? 'neutral-500'} small wrap>
           {text}
         </Text>
       </FlexRow>

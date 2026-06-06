@@ -1,15 +1,17 @@
-import { Satoshis } from './types'
+import { fiatDecimalsFor, FIAT_SYMBOLS } from './fiat'
+import { Fiats, Tx } from './types'
 import { Decimal } from 'decimal.js'
 
-export const fromSatoshis = (num: Satoshis): number => {
+export const fromSatoshis = (num: number): number => {
   return Decimal.div(num, 100_000_000).toNumber()
 }
 
-export const toSatoshis = (num: number): Satoshis => {
+export const toSatoshis = (num: number): number => {
   return Decimal.mul(num, 100_000_000).floor().toNumber()
 }
 
 export const prettyAgo = (timestamp: number | string, long = false): string => {
+  if (!timestamp) return ''
   const now = Math.floor(Date.now() / 1000)
   const unixTimestamp =
     typeof timestamp === 'string'
@@ -24,13 +26,20 @@ export const prettyAgo = (timestamp: number | string, long = false): string => {
   return ''
 }
 
-export const prettyAmount = (amount: string | number, suffix?: string): string => {
-  const sats = typeof amount === 'string' ? Number(amount) : amount
-  if (suffix) return `${prettyNumber(sats, 2)} ${suffix}`
+export const prettyAmount = (sats: number, suffix?: string, decimals = 2): string => {
+  if (suffix) return `${prettyNumber(sats, decimals)} ${suffix}`
+  if (sats >= 100_000_000_000_000) return `${prettyNumber(fromSatoshis(sats), 0)}K BTC`
   if (sats >= 100_000_000_000) return `${prettyNumber(fromSatoshis(sats), 0)} BTC`
   if (sats >= 100_000_000) return `${prettyNumber(fromSatoshis(sats), 3)} BTC`
   if (sats >= 1_000_000) return `${prettyNumber(sats / 1_000_000, 3)}M SATS`
-  return `${prettyNumber(sats)} ${sats === 1 ? 'SAT' : 'SATS'}`
+  return `${prettyNumber(sats, 0)} ${sats === 1 ? 'SAT' : 'SATS'}`
+}
+
+export const prettyFiatAmount = (amount: number, currency: Fiats): string => {
+  const symbol = FIAT_SYMBOLS[currency]
+  const decimals = fiatDecimalsFor(currency)
+  const formatted = prettyNumber(amount, decimals, true, decimals)
+  return symbol ? `${symbol}${formatted}` : `${formatted} ${currency}`
 }
 
 export const prettyDelta = (seconds: number, long = true): string => {
@@ -66,9 +75,23 @@ export const prettyDate = (num: number): string => {
   }).format(date)
 }
 
+const hideDots = (value: string | number): string => {
+  const str = typeof value === 'string' ? value : value.toString()
+  const length = str.length * 2 > 6 ? str.length * 2 : 6
+  return '·'.repeat(length)
+}
+
 export const prettyHide = (value: string | number, suffix = 'SATS'): string => {
   if (!value) return ''
-  return '······' + (suffix ? ' ' + suffix : '')
+  const dots = hideDots(value)
+  return suffix ? `${dots} ${suffix}` : dots
+}
+
+export const prettyFiatHide = (value: number, currency: Fiats): string => {
+  if (!value) return ''
+  const dots = hideDots(value)
+  const symbol = FIAT_SYMBOLS[currency]
+  return symbol ? `${symbol}${dots}` : `${dots} ${currency}`
 }
 
 export const prettyLongText = (str?: string, showChars = 11): string => {
@@ -80,9 +103,27 @@ export const prettyLongText = (str?: string, showChars = 11): string => {
   return `${left}...${right}`
 }
 
-export const prettyNumber = (num?: number, maximumFractionDigits = 8, useGrouping = true): string => {
-  if (!num) return '0'
-  return new Intl.NumberFormat('en', { style: 'decimal', maximumFractionDigits, useGrouping }).format(num)
+export const prettyNumber = (
+  num?: number,
+  maximumFractionDigits = 8,
+  useGrouping = true,
+  minimumFractionDigits?: number,
+): string => {
+  if (num === undefined || num === null || Number.isNaN(num)) return '0'
+  return new Intl.NumberFormat('en', {
+    style: 'decimal',
+    maximumFractionDigits,
+    minimumFractionDigits,
+    useGrouping,
+  }).format(num)
+}
+
+export const isIssuance = (tx: Tx): boolean => {
+  return tx.type === 'sent' && tx.amount === 0 && (tx.assets ?? []).some((a) => a.amount > 0)
+}
+
+export const isBurn = (tx: Tx): boolean => {
+  return tx.type === 'sent' && tx.amount === 0 && (tx.assets ?? []).some((a) => a.amount < 0)
 }
 
 export const toUint8Array = (str: string): Uint8Array => {

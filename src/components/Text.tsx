@@ -1,7 +1,6 @@
-import { IonText, useIonToast } from '@ionic/react'
 import { ReactNode } from 'react'
 import { copyToClipboard } from '../lib/clipboard'
-import { copiedToClipboard } from '../lib/toast'
+import { useToast } from './Toast'
 import { hapticSubtle } from '../lib/haptics'
 
 interface TextProps {
@@ -19,8 +18,10 @@ interface TextProps {
   right?: boolean
   smaller?: boolean
   small?: boolean
+  testId?: string
   thin?: boolean
   tiny?: boolean
+  tooltip?: string
   wrap?: boolean
 }
 
@@ -39,8 +40,10 @@ export default function Text({
   right,
   smaller,
   small,
+  testId,
   thin,
   tiny,
+  tooltip,
   wrap,
 }: TextProps) {
   const fontSize = tiny ? 12 : smaller ? 13 : small ? 14 : big ? 24 : bigger ? 32 : large ? 18 : 16
@@ -62,28 +65,30 @@ export default function Text({
     wordBreak: 'break-word',
   }
 
-  const [present] = useIonToast()
+  const { toast } = useToast()
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (!copy) return
     hapticSubtle()
-    copyToClipboard(copy)
-    present(copiedToClipboard)
+    try {
+      await copyToClipboard(copy)
+      toast('Copied to clipboard')
+    } catch {
+      toast('Failed to copy')
+    }
   }
 
   return (
-    <IonText>
-      <p className={className} onClick={handleClick} style={pStyle}>
-        {children}
-      </p>
-    </IonText>
+    <p className={className} onClick={handleClick} style={pStyle} title={tooltip} data-testid={testId}>
+      {children}
+    </p>
   )
 }
 
 export function TextLabel({ children }: TextProps) {
   return (
-    <div style={{ padding: '0.5rem 1rem' }}>
-      <Text capitalize smaller>
+    <div style={{ padding: '0 1rem 0.5rem 1rem' }}>
+      <Text capitalize color='neutral-500' smaller>
         {children}
       </Text>
     </div>
@@ -92,7 +97,7 @@ export function TextLabel({ children }: TextProps) {
 
 export function TextSecondary({ centered, children }: TextProps) {
   return (
-    <Text centered={centered} small thin wrap>
+    <Text centered={centered} color='neutral-500' small thin wrap>
       {children}
     </Text>
   )

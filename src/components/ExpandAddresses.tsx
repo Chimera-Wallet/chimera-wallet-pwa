@@ -9,8 +9,7 @@ import FlexRow from './FlexRow'
 import Shadow from './Shadow'
 import { copyToClipboard } from '../lib/clipboard'
 import CheckMarkIcon from '../icons/CheckMark'
-import { useIonToast } from '@ionic/react'
-import { copiedToClipboard } from '../lib/toast'
+import { useToast } from './Toast'
 import Focusable from './Focusable'
 import { hapticSubtle } from '../lib/haptics'
 
@@ -19,6 +18,7 @@ interface ExpandAddressesProps {
   boardingAddr: string
   offchainAddr: string
   invoice: string
+  lnurl?: string
   onClick: (arg0: string) => void
 }
 
@@ -27,12 +27,13 @@ export default function ExpandAddresses({
   boardingAddr,
   offchainAddr,
   invoice,
+  lnurl,
   onClick,
 }: ExpandAddressesProps) {
   const [copied, setCopied] = useState('')
   const [expand, setExpand] = useState(false)
 
-  const [present] = useIonToast()
+  const { toast } = useToast()
 
   useEffect(() => {
     const handleArrowDown = (event: KeyboardEvent) => {
@@ -50,7 +51,7 @@ export default function ExpandAddresses({
   const handleCopy = async (value: string) => {
     hapticSubtle()
     await copyToClipboard(value)
-    present(copiedToClipboard)
+    toast('Copied to clipboard')
     setCopied(value)
   }
 
@@ -102,6 +103,7 @@ export default function ExpandAddresses({
             {boardingAddr ? <ExpandLine testId='btc' title='BTC address' value={boardingAddr} /> : null}
             {offchainAddr ? <ExpandLine testId='ark' title='Arkade address' value={offchainAddr} /> : null}
             {invoice ? <ExpandLine testId='invoice' title='Lightning invoice' value={invoice} /> : null}
+            {lnurl ? <ExpandLine testId='lnurl' title='LNURL' value={lnurl} /> : null}
           </FlexCol>
         </div>
       ) : null}

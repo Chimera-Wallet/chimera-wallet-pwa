@@ -71,12 +71,17 @@ export default function NeedsPassword({ error, onPassword, loading = false, onRe
     return (
       <>
         <Content>
-          <Padded>
-            <CenterScreen onClick={handleBiometrics}>
-              <LockIcon big />
-              <Text centered>Unlock with your passkey</Text>
-            </CenterScreen>
-          </Padded>
+          <CenterScreen onClick={handleBiometrics}>
+            <LockIcon big />
+            <FlexCol gap='0.5rem'>
+              <Text centered heading>
+                Welcome back
+              </Text>
+              <TextSecondary centered wrap>
+                Unlock with your passkey to continue
+              </TextSecondary>
+            </FlexCol>
+          </CenterScreen>
         </Content>
         <ButtonsOnBottom>
           <Button onClick={handleBiometrics} label='Unlock using biometrics' loading={loading} disabled={loading} />
@@ -90,32 +95,35 @@ export default function NeedsPassword({ error, onPassword, loading = false, onRe
     <>
       <Content>
         <Padded>
-          <FlexCol gap='1rem'>
-            <InputPassword
-              focus
-              label='Insert password'
-              onChange={handleChange}
-              onEnter={handleClick}
-              placeholder='password'
-            />
-            <ErrorMessage text={error} error={Boolean(error)} />
-            {onRestore ? (
-              <span
-                onClick={onRestore}
-                style={{
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  fontSize: '14px',
-                  fontWeight: 300,
-                  color: 'var(--ion-color-medium)',
-                  textDecoration: 'underline',
-                  display: 'block',
-                }}
-              >
-                Forgot password? Restore with private key
-              </span>
-            ) : null}
-          </FlexCol>
+          <CenterScreen>
+            <LockIcon big />
+            <FlexCol gap='1rem'>
+              <InputPassword
+                focus
+                label='Insert password'
+                onChange={handleChange}
+                onEnter={handleClick}
+                placeholder='password'
+              />
+              <ErrorMessage text={error} error={Boolean(error)} />
+              {onRestore ? (
+                <span
+                  onClick={onRestore}
+                  style={{
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    fontSize: '14px',
+                    fontWeight: 300,
+                    color: 'var(--neutral-500)',
+                    textDecoration: 'underline',
+                    display: 'block',
+                  }}
+                >
+                  Forgot password? Restore with private key
+                </span>
+              ) : null}
+            </FlexCol>
+          </CenterScreen>
         </Padded>
       </Content>
       <ButtonsOnBottom>

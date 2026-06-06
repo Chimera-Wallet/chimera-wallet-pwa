@@ -4,6 +4,7 @@ interface ShadowProps {
   border?: boolean
   borderPurple?: boolean
   children: ReactNode
+  darkPurple?: boolean
   fat?: boolean
   flex?: boolean
   info?: boolean
@@ -22,6 +23,7 @@ export default function Shadow({
   border,
   borderPurple,
   children,
+  darkPurple,
   fat,
   flex,
   info,

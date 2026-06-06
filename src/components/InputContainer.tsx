@@ -24,7 +24,7 @@ export default function InputContainer({
 }: InputContainerProps) {
   const TopLabel = () => (
     <FlexRow between>
-      <Text capitalize smaller>
+      <Text capitalize color='neutral-500' smaller>
         {label}
       </Text>
       <div>{right}</div>
@@ -33,10 +33,10 @@ export default function InputContainer({
 
   const BottomLabel = () => (
     <FlexRow between>
-      <Text capitalize smaller>
+      <Text capitalize color='neutral-500' smaller>
         {bottomLeft}
       </Text>
-      <Text capitalize smaller>
+      <Text capitalize color='neutral-500' smaller>
         {bottomRight}
       </Text>
     </FlexRow>
@@ -46,8 +46,8 @@ export default function InputContainer({
     <FlexCol>
       <FlexCol gap='0.5rem'>
         {label || right ? <TopLabel /> : null}
-        <Shadow input>
-          <FlexRow>{children}</FlexRow>
+        <Shadow>
+          <FlexRow between>{children}</FlexRow>
         </Shadow>
         {bottomLeft || bottomRight ? <BottomLabel /> : null}
       </FlexCol>

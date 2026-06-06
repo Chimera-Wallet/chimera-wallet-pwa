@@ -1,39 +1,72 @@
 import InputContainer from './InputContainer'
-import { useRef, useEffect } from 'react'
-import { IonInput } from '@ionic/react'
+import { useRef, useEffect, ChangeEventHandler } from 'react'
+import { cn } from '@/lib/utils'
 
 interface InputProps {
+  className?: string
   focus?: boolean
   label?: string
+  max?: string
+  maxLength?: number
+  min?: string
   name?: string
   onChange: (arg0: any) => void
   onEnter?: () => void
+  placeholder?: string
+  right?: JSX.Element
+  step?: string
+  testId?: string
+  type?: 'text' | 'number' | 'url'
+  value?: string | number
 }
 
-export default function Input({ focus, label, name, onChange, onEnter }: InputProps) {
+export default function Input({
+  className,
+  focus,
+  label,
+  max,
+  maxLength,
+  min,
+  name,
+  onChange,
+  onEnter,
+  placeholder,
+  right,
+  step,
+  testId,
+  type = 'text',
+  value,
+}: InputProps) {
   const firstRun = useRef(true)
-  const input = useRef<HTMLIonInputElement>(null)
+  const input = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (focus && firstRun.current) {
       firstRun.current = false
-      input.current?.setFocus()
+      input.current?.focus()
     }
   })
 
-  const handleInput = (ev: Event) => {
-    const value = (ev.target as HTMLInputElement).value
-    onChange(value)
+  const handleChange: ChangeEventHandler<HTMLInputElement> = (ev) => {
+    onChange(ev.currentTarget.value)
   }
 
   return (
-    <InputContainer label={label}>
-      <IonInput
-        name={name}
-        onIonInput={handleInput}
-        onKeyUp={(ev) => ev.key === 'Enter' && onEnter && onEnter()}
+    <InputContainer label={label} right={right}>
+      <input
+        max={max}
+        min={min}
         ref={input}
-        type='text'
+        step={step}
+        type={type}
+        value={value}
+        className={cn('input', className)}
+        data-testid={testId}
+        name={name ?? testId}
+        maxLength={maxLength}
+        onChange={handleChange}
+        placeholder={placeholder}
+        onKeyUp={(ev) => ev.key === 'Enter' && onEnter && onEnter()}
       />
     </InputContainer>
   )

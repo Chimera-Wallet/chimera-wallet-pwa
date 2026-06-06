@@ -1,23 +1,18 @@
-import { IonContent } from '@ionic/react'
-import { ReactNode, useEffect, useRef } from 'react'
+import { ReactNode } from 'react'
 import Refresher from './Refresher'
 
 interface ContentProps {
   children: ReactNode
+  noFade?: boolean
+  noRefresh?: boolean
 }
 
-export default function Content({ children }: ContentProps) {
-  const contentRef = useRef<HTMLIonContentElement>(null)
-
-  useEffect(() => {
-    // Scroll to top when component mounts
-    contentRef.current?.scrollToTop(0)
-  }, [])
-
+export default function Content({ children, noFade, noRefresh }: ContentProps) {
+  const className = noFade ? 'content no-content-fade' : 'content'
   return (
-    <IonContent ref={contentRef}>
-      <Refresher />
-      <div style={{ height: '100%', paddingTop: '1rem' }}>{children}</div>
-    </IonContent>
+    <div className={className}>
+      {noRefresh ? null : <Refresher />}
+      <div className='content-shell'>{children}</div>
+    </div>
   )
 }

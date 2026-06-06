@@ -6,6 +6,7 @@ import AssetList from '../../components/AssetList'
 import AssetBalanceView from '../../components/AssetBalanceView'
 import { WalletContext } from '../../providers/wallet'
 import { AspContext } from '../../providers/asp'
+import { ConfigContext } from '../../providers/config'
 import Padded from '../../components/Padded'
 import Content from '../../components/Content'
 import FlexCol from '../../components/FlexCol'
@@ -16,6 +17,7 @@ import FlexRow from '../../components/FlexRow'
 import { emptyRecvInfo, emptySendInfo, FlowContext } from '../../providers/flow'
 import { NavigationContext, Pages } from '../../providers/navigation'
 import { NudgeContext } from '../../providers/nudge'
+import { EmptyTxList } from '../../components/Empty'
 import { InfoBox } from '../../components/AlertBox'
 import { psaMessage } from '../../lib/constants'
 import { AnnouncementContext } from '../../providers/announcements'
@@ -32,6 +34,7 @@ import StakingBanner from '../../components/StakingBanner'
 export default function Wallet() {
   const { aspInfo } = useContext(AspContext)
   const { announcement } = useContext(AnnouncementContext)
+  const { config } = useContext(ConfigContext)
   const { setRecvInfo, setSendInfo } = useContext(FlowContext)
   const { isInitialLoad, navigate, navigationCount, screen } = useContext(NavigationContext)
   const { balance, dataReady, synced, txs } = useContext(WalletContext)
@@ -223,17 +226,34 @@ export default function Wallet() {
                   {nudge ? nudge : psaMessage ? <InfoBox html={psaMessage} /> : null}
                 </WalletStaggerChild>
               </FlexCol>
-              {!dataReady || (!synced && txs.length === 0) ? (
+              {!dataReady || (!synced && txs.length === 0) ? null : txs.length === 0 ? (
                 <WalletStaggerChild animate={shouldStagger}>
-                  <div style={{ marginTop: '5rem', width: '100%', display: 'flex', justifyContent: 'center' }}>
-                    <div className='spinner' />
+                  <div style={{ marginTop: '5rem', width: '100%' }}>
+                    <EmptyTxList />
                   </div>
                 </WalletStaggerChild>
-              ) : txs.length > 0 ? (
+              ) : (
                 <WalletStaggerChild animate={shouldStagger}>
                   <TransactionsList maxItems={4} />
+                  <button
+                    type='button'
+                    onClick={handleTransactions}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      background: 'none',
+                      border: '1px solid var(--neutral-200)',
+                      borderRadius: '0.5rem',
+                      color: 'var(--fg)',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      marginTop: '0.5rem',
+                    }}
+                  >
+                    See all transactions
+                  </button>
                 </WalletStaggerChild>
-              ) : null}
+              )}
               <WalletStaggerChild animate={shouldStagger}>
                 <AssetList
                   balances={[{ symbol: ASSETS.BTC.symbol, balance: fromSatoshis(balance) }]}

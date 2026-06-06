@@ -1,5 +1,5 @@
 import AddressBookIcon from '../icons/AddressBook'
-import { ReactElement, ReactNode, createContext, useCallback, useState } from 'react'
+import { ReactElement, ReactNode, createContext, useCallback, useEffect, useRef, useState } from 'react'
 import BackupIcon from '../icons/Backup'
 import InfoIcon from '../icons/Info'
 import KnowledgeBaseIcon from '../icons/KnowledgeBase'
@@ -12,6 +12,7 @@ import ServerIcon from '../icons/Server'
 import LogsIcon from '../icons/Logs'
 import SupportIcon from '../icons/Support'
 import { SettingsOptions, SettingsSections } from '../lib/types'
+import { isButtonBack, subNavHandler } from './navigation'
 import CogIcon from '../icons/Cog'
 import LockIcon from '../icons/Lock'
 import PuzzleIcon from '../icons/Puzzle'
@@ -119,9 +120,29 @@ export const options: Option[] = [
     section: SettingsSections.Config,
   },
   {
+    icon: <></>,
+    option: SettingsOptions.Delegates,
+    section: SettingsSections.Advanced,
+  },
+  {
+    icon: <></>,
+    option: SettingsOptions.Delegates,
+    section: SettingsSections.Advanced,
+  },
+  {
     icon: <VtxosIcon />,
     option: SettingsOptions.Vtxos,
     section: SettingsSections.Config,
+  },
+  {
+    icon: <></>,
+    option: SettingsOptions.Contracts,
+    section: SettingsSections.Config,
+  },
+  {
+    icon: <></>,
+    option: SettingsOptions.Contracts,
+    section: SettingsSections.Advanced,
   },
   {
     icon: <></>,
@@ -167,7 +188,7 @@ const allOptions: SectionResponse[] = [
   }
 })
 
-export type SettingsDirection = 'forward' | 'back'
+export type SettingsDirection = 'forward' | 'back' | 'none'
 
 interface OptionsContextProps {
   direction: SettingsDirection
@@ -191,62 +212,72 @@ export const OptionsProvider = ({ children }: { children: ReactNode }) => {
   const [option, setOption] = useState(SettingsOptions.Menu)
   const [direction, setDirection] = useState<SettingsDirection>('forward')
 
+  const optionRef = useRef(SettingsOptions.Menu)
+  const historyDepth = useRef(0)
+
   const optionSection = (opt: SettingsOptions): SettingsSections => {
     return options.find((o) => o.option === opt)?.section || SettingsSections.General
   }
 
-  const navigateToOption = useCallback(
-    (o: SettingsOptions) => {
-      setDirection('forward')
-      setOption(o)
-    },
-    [setOption],
-  )
+  const getParentOption = (current: SettingsOptions): SettingsOptions => {
+    const section = optionSection(current)
+    return section === SettingsSections.Advanced
+      ? SettingsOptions.Advanced
+      : section === SettingsSections.Config
+        ? SettingsOptions.General
+        : SettingsOptions.Menu
+  }
 
+  // Internal goBack — called by popstate handler via subNavHandler, does NOT touch browser history
+  const internalGoBack = useCallback((fromButton: boolean) => {
+    setDirection(fromButton ? 'back' : 'none')
+    const target = getParentOption(optionRef.current)
+    if (historyDepth.current > 0) historyDepth.current--
+    optionRef.current = target
+    setOption(target)
+  }, [])
+
+  const navigateToOption = useCallback((o: SettingsOptions) => {
+    if (o === SettingsOptions.Menu) {
+      // Reset to menu — don't push history (caller handles history cleanup)
+      historyDepth.current = 0
+      optionRef.current = SettingsOptions.Menu
+      setDirection('back')
+      setOption(SettingsOptions.Menu)
+      return
+    }
+    setDirection('forward')
+    history.pushState({}, '', '')
+    historyDepth.current++
+    optionRef.current = o
+    setOption(o)
+  }, [])
+
+  // Public goBack — called by back button in Settings header
   const goBack = useCallback(() => {
-    setDirection('back')
-    setOption((current) => {
-      // If we're on a specific settings page, determine where to go back
-      if (current === SettingsOptions.Menu) {
-        return SettingsOptions.Menu // Already at top level
-      }
+    if (optionRef.current !== SettingsOptions.Menu) {
+      isButtonBack.current = true
+      history.back() // triggers popstate → NavigationProvider delegates to internalGoBack
+    }
+  }, [])
 
-      const section = optionSection(current)
-
-      // Handle Config section items (these are sub-items within other sections)
-      if (section === SettingsSections.Config) {
-        // Items like Theme, Display, Haptics are under General (if still used)
-        if (
-          current === SettingsOptions.Theme ||
-          current === SettingsOptions.Display ||
-          current === SettingsOptions.Haptics
-        ) {
-          return SettingsOptions.General
-        }
-        // Fiat goes directly from App > Currency, so back goes to menu
-        if (current === SettingsOptions.Fiat) {
-          return SettingsOptions.Menu
-        }
-        // Items like Lock, Reset, Server, Logs, Vtxos, Password are under Advanced
-        if (
-          current === SettingsOptions.Lock ||
-          current === SettingsOptions.Reset ||
-          current === SettingsOptions.Server ||
-          current === SettingsOptions.Logs ||
-          current === SettingsOptions.Vtxos ||
-          current === SettingsOptions.Password
-        ) {
-          return SettingsOptions.Advanced
-        }
-        // Items like Backup are standalone in Security but kept in Config for routing
-        // Go back to menu for these
-        return SettingsOptions.Menu
-      }
-
-      // For items in Account, Security, App, Advanced sections, go back to menu
-      return SettingsOptions.Menu
-    })
-  }, [setOption])
+  // Register with sub-nav handler so NavigationProvider can coordinate
+  useEffect(() => {
+    subNavHandler.canGoBack = () => optionRef.current !== SettingsOptions.Menu
+    subNavHandler.goBack = (fromButton: boolean) => internalGoBack(fromButton)
+    subNavHandler.getDepth = () => historyDepth.current
+    subNavHandler.reset = () => {
+      historyDepth.current = 0
+      optionRef.current = SettingsOptions.Menu
+      setOption(SettingsOptions.Menu)
+    }
+    return () => {
+      subNavHandler.canGoBack = () => false
+      subNavHandler.goBack = () => {}
+      subNavHandler.getDepth = () => 0
+      subNavHandler.reset = () => {}
+    }
+  }, [internalGoBack])
 
   const validOptions = (): SectionResponse[] => {
     return allOptions

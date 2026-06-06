@@ -12,7 +12,6 @@ import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import InputContainer from '../../../components/InputContainer'
 import Scanner from '../../../components/Scanner'
 import Focusable from '../../../components/Focusable'
-import { IonInput, IonText } from '@ionic/react'
 import TabSelector from './TabSelector'
 import ScanIcon from '../../../icons/Scan'
 import PasteIcon from '../../../icons/Paste'
@@ -142,10 +141,11 @@ export default function AddressBookForm() {
               {/* Contact name input (shown when adding as contact) */}
               {isContact && !existingContactName ? (
                 <InputContainer label='Contact Name'>
-                  <IonInput
+                  <input
+                    className='input'
                     value={contactName}
                     placeholder='Enter contact name'
-                    onIonInput={(e) => setContactName(e.detail.value || '')}
+                    onChange={(e) => setContactName(e.target.value)}
                   />
                 </InputContainer>
               ) : null}
@@ -164,21 +164,19 @@ export default function AddressBookForm() {
 
               {/* Label input (optional) */}
               <InputContainer label='Label (optional)'>
-                <IonInput
+                <input
+                  className='input'
                   value={label}
                   placeholder='e.g., Main wallet, Savings...'
-                  onIonInput={(e) => setLabel(e.detail.value || '')}
+                  onChange={(e) => setLabel(e.target.value)}
                 />
               </InputContainer>
 
               {/* Address input */}
-              <InputContainer label='Address'>
-                <IonInput
-                  value={address}
-                  placeholder={`Enter ${getAddressTypeName(addressType).toLowerCase()}`}
-                  onIonInput={(e) => setAddress(e.detail.value || '')}
-                >
-                  <IonText slot='end' style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <InputContainer
+                label='Address'
+                right={
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                     <div
                       onClick={() => setScan(true)}
                       style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
@@ -204,8 +202,15 @@ export default function AddressBookForm() {
                     >
                       <PasteIcon />
                     </div>
-                  </IonText>
-                </IonInput>
+                  </div>
+                }
+              >
+                <input
+                  className='input'
+                  value={address}
+                  placeholder={`Enter ${getAddressTypeName(addressType).toLowerCase()}`}
+                  onChange={(e) => setAddress(e.target.value)}
+                />
               </InputContainer>
 
               {/* Error message */}

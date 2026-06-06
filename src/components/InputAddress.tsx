@@ -1,3 +1,4 @@
+import { isValidLnUrl } from '../lib/lnurl'
 import {
   isArkAddress,
   isBTCAddress,
@@ -35,13 +36,16 @@ export default function InputAddress({
   validator,
 }: InputAddressProps) {
   const isAddress = (data: string): boolean => {
+    const lowerData = data.toLowerCase()
     return (
-      isBip21(data.toLowerCase()) ||
-      isArkAddress(data.toLowerCase()) ||
-      isBTCAddress(data.toLowerCase()) ||
-      isLightningInvoice(data.toLowerCase()) ||
-      isURLWithLightningQueryString(data.toLowerCase()) ||
+      isBip21(lowerData) ||
+      isArkAddress(lowerData) ||
+      isBTCAddress(lowerData) ||
+      isLightningInvoice(lowerData) ||
+      (lowerData.startsWith('lightning:') && isLightningInvoice(lowerData.slice(10))) ||
+      isURLWithLightningQueryString(lowerData) ||
       isEmailAddress(data) ||
+      isValidLnUrl(data) ||
       isArkNote(data) // easter egg :)
     )
   }

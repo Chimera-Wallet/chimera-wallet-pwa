@@ -5,10 +5,11 @@ import {
   MessageBus,
   WalletMessageHandler,
 } from '@arkade-os/sdk'
+import { gitCommit } from './_gitCommit'
 
-// Health-check ping: responds via MessageChannel so the main thread can detect
-// if this worker is alive before attempting full initialization. Must be
-// registered before any other code that could fail.
+// Health-check ping: responds via MessageChannel so the main thread can
+// detect if this worker is alive before attempting full initialization.
+// Must be registered before any other code that could fail.
 self.addEventListener('message', (event: ExtendableMessageEvent) => {
   if (event.data?.type === 'PING' && event.ports?.[0]) {
     event.ports[0].postMessage({ type: 'PONG' })
@@ -18,6 +19,13 @@ self.addEventListener('message', (event: ExtendableMessageEvent) => {
 const walletRepository = new IndexedDBWalletRepository()
 const contractRepository = new IndexedDBContractRepository()
 const swapRepository = new IndexedDbSwapRepository()
+
+// Allow the page to force activation of a newly installed worker.
+self.addEventListener('message', (event: ExtendableMessageEvent) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    event.waitUntil(self.skipWaiting())
+  }
+})
 
 const worker = new MessageBus(walletRepository, contractRepository, {
   messageHandlers: [new WalletMessageHandler(), new ArkadeSwapsMessageHandler(swapRepository)],
@@ -36,43 +44,33 @@ declare const self: ServiceWorkerGlobalScope
 // only called once per service worker. If you alter your
 // service worker script the browser considers it a
 // different service worker, and it'll get its own install event.
-//
-// install event: activate service worker immediately
 self.addEventListener('install', (event: ExtendableEvent) => {
-  event.waitUntil(caches.open(CACHE_NAME))
-  self.skipWaiting() // activate service worker immediately
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(() => {
+      // activate service worker immediately
+      console.log(`Activating service worker ${gitCommit}`)
+      return self.skipWaiting()
+    }),
+  )
 })
 
 // activate event: clean up old caches
 self.addEventListener('activate', (event: ExtendableEvent) => {
+  // claim clients immediately so that the new
+  // service worker starts controlling the page
+  event.waitUntil(self.clients.claim())
+
+  // delete old caches
   event.waitUntil(
-    caches
-      .keys()
-      .then((cacheNames) => {
-        // Delete ALL old caches, keeping only the current one
-        return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (cacheName === CACHE_NAME) return
-            console.log('Deleting old cache:', cacheName)
-            return caches.delete(cacheName)
-          }),
-        )
-      })
-      .then(() => {
-        // Force reload all clients after cache cleanup
-        return self.clients.matchAll({
-          includeUncontrolled: true,
-          type: 'window',
-        })
-      })
-      .then((clients) => {
-        clients.forEach((client) => {
-          console.log('Sending reload message to client')
-          client.postMessage({ type: 'RELOAD_PAGE' })
-        })
-      }),
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName === CACHE_NAME) return
+          return caches.delete(cacheName)
+        }),
+      )
+    }),
   )
-  self.clients.claim() // take control of clients immediately
 })
 
 // we can adopt two different strategies for caching:
@@ -108,10 +106,3 @@ self.addEventListener('activate', (event: ExtendableEvent) => {
 // self.addEventListener('fetch', (event: FetchEvent) => {
 //   event.respondWith(networkFirst(event.request))
 // })
-
-self.addEventListener('message', (event: ExtendableMessageEvent) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    // Skip waiting and activate immediately when requested
-    self.skipWaiting()
-  }
-})

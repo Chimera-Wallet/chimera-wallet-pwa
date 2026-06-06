@@ -8,7 +8,7 @@ import Button from '../../components/Button'
 import { WalletContext } from '../../providers/wallet'
 import { ConfigContext } from '../../providers/config'
 import { AspContext } from '../../providers/asp'
-import { LightningContext } from '../../providers/lightning'
+import { SwapsContext } from '../../providers/swaps'
 import { getReceivingAddresses } from '../../lib/asp'
 import { Addresses } from '../../lib/types'
 import { getWebExplorerURL } from '../../lib/explorers'
@@ -17,11 +17,13 @@ import ChatwootWidget from '../../components/ChatWoot'
 import ButtonsOnBottom from '../../components/ButtonsOnBottom'
 import ErrorMessage from '../../components/Error'
 import { hasChatwootVars } from '../../lib/chatwoot'
+import { getDefaultAddress } from '../../lib/address'
+import { gitCommit } from '../../_gitCommit'
 
 export default function Support() {
   const { aspInfo } = useContext(AspContext)
   const { config } = useContext(ConfigContext)
-  const { getApiUrl } = useContext(LightningContext)
+  const { getApiUrl } = useContext(SwapsContext)
   const { wallet, svcWallet } = useContext(WalletContext)
 
   const [error, setError] = useState('')
@@ -39,15 +41,22 @@ export default function Support() {
 
   // Wait for Chatwoot to load, show error after 5 seconds if not loaded
   useEffect(() => {
-    if (!hasChatwootVars()) {
-      setError('Support chat is not configured')
+    // If Chatwoot is already loaded, set state immediately
+    if (window.$chatwoot) {
+      window.$chatwoot?.toggleBubbleVisibility('hide')
+      setSupportChatLoaded(true)
       return
     }
 
+    // Not all networks may have Chatwoot configured, check for required vars before waiting
+    if (!hasChatwootVars()) return setError('Support chat is not configured')
+
+    // Timeout to detect if Chatwoot fails to load
     const loadTimeout = setTimeout(() => {
       if (!supportChatLoaded) setError('Failed to load support chat')
     }, 5_000)
 
+    // Listen for Chatwoot ready event to set loaded state
     const eventHandler = () => {
       clearTimeout(loadTimeout)
       setSupportChatLoaded(true)
@@ -56,22 +65,29 @@ export default function Support() {
 
     const event = 'chatwoot:ready'
     window.addEventListener(event, eventHandler)
-    return () => window.removeEventListener(event, eventHandler)
+
+    return () => {
+      clearTimeout(loadTimeout)
+      window.removeEventListener(event, eventHandler)
+    }
   }, [])
 
   // Set Chatwoot user and custom attributes when addresses are available
   useEffect(() => {
-    if (!addresses || !supportChatLoaded || !window.$chatwoot || !wallet.pubkey) return
+    if (!addresses || !window.$chatwoot || !wallet.pubkey) return
 
     // Set user identifier (using wallet pubkey)
     const userIdentifier = wallet.pubkey.substring(0, 16)
     window.$chatwoot.setUser(userIdentifier, { name: `User ${userIdentifier}` })
+
+    const defaultAddress = getDefaultAddress(wallet.pubkey, aspInfo)
 
     // Set custom attributes including addresses and service URLs
     window.$chatwoot.setCustomAttributes({
       wallet_pubkey: wallet.pubkey,
       network: wallet.network || 'not available',
       location_origin: window.location.origin,
+      default_address: defaultAddress,
       ark_address: addresses.offchainAddr || 'not available',
       boltz_url: getApiUrl() || 'not available',
       indexer_url: aspInfo.url || config.aspUrl || 'not available',
@@ -79,10 +95,11 @@ export default function Support() {
       ark_server_url: aspInfo.url || config.aspUrl || 'not available',
       app_version: import.meta.env.VITE_APP_VERSION || 'not available',
       lendasat_url: import.meta.env.VITE_LENDASAT_IFRAME_URL || 'not available',
-      lendaswap_url: import.meta.env.VITE_LENDASWAP_IFRAME_URL || 'not available',
+      satora_url: import.meta.env.VITE_SATORA_IFRAME_URL || 'not available',
       explorer_url: wallet.network ? getWebExplorerURL(wallet.network as NetworkName) : 'not available',
+      git_commit: gitCommit,
     })
-  }, [addresses, supportChatLoaded, wallet.pubkey, window.$chatwoot])
+  }, [addresses, wallet.pubkey, supportChatLoaded])
 
   const handleOpenChat = () => {
     if (window.$chatwoot) window.$chatwoot.toggle('open')

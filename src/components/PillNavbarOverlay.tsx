@@ -1,0 +1,46 @@
+import { createPortal } from 'react-dom'
+import { motion, useReducedMotion } from 'framer-motion'
+import PillNavbar from './PillNavbar'
+
+interface PillNavbarOverlayProps {
+  visible: boolean
+  activeTab: string
+  onCardClick: () => void
+  onTradeClick: () => void
+  onWalletClick: () => void
+  onAppsClick: () => void
+  onSettingsClick: () => void
+}
+
+export default function PillNavbarOverlay({
+  visible,
+  activeTab,
+  onCardClick,
+  onTradeClick,
+  onWalletClick,
+  onAppsClick,
+  onSettingsClick,
+}: PillNavbarOverlayProps) {
+  const prefersReduced = useReducedMotion()
+
+  return createPortal(
+    <motion.div
+      className={`pill-navbar-layer ${!visible ? 'pill-navbar-layer--hidden' : ''}`}
+      animate={visible ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+      initial={false}
+      transition={prefersReduced ? { duration: 0 } : { type: 'spring', duration: 0.5, bounce: 0.25 }}
+      {...(!visible && { inert: '' })}
+    >
+      <div className='pill-navbar-haze' aria-hidden='true' />
+      <PillNavbar
+        activeTab={activeTab}
+        onCardClick={onCardClick}
+        onTradeClick={onTradeClick}
+        onWalletClick={onWalletClick}
+        onAppsClick={onAppsClick}
+        onSettingsClick={onSettingsClick}
+      />
+    </motion.div>,
+    document.body,
+  )
+}

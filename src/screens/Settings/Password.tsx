@@ -15,6 +15,7 @@ import { getPrivateKey, isValidPassword, noUserDefinedPassword, setPrivateKey } 
 import Text, { TextSecondary } from '../../components/Text'
 import CenterScreen from '../../components/CenterScreen'
 import LockIcon from '../../icons/Lock'
+import { hasMnemonic, getMnemonic, setMnemonic } from '../../lib/mnemonic'
 
 export default function Password() {
   const { updateWallet, wallet } = useContext(WalletContext)
@@ -67,10 +68,15 @@ export default function Password() {
   const saveNewPassword = async (nextPassword: string | null): Promise<boolean> => {
     if (!oldPassword || nextPassword === null || !authenticated) return false
     const finalPassword = nextPassword === '' ? defaultPassword : nextPassword
-    const privateKey = await getPrivateKey(oldPassword)
     try {
       setSaving(true)
-      await setPrivateKey(privateKey, finalPassword)
+      if (hasMnemonic()) {
+        const mnemonic = await getMnemonic(oldPassword)
+        await setMnemonic(mnemonic, finalPassword)
+      } else {
+        const privateKey = await getPrivateKey(oldPassword)
+        await setPrivateKey(privateKey, finalPassword)
+      }
       setSuccessText(finalPassword === defaultPassword ? 'Password removed' : 'Password changed')
       setError('')
       return true

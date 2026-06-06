@@ -1,17 +1,21 @@
 import { ReactNode, createContext, useEffect, useState } from 'react'
 import { clearStorage, readConfigFromStorage, saveConfigToStorage } from '../lib/storage'
-import { defaultArkServer } from '../lib/constants'
+import { defaultArkServer, devServer } from '../lib/constants'
 import { Config, CurrencyDisplay, Fiats, Themes, Unit } from '../lib/types'
 import { BackupProvider } from '../lib/backup'
 import { consoleError } from '../lib/logs'
 import { setHapticsEnabled } from '../lib/haptics'
+import { IndexedDbSwapRepository } from '@arkade-os/boltz-swap'
 
 const defaultConfig: Config = {
   announcementsSeen: [],
-  apps: { boltz: { connected: true } },
+  apps: { assets: { enabled: false }, boltz: { connected: true } },
   aspUrl: defaultArkServer(),
-  currencyDisplay: CurrencyDisplay.Both,
+  dismissedBanners: [],
+  currencyDisplay: CurrencyDisplay.Fiat,
+  delegate: import.meta.env.VITE_DELEGATE_ENABLED !== 'false',
   fiat: Fiats.USD,
+  importedAssets: [],
   haptics: true,
   nostrBackup: false,
   notifications: false,
@@ -50,6 +54,29 @@ export const ConfigContext = createContext<ConfigContextProps>({
   useFiat: false,
 })
 
+const updateDefaultConfig = (config: Partial<Config>): Config => {
+  // Ad-hoc merge keeps defaults immutable and documents per-field semantics.
+  // Arrays are replaced (not concatenated) and nested objects are rebuilt so we don't
+  // leak references between sessions when the stored config is partial.
+  const announcementsSeen = Array.isArray(config.announcementsSeen)
+    ? config.announcementsSeen
+    : defaultConfig.announcementsSeen
+  const importedAssets = Array.isArray(config.importedAssets) ? config.importedAssets : defaultConfig.importedAssets
+  return {
+    ...defaultConfig,
+    ...config,
+    announcementsSeen: [...announcementsSeen],
+    importedAssets: [...importedAssets],
+    apps: {
+      assets: { enabled: config.apps?.assets?.enabled ?? defaultConfig.apps.assets.enabled },
+      boltz: { connected: config.apps?.boltz?.connected ?? defaultConfig.apps.boltz.connected },
+    },
+  }
+}
+
+const shouldUseDevEnvArkServer = (aspUrl: string) =>
+  import.meta.env.DEV && import.meta.env.VITE_ARK_SERVER && aspUrl === devServer
+
 export const resolveTheme = (theme: Themes): Themes.Dark | Themes.Light => {
   if (theme === Themes.Auto) {
     return window?.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? Themes.Dark : Themes.Light
@@ -67,7 +94,7 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
   const [systemTheme, setSystemTheme] = useState<Themes.Dark | Themes.Light>(() => resolveTheme(Themes.Auto))
 
   const backupConfig = async (config: Config) => {
-    const backupProvider = new BackupProvider({ pubkey: config.pubkey })
+    const backupProvider = new BackupProvider({ pubkey: config.pubkey }, new IndexedDbSwapRepository())
     await backupProvider.backupConfig(config).catch((error) => {
       consoleError(error, 'Backup to Nostr failed')
     })
@@ -78,13 +105,18 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
   const applyTheme = (theme: Themes) => {
     const resolved = resolveTheme(theme)
     setEffectiveTheme(resolved)
-    const darkPalette = 'ion-palette-dark'
+    const darkPalette = 'palette-dark'
     const root = document.documentElement
     if (resolved === Themes.Dark) root.classList.add(darkPalette)
     else root.classList.remove(darkPalette)
+
+    const themeColor = resolved === Themes.Dark ? '#101010' : '#fff'
+    document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute('content', themeColor)
   }
 
-  const updateConfig = async (config: Config) => {
+  const updateConfig = async (incoming: Config) => {
+    // merge with defaults so newly added fields are always present
+    const config = updateDefaultConfig(incoming)
     // add protocol to aspUrl if missing
     if (!config.aspUrl.startsWith('http://') && !config.aspUrl.startsWith('https://')) {
       const protocol = config.aspUrl.startsWith('localhost') ? 'http://' : 'https://'

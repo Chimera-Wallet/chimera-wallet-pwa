@@ -4,7 +4,7 @@ import ButtonsOnBottom from '../../components/ButtonsOnBottom'
 import Padded from '../../components/Padded'
 import { WalletContext } from '../../providers/wallet'
 import { FlowContext } from '../../providers/flow'
-import { prettyAgo, prettyDate } from '../../lib/format'
+import { isBurn, isIssuance, prettyAgo, prettyDate } from '../../lib/format'
 import { defaultFee } from '../../lib/constants'
 import ErrorMessage from '../../components/Error'
 import { extractError } from '../../lib/error'
@@ -12,25 +12,29 @@ import Header from '../../components/Header'
 import Content from '../../components/Content'
 import Info from '../../components/Info'
 import FlexCol from '../../components/FlexCol'
-import WaitingForRound from '../../components/WaitingForRound'
+import FlexRow from '../../components/FlexRow'
 import { sleep } from '../../lib/sleep'
 import Text, { TextSecondary } from '../../components/Text'
+import AssetAvatar from '../../components/AssetAvatar'
 import Details, { DetailsProps } from '../../components/Details'
 import VtxosIcon from '../../icons/Vtxos'
 import CheckMarkIcon from '../../icons/CheckMark'
+import LoadingIcon from '../../icons/Loading'
 import { AspContext } from '../../providers/asp'
 import Reminder from '../../components/Reminder'
 import { LimitsContext } from '../../providers/limits'
 import { getInputsToSettle } from '../../lib/asp'
-import { getTxStatus } from '../../lib/txStatus'
+import { prettyAssetAmount } from '../../lib/assets'
 
 export default function Transaction() {
   const { utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
-  const { txInfo, setTxInfo } = useContext(FlowContext)
+  const { txInfo } = useContext(FlowContext)
   const { aspInfo, calcBestMarketHour } = useContext(AspContext)
-  const { settlePreconfirmed, vtxos, wallet, svcWallet } = useContext(WalletContext)
+  const { assetMetadataCache, settlePreconfirmed, vtxos, vtxoManager, wallet, svcWallet } = useContext(WalletContext)
 
   const tx = txInfo
+  const issuanceTx = tx ? isIssuance(tx) : false
+  const burnTx = tx ? isBurn(tx) : false
   const boardingTx = Boolean(tx?.boardingTxid)
   const defaultButtonLabel = boardingTx ? 'Complete boarding' : 'Settle transaction'
   const boardingExitDelay = Number(aspInfo?.boardingExitDelay || 0)
@@ -49,9 +53,12 @@ export default function Transaction() {
   const [settling, setSettling] = useState(false)
   const [startTime, setStartTime] = useState(0)
 
+  // Hide status banners while settling or after success to prevent conflicting UI states
+  const hideStatusBanners = settling || settleSuccess
+
   useEffect(() => {
     setButtonLabel(settling ? 'Settling...' : defaultButtonLabel)
-  }, [settling])
+  }, [settling, defaultButtonLabel])
 
   useEffect(() => {
     if (!tx) return
@@ -66,13 +73,13 @@ export default function Transaction() {
   }, [wallet.nextRollover])
 
   useEffect(() => {
-    if (!aspInfo || !svcWallet) return
-    getInputsToSettle(svcWallet, wallet.thresholdMs).then(({ inputs }) => {
+    if (!aspInfo || !svcWallet || !vtxoManager) return
+    getInputsToSettle(svcWallet, vtxoManager, wallet.thresholdMs).then(({ inputs }) => {
       setHasInputsToSettle(inputs.length > 0)
       const totalAmount = inputs.reduce((a, v) => a + v.value, 0) || 0
       setAmountAboveDust(totalAmount > aspInfo.dust)
     })
-  }, [aspInfo, vtxos, svcWallet, wallet.thresholdMs])
+  }, [aspInfo, vtxos, svcWallet, vtxoManager, wallet.thresholdMs])
 
   // TODO implement resend
   //  - create new boarding tx
@@ -90,7 +97,10 @@ export default function Transaction() {
       await settlePreconfirmed()
       await sleep(2000) // give time to read last message
       setSettleSuccess(true)
-      if (tx) setTxInfo({ ...tx, preconfirmed: false, settled: true })
+      // Note: We don't optimistically update txInfo here because:
+      // 1. The wallet will reload and reflect the settled state automatically
+      // 2. Updating txInfo after an async operation can corrupt navigation if
+      //    the user has navigated to a different transaction
     } catch (err) {
       setError(extractError(err))
     }
@@ -100,12 +110,24 @@ export default function Transaction() {
   if (!tx) return <></>
 
   const details: DetailsProps = {
-    direction: tx.type === 'sent' ? 'Sent' : 'Received',
+    direction: issuanceTx ? 'Issuance' : burnTx ? 'Burn' : tx.type === 'sent' ? 'Sent' : 'Received',
     when: tx.createdAt ? prettyAgo(tx.createdAt) : !unconfirmedBoardingTx ? 'Unknown' : 'Unconfirmed',
     date: tx.createdAt ? prettyDate(tx.createdAt) : !unconfirmedBoardingTx ? 'Unknown' : 'Unconfirmed',
-    status: getTxStatus(tx, boardingExitDelay),
+    status:
+      settleSuccess || tx.settled
+        ? 'Settled'
+        : expiredBoardingTx
+          ? 'Expired'
+          : unconfirmedBoardingTx
+            ? 'Unconfirmed'
+            : boardingTx && tx.preconfirmed
+              ? 'Pending boarding'
+              : 'Preconfirmed',
     type: boardingTx ? 'Boarding' : 'Offchain',
-    txid: tx.boardingTxid || '',
+    txid: tx.boardingTxid || tx.redeemTxid || '',
+    isOffchainTx: !tx.boardingTxid && Boolean(tx.redeemTxid),
+    assetId: tx.assets?.[0]?.assetId,
+    wallet: wallet,
     satoshis: tx.type === 'sent' ? tx.amount - defaultFee : tx.amount,
     fees: tx.type === 'sent' ? defaultFee : 0,
     total: tx.amount,
@@ -116,7 +138,12 @@ export default function Transaction() {
       <Padded>
         <FlexCol>
           <ErrorMessage error={Boolean(error)} text={error} />
-          {expiredBoardingTx ? (
+          {settling ? (
+            <Info color='purpletext' icon={<LoadingIcon small />} title='Settling'>
+              <Text wrap>{boardingTx ? 'Processing your boarding transaction...' : 'Settling transaction...'}</Text>
+            </Info>
+          ) : null}
+          {expiredBoardingTx && !hideStatusBanners ? (
             <Info color='red' icon={<VtxosIcon />} title='Expired'>
               <Text wrap>Boarding transaction expired.</Text>
             </Info>
@@ -124,7 +151,7 @@ export default function Transaction() {
             <Info color='orange' icon={<VtxosIcon />} title='Unconfirmed'>
               <Text wrap>Onchain transaction unconfirmed. Please wait for confirmation.</Text>
             </Info>
-          ) : tx.preconfirmed && tx.boardingTxid ? (
+          ) : tx.preconfirmed && tx.boardingTxid && !hideStatusBanners ? (
             <Info color='orange' icon={<VtxosIcon />} title='Pending boarding'>
               <Text wrap>Onboard transaction confirmed on-chain.</Text>
             </Info>
@@ -133,6 +160,30 @@ export default function Transaction() {
             <Info color='green' icon={<CheckMarkIcon small />} title='Success'>
               <TextSecondary>Transaction settled successfully</TextSecondary>
             </Info>
+          ) : null}
+          {tx.assets?.length ? (
+            <FlexCol gap='0.5rem'>
+              {tx.assets.map((a) => {
+                const meta = assetMetadataCache.get(a.assetId)?.metadata
+                const ticker = meta?.ticker
+                const name = meta?.name
+                const icon = meta?.icon
+                const decimals = meta?.decimals ?? 8
+                const color = tx.type === 'received' || issuanceTx ? 'green' : ''
+                const label = ticker ?? name ?? `${a.assetId.slice(0, 8)}...`
+                return (
+                  <FlexRow key={a.assetId} gap='0.5rem'>
+                    <AssetAvatar icon={icon} ticker={ticker} size={32} assetId={a.assetId} clickable />
+                    <FlexCol gap='0'>
+                      <Text color={color}>
+                        {prettyAssetAmount(a.amount, decimals)} {label}
+                      </Text>
+                      {name && ticker ? <TextSecondary>{name}</TextSecondary> : null}
+                    </FlexCol>
+                  </FlexRow>
+                )
+              })}
+            </FlexCol>
           ) : null}
           <Details details={details} />
         </FlexCol>
@@ -154,7 +205,7 @@ export default function Transaction() {
     !settling
 
   const Buttons = () =>
-    expiredBoardingTx ? (
+    expiredBoardingTx && !hideStatusBanners ? (
       <ButtonsOnBottom>
         <Button onClick={handleResend} label='Resend' disabled={resending || true} />
       </ButtonsOnBottom>
@@ -177,7 +228,7 @@ export default function Transaction() {
   return (
     <>
       <Header text='Transaction' back />
-      {settling ? <WaitingForRound settle /> : <Body />}
+      <Body />
       <Buttons />
     </>
   )

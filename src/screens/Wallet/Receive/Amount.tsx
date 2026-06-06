@@ -189,9 +189,9 @@ export default function ReceiveAmount() {
     }
 
     // Debounce: wait until the user stops typing before hitting Boltz.
-    // Without this, each keystroke (1 → 10 → 100 → 10_000 → 100_000) fires a
+    // Without this, each keystroke (1 ÔåÆ 10 ÔåÆ 100 ÔåÆ 10_000 ÔåÆ 100_000) fires a
     // parallel createReverseSwap; the first one to succeed (at Boltz's min
-    // ≈10_000 sats) wins and the real amount is never requested.
+    // Ôëê10_000 sats) wins and the real amount is never requested.
     let cancelled = false
     const handle = setTimeout(() => {
       createReverseSwap(satoshis)

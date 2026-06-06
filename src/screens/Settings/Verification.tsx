@@ -1,5 +1,5 @@
 ﻿import { useContext, useEffect, useState, useRef, useCallback } from 'react'
-import { IonCheckbox, IonInput } from '@ionic/react'
+import { Checkbox } from '../../components/ui/checkbox'
 import Header from './Header'
 import Content from '../../components/Content'
 import Padded from '../../components/Padded'
@@ -423,20 +423,20 @@ export default function Verification() {
                 <Text>Enter your email address</Text>
                 <TextSecondary>Enter your email address to begin your KYC verification.</TextSecondary>
               </div>
-              <IonInput
+              <input
+                className='input'
                 value={email}
-                onIonInput={(e) => {
-                  setEmail(String(e.detail.value ?? ''))
+                onChange={(e) => {
+                  setEmail(e.target.value)
                   if (emailError) setEmailError('')
                 }}
                 placeholder='you@example.com'
                 type='email'
-                autocomplete='email'
+                autoComplete='email'
                 style={{
-                  border: '1px solid var(--ion-color-medium)',
+                  border: '1px solid var(--neutral-300)',
                   borderRadius: '8px',
-                  padding: '0 0.75rem',
-                  '--padding-start': '0.75rem',
+                  padding: '0.625rem 0.75rem',
                 }}
               />
               {emailError ? <ErrorMessage error text={emailError} /> : null}
@@ -463,21 +463,21 @@ export default function Verification() {
                   Your email is registered. Open the verification portal to complete or check your KYC status.
                 </TextSecondary>
               </div>
-              <IonInput
+              <input
+                className='input'
                 value={email}
-                readonly={!isEditingEmail}
+                readOnly={!isEditingEmail}
                 type='email'
-                onIonInput={(e) => {
-                  setEmail(String(e.detail.value ?? ''))
+                onChange={(e) => {
+                  setEmail(e.target.value)
                   if (emailError) setEmailError('')
                 }}
-                onIonFocus={() => setIsEditingEmail(true)}
+                onFocus={() => setIsEditingEmail(true)}
                 placeholder='you@example.com'
                 style={{
-                  border: `1px solid ${emailChanged ? 'var(--ion-color-warning)' : 'var(--ion-color-medium)'}`,
+                  border: `1px solid ${emailChanged ? 'var(--orange-500)' : 'var(--neutral-300)'}`,
                   borderRadius: '8px',
-                  padding: '0 0.75rem',
-                  '--padding-start': '0.75rem',
+                  padding: '0.625rem 0.75rem',
                   opacity: isEditingEmail ? 1 : 0.7,
                 }}
               />
@@ -522,42 +522,44 @@ export default function Verification() {
               </div>
               <div style={checkboxStyle}>
                 <FlexRow>
-                  <IonCheckbox
-                    labelPlacement='end'
+                  <Checkbox
                     checked={privacyAccepted}
-                    onIonChange={(e) => setPrivacyAccepted(e.detail.checked)}
-                  >
+                    onCheckedChange={(checked) => setPrivacyAccepted(checked === true)}
+                    aria-label='Accept privacy policy'
+                  />
+                  <Text small>
                     I have read and agree to the{' '}
                     <a
                       href='https://outlogic.net/privacy-policy/'
                       target='_blank'
                       rel='noopener noreferrer'
-                      style={{ color: 'var(--primary)' }}
+                      style={{ color: 'var(--purple-700)' }}
                       onClick={(e) => e.stopPropagation()}
                     >
                       Privacy Policy
                     </a>
-                  </IonCheckbox>
+                  </Text>
                 </FlexRow>
               </div>
               <div style={checkboxStyle}>
                 <FlexRow>
-                  <IonCheckbox
-                    labelPlacement='end'
+                  <Checkbox
                     checked={termsAccepted}
-                    onIonChange={(e) => setTermsAccepted(e.detail.checked)}
-                  >
+                    onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                    aria-label='Accept terms of service'
+                  />
+                  <Text small>
                     I have read and agree to the{' '}
                     <a
                       href='https://outlogic.net/terms-conditions/'
                       target='_blank'
                       rel='noopener noreferrer'
-                      style={{ color: 'var(--primary)' }}
+                      style={{ color: 'var(--purple-700)' }}
                       onClick={(e) => e.stopPropagation()}
                     >
                       Terms of Service
                     </a>
-                  </IonCheckbox>
+                  </Text>
                 </FlexRow>
               </div>
               {sendError ? <ErrorMessage error text={sendError} /> : null}

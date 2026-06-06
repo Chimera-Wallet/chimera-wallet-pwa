@@ -4,17 +4,17 @@ import { EmptySwapList } from './Empty'
 import { FlowContext } from '../providers/flow'
 import { ConfigContext } from '../providers/config'
 import Text, { TextLabel, TextSecondary } from './Text'
-import { useContext, useEffect, useState } from 'react'
-import { LightningContext } from '../providers/lightning'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import { useContext, useEffect, useRef, useState } from 'react'
+import { SwapsContext } from '../providers/swaps'
 import { NavigationContext, Pages } from '../providers/navigation'
 import { prettyAgo, prettyAmount, prettyDate, prettyHide } from '../lib/format'
 import { SwapFailedIcon, SwapPendingIcon, SwapSuccessIcon } from '../icons/Swap'
-import { BoltzSwapStatus } from '@arkade-os/boltz-swap'
+import { BoltzSwapStatus, BoltzSwap } from '@arkade-os/boltz-swap'
 import { consoleError } from '../lib/logs'
 import Focusable from './Focusable'
-import { PendingSwap } from '../lib/types'
 
-const border = '1px solid var(--dark20)'
+const border = '1px solid var(--neutral-200)'
 
 type statusUI = 'Successful' | 'Pending' | 'Failed' | 'Refunded'
 
@@ -42,7 +42,7 @@ const colorDict: Record<statusUI, string> = {
   Failed: 'red',
   Successful: 'green',
   Pending: 'yellow',
-  Refunded: 'dark50',
+  Refunded: 'neutral-500',
 }
 
 const iconDict: Record<statusUI, JSX.Element> = {
@@ -52,13 +52,35 @@ const iconDict: Record<statusUI, JSX.Element> = {
   Refunded: <SwapFailedIcon />,
 }
 
-const SwapLine = ({ onClick, swap }: { onClick: () => void; swap: PendingSwap }) => {
+const SwapLine = ({ onClick, swap }: { onClick: () => void; swap: BoltzSwap }) => {
   const { config } = useContext(ConfigContext)
 
-  const sats = (swap.type === 'reverse' ? swap.response.onchainAmount : swap.response.expectedAmount) ?? 0
-  const direction = swap.type === 'reverse' ? 'Lightning to Arkade' : 'Arkade to Lightning'
-  const status: statusUI = statusDict[swap.status] || 'Pending'
-  const prefix = swap.type === 'reverse' ? '+' : '-'
+  let sats = 0,
+    direction = '',
+    prefix = ''
+
+  if (swap.type === 'reverse') {
+    sats = swap.response.onchainAmount ?? 0
+    direction = 'Lightning to Arkade'
+    prefix = '+'
+  } else if (swap.type === 'submarine') {
+    sats = swap.response.expectedAmount
+    direction = 'Arkade to Lightning'
+    prefix = '-'
+  } else if (swap.type === 'chain') {
+    sats = swap.request.userLockAmount || swap.request.serverLockAmount || 0
+    if (swap.request.from === 'ARK') {
+      direction = 'Arkade to Bitcoin'
+      prefix = '-'
+    } else {
+      direction = 'Bitcoin to Arkade'
+      prefix = '+'
+    }
+  }
+
+  if (!direction || !prefix) throw new Error('Invalid swap data')
+
+  const status: statusUI = statusDict[swap.status as BoltzSwapStatus] || 'Pending'
   const amount = `${prefix} ${config.showBalance ? prettyAmount(sats) : prettyHide(sats)}`
   const when = window.innerWidth < 400 ? prettyAgo(swap.createdAt) : prettyDate(swap.createdAt)
   const refunded = swap.type === 'submarine' && swap.refunded
@@ -74,7 +96,7 @@ const SwapLine = ({ onClick, swap }: { onClick: () => void; swap: PendingSwap })
     alignItems: 'center',
     borderTop: border,
     cursor: 'pointer',
-    padding: '0.5rem 1rem',
+    padding: '0.5rem 0',
   }
 
   return (
@@ -99,24 +121,21 @@ const SwapLine = ({ onClick, swap }: { onClick: () => void; swap: PendingSwap })
 export default function SwapsList() {
   const { setSwapInfo } = useContext(FlowContext)
   const { navigate } = useContext(NavigationContext)
-  const { arkadeLightning, swapManager, getSwapHistory } = useContext(LightningContext)
+  const { swapManager, getSwapHistory } = useContext(SwapsContext)
 
   const [focused, setFocused] = useState(false)
-  const [swapHistory, setSwapHistory] = useState<PendingSwap[]>([])
+  const [swapHistory, setSwapHistory] = useState<BoltzSwap[]>([])
+
+  const parentRef = useRef<HTMLDivElement>(null)
 
   // Load initial swap history
   useEffect(() => {
-    const loadHistory = async () => {
-      if (!arkadeLightning) return
-      try {
-        const history = await getSwapHistory()
-        setSwapHistory(history)
-      } catch (err) {
+    getSwapHistory()
+      .then(setSwapHistory)
+      .catch((err) => {
         consoleError(err, 'Error fetching swap history:')
-      }
-    }
-    loadHistory()
-  }, [arkadeLightning])
+      })
+  }, [getSwapHistory])
 
   // Subscribe to swap updates from SwapManager for real-time updates.
   // In v0.3.18 onSwapUpdate returns Promise<() => void>, so we can't just
@@ -126,13 +145,10 @@ export default function SwapsList() {
   useEffect(() => {
     if (!swapManager) return
 
-    let unsubscribe: (() => void) | null = null
+    let unsub: (() => void) | null = null
     let cancelled = false
-
     swapManager
       .onSwapUpdate((swap) => {
-        // Chain swaps aren't part of chimera's UI; ignore them defensively.
-        if (swap.type === 'chain') return
         setSwapHistory((prev) => {
           const existingIndex = prev.findIndex((s) => s.id === swap.id)
           if (existingIndex >= 0) {
@@ -140,20 +156,30 @@ export default function SwapsList() {
             updated[existingIndex] = swap
             return updated
           }
+          // New swap, add to beginning
           return [swap, ...prev]
         })
       })
-      .then((fn) => {
-        if (cancelled) fn()
-        else unsubscribe = fn
+      .then((unsubscribe) => {
+        if (cancelled) {
+          unsubscribe()
+        } else {
+          unsub = unsubscribe
+        }
       })
-      .catch(consoleError)
 
     return () => {
       cancelled = true
-      if (unsubscribe) unsubscribe()
+      unsub?.()
     }
   }, [swapManager])
+
+  const virtualizer = useVirtualizer({
+    count: swapHistory.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 61,
+    overscan: 5,
+  })
 
   if (swapHistory.length === 0) return <EmptySwapList />
 
@@ -171,35 +197,59 @@ export default function SwapsList() {
     if (outer) outer.focus()
   }
 
-  const ariaLabel = (swap?: PendingSwap) => {
+  const ariaLabel = (swap?: BoltzSwap) => {
     if (!swap) return 'Pressing Enter enables keyboard navigation of the swap list'
     return `Transaction ${swap.type} with status ${swap.status}. Press Escape to exit keyboard navigation.`
   }
 
-  const handleClick = (swap: PendingSwap) => {
+  const handleClick = (swap: BoltzSwap) => {
     setSwapInfo(swap)
     navigate(Pages.AppBoltzSwap)
   }
 
-  const key = (swap: PendingSwap) => swap.response.id
+  const key = (swap: BoltzSwap) => swap.response.id
 
   return (
-    <div style={{ width: 'calc(100% + 2rem)', margin: '0 -1rem' }}>
+    <div style={{ width: '100%' }}>
       <TextLabel>Swap history</TextLabel>
       <Focusable id='outer' inactive={focused} onEnter={focusOnFirstRow} ariaLabel={ariaLabel()}>
-        <div style={{ borderBottom: border }}>
-          {swapHistory.map((swap) => (
-            <Focusable
-              id={key(swap)}
-              key={key(swap)}
-              inactive={!focused}
-              ariaLabel={ariaLabel(swap)}
-              onEscape={focusOnOuterShell}
-              onEnter={() => handleClick(swap)}
-            >
-              <SwapLine onClick={() => handleClick(swap)} swap={swap} />
-            </Focusable>
-          ))}
+        <div
+          ref={parentRef}
+          className='hide-scrollbar scroll-fade'
+          style={{
+            borderBottom: border,
+            height: 'calc(100dvh - 280px)',
+            minHeight: '200px',
+            overflowY: 'auto',
+          }}
+        >
+          <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative', width: '100%' }}>
+            {virtualizer.getVirtualItems().map((virtualItem) => {
+              const swap = swapHistory[virtualItem.index]
+              return (
+                <div
+                  key={key(swap)}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualItem.start}px)`,
+                  }}
+                >
+                  <Focusable
+                    id={key(swap)}
+                    inactive={!focused}
+                    ariaLabel={ariaLabel(swap)}
+                    onEscape={focusOnOuterShell}
+                    onEnter={() => handleClick(swap)}
+                  >
+                    <SwapLine onClick={() => handleClick(swap)} swap={swap} />
+                  </Focusable>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </Focusable>
     </div>

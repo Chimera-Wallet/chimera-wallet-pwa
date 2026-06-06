@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef, useState } from 'react'
 import { ArkadeUnreachableError, WalletContext } from '../../providers/wallet'
 import { FlowContext } from '../../providers/flow'
 import { consoleError } from '../../lib/logs'
-import { getPrivateKey, noUserDefinedPassword } from '../../lib/privateKey'
+import { noUserDefinedPassword } from '../../lib/privateKey'
 import { NavigationContext, Pages } from '../../providers/navigation'
 import NeedsPassword from '../../components/NeedsPassword'
 import Header from '../../components/Header'
@@ -11,7 +11,7 @@ import Loading from '../../components/Loading'
 import { clearStorage } from '../../lib/storage'
 
 export default function Unlock() {
-  const { initWallet, dataReady, wallet, updateWallet } = useContext(WalletContext)
+  const { unlockWallet, dataReady, wallet, updateWallet } = useContext(WalletContext)
   const { navigate } = useContext(NavigationContext)
   const { deepLinkInfo } = useContext(FlowContext)
 
@@ -32,15 +32,6 @@ export default function Unlock() {
   // per call. We measured ~60 req/s (one per frame) hammering Arkade until
   // it 429s, which is what the HAR showed.
   const unlockInFlight = useRef(false)
-
-  // Reset unlock state when component mounts to prevent stale state
-  useEffect(() => {
-    return () => {
-      // Cleanup on unmount
-      setUnlocking(false)
-      setUnlocked(false)
-    }
-  }, [])
 
   // Check if we should auto-unlock (only if no custom password and no biometrics)
   useEffect(() => {
@@ -68,8 +59,7 @@ export default function Unlock() {
     setError('')
 
     const pass = password ? password : defaultPassword
-    getPrivateKey(pass)
-      .then(initWallet)
+    unlockWallet(pass)
       .then(() => setUnlocked(true))
       .catch((err) => {
         setTried(true)

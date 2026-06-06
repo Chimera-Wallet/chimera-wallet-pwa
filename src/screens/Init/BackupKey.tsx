@@ -14,15 +14,14 @@ import SafeIcon from '../../icons/Safe'
 import XIcon from '../../icons/X'
 import { copyToClipboard } from '../../lib/clipboard'
 import { privateKeyToNsec } from '../../lib/privateKey'
-import { copiedToClipboard } from '../../lib/toast'
 import { NavigationContext, Pages } from '../../providers/navigation'
-import { useIonToast } from '@ionic/react'
+import { useToast } from '../../components/Toast'
 import { FlowContext } from '../../providers/flow'
 
 export default function InitBackupKey() {
   const { navigate } = useContext(NavigationContext)
   const { initInfo } = useContext(FlowContext)
-  const [present] = useIonToast()
+  const { toast } = useToast()
 
   const nsec = useMemo(() => (initInfo.privateKey ? privateKeyToNsec(initInfo.privateKey) : ''), [initInfo.privateKey])
   const [revealed, setRevealed] = useState(false)
@@ -30,7 +29,7 @@ export default function InitBackupKey() {
   const handleCopy = async () => {
     if (!nsec) return
     await copyToClipboard(nsec)
-    present(copiedToClipboard)
+    toast('Copied to clipboard')
   }
 
   const handleProceed = () => navigate(Pages.InitBiometric)

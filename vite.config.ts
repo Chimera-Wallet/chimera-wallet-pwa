@@ -1,12 +1,22 @@
+import path from 'path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import eslint from 'vite-plugin-eslint'
 import basicSsl from '@vitejs/plugin-basic-ssl'
+import tailwindcss from '@tailwindcss/vite'
+import basicAuth from './plugins/vite-plugin-basic-auth'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
   plugins: [
+    basicAuth(),
     react(),
+    tailwindcss(),
     eslint({
       include: ['src/**/*.ts', 'src/**/*.tsx'],
       exclude: ['src/test/**/*.ts', 'src/test/**/*.tsx'],
@@ -21,8 +31,6 @@ export default defineConfig({
     port: 3002,
     host: true,
     allowedHosts: ['.trycloudflare.com', '.ngrok-free.app'],
-    // Handle SPA routing - all paths fallback to index.html
-    historyApiFallback: true,
     proxy: {
       '/api': {
         target: 'http://localhost:7071',

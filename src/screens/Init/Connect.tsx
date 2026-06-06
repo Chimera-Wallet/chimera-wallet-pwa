@@ -1,60 +1,81 @@
 import { useContext, useEffect, useState } from 'react'
-import Button from '../../components/Button'
-import ButtonsOnBottom from '../../components/ButtonsOnBottom'
-import { NavigationContext, Pages } from '../../providers/navigation'
 import { FlowContext } from '../../providers/flow'
 import Content from '../../components/Content'
 import { WalletContext } from '../../providers/wallet'
-import Loading from '../../components/Loading'
+import LoadingLogo from '../../components/LoadingLogo'
 import Header from '../../components/Header'
 import { setPrivateKey } from '../../lib/privateKey'
+import { setMnemonic } from '../../lib/mnemonic'
 import { consoleError, consoleLog } from '../../lib/logs'
-import { LightningContext } from '../../providers/lightning'
+import { SwapsContext } from '../../providers/swaps'
+import { useLoadingStatus } from '../../hooks/useLoadingStatus'
+import { setLoadingStatus } from '../../lib/loadingStatus'
+import { NavigationContext, Pages } from '../../providers/navigation'
 
 export default function InitConnect() {
   const { initInfo, setInitInfo } = useContext(FlowContext)
-  const { arkadeLightning, restoreSwaps } = useContext(LightningContext)
+  const { arkadeSwaps, restoreSwaps } = useContext(SwapsContext)
   const { navigate } = useContext(NavigationContext)
   const { initWallet } = useContext(WalletContext)
 
+  const loadingStatus = useLoadingStatus()
+  const [error, setError] = useState<string>()
   const [initialized, setInitialized] = useState(false)
+  const [connectDone, setConnectDone] = useState(false)
 
-  const { password, privateKey } = initInfo
+  const { password, privateKey, mnemonic } = initInfo
 
   useEffect(() => {
-    if (!password || !privateKey) return
-    setPrivateKey(privateKey, password)
-      .then(() => initWallet(privateKey))
-      .then(() => setInitialized(true))
-      .catch((err) => consoleError(err, 'Error initializing wallet:'))
+    if (!password || (!mnemonic && !privateKey)) {
+      abortConnectionWithError(new Error('Missing credentials'))
+      return
+    }
+    if (mnemonic) {
+      setMnemonic(mnemonic, password)
+        .then(() => initWallet({ mnemonic }))
+        .then(() => setInitialized(true))
+        .catch(abortConnectionWithError)
+    } else if (privateKey) {
+      setPrivateKey(privateKey, password)
+        .then(() => initWallet({ privateKey }))
+        .then(() => setInitialized(true))
+        .catch(abortConnectionWithError)
+    }
   }, [])
 
   useEffect(() => {
-    if (!initialized) return
-    if (!initInfo.restoring) return handleProceed()
-    if (!arkadeLightning) return
+    if (!initialized || !arkadeSwaps) return
+    if (!initInfo.restoring) return setConnectDone(true)
+    setLoadingStatus('Restoring swaps...')
     restoreSwaps()
       .then((count) => count && consoleLog(`Restored ${count} swaps from network`))
       .catch((err) => consoleError(err, 'Error restoring swaps:'))
-      .finally(handleProceed)
-  }, [arkadeLightning, initialized, initInfo.restoring])
+      .finally(() => setConnectDone(true))
+  }, [arkadeSwaps, initialized, initInfo.restoring])
 
-  const handleCancel = () => navigate(Pages.Init)
+  const handleExitComplete = () => {
+    setInitInfo({ ...initInfo, password: undefined, privateKey: undefined, mnemonic: undefined })
+    navigate(error ? Pages.Init : Pages.Wallet)
+  }
 
-  const handleProceed = () => {
-    setInitInfo({ ...initInfo, password: undefined, privateKey: undefined })
-    navigate(Pages.Wallet)
+  const abortConnectionWithError = (err: any) => {
+    consoleError(err, 'Error during connection:')
+    setLoadingStatus('Connection failed')
+    setError('Connection failed')
+    setConnectDone(true)
   }
 
   return (
     <>
-      <Header text='Connecting to server' back={handleCancel} />
+      <Header text='Connecting to server' />
       <Content>
-        <Loading text='Connecting to server' />
+        <LoadingLogo
+          text={loadingStatus || 'Connecting to server'}
+          exitMode={connectDone ? 'fly-up' : 'none'}
+          onExitComplete={handleExitComplete}
+          done={connectDone}
+        />
       </Content>
-      <ButtonsOnBottom>
-        <Button onClick={handleCancel} label='Cancel' secondary />
-      </ButtonsOnBottom>
     </>
   )
 }

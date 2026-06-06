@@ -133,7 +133,7 @@ export default function SendForm() {
         return setRecipient(url.searchParams.get('lightning')!)
       }
       if (isBip21(lowerCaseData)) {
-        const { address, arkAddress, invoice, lnurl, satoshis } = decodeBip21(lowerCaseData)
+        const { address, arkAddress, invoice, lnUrl, satoshis } = decodeBip21(lowerCaseData)
         if (!address && !arkAddress && !invoice) return setError('Unable to parse bip21')
         if (selectedMethod === TRANSFER_METHOD.bitcoin) {
           if (!address) return setError('Selected method requires a Bitcoin address')
@@ -144,13 +144,13 @@ export default function SendForm() {
           return setState({ ...sendInfo, address: '', arkAddress, invoice: '', lnUrl: undefined, recipient, satoshis })
         }
         if (selectedMethod === TRANSFER_METHOD.lightning) {
-          if (!invoice && !lnurl) return setError('Selected method requires a Lightning invoice address')
+          if (!invoice && !lnUrl) return setError('Selected method requires a Lightning invoice address')
           return setState({
             ...sendInfo,
             address: '',
             arkAddress: '',
             invoice: invoice ?? '',
-            lnUrl: lnurl,
+            lnUrl,
             recipient,
             satoshis,
           })

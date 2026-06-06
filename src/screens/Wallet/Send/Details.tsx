@@ -12,32 +12,56 @@ import { defaultFee } from '../../../lib/constants'
 import { prettyNumber, fromSatoshis } from '../../../lib/format'
 import Content from '../../../components/Content'
 import FlexCol from '../../../components/FlexCol'
-import { collaborativeExitWithFees, sendOffChain } from '../../../lib/asp'
+import { collaborativeExitWithFees, sendAssets, sendOffChain } from '../../../lib/asp'
 import { extractError } from '../../../lib/error'
-import Loading from '../../../components/Loading'
+import LoadingLogo from '../../../components/LoadingLogo'
 import { consoleError } from '../../../lib/logs'
-import WaitingForRound from '../../../components/WaitingForRound'
 import { LimitsContext } from '../../../providers/limits'
-import { LightningContext } from '../../../providers/lightning'
+import { SwapsContext } from '../../../providers/swaps'
+import Text from '../../../components/Text'
+import { isPendingChainSwap, isPendingSubmarineSwap } from '@arkade-os/boltz-swap'
 import { FeesContext } from '../../../providers/fees'
+import { prettyAssetAmount } from '../../../lib/assets'
 
 export default function SendDetails() {
-  const { calcOnchainOutputFee } = useContext(FeesContext)
-  const { sendInfo, setSendInfo } = useContext(FlowContext)
-  const { calcSubmarineSwapFee, payInvoice } = useContext(LightningContext)
-  const { lnSwapsAllowed, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
   const { navigate } = useContext(NavigationContext)
-  const { balance, svcWallet } = useContext(WalletContext)
+  const { sendInfo, setSendInfo } = useContext(FlowContext)
+  const { calcOnchainOutputFee } = useContext(FeesContext)
+  const isAssetSend = Boolean(sendInfo.assets?.length)
+  const { lnSwapsAllowed, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
+  const { payInvoice, payBtc } = useContext(SwapsContext)
+  const { assetMetadataCache, balance, svcWallet } = useContext(WalletContext)
+
+  const assetId = sendInfo.assets?.[0]?.assetId
+  const assetMeta = assetId ? assetMetadataCache.get(assetId) : undefined
+  const assetTicker = assetMeta?.metadata?.ticker ?? ''
+  const assetName = assetMeta?.metadata?.name ?? 'Asset'
+  const assetAmountValue = sendInfo.assets?.[0]?.amount ?? BigInt(0)
 
   const [buttonLabel, setButtonLabel] = useState('')
   const [details, setDetails] = useState<DetailsProps>()
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
+  const [sendDone, setSendDone] = useState(false)
 
   const { address, arkAddress, invoice, pendingSwap, satoshis } = sendInfo
 
   useEffect(() => {
     if (!address && !arkAddress && !invoice) return setError('Missing address')
+    if (isAssetSend) {
+      if (!assetAmountValue) return setError('Missing asset amount')
+      const destination = arkAddress ?? ''
+      const feeInSats = defaultFee
+      setDetails({
+        destination,
+        direction: 'Sending assets',
+        fees: feeInSats,
+        satoshis: 0,
+        total: feeInSats,
+      })
+      setButtonLabel('Tap to Sign')
+      return
+    }
     if (!satoshis) return setError('Missing amount')
     const destination =
       arkAddress && vtxoTxsAllowed()
@@ -49,25 +73,29 @@ export default function SendDetails() {
             : ''
     const direction =
       destination === arkAddress
-        ? 'Paying inside the Ark'
+        ? 'Paying inside Arkade'
         : destination === invoice
           ? 'Swapping to Lightning'
-          : destination === address
-            ? 'Paying to mainnet'
-            : ''
-    const feeInSats =
-      destination === invoice
-        ? calcSubmarineSwapFee(satoshis)
-        : destination === address
-          ? calcOnchainOutputFee()
-          : defaultFee
+          : pendingSwap?.type === 'chain'
+            ? 'Swapping to mainnet'
+            : destination === address
+              ? 'Paying to mainnet'
+              : ''
+    const total = pendingSwap
+      ? pendingSwap.type === 'chain'
+        ? pendingSwap.response.lockupDetails.amount
+        : pendingSwap.type === 'submarine'
+          ? pendingSwap.response.expectedAmount
+          : satoshis
+      : satoshis
+    const amount = direction === 'Paying to mainnet' ? satoshis - calcOnchainOutputFee() : satoshis
+    const fees = total - amount > 0 ? total - amount : 0
     const swapId = pendingSwap?.id
-    const total = satoshis + feeInSats
     setDetails({
       destination,
       direction,
-      fees: feeInSats,
-      satoshis,
+      fees,
+      satoshis: amount,
       swapId,
       total,
     })
@@ -84,30 +112,61 @@ export default function SendDetails() {
   }
 
   const handleTxid = (txid: string) => {
-    if (!txid) return setError('Error sending transaction')
+    if (!txid) return handleError('Error sending transaction')
     setSendInfo({ ...sendInfo, total: details?.total, txid })
-    navigate(Pages.SendSuccess)
+    setSendDone(true)
+  }
+
+  const handleExitComplete = () => {
+    if (error) return setSending(false)
+    else navigate(Pages.SendSuccess)
   }
 
   const handleError = (err: any) => {
     consoleError(err, 'error sending payment')
     setError(extractError(err))
-    setSending(false)
+    setSendDone(true)
   }
 
   const handleContinue = async () => {
-    if (!details?.total || !details.satoshis || !svcWallet) return
+    if (!details || !svcWallet) return
+    if (!isAssetSend && (!details.total || !details.satoshis)) return
+    if (isAssetSend && !arkAddress) {
+      setError('Assets can only be sent to Arkade addresses')
+      return
+    }
+
     setSending(true)
-    if (arkAddress) {
-      sendOffChain(svcWallet, details.total, arkAddress).then(handleTxid).catch(handleError)
-    } else if (invoice) {
-      const response = pendingSwap?.response
-      if (!response) return setError('Swap response not available')
-      const swapAddress = pendingSwap?.response.address
-      if (!swapAddress) return setError('Swap address not available')
-      payInvoice(pendingSwap).then(handlePreimage).catch(handleError)
+
+    if (isAssetSend && arkAddress) {
+      // Asset send via wallet.send()
+      if (!sendInfo.assets || sendInfo.assets.length === 0) return handleError('Missing assets list')
+      sendAssets(svcWallet, arkAddress, sendInfo.assets)
+        .then((txId: string) => handleTxid(txId))
+        .catch(handleError)
+    } else if (arkAddress) {
+      if (!details.total) return handleError('Missing total amount')
+      sendOffChain(svcWallet, details.total, arkAddress)
+        .then((txId: string) => handleTxid(txId))
+        .catch(handleError)
+    } else if (invoice && pendingSwap && isPendingSubmarineSwap(pendingSwap)) {
+      const swapAddress = pendingSwap.response.address
+      if (!swapAddress) return handleError('Swap address not available')
+      payInvoice(pendingSwap)
+        .then(({ preimage, txid }) => handlePreimage({ preimage, txid }))
+        .catch(handleError)
     } else if (address) {
-      collaborativeExitWithFees(svcWallet, details.total, details.satoshis, address).then(handleTxid).catch(handleError)
+      if (pendingSwap && isPendingChainSwap(pendingSwap)) {
+        payBtc(pendingSwap)
+          .then(({ txid }) => handleTxid(txid))
+          .catch(handleError)
+      } else {
+        if (!details.total) return handleError('Missing total amount')
+        if (!details.satoshis) return handleError('Missing satoshis amount')
+        collaborativeExitWithFees(svcWallet, details.total, details.satoshis, address)
+          .then((txId: string) => handleTxid(txId))
+          .catch(handleError)
+      }
     }
   }
 
@@ -117,16 +176,41 @@ export default function SendDetails() {
       <Content>
         {sending ? (
           details?.destination === invoice ? (
-            <Loading text='Paying to Lightning' />
+            <LoadingLogo
+              text='Paying to Lightning'
+              done={sendDone}
+              exitMode='fly-up'
+              onExitComplete={handleExitComplete}
+            />
           ) : details?.destination === arkAddress ? (
-            <Loading text='Paying inside the Ark' />
+            <LoadingLogo
+              text='Paying inside Arkade'
+              done={sendDone}
+              exitMode='fly-up'
+              onExitComplete={handleExitComplete}
+            />
           ) : (
-            <WaitingForRound />
+            <LoadingLogo
+              text='Paying to mainnet'
+              done={sendDone}
+              exitMode='fly-up'
+              onExitComplete={handleExitComplete}
+            />
           )
         ) : (
           <Padded>
             <FlexCol>
               <ErrorMessage error={Boolean(error)} text={error} />
+              {isAssetSend ? (
+                <FlexCol gap='0.5rem'>
+                  <Text color='neutral-500' smaller testId='send-details-asset-name'>
+                    {assetName} ({assetTicker})
+                  </Text>
+                  <Text bold testId='send-details-asset-amount'>
+                    {prettyAssetAmount(assetAmountValue, assetMeta?.metadata?.decimals ?? 8)} {assetTicker}
+                  </Text>
+                </FlexCol>
+              ) : null}
               <Details details={details} />
             </FlexCol>
           </Padded>

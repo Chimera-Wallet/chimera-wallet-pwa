@@ -27,8 +27,8 @@ export interface ChatwootVars {
 
 export const getChatwootVars = (): ChatwootVars => {
   return {
-    websiteToken: import.meta.env.VITE_CHATWOOT_WEBSITE_TOKEN,
-    baseUrl: import.meta.env.VITE_CHATWOOT_BASE_URL,
+    websiteToken: import.meta.env.VITE_CHATWOOT_WEBSITE_TOKEN ?? '',
+    baseUrl: import.meta.env.VITE_CHATWOOT_BASE_URL ?? '',
   }
 }
 

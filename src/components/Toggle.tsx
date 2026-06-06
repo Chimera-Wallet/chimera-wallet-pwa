@@ -1,34 +1,37 @@
 import Text from './Text'
-import { IonToggle } from '@ionic/react'
 import FlexRow from './FlexRow'
 import FlexCol from './FlexCol'
-import Focusable from './Focusable'
+import { Switch } from '@/components/ui/switch'
 import { hapticLight } from '../lib/haptics'
 
 interface ToggleProps {
   checked: boolean
   onClick: () => void
-  text: string
   subtext?: string
+  text: string
   testId?: string
 }
 
 export default function Toggle({ checked, onClick, text, subtext, testId }: ToggleProps) {
-  const handleClick = () => {
+  const handleChange = () => {
     hapticLight()
     onClick()
   }
 
   return (
     <FlexCol border gap='0.5rem' padding='0 0 1rem 0'>
-      <FlexRow between onClick={handleClick}>
+      <FlexRow between>
         <Text thin>{text}</Text>
-        <Focusable onEnter={handleClick} fit round>
-          <IonToggle checked={checked} data-testid={testId} />
-        </Focusable>
+        <Switch
+          checked={checked}
+          onCheckedChange={handleChange}
+          data-testid={testId}
+          data-checked={checked ? 'true' : 'false'}
+          size='lg'
+        />
       </FlexRow>
       {subtext ? (
-        <Text small thin wrap>
+        <Text color='neutral-500' small thin wrap>
           {subtext}
         </Text>
       ) : null}

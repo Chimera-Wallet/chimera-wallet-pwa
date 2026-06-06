@@ -1,4 +1,4 @@
-import { useIonToast } from '@ionic/react'
+import { useToast } from '../../components/Toast'
 import { useState, useEffect, useContext, useRef } from 'react'
 import Button from '../../components/Button'
 import Padded from '../../components/Padded'
@@ -7,8 +7,8 @@ import { copyToClipboard } from '../../lib/clipboard'
 import Header from './Header'
 import Text, { TextSecondary } from '../../components/Text'
 import FlexCol from '../../components/FlexCol'
-import { backupToNostr, copiedToClipboard } from '../../lib/toast'
 import { getPrivateKey, privateKeyToNsec } from '../../lib/privateKey'
+import { hasMnemonic, getMnemonic } from '../../lib/mnemonic'
 import { consoleError } from '../../lib/logs'
 import Shadow from '../../components/Shadow'
 import { defaultPassword } from '../../lib/constants'
@@ -28,26 +28,34 @@ import { WalletContext } from '../../providers/wallet'
 import { authenticateUser } from '../../lib/biometrics'
 import FingerprintIcon from '../../icons/Fingerprint'
 import InputPassword from '../../components/InputPassword'
+import { IndexedDbSwapRepository } from '@arkade-os/boltz-swap'
+import { SwapsContext } from '../../providers/swaps'
 
 export default function Backup() {
   const { wallet } = useContext(WalletContext)
+  const { arkadeSwaps } = useContext(SwapsContext)
   const { backupConfig, config, updateConfig } = useContext(ConfigContext)
 
-  const [present] = useIonToast()
+  const { toast } = useToast()
 
-  const [nsec, setNsec] = useState('')
+  const isMnemonicWallet = hasMnemonic()
+
+  const [secret, setSecret] = useState('')
   const [error, setError] = useState('')
   const [dialog, setDialog] = useState(false)
-  const [showNsec, setShowNsec] = useState(false)
+  const [showSecret, setShowSecret] = useState(false)
 
   const enteredPassword = useRef('')
 
   useEffect(() => {
-    verifyPassword(defaultPassword).then(setNsec)
+    verifyPassword(defaultPassword).then(setSecret)
   }, [])
 
   const verifyPassword = async (password: string): Promise<string> => {
     try {
+      if (isMnemonicWallet) {
+        return await getMnemonic(password)
+      }
       const privateKey = await getPrivateKey(password)
       return privateKeyToNsec(privateKey)
     } catch {
@@ -56,9 +64,9 @@ export default function Backup() {
   }
 
   const handleCopy = async () => {
-    if (!nsec) return
-    await copyToClipboard(nsec)
-    present(copiedToClipboard)
+    if (!secret) return
+    await copyToClipboard(secret)
+    toast('Copied to clipboard')
   }
 
   const onChangePassword = (e: any) => {
@@ -66,16 +74,20 @@ export default function Backup() {
   }
 
   const showPrivateKey = async () => {
-    if (!nsec) {
+    if (!secret) {
       const password = wallet.lockedByBiometrics
         ? await authenticateUser(wallet.passkeyId).catch(setError)
         : enteredPassword.current
       if (!password) return
-      const privateKey = await verifyPassword(password)
-      setError(privateKey ? '' : 'Invalid password')
-      setNsec(privateKey ?? '')
+      const result = await verifyPassword(password)
+      if (!result) {
+        setError('Invalid password')
+        return
+      }
+      setError('')
+      setSecret(result)
     }
-    setShowNsec(true)
+    setShowSecret(true)
     setDialog(false)
   }
 
@@ -87,8 +99,8 @@ export default function Backup() {
     const newConfig = { ...config, nostrBackup: !config.nostrBackup }
     updateConfig(newConfig)
     if (newConfig.nostrBackup) {
-      const backupProvider = new BackupProvider({ pubkey: config.pubkey })
-      await backupProvider.fullBackup(newConfig).catch((error) => {
+      const backupProvider = new BackupProvider({ pubkey: config.pubkey }, new IndexedDbSwapRepository())
+      await backupProvider.fullBackup(newConfig, arkadeSwaps ?? undefined).catch((error) => {
         consoleError(error, 'Backup to Nostr failed')
         setError('Backup to Nostr failed')
         return
@@ -96,20 +108,24 @@ export default function Backup() {
     } else {
       backupConfig(newConfig)
     }
-    present(backupToNostr)
+    toast('Nostr backup updated')
   }
+
+  const secretLabel = isMnemonicWallet ? 'Recovery phrase' : 'Private key'
 
   const Dialog = () => (
     <FlexCol gap='1.5rem'>
       <FlexCol centered gap='0.5rem'>
         <Text big medium heading>
-          Private key
+          {secretLabel}
         </Text>
         <TextSecondary centered wrap>
-          Your Private Key is the key used to back up your wallet. Keep it secret and secure at all times.
+          {isMnemonicWallet
+            ? 'Your recovery phrase is used to back up your wallet. Keep it secret and secure at all times.'
+            : 'Your private key is used to back up your wallet. Keep it secret and secure at all times.'}
         </TextSecondary>
       </FlexCol>
-      {!nsec ? (
+      {!secret ? (
         wallet.lockedByBiometrics ? (
           <FlexCol centered gap='0.5rem'>
             <FingerprintIcon />
@@ -126,7 +142,7 @@ export default function Backup() {
       <FlexCol gap='0.25rem'>
         <FlexRow>
           <SafeIcon />
-          <TextSecondary>Keep your private key safe</TextSecondary>
+          <TextSecondary>Keep your {secretLabel.toLowerCase()} safe</TextSecondary>
         </FlexRow>
         <FlexRow>
           <DontIcon />
@@ -147,25 +163,23 @@ export default function Backup() {
   return (
     <>
       <Header text='Backup' back />
-      {dialog ? (
-        <Modal>
-          <Dialog />
-        </Modal>
-      ) : null}
+      <Modal open={dialog} onOpenChange={setDialog}>
+        <Dialog />
+      </Modal>
       <Content>
         <Padded>
           <FlexCol gap='2rem'>
             <ErrorMessage error={Boolean(error)} text={error} />
             <FlexCol border gap='0.5rem' padding='0 0 1rem 0'>
-              <Text thin>Private key</Text>
+              <Text thin>{secretLabel}</Text>
               <TextSecondary>For your eyes only, do not share.</TextSecondary>
               <Shadow lighter>
                 <FlexCol gap='10px'>
-                  <InputFake testId='private-key' text={showNsec ? nsec : '*******'} />
-                  {showNsec ? (
+                  <InputFake testId='private-key' text={showSecret ? secret : '*******'} />
+                  {showSecret ? (
                     <Button onClick={handleCopy} label='Copy to clipboard' />
                   ) : (
-                    <Button onClick={toggleDialog} label='View private key' />
+                    <Button onClick={toggleDialog} label={`View ${secretLabel.toLowerCase()}`} />
                   )}
                   <FlexRow>
                     <OkIcon />
@@ -173,8 +187,14 @@ export default function Backup() {
                   </FlexRow>
                 </FlexCol>
               </Shadow>
-              {showNsec ? (
-                <WarningBox text="Your Private Key can be used to access everything in your wallet. Don't share it with anyone." />
+              {showSecret ? (
+                <WarningBox
+                  text={
+                    isMnemonicWallet
+                      ? "Your recovery phrase can be used to access everything in your wallet. Don't share it with anyone."
+                      : "Your private key can be used to access everything in your wallet. Don't share it with anyone."
+                  }
+                />
               ) : null}
             </FlexCol>
             <Toggle

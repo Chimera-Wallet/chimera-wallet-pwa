@@ -17,6 +17,7 @@ const CRYPTO_COINGECKO_ID_MAP: Record<AssetSymbol, CoinGeckoAssetID> = {
   ETH: 'ethereum',
   TRX: 'tron',
   MATIC: 'matic-network',
+  CEXT: 'bitcoin',
 }
 
 // Map fiat currency symbols to CoinGecko IDs
@@ -24,6 +25,9 @@ const FIAT_COINGECKO_ID_MAP: Record<FiatSymbol, CoinGeckoAssetID> = {
   CHF: 'chf',
   EUR: 'eur',
   USD: 'usd',
+  JPY: 'jpy',
+  GBP: 'gbp',
+  CNY: 'cny',
 }
 
 // Build asset mappings from ASSETS config

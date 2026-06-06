@@ -1,22 +1,26 @@
 import { useContext, useEffect, useState } from 'react'
-import { generateMnemonic, mnemonicToSeedSync } from '@scure/bip39'
+import { generateMnemonic } from '@scure/bip39'
 import { wordlist } from '@scure/bip39/wordlists/english'
 import Button from '../../components/Button'
 import { NavigationContext, Pages } from '../../providers/navigation'
 import { AspContext } from '../../providers/asp'
 import ErrorMessage from '../../components/Error'
 import { FlowContext } from '../../providers/flow'
-import { IonContent } from '@ionic/react'
-import { deriveKeyFromSeed } from '../../lib/wallet'
-import { defaultPassword } from '../../lib/constants'
 import FlexCol from '../../components/FlexCol'
+import { defaultPassword } from '../../lib/constants'
+import { WalletContext } from '../../providers/wallet'
 
 export default function Init() {
   const { aspInfo } = useContext(AspContext)
   const { setInitInfo } = useContext(FlowContext)
   const { navigate } = useContext(NavigationContext)
+  const { authState, wallet } = useContext(WalletContext)
 
   const [error, setError] = useState(false)
+
+  useEffect(() => {
+    if (wallet.pubkey && authState === 'authenticated') navigate(Pages.Wallet)
+  }, [wallet.pubkey, authState])
 
   useEffect(() => {
     setError(aspInfo.unreachable)
@@ -24,16 +28,14 @@ export default function Init() {
 
   const handleNewWallet = () => {
     const mnemonic = generateMnemonic(wordlist)
-    const seed = mnemonicToSeedSync(mnemonic)
-    const privateKey = deriveKeyFromSeed(seed)
-    setInitInfo({ privateKey, password: defaultPassword, restoring: false })
-    navigate(Pages.InitSuccess)
+    setInitInfo({ mnemonic, password: defaultPassword, restoring: false })
+    navigate(Pages.InitConnect)
   }
 
   const handleOldWallet = () => navigate(Pages.InitRestore)
 
   return (
-    <IonContent style={{ '--background': 'transparent' } as any}>
+    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: '100vh' }}>
       {/* Full-screen gradient background */}
       <div
         style={{
@@ -107,6 +109,6 @@ export default function Init() {
           </div>
         </div>
       </div>
-    </IonContent>
+    </div>
   )
 }

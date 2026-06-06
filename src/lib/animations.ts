@@ -1,7 +1,11 @@
 import { Variants } from 'framer-motion'
 
-// Easing: Emil Kowalski's ease-out quint
+// Easing: Emil Kowalski's curves
 export const EASE_OUT_QUINT = [0.23, 1, 0.32, 1]
+export const EASE_OUT_QUINT_TUPLE = EASE_OUT_QUINT as [number, number, number, number]
+// ease-in-out-quint: for on-screen elements moving between positions
+export const EASE_IN_OUT_QUINT = [0.86, 0, 0.07, 1]
+export const EASE_IN_OUT_QUINT_TUPLE = EASE_IN_OUT_QUINT as [number, number, number, number]
 
 // Page transition timing
 export const PAGE_TRANSITION_DURATION = 0.3
@@ -9,7 +13,7 @@ export const PAGE_TRANSITION_EXIT_DURATION = 0.24 // 20% faster exit
 
 // Stagger timing for wallet load-in
 export const STAGGER_DELAY = 0.06
-export const STAGGER_DURATION = 0.4
+export const STAGGER_DURATION = 0.3
 
 // Slide distance (% of container)
 const SLIDE_OFFSET = '20%'
@@ -26,7 +30,8 @@ export const pageTransitionVariants: Variants = {
   animate: (direction: string) => ({
     x: '0%',
     opacity: 1,
-    transition: direction === 'none' ? { duration: 0 } : { duration: PAGE_TRANSITION_DURATION, ease: EASE_OUT_QUINT },
+    transition:
+      direction === 'none' ? { duration: 0 } : { duration: PAGE_TRANSITION_DURATION, ease: EASE_OUT_QUINT_TUPLE },
   }),
   exit: (direction: string) => {
     if (direction === 'forward')
@@ -34,14 +39,14 @@ export const pageTransitionVariants: Variants = {
         x: `-${SLIDE_OFFSET}`,
         opacity: 0,
         pointerEvents: 'none' as const,
-        transition: { duration: PAGE_TRANSITION_EXIT_DURATION, ease: EASE_OUT_QUINT },
+        transition: { duration: PAGE_TRANSITION_EXIT_DURATION, ease: EASE_OUT_QUINT_TUPLE },
       }
     if (direction === 'back')
       return {
         x: SLIDE_OFFSET,
         opacity: 0,
         pointerEvents: 'none' as const,
-        transition: { duration: PAGE_TRANSITION_EXIT_DURATION, ease: EASE_OUT_QUINT },
+        transition: { duration: PAGE_TRANSITION_EXIT_DURATION, ease: EASE_OUT_QUINT_TUPLE },
       }
     return { opacity: 0, pointerEvents: 'none' as const, transition: { duration: 0 } }
   },
@@ -54,7 +59,7 @@ export const overlayStyle = {
   zIndex: 10,
   display: 'flex',
   flexDirection: 'column' as const,
-  background: 'var(--ion-background-color)',
+  background: 'var(--background-color)',
 }
 
 // Overlay slide-up animation — used for keyboard, scanner, etc.
@@ -62,11 +67,11 @@ export const overlaySlideUp: Variants = {
   initial: { y: '100%' },
   animate: {
     y: '0%',
-    transition: { duration: PAGE_TRANSITION_DURATION, ease: EASE_OUT_QUINT },
+    transition: { duration: PAGE_TRANSITION_DURATION, ease: EASE_OUT_QUINT_TUPLE },
   },
   exit: {
     y: '100%',
-    transition: { duration: PAGE_TRANSITION_EXIT_DURATION, ease: EASE_OUT_QUINT },
+    transition: { duration: PAGE_TRANSITION_EXIT_DURATION, ease: EASE_OUT_QUINT_TUPLE },
   },
 }
 
@@ -83,7 +88,7 @@ export const walletLoadInChild: Variants = {
     y: 0,
     x: 0,
     opacity: 1,
-    transition: { duration: STAGGER_DURATION, ease: EASE_OUT_QUINT },
+    transition: { duration: STAGGER_DURATION, ease: EASE_OUT_QUINT_TUPLE },
   },
 }
 
@@ -102,6 +107,6 @@ export const onboardStaggerChild: Variants = {
   animate: {
     y: 0,
     opacity: 1,
-    transition: { duration: STAGGER_DURATION, ease: EASE_OUT_QUINT },
+    transition: { duration: STAGGER_DURATION, ease: EASE_OUT_QUINT_TUPLE },
   },
 }

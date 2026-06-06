@@ -1,34 +1,55 @@
-import { useContext, useEffect, useState } from 'react'
+import { useCallback, useContext, useEffect, useState } from 'react'
 import Padded from '../../../components/Padded'
 import Header from '../../../components/Header'
 import Content from '../../../components/Content'
 import FlexCol from '../../../components/FlexCol'
 import Table, { TableData } from '../../../components/Table'
 import { FlowContext } from '../../../providers/flow'
-import { decodeInvoice } from '../../../lib/bolt11'
+import { decodeInvoice, isValidInvoice } from '../../../lib/bolt11'
 import { prettyAgo, prettyAmount, prettyDate, prettyHide } from '../../../lib/format'
 import { ConfigContext } from '../../../providers/config'
-import { isSubmarineSwapRefundable, isReverseClaimableStatus } from '@arkade-os/boltz-swap'
+import {
+  isSubmarineSwapRefundable,
+  isChainSwapRefundable,
+  isReverseSwapClaimable,
+  isChainSwapClaimable,
+} from '@arkade-os/boltz-swap'
 import Button from '../../../components/Button'
 import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
-import { LightningContext } from '../../../providers/lightning'
+import { SwapsContext } from '../../../providers/swaps'
 import { consoleError } from '../../../lib/logs'
 import { extractError } from '../../../lib/error'
 import ErrorMessage from '../../../components/Error'
 import { TextSecondary } from '../../../components/Text'
 import CheckMarkIcon from '../../../icons/CheckMark'
 import Info from '../../../components/Info'
-import Loading from '../../../components/Loading'
+import LoadingLogo from '../../../components/LoadingLogo'
 import FlexRow from '../../../components/FlexRow'
 import { InfoIconDark } from '../../../icons/Info'
+
+function friendlySwapError(message: string): string {
+  const locktimeMatch = message.match(/locktime=(\d+)/)
+  if (locktimeMatch) {
+    const date = prettyDate(parseInt(locktimeMatch[1], 10))
+    return `Refund not yet available. Your funds will be recoverable after ${date}.`
+  }
+  if (message.includes('VHTLC is already spent')) {
+    return 'This swap has already been refunded or claimed.'
+  }
+  if (message.includes('VHTLC not found')) {
+    return 'No funds found at the swap address. The swap may not have been funded.'
+  }
+  return message
+}
 
 export default function AppBoltzSwap() {
   const { config } = useContext(ConfigContext)
   const { swapInfo, setSwapInfo } = useContext(FlowContext)
-  const { claimVHTLC, refundVHTLC, swapManager } = useContext(LightningContext)
+  const { claimArk, claimBtc, claimVHTLC, refundArk, refundVHTLC, swapManager } = useContext(SwapsContext)
 
   const [error, setError] = useState<string>('')
   const [processing, setProcessing] = useState<boolean>(false)
+  const [opDone, setOpDone] = useState(false)
   const [success, setSuccess] = useState<boolean>(false)
 
   // Subscribe to real-time updates for this swap. subscribeToSwapUpdates
@@ -37,80 +58,142 @@ export default function AppBoltzSwap() {
   useEffect(() => {
     if (!swapManager || !swapInfo) return
 
-    let unsubscribe: (() => void) | null = null
+    let unsub: (() => void) | null = null
     let cancelled = false
-
     swapManager
       .subscribeToSwapUpdates(swapInfo.id, (updatedSwap) => {
-        if (updatedSwap.type === 'chain') return
         setSwapInfo(updatedSwap)
       })
-      .then((fn) => {
-        if (cancelled) fn()
-        else unsubscribe = fn
+      .then((unsubscribe) => {
+        if (cancelled) {
+          unsubscribe()
+        } else {
+          unsub = unsubscribe
+        }
       })
-      .catch(consoleError)
 
     return () => {
       cancelled = true
-      if (unsubscribe) unsubscribe()
+      unsub?.()
     }
   }, [swapManager, swapInfo?.id])
 
   if (!swapInfo) return null
 
-  const isReverse = swapInfo.type === 'reverse'
+  const formatAmount = (amt: number | undefined) => {
+    if (amt === undefined || Number.isNaN(amt)) return '—'
+    return config.showBalance ? prettyAmount(amt) : prettyHide(amt)
+  }
 
-  const refunded = !isReverse && swapInfo.refunded
-  const kind = isReverse ? 'Reverse Swap' : 'Submarine Swap'
-  const direction = isReverse ? 'Lightning to Arkade' : 'Arkade to Lightning'
-  const address = isReverse ? swapInfo.response.lockupAddress : swapInfo.response.address
-  const total = isReverse ? swapInfo.request.invoiceAmount : swapInfo.response.expectedAmount
-  const invoice = isReverse ? swapInfo.response.invoice : swapInfo.request.invoice
-  const decodedInvoice = invoice ? decodeInvoice(invoice) : { amountSats: total, note: '' }
-  const amount = (isReverse ? swapInfo.response.onchainAmount : decodedInvoice.amountSats) ?? 0
+  const diff = (a: number | undefined, b: number | undefined) =>
+    a === undefined || b === undefined ? undefined : a - b
 
-  const formatAmount = (amt: number) => (config.showBalance ? prettyAmount(amt) : prettyHide(amt))
+  const date = prettyDate(swapInfo.createdAt)
+  const when = prettyAgo(swapInfo.createdAt)
+  const swapId = swapInfo.response.id
+  const preimage = swapInfo.preimage
+  const status = swapInfo.status
 
-  const data: TableData = [
-    ['When', prettyAgo(swapInfo.createdAt)],
-    ['Kind', kind],
-    ['Swap ID', swapInfo.response.id],
-    ['Description', decodedInvoice.note],
-    ['Direction', direction],
-    ['Date', prettyDate(swapInfo.createdAt)],
-    ['Invoice', invoice],
-    ['Preimage', swapInfo.preimage],
-    ['Address', address],
-    ['Status', swapInfo.status],
-    ['Amount', formatAmount(amount)],
-    ['Fees', formatAmount(total - amount)],
-    ['Total', formatAmount(total)],
-  ]
+  let tableData: TableData = []
 
-  const isRefundable = isSubmarineSwapRefundable(swapInfo)
-  const isClaimable = isReverseClaimableStatus(swapInfo.status)
+  if (swapInfo.type === 'chain') {
+    const sentSats = swapInfo.response.lockupDetails?.amount
+    const rcvdSats = swapInfo.response.claimDetails?.amount
+    const btcAddress =
+      swapInfo.request.from === 'ARK' ? swapInfo.toAddress : swapInfo.response.claimDetails?.lockupAddress
+
+    tableData = [
+      ['When', when],
+      ['Kind', 'Chain Swap'],
+      ['Swap ID', swapId],
+      ['Direction', swapInfo.request.from === 'ARK' ? 'Arkade to BTC' : 'BTC to Arkade'],
+      ['Date', date],
+      ['Preimage', preimage],
+      ['BTC Address', btcAddress],
+      ['Status', status],
+      ['Amount', formatAmount(rcvdSats)],
+      ['Fees', formatAmount(diff(sentSats, rcvdSats))],
+      ['Total', formatAmount(sentSats)],
+    ]
+  } else if (swapInfo.type === 'reverse') {
+    const sentSats = swapInfo.request.invoiceAmount
+    const rcvdSats = swapInfo.response.onchainAmount
+
+    tableData = [
+      ['When', when],
+      ['Kind', 'Reverse Swap'],
+      ['Swap ID', swapId],
+      ['Direction', 'Lightning to Arkade'],
+      ['Date', date],
+      ['Preimage', preimage],
+      ['Invoice', swapInfo.response.invoice],
+      ['Status', swapInfo.status],
+      ['Amount', formatAmount(rcvdSats)],
+      ['Fees', formatAmount(diff(sentSats, rcvdSats))],
+      ['Total', formatAmount(sentSats)],
+    ]
+  } else if (swapInfo.type === 'submarine') {
+    const sentSats = swapInfo.response.expectedAmount
+    const rcvdSats = isValidInvoice(swapInfo.request.invoice)
+      ? decodeInvoice(swapInfo.request.invoice).amountSats
+      : undefined
+
+    tableData = [
+      ['When', when],
+      ['Kind', 'Submarine Swap'],
+      ['Swap ID', swapId],
+      ['Direction', 'Arkade to Lightning'],
+      ['Date', date],
+      ['Preimage', preimage],
+      ['Invoice', swapInfo.request.invoice],
+      ['Status', status],
+      ['Amount', formatAmount(rcvdSats)],
+      ['Fees', formatAmount(diff(sentSats, rcvdSats))],
+      ['Total', formatAmount(sentSats)],
+    ]
+  }
+
+  const isRefundable = isSubmarineSwapRefundable(swapInfo) || isChainSwapRefundable(swapInfo)
+  const isClaimable = isReverseSwapClaimable(swapInfo) || isChainSwapClaimable(swapInfo)
   const buttonLabel = isClaimable ? 'Complete swap' : 'Refund swap'
+  const refunded = swapInfo.status === 'transaction.refunded'
 
   const buttonHandler = async () => {
     try {
       setProcessing(true)
-      if (isReverse && isClaimable) {
+      if (isReverseSwapClaimable(swapInfo)) {
         await claimVHTLC(swapInfo)
         setSuccess(true)
       }
-      if (!isReverse && isRefundable) {
+      if (isChainSwapClaimable(swapInfo)) {
+        if (swapInfo.request.to === 'BTC') {
+          await claimBtc(swapInfo)
+        } else if (swapInfo.request.to === 'ARK') {
+          await claimArk(swapInfo)
+        }
+        setSuccess(true)
+      }
+      if (isChainSwapRefundable(swapInfo)) {
+        await refundArk(swapInfo)
+        setSuccess(true)
+      }
+      if (isSubmarineSwapRefundable(swapInfo)) {
         await refundVHTLC(swapInfo)
         setSuccess(true)
       }
       // No need to manually refresh - SwapManager handles status updates
+      setOpDone(true)
     } catch (error) {
-      setError(extractError(error))
-      consoleError(error, 'Error processing swap')
-    } finally {
+      const raw = extractError(error)
+      setError(friendlySwapError(raw))
+      consoleError(error, `Error processing swap ${swapInfo?.id}`)
       setProcessing(false)
     }
   }
+
+  const handleExitComplete = useCallback(() => {
+    setProcessing(false)
+  }, [])
 
   return (
     <>
@@ -118,7 +201,12 @@ export default function AppBoltzSwap() {
       <Content>
         <Padded>
           {processing ? (
-            <Loading text='Processing swap...' />
+            <LoadingLogo
+              text='Processing swap...'
+              done={opDone}
+              exitMode='fly-up'
+              onExitComplete={handleExitComplete}
+            />
           ) : (
             <FlexCol gap='2rem'>
               <ErrorMessage error={Boolean(error)} text={error} />
@@ -132,7 +220,7 @@ export default function AppBoltzSwap() {
                   <TextSecondary>Swap refunded</TextSecondary>
                 </FlexRow>
               ) : null}
-              <Table data={data} />
+              <Table data={tableData} />
             </FlexCol>
           )}
         </Padded>

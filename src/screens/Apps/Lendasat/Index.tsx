@@ -13,6 +13,7 @@ import { hmac } from '@noble/hashes/hmac.js'
 import { collaborativeExit, getReceivingAddresses } from '../../../lib/asp'
 import { Transaction } from '@arkade-os/sdk'
 import { isArkAddress, isBTCAddress } from '../../../lib/address'
+import { NavigationContext, Pages } from '../../../providers/navigation'
 
 const { bytesToHex, hexToBytes } = utils
 
@@ -21,7 +22,9 @@ secp.hashes.sha256 = sha256
 secp.hashes.hmacSha256 = (key, msg) => hmac(sha256, key, msg)
 
 export default function AppLendasat() {
+  const { navigate } = useContext(NavigationContext)
   const { wallet, svcWallet } = useContext(WalletContext)
+
   const [arkAddress, setArkAddress] = useState<string | null>(null)
   const [boardingAddress, setBoardingAddress] = useState<string | null>(null)
 
@@ -71,7 +74,7 @@ export default function AppLendasat() {
           switch (asset) {
             case 'bitcoin':
               if (isArkAddress(address)) {
-                const txId = await svcWallet?.sendBitcoin({ amount: amount, address: address })
+                const txId = await svcWallet?.send({ amount, address })
                 if (txId) {
                   return txId
                 } else {
@@ -117,7 +120,7 @@ export default function AppLendasat() {
 
           switch (addressType) {
             case AddressType.ARK:
-              if (!arkAddress) throw new Error('Ark address not yet loaded')
+              if (!arkAddress) throw new Error('Arkade address not yet loaded')
               return arkAddress
 
             case AddressType.BITCOIN:
@@ -176,7 +179,7 @@ export default function AppLendasat() {
 
   return (
     <>
-      <Header text='Lendasat' back />
+      <Header text='Lendasat' back={() => navigate(Pages.Apps)} />
       <Content>
         <Padded>
           <FlexCol gap='2rem' between>

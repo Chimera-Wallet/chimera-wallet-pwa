@@ -1,16 +1,27 @@
 import { ReactNode, createContext, useContext, useEffect, useRef } from 'react'
-import { Satoshis, TxType } from '../lib/types'
-import { AspContext } from './asp'
 import { consoleError } from '../lib/logs'
 import { WalletContext } from './wallet'
-import { LightningContext } from './lightning'
+import { SwapsContext } from './swaps'
+import { AspContext } from './asp'
+
+enum TxType {
+  arkToBtc = 'arkToBtc',
+  btcToArk = 'btcToArk',
+  swap = 'swap',
+  utxo = 'utxo',
+  vtxo = 'vtxo',
+}
 
 type LimitsContextProps = {
-  amountIsAboveMaxLimit: (sats: Satoshis) => boolean
-  amountIsBelowMinLimit: (sats: Satoshis) => boolean
-  validLnSwap: (sats: Satoshis) => boolean
-  validUtxoTx: (sats: Satoshis) => boolean
-  validVtxoTx: (sats: Satoshis) => boolean
+  amountIsAboveMaxLimit: (sats: number) => boolean
+  amountIsBelowMinLimit: (sats: number) => boolean
+  validArkToBtc: (sats: number) => boolean
+  validBtcToArk: (sats: number) => boolean
+  validLnSwap: (sats: number) => boolean
+  validUtxoTx: (sats: number) => boolean
+  validVtxoTx: (sats: number) => boolean
+  arkToBtcAllowed: () => boolean
+  btcToArkAllowed: () => boolean
   lnSwapsAllowed: () => boolean
   utxoTxsAllowed: () => boolean
   vtxoTxsAllowed: () => boolean
@@ -19,8 +30,8 @@ type LimitsContextProps = {
 }
 
 type LimitAmounts = {
-  min: bigint
-  max: bigint
+  min: number
+  max: number
 }
 
 type LimitTxTypes = Record<TxType, LimitAmounts>
@@ -28,9 +39,13 @@ type LimitTxTypes = Record<TxType, LimitAmounts>
 export const LimitsContext = createContext<LimitsContextProps>({
   amountIsAboveMaxLimit: () => false,
   amountIsBelowMinLimit: () => false,
+  arkToBtcAllowed: () => false,
+  btcToArkAllowed: () => false,
   lnSwapsAllowed: () => false,
   utxoTxsAllowed: () => false,
   vtxoTxsAllowed: () => false,
+  validArkToBtc: () => false,
+  validBtcToArk: () => false,
   validLnSwap: () => false,
   validUtxoTx: () => false,
   validVtxoTx: () => false,
@@ -41,75 +56,103 @@ export const LimitsContext = createContext<LimitsContextProps>({
 export const LimitsProvider = ({ children }: { children: ReactNode }) => {
   const { aspInfo } = useContext(AspContext)
   const { svcWallet } = useContext(WalletContext)
-  const { arkadeLightning, connected } = useContext(LightningContext)
+  const { arkadeSwaps, connected } = useContext(SwapsContext)
 
   const limits = useRef<LimitTxTypes>({
-    swap: { min: BigInt(0), max: BigInt(0) },
-    utxo: { min: BigInt(0), max: BigInt(-1) },
-    vtxo: { min: BigInt(0), max: BigInt(-1) },
+    arkToBtc: { min: 0, max: 0 },
+    btcToArk: { min: 0, max: 0 },
+    swap: { min: 0, max: 0 },
+    utxo: { min: 0, max: -1 },
+    vtxo: { min: 0, max: -1 },
   })
   // Track whether swap limits have been fetched to avoid duplicate /submarine calls
   const swapLimitsFetched = useRef(false)
 
   // update limits when aspInfo or svcWallet changes
   useEffect(() => {
-    if (!aspInfo.network || !svcWallet || !arkadeLightning) return
+    if (!aspInfo.network || !svcWallet || !connected) return
 
     limits.current.utxo = {
-      min: BigInt(import.meta.env.VITE_UTXO_MIN_AMOUNT || aspInfo.utxoMinAmount || aspInfo.dust || -1),
-      max: BigInt(import.meta.env.VITE_UTXO_MAX_AMOUNT || aspInfo.utxoMaxAmount || -1),
+      min: Number(import.meta.env.VITE_UTXO_MIN_AMOUNT || aspInfo.utxoMinAmount || aspInfo.dust || -1),
+      max: Number(import.meta.env.VITE_UTXO_MAX_AMOUNT || aspInfo.utxoMaxAmount || -1),
     }
 
     limits.current.vtxo = {
-      min: BigInt(import.meta.env.VITE_VTXO_MIN_AMOUNT || aspInfo.vtxoMinAmount || aspInfo.dust || -1),
-      max: BigInt(import.meta.env.VITE_VTXO_MAX_AMOUNT || aspInfo.vtxoMaxAmount || -1),
+      min: Number(import.meta.env.VITE_VTXO_MIN_AMOUNT || aspInfo.vtxoMinAmount || aspInfo.dust || -1),
+      max: Number(import.meta.env.VITE_VTXO_MAX_AMOUNT || aspInfo.vtxoMaxAmount || -1),
     }
-  }, [aspInfo.network, svcWallet, arkadeLightning])
+  }, [aspInfo.network, svcWallet, connected])
 
-  // update limits when arkadeLightning or connected changes
+  // update limits when arkadeSwaps or connected changes
   useEffect(() => {
-    if (!arkadeLightning) return
-
-    if (connected) {
-      if (swapLimitsFetched.current) return
-      swapLimitsFetched.current = true
-      arkadeLightning
+    if (!arkadeSwaps) return
+    if (!connected) {
+      limits.current.swap = {
+        ...limits.current.swap,
+        min: 0,
+        max: 0,
+      }
+      limits.current.arkToBtc = {
+        ...limits.current.arkToBtc,
+        min: 0,
+        max: 0,
+      }
+      limits.current.btcToArk = {
+        ...limits.current.btcToArk,
+        min: 0,
+        max: 0,
+      }
+    } else {
+      arkadeSwaps
         .getLimits()
         .then((res) => {
           if (!res) return
           limits.current.swap = {
             ...limits.current.swap,
-            min: BigInt(res.min),
-            max: BigInt(res.max),
+            min: res.min,
+            max: res.max,
           }
         })
-        .catch((err) => {
-          swapLimitsFetched.current = false // allow retry
-          consoleError(err)
+        .catch(consoleError)
+      arkadeSwaps
+        .getLimits('ARK', 'BTC')
+        .then((res) => {
+          if (!res) return
+          limits.current.arkToBtc = {
+            ...limits.current.arkToBtc,
+            min: res.min,
+            max: res.max,
+          }
         })
-    } else {
-      swapLimitsFetched.current = false
-      limits.current.swap = {
-        ...limits.current.swap,
-        min: BigInt(0),
-        max: BigInt(0),
-      }
+        .catch(consoleError)
+      arkadeSwaps
+        .getLimits('BTC', 'ARK')
+        .then((res) => {
+          if (!res) return
+          limits.current.btcToArk = {
+            ...limits.current.btcToArk,
+            min: res.min,
+            max: res.max,
+          }
+        })
+        .catch(consoleError)
     }
-  }, [arkadeLightning, connected])
+  }, [arkadeSwaps, connected])
 
   const minSwapAllowed = () => Number(limits.current.swap.min)
   const maxSwapAllowed = () => Number(limits.current.swap.max)
 
-  const validAmount = (sats: Satoshis, txtype: TxType): boolean => {
+  const validAmount = (sats: number, txtype: TxType): boolean => {
     if (!sats) return txtype !== TxType.swap
-    const bigSats = BigInt(sats)
     const { min, max } = limits.current[txtype]
-    return bigSats >= min && (max === BigInt(-1) || bigSats <= max)
+    return sats >= min && (max === -1 ? true : sats <= max)
   }
 
-  const validLnSwap = (sats: Satoshis): boolean => validAmount(sats, TxType.swap)
-  const validUtxoTx = (sats: Satoshis): boolean => validAmount(sats, TxType.utxo)
-  const validVtxoTx = (sats: Satoshis): boolean => validAmount(sats, TxType.vtxo)
+  const validLnSwap = (sats: number): boolean => validAmount(sats, TxType.swap)
+  const validUtxoTx = (sats: number): boolean => validAmount(sats, TxType.utxo)
+  const validVtxoTx = (sats: number): boolean => validAmount(sats, TxType.vtxo)
+  const validArkToBtc = (sats: number): boolean => validAmount(sats, TxType.arkToBtc)
+  const validBtcToArk = (sats: number): boolean => validAmount(sats, TxType.btcToArk)
 
   /**
    * Calculates the maximum allowed amount based on UTXO and VTXO limits.
@@ -128,11 +171,11 @@ export const LimitsProvider = ({ children }: { children: ReactNode }) => {
    * amount   444 | 444 | 444 | 444 |
    *
    */
-  const getMaxSatsAllowed = (): bigint => {
+  const getMaxSatsAllowed = (): number => {
     const { utxo, vtxo } = limits.current
-    if (vtxo.max === BigInt(-1)) return utxo.max > 0 ? utxo.max : BigInt(-1)
-    if (vtxo.max === BigInt(0)) return utxo.max
-    if (utxo.max <= BigInt(0)) return vtxo.max
+    if (vtxo.max === -1) return utxo.max > 0 ? utxo.max : -1
+    if (vtxo.max === 0) return utxo.max
+    if (utxo.max <= 0) return vtxo.max
     return utxo.max < vtxo.max ? utxo.max : vtxo.max
   }
 
@@ -147,7 +190,7 @@ export const LimitsProvider = ({ children }: { children: ReactNode }) => {
   // min        0 |  -1 |   0 |   0 |
   // amount   444 |  -1 |   0 | 333 |
   //
-  const getMinSatsAllowed = (): bigint => {
+  const getMinSatsAllowed = (): number => {
     const { utxo, vtxo } = limits.current
     return utxo.min < vtxo.min ? utxo.min : vtxo.min
   }
@@ -157,9 +200,9 @@ export const LimitsProvider = ({ children }: { children: ReactNode }) => {
    * @param sats - The amount in satoshis to check
    * @returns true if the amount is above the maximum limit, false otherwise
    */
-  const amountIsAboveMaxLimit = (sats: Satoshis): boolean => {
+  const amountIsAboveMaxLimit = (sats: number): boolean => {
     const maxAllowed = getMaxSatsAllowed()
-    return maxAllowed === BigInt(-1) ? false : BigInt(sats) > maxAllowed
+    return maxAllowed === -1 ? false : sats > maxAllowed
   }
 
   /**
@@ -167,19 +210,23 @@ export const LimitsProvider = ({ children }: { children: ReactNode }) => {
    * @param sats - The amount in satoshis to check
    * @returns true if the amount is below the minimum limit, false otherwise
    */
-  const amountIsBelowMinLimit = (sats: Satoshis) => {
-    return getMinSatsAllowed() < 0 ? false : BigInt(sats) < getMinSatsAllowed()
+  const amountIsBelowMinLimit = (sats: number) => {
+    return getMinSatsAllowed() < 0 ? false : sats < getMinSatsAllowed()
   }
 
-  const lnSwapsAllowed = () => limits.current.swap.max !== BigInt(0)
-  const utxoTxsAllowed = () => limits.current.utxo.max !== BigInt(0)
-  const vtxoTxsAllowed = () => limits.current.vtxo.max !== BigInt(0)
+  const lnSwapsAllowed = () => limits.current.swap.max !== 0
+  const utxoTxsAllowed = () => limits.current.utxo.max !== 0
+  const vtxoTxsAllowed = () => limits.current.vtxo.max !== 0
+  const arkToBtcAllowed = () => limits.current.arkToBtc.max !== 0
+  const btcToArkAllowed = () => limits.current.btcToArk.max !== 0
 
   return (
     <LimitsContext.Provider
       value={{
         amountIsAboveMaxLimit,
         amountIsBelowMinLimit,
+        arkToBtcAllowed,
+        btcToArkAllowed,
         minSwapAllowed,
         maxSwapAllowed,
         lnSwapsAllowed,
@@ -188,6 +235,8 @@ export const LimitsProvider = ({ children }: { children: ReactNode }) => {
         validLnSwap,
         validUtxoTx,
         validVtxoTx,
+        validArkToBtc,
+        validBtcToArk,
       }}
     >
       {children}

@@ -233,7 +233,7 @@ export const ASSETS = {
 } as const
 ```
 
-2. Add the color to [src/ionic.css](../../ionic.css):
+2. Add the color to [src/tokens.css](../../tokens.css):
 
 ```css
 --asset-ada: #0033ad;

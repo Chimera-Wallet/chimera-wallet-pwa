@@ -5,7 +5,7 @@ import { fromSatoshis, prettyNumber } from '../lib/format'
 import { Relay } from 'nostr-tools'
 
 interface NotificationsContextProps {
-  notifyPaymentReceived: (s: number) => void
+  notifyPaymentReceived: (s: number, assetLabel?: string) => void
   notifyPaymentSent: (s: number) => void
   notifyVtxosRollover: () => void
   notifyTxSettled: () => void
@@ -31,8 +31,8 @@ export const NotificationsProvider = ({ children }: { children: ReactNode }) => 
     sendNotification(title, body)
   }
 
-  const notifyPaymentReceived = (sats: number) => {
-    const body = `You received ${prettyNumber(fromSatoshis(sats), 8)} BTC`
+  const notifyPaymentReceived = (sats: number, assetLabel?: string) => {
+    const body = assetLabel ? `You received ${assetLabel}` : `You received ${prettyNumber(sats)} sats`
     const title = 'Payment received'
     sendSystemNotification(title, body)
   }
@@ -56,7 +56,7 @@ export const NotificationsProvider = ({ children }: { children: ReactNode }) => 
   }
 
   useEffect(() => {
-    if (!config.nostr) {
+    if (!config.nostrBackup) {
       if (relay.current) {
         if (relay.current.connected) relay.current.close()
         relay.current = undefined
@@ -64,7 +64,7 @@ export const NotificationsProvider = ({ children }: { children: ReactNode }) => 
       return
     }
     connectRelay()
-  }, [config.nostr])
+  }, [config.nostrBackup])
 
   return (
     <NotificationsContext.Provider

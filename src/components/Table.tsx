@@ -5,22 +5,22 @@ import { prettyLongText } from '../lib/format'
 import { useState } from 'react'
 import Focusable from './Focusable'
 import { copyToClipboard } from '../lib/clipboard'
-import { useIonToast } from '@ionic/react'
-import { copiedToClipboard } from '../lib/toast'
+import { useToast } from './Toast'
 import { hapticSubtle } from '../lib/haptics'
+import ExternalLinkIcon from '../icons/ExternalLink'
 
-export type TableLine = [string, string | undefined, JSX.Element?]
+export type TableLine = [string, string | undefined, JSX.Element?, (() => void)?]
 export type TableData = TableLine[]
 
 export default function Table({ data }: { data: TableData }) {
   const [focused, setFocused] = useState(false)
 
-  const [present] = useIonToast()
+  const { toast } = useToast()
 
   const copy = (value: string) => {
     hapticSubtle()
     copyToClipboard(value)
-    present(copiedToClipboard)
+    toast('Copied to clipboard')
   }
 
   const focusOnFirstRow = () => {
@@ -45,26 +45,33 @@ export default function Table({ data }: { data: TableData }) {
   return (
     <Focusable id='outer' inactive={focused} onEnter={focusOnFirstRow} ariaLabel={ariaLabel()}>
       <FlexCol gap='0.5rem'>
-        {data.map(([title, value, icon]) =>
+        {data.map(([title, value, icon, onClick]) =>
           value == '' || value === undefined || value === null ? null : (
             <Focusable
               id={title}
               key={title}
               inactive={!focused}
-              onEnter={() => copy(value)}
+              onEnter={() => (onClick ? onClick() : copy(value))}
               onEscape={focusOnOuterShell}
               ariaLabel={ariaLabel(title, value)}
             >
               <FlexRow between>
-                <FlexRow>
+                <FlexRow color='neutral-500'>
                   {icon}
                   <Text small thin>
                     {title}
                   </Text>
                 </FlexRow>
-                <Text copy={value} small bold>
-                  {prettyLongText(value)}
-                </Text>
+                <FlexRow end gap='0.25rem'>
+                  {onClick ? (
+                    <span onClick={onClick} style={{ cursor: 'pointer', color: 'var(--neutral-500)' }}>
+                      <ExternalLinkIcon />
+                    </span>
+                  ) : null}
+                  <Text color='dark' copy={value} small bold testId={title}>
+                    {prettyLongText(value, onClick ? 8 : undefined)}
+                  </Text>
+                </FlexRow>
               </FlexRow>
             </Focusable>
           ),

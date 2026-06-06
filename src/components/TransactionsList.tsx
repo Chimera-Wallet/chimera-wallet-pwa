@@ -1,51 +1,46 @@
-import { useContext, useState } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import { useContext, useRef } from 'react'
 import { WalletContext } from '../providers/wallet'
-import Text, { TextLabel } from './Text'
-import { Fiats, Tx } from '../lib/types'
-import { fromSatoshis, prettyDate, prettyHide } from '../lib/format'
+import { TextLabel, TextSecondary } from './Text'
+import { Tx } from '../lib/types'
+import { fromSatoshis, prettyDate, prettyFiatAmount, prettyFiatHide, prettyHide } from '../lib/format'
 import { FlowContext } from '../providers/flow'
 import { NavigationContext, Pages } from '../providers/navigation'
 import { ConfigContext } from '../providers/config'
 import { FiatContext } from '../providers/fiat'
 import Focusable from './Focusable'
 import { hapticSubtle } from '../lib/haptics'
-import { ASSETS, type AssetSymbol } from '../lib/assets'
+import { ASSETS } from '../lib/assets'
 import { getTxStatus, TxStatus } from '../lib/txStatus'
 import { AspContext } from '../providers/asp'
 
-const LIST_STATUS: Record<TxStatus, { text: string; color: string }> = {
-  Settled: { text: 'Confirmed', color: 'var(--green-positive)' },
-  Preconfirmed: { text: 'Confirmed', color: 'var(--green-positive)' },
+const STATUS_STYLE: Record<TxStatus, { text: string; color: string }> = {
+  Settled: { text: 'Confirmed', color: 'var(--green)' },
+  Preconfirmed: { text: 'Confirmed', color: 'var(--green)' },
   'Pending boarding': { text: 'Pending', color: 'var(--orange)' },
   Unconfirmed: { text: 'Pending', color: 'var(--orange)' },
   Expired: { text: 'Failed', color: 'var(--red)' },
 }
 
-const TransactionLine = ({ tx, onClick }: { tx: Tx; onClick: () => void }) => {
+const TransactionLine = ({ tx, onClick, isFirst }: { tx: Tx; onClick: () => void; isFirst?: boolean }) => {
   const { config } = useContext(ConfigContext)
   const { toFiat } = useContext(FiatContext)
   const { aspInfo } = useContext(AspContext)
   const boardingExitDelay = Number(aspInfo?.boardingExitDelay || 0)
 
-  // Convert satoshis to BTC
-  const btcAmount = fromSatoshis(tx.amount)
-
   const prefix = tx.type === 'sent' ? '-' : '+'
-
-  // Format BTC amount with up to 5 decimal places
+  const btcAmount = fromSatoshis(tx.amount)
   const formattedBTC = config.showBalance
     ? `${prefix} ${btcAmount.toFixed(5)} ${ASSETS.BTC.symbol}`
     : prettyHide(btcAmount, ASSETS.BTC.symbol)
 
-  // Format fiat amount using selected currency
-  const fiatAmount = toFiat(tx.amount)
-  const fiatSymbol = config.fiat === Fiats.EUR ? '€' : config.fiat === Fiats.CHF ? 'Fr.' : '$'
-  const formattedUSD = config.showBalance
-    ? `${prefix} ${fiatSymbol}${fiatAmount.toFixed(2)}`
-    : prettyHide(fiatAmount, config.fiat)
+  const fiatValue = toFiat(tx.amount)
+  const formattedFiat = config.showBalance
+    ? `${prefix} ${prettyFiatAmount(fiatValue, config.fiat)}`
+    : prettyFiatHide(fiatValue, config.fiat)
 
-  const statusText = getTxStatus(tx, boardingExitDelay)
-  const status = LIST_STATUS[statusText] ?? { text: statusText, color: 'var(--grey)' }
+  const statusKey = getTxStatus(tx, boardingExitDelay)
+  const status = STATUS_STYLE[statusKey] ?? { text: statusKey, color: 'var(--grey)' }
   const date = tx.createdAt ? prettyDate(tx.createdAt) : 'Unknown date'
   const action = tx.type === 'sent' ? `Sent ${ASSETS.BTC.symbol}` : `Received ${ASSETS.BTC.symbol}`
 
@@ -55,38 +50,36 @@ const TransactionLine = ({ tx, onClick }: { tx: Tx; onClick: () => void }) => {
   return (
     <div
       onClick={onClick}
+      data-testid='tx-row'
       style={{
         display: 'flex',
         alignItems: 'center',
         padding: '12px 16px',
         cursor: 'pointer',
-        borderBottom: '1px solid var(--dark10)',
+        borderTop: isFirst ? 'none' : '1px solid var(--neutral-100)',
         transition: 'background 0.15s ease',
         width: '100%',
+        boxSizing: 'border-box',
       }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = 'var(--white03)'
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = 'transparent'
-      }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--neutral-50)' }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
     >
-      {/* Left Section - Icon */}
-      <div style={{ marginRight: '12px' }}>
+      {/* Icon */}
+      <div style={{ marginRight: '12px', flexShrink: 0 }}>
         <img src={iconSrc} alt={iconAlt} width={24} height={24} style={{ display: 'block' }} />
       </div>
 
-      {/* Middle Section - Date, Action, Status */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <div style={{ fontSize: '11px', color: 'var(--grey)', fontWeight: 400 }}>{date}</div>
-        <div style={{ fontSize: '14px', color: 'white', fontWeight: 500 }}>{action}</div>
+      {/* Date / Action / Status */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+        <div style={{ fontSize: '11px', color: 'var(--neutral-500)', fontWeight: 400 }}>{date}</div>
+        <div style={{ fontSize: '14px', fontWeight: 500 }}>{action}</div>
         <div style={{ fontSize: '12px', color: status.color, fontWeight: 500 }}>{status.text}</div>
       </div>
 
-      {/* Right Section - Amount */}
-      <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <div style={{ fontSize: '14px', color: 'white', fontWeight: 500, fontFamily: 'monospace' }}>{formattedBTC}</div>
-        <div style={{ fontSize: '12px', color: 'var(--grey)', fontWeight: 400 }}>{formattedUSD}</div>
+      {/* Amounts */}
+      <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '2px', flexShrink: 0 }}>
+        <div style={{ fontSize: '14px', fontWeight: 500, fontFamily: 'Geist Mono, monospace' }}>{formattedBTC}</div>
+        <div style={{ fontSize: '12px', color: 'var(--neutral-500)', fontWeight: 400 }}>{formattedFiat}</div>
       </div>
     </div>
   )
@@ -96,42 +89,69 @@ export default function TransactionsList({
   filterAsset,
   maxItems,
 }: {
-  filterAsset?: AssetSymbol | string
+  filterAsset?: string
   maxItems?: number
-}) {
+} = {}) {
   const { setTxInfo } = useContext(FlowContext)
   const { navigate } = useContext(NavigationContext)
-  const { txs } = useContext(WalletContext)
+  const { txs: allTxs } = useContext(WalletContext)
 
-  const [focused, setFocused] = useState(false)
+  const txs = (() => {
+    let list = allTxs
+    if (filterAsset) {
+      list = list.filter(
+        (tx) => tx.assets?.some((a) => a.assetId === filterAsset) || (!tx.assets?.length && filterAsset === 'BTC'),
+      )
+    }
+    if (typeof maxItems === 'number') {
+      list = list.slice(0, maxItems)
+    }
+    return list
+  })()
 
-  // Filter transactions by asset if specified
-  // Note: Currently all transactions are BTC. When multi-asset support is added,
-  // the Tx type should include an 'asset' field for filtering.
-  const filteredTxs = filterAsset
-    ? txs.filter(() => {
-        // For now, assume all transactions are BTC
-        // In future: return tx.asset === filterAsset
-        return filterAsset === ASSETS.BTC.symbol
-      })
-    : txs
+  const focusedRef = useRef(false)
+  const focusedIndexRef = useRef(0)
+  const parentRef = useRef<HTMLDivElement>(null)
 
-  // Limit to maxItems if specified
-  const displayTxs = maxItems ? filteredTxs.slice(0, maxItems) : filteredTxs
-  const hasMore = maxItems && filteredTxs.length > maxItems
+  const virtualizer = useVirtualizer({
+    count: txs.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 72,
+    overscan: 5,
+  })
 
-  const key = (tx: Tx, index: number) => tx.roundTxid || tx.redeemTxid || tx.boardingTxid || `tx-${index}`
+  const key = (tx: Tx, index: number) =>
+    [tx.roundTxid, tx.redeemTxid, tx.boardingTxid].filter(Boolean).join('-') || `tx-${index}`
+
+  const focusRow = (index: number) => {
+    if (index < 0 || index >= txs.length) return
+    focusedIndexRef.current = index
+    virtualizer.scrollToIndex(index)
+    requestAnimationFrame(() => {
+      const el = document.getElementById(key(txs[index], index)) as HTMLElement
+      if (el) el.focus()
+    })
+  }
 
   const focusOnFirstRow = () => {
-    setFocused(true)
-    if (displayTxs.length === 0) return
-    const id = key(displayTxs[0], 0)
-    const first = document.getElementById(id) as HTMLElement
-    if (first) first.focus()
+    if (txs.length === 0) return
+    focusedRef.current = true
+    focusRow(0)
+  }
+
+  const handleListKeyDown = (e: React.KeyboardEvent) => {
+    if (!focusedRef.current) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      focusRow(Math.min(focusedIndexRef.current + 1, txs.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      focusRow(Math.max(focusedIndexRef.current - 1, 0))
+    }
   }
 
   const focusOnOuterShell = () => {
-    setFocused(false)
+    focusedRef.current = false
     const outer = document.getElementById('outer') as HTMLElement
     if (outer) outer.focus()
   }
@@ -147,68 +167,68 @@ export default function TransactionsList({
     navigate(Pages.Transaction)
   }
 
-  const handleViewAll = () => {
-    hapticSubtle()
-    navigate(Pages.Transactions)
+  const label = filterAsset ? `${filterAsset} transactions` : 'Recent Transactions'
+
+  const containerStyle: React.CSSProperties = {
+    border: '1px solid var(--neutral-200)',
+    borderRadius: '0.5rem',
+    overflow: 'hidden',
+    width: '100%',
   }
 
   return (
-    <div style={{ marginTop: '1.5rem', width: '100%' }}>
+    <div style={{ marginTop: '1rem', width: '100%' }}>
       <div style={{ marginBottom: '8px' }}>
-        <TextLabel>{filterAsset ? `${filterAsset} transactions` : 'Recent Transactions'}</TextLabel>
+        <TextLabel>{label}</TextLabel>
       </div>
-      <div
-        style={{
-          border: '1px solid var(--grey)',
-          borderRadius: 'var(--info-container-radius)',
-          overflow: 'hidden',
-          backgroundColor: 'transparent',
-          width: '100%',
-        }}
-      >
+      <div style={containerStyle}>
         <Focusable id='outer' onEnter={focusOnFirstRow} ariaLabel={ariaLabel()}>
-          <div style={{ width: '100%' }}>
-            {displayTxs.map((tx, index) => {
-              const k = key(tx, index)
-              return (
-                <Focusable
-                  id={k}
-                  key={k}
-                  inactive={!focused}
-                  onEnter={() => handleClick(tx)}
-                  onEscape={focusOnOuterShell}
-                  ariaLabel={ariaLabel(tx)}
-                >
-                  <TransactionLine onClick={() => handleClick(tx)} tx={tx} />
-                </Focusable>
-              )
-            })}
-          </div>
-        </Focusable>
-
-        {hasMore ? (
           <div
-            onClick={handleViewAll}
+            ref={parentRef}
+            onKeyDown={handleListKeyDown}
+            className='hide-scrollbar'
             style={{
-              padding: '12px 16px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              borderTop: '1px solid var(--dark10)',
-              transition: 'background 0.15s ease',
-              width: '100%',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--white03)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent'
+              height: typeof maxItems === 'number' ? `${virtualizer.getTotalSize()}px` : 'calc(100dvh - 300px)',
+              minHeight: typeof maxItems === 'number' ? undefined : '200px',
+              overflowY: typeof maxItems === 'number' ? 'visible' : 'auto',
+              position: 'relative',
             }}
           >
-            <Text color='blue-primary' thin>
-              View all transactions
-            </Text>
+            <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative', width: '100%' }}>
+              {virtualizer.getVirtualItems().map((virtualItem) => {
+                const tx = txs[virtualItem.index]
+                const k = key(tx, virtualItem.index)
+                return (
+                  <div
+                    key={k}
+                    data-index={virtualItem.index}
+                    onFocus={() => {
+                      focusedIndexRef.current = virtualItem.index
+                      focusedRef.current = true
+                    }}
+                    style={{
+                      left: 0,
+                      position: 'absolute',
+                      top: 0,
+                      transform: `translateY(${virtualItem.start}px)`,
+                      width: '100%',
+                    }}
+                  >
+                    <Focusable
+                      id={k}
+                      inactive={!focusedRef.current}
+                      onEnter={() => handleClick(tx)}
+                      onEscape={focusOnOuterShell}
+                      ariaLabel={ariaLabel(tx)}
+                    >
+                      <TransactionLine onClick={() => handleClick(tx)} tx={tx} isFirst={virtualItem.index === 0} />
+                    </Focusable>
+                  </div>
+                )
+              })}
+            </div>
           </div>
-        ) : null}
+        </Focusable>
       </div>
     </div>
   )

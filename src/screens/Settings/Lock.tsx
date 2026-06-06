@@ -33,7 +33,6 @@ export default function Lock() {
 
   const handleSetPassword = () => {
     setOption(SettingsOptions.Password)
-    navigate(Pages.Settings)
   }
 
   const handleLock = async () => {

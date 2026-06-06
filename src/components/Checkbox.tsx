@@ -1,6 +1,7 @@
-import { IonCheckbox } from '@ionic/react'
-import FlexRow from './FlexRow'
+import { useId, useState } from 'react'
+import { Checkbox as ShadcnCheckbox } from '@/components/ui/checkbox'
 import { hapticLight } from '../lib/haptics'
+import Text from './Text'
 
 interface CheckboxProps {
   onChange: () => void
@@ -8,24 +9,29 @@ interface CheckboxProps {
 }
 
 export default function Checkbox({ onChange, text }: CheckboxProps) {
-  const handleChange = () => {
+  const checkboxId = useId()
+  const [checked, setChecked] = useState(false)
+
+  const handleChange = (nextChecked: boolean) => {
+    if (nextChecked === checked) return
+    setChecked(nextChecked)
     hapticLight()
     onChange()
   }
-  const style: React.CSSProperties = {
-    border: '1px solid var(--dark50)',
-    borderRadius: '0.5rem',
-    margin: '0 2px',
-    padding: '0.5rem',
-    width: '100%',
-  }
+
   return (
-    <div style={style}>
-      <FlexRow>
-        <IonCheckbox labelPlacement='end' onIonChange={handleChange}>
-          {text}
-        </IonCheckbox>
-      </FlexRow>
-    </div>
+    <label
+      htmlFor={checkboxId}
+      className='flex w-full cursor-pointer items-center gap-3 rounded-lg border border-neutral-500 p-3'
+      data-testid='checkbox'
+    >
+      <ShadcnCheckbox
+        id={checkboxId}
+        checked={checked}
+        onCheckedChange={handleChange}
+        className='size-6 rounded-md data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground'
+      />
+      <Text small>{text}</Text>
+    </label>
   )
 }

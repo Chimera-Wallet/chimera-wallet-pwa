@@ -1,5 +1,6 @@
-import { BoltzReverseSwap, BoltzSubmarineSwap } from '@arkade-os/boltz-swap'
+import { BoltzSwap } from '@arkade-os/boltz-swap'
 import { ReactNode, createContext, useState } from 'react'
+import type { Asset, AssetDetails } from '@arkade-os/sdk'
 import { Tx } from '../lib/types'
 import type { TransferMethod } from '../lib/transferMethods'
 import { ChimeraOrder } from './chimera'
@@ -9,6 +10,7 @@ export type { TransferMethod } from '../lib/transferMethods'
 export interface InitInfo {
   password?: string
   privateKey?: Uint8Array
+  mnemonic?: string
   restoring?: boolean
 }
 
@@ -31,10 +33,16 @@ export interface KycAuthParams {
 export interface RecvInfo {
   boardingAddr: string
   offchainAddr: string
+  onchainAddr?: string
   invoice?: string
   method?: TransferMethod
   satoshis: number
   txid?: string
+  addressError?: string
+  assetId?: string
+  assetAmount?: bigint
+  receivedAssets?: Asset[]
+  received: boolean
 }
 
 // Bank Receive (Deposit) Info - for fiat → crypto
@@ -59,11 +67,12 @@ export type BankOrderType = 'receive' | 'send'
 
 export type SendInfo = {
   address?: string
+  assets?: Asset[]
   arkAddress?: string
   invoice?: string
   lnUrl?: string
+  pendingSwap?: BoltzSwap
   method?: TransferMethod
-  pendingSwap?: BoltzSubmarineSwap
   recipient?: string
   satoshis?: number
   swapId?: string
@@ -72,11 +81,13 @@ export type SendInfo = {
   txid?: string
 }
 
-export type SwapInfo = BoltzSubmarineSwap | BoltzReverseSwap | undefined
+export type SwapInfo = BoltzSwap | undefined
 
 export type SwapOrderInfo = ChimeraOrder | undefined
 
 export type TxInfo = Tx | undefined
+
+export type LnUrlInfo = Uint8Array | undefined
 
 interface FlowContextProps {
   initInfo: InitInfo
@@ -101,6 +112,10 @@ interface FlowContextProps {
   setSwapInfo: (arg0: SwapInfo) => void
   setSwapOrderInfo: (arg0: SwapOrderInfo) => void
   setTxInfo: (arg0: TxInfo) => void
+  assetInfo: AssetDetails
+  setAssetInfo: (arg0: AssetDetails) => void
+  lnurlInfo: LnUrlInfo
+  setLnurlInfo: (arg0: LnUrlInfo) => void
   setBankRecvInfo: (arg0: BankRecvInfo) => void
   setBankSendInfo: (arg0: BankSendInfo) => void
   setBankStatusOrder: (order: ChimeraOrder | undefined) => void
@@ -120,9 +135,12 @@ export const emptyNoteInfo: NoteInfo = {
 export const emptyRecvInfo: RecvInfo = {
   boardingAddr: '',
   offchainAddr: '',
+  received: false,
   method: 'bitcoin',
   satoshis: 0,
 }
+
+export const emptyAssetInfo: AssetDetails = { assetId: '', supply: BigInt(0) }
 
 export const emptySendInfo: SendInfo = {
   address: '',
@@ -169,6 +187,10 @@ export const FlowContext = createContext<FlowContextProps>({
   setSwapInfo: () => {},
   setSwapOrderInfo: () => {},
   setTxInfo: () => {},
+  assetInfo: emptyAssetInfo,
+  setAssetInfo: () => {},
+  lnurlInfo: undefined,
+  setLnurlInfo: () => {},
   setBankRecvInfo: () => {},
   setBankSendInfo: () => {},
   setBankStatusOrder: () => {},
@@ -185,6 +207,8 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
   const [swapInfo, setSwapInfo] = useState<SwapInfo>()
   const [swapOrderInfo, setSwapOrderInfo] = useState<SwapOrderInfo>()
   const [txInfo, setTxInfo] = useState<TxInfo>()
+  const [assetInfo, setAssetInfo] = useState<AssetDetails>(emptyAssetInfo)
+  const [lnurlInfo, setLnurlInfo] = useState<LnUrlInfo>()
   const [bankRecvInfo, setBankRecvInfo] = useState<BankRecvInfo>(emptyBankRecvInfo)
   const [bankSendInfo, setBankSendInfo] = useState<BankSendInfo>(emptyBankSendInfo)
   const [bankStatusOrder, setBankStatusOrder] = useState<ChimeraOrder | undefined>()
@@ -197,6 +221,7 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
         kycAuthParams,
         noteInfo,
         deepLinkInfo,
+        lnurlInfo,
         recvInfo,
         sendInfo,
         swapInfo,
@@ -215,6 +240,9 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
         setSwapInfo,
         setSwapOrderInfo,
         setTxInfo,
+        assetInfo,
+        setAssetInfo,
+        setLnurlInfo,
         setBankRecvInfo,
         setBankSendInfo,
         setBankStatusOrder,

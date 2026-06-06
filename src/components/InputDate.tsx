@@ -1,5 +1,4 @@
 import InputContainer from './InputContainer'
-import { IonInput } from '@ionic/react'
 
 interface InputDateProps {
   label: string
@@ -16,8 +15,8 @@ export default function InputDate({ label, value, onChange, max }: InputDateProp
     return `${year}-${month}-${day}`
   }
 
-  const handleInput = (ev: Event) => {
-    const inputValue = (ev.target as HTMLInputElement).value
+  const handleChange = (ev: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = ev.target.value
     if (inputValue) {
       const newDate = new Date(inputValue)
       // Set time to start of day to avoid timezone issues
@@ -28,16 +27,7 @@ export default function InputDate({ label, value, onChange, max }: InputDateProp
 
   return (
     <InputContainer label={label}>
-      <IonInput
-        type='date'
-        value={formatDateForInput(value)}
-        onIonInput={handleInput}
-        max={max}
-        style={{
-          '--padding-start': '0',
-          '--padding-end': '0',
-        }}
-      />
+      <input className='input' type='date' value={formatDateForInput(value)} onChange={handleChange} max={max} />
     </InputContainer>
   )
 }

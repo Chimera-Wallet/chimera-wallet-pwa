@@ -1,10 +1,9 @@
-import { IonCol, IonGrid, IonRow } from '@ionic/react'
 import Header from './Header'
 import Content from './Content'
 import { useContext, useEffect, useState } from 'react'
 import Text, { TextSecondary } from './Text'
 import { FiatContext } from '../providers/fiat'
-import { prettyAmount, prettyNumber } from '../lib/format'
+import { prettyAmount, prettyFiatAmount, prettyNumber } from '../lib/format'
 import { WalletContext } from '../providers/wallet'
 import { defaultFee } from '../lib/constants'
 import ErrorMessage from './Error'
@@ -13,30 +12,29 @@ import ButtonsOnBottom from './ButtonsOnBottom'
 import { ConfigContext } from '../providers/config'
 import FlexCol from './FlexCol'
 import SwapIcon from '../icons/Swap'
+import { AssetOption } from '../lib/types'
+import { prettyAssetAmount, unitsToCents } from '../lib/assets'
 
 interface KeyboardProps {
+  asset?: AssetOption
   back: () => void
   hideBalance?: boolean
-  onSats: (sats: number) => void
-  value: number | undefined
+  onSave: (value: string) => void
 }
 
-export default function Keyboard({ back, hideBalance, onSats, value }: KeyboardProps) {
+export default function Keyboard({ asset, back, hideBalance, onSave }: KeyboardProps) {
   const { config, useFiat } = useContext(ConfigContext)
-  const { fromFiat, toFiat } = useContext(FiatContext)
+  const { fromFiat, toFiat, fiatDecimals } = useContext(FiatContext)
   const { balance, svcWallet } = useContext(WalletContext)
 
+  const [assetInCents, setAssetInCents] = useState(BigInt(0))
   const [amountInSats, setAmountInSats] = useState(0)
   const [available, setAvailable] = useState(0)
   const [error, setError] = useState('')
-  const [inputMode, setInputMode] = useState<'sats' | 'fiat'>(useFiat ? 'fiat' : 'sats')
+  const [inputMode, setInputMode] = useState<'sats' | 'fiat' | 'asset'>(
+    asset?.assetId ? 'asset' : useFiat ? 'fiat' : 'sats',
+  )
   const [textValue, setTextValue] = useState('')
-
-  useEffect(() => {
-    if (!value) return setTextValue('')
-    const amount = inputMode === 'fiat' ? toFiat(value) : value
-    setTextValue(prettyNumber(amount, getMaxDecimals()))
-  }, [value])
 
   useEffect(() => {
     if (!svcWallet) return
@@ -44,13 +42,24 @@ export default function Keyboard({ back, hideBalance, onSats, value }: KeyboardP
   }, [balance])
 
   useEffect(() => {
-    const value = Number(textValue.replaceAll(',', ''))
-    if (Number.isNaN(value)) return
-    setAmountInSats(inputMode === 'fiat' ? fromFiat(value) : value)
+    const strValue = textValue.replaceAll(',', '')
+    if (inputMode === 'asset' && asset) {
+      setAssetInCents(unitsToCents(strValue, asset.decimals))
+    } else {
+      setAmountInSats(inputMode === 'fiat' ? fromFiat(Number(strValue)) : Number(strValue))
+    }
   }, [textValue])
 
   const getMaxDecimals = () => {
-    return inputMode === 'fiat' ? 2 : 0
+    switch (inputMode) {
+      case 'asset':
+        return asset?.decimals ?? 0
+      case 'fiat':
+        return fiatDecimals()
+      case 'sats':
+      default:
+        return 0
+    }
   }
 
   const handleKeyPress = (k: string) => {
@@ -81,16 +90,22 @@ export default function Keyboard({ back, hideBalance, onSats, value }: KeyboardP
   }
 
   const handleMaxPress = () => {
-    if (available < defaultFee) return setError('Total balance is below fee')
-    const maxSats = available - defaultFee
-    const maxTextValue = inputMode === 'fiat' ? toFiat(maxSats) : maxSats
-    setTextValue(prettyNumber(maxTextValue, getMaxDecimals(), false))
+    if (asset) {
+      const { balance, decimals } = asset
+      setTextValue(prettyAssetAmount(balance, decimals, false))
+      return
+    } else {
+      const maxSats = available - defaultFee
+      const maxTextValue = inputMode === 'fiat' ? toFiat(maxSats) : maxSats
+      setTextValue(prettyNumber(maxTextValue, getMaxDecimals(), false))
+    }
   }
 
   const handleToggleCurrency = () => {
+    if (inputMode === 'asset') return // No toggle for assets
     if (inputMode === 'sats') {
       // Convert from sats to fiat and round to 2 decimal places
-      setTextValue(amountInSats ? prettyNumber(toFiat(amountInSats), 2, false) : '')
+      setTextValue(amountInSats ? prettyNumber(toFiat(amountInSats), fiatDecimals(), false) : '')
       setInputMode('fiat')
     } else {
       setTextValue(amountInSats ? prettyNumber(amountInSats, 0, false) : '')
@@ -99,29 +114,60 @@ export default function Keyboard({ back, hideBalance, onSats, value }: KeyboardP
   }
 
   const handleSave = () => {
-    onSats(amountInSats)
-    back()
+    if (!textValue || Number.isNaN(Number(textValue))) {
+      setError('Please enter a valid amount')
+      return
+    }
+    if (inputMode === 'asset') {
+      onSave(textValue)
+    } else if (inputMode === 'fiat') {
+      onSave(useFiat ? textValue : toFiat(Number(textValue)).toString())
+    } else {
+      onSave(useFiat ? toFiat(Number(textValue)).toString() : textValue)
+    }
   }
 
   // Display amounts based on input mode
   const amount = {
-    primary: `${textValue || '0'} ${inputMode === 'fiat' ? config.fiat : 'SATS'}`,
-    secondary: inputMode === 'fiat' ? prettyAmount(amountInSats) : prettyAmount(toFiat(amountInSats), config.fiat),
-    balance: inputMode === 'fiat' ? prettyAmount(toFiat(available), config.fiat) : prettyAmount(available),
+    primary:
+      inputMode === 'fiat'
+        ? prettyFiatAmount(amountInSats ? toFiat(amountInSats) : 0, config.fiat)
+        : inputMode === 'asset'
+          ? `${textValue || '0'} ${asset?.ticker}`
+          : `${textValue || '0'} SATS`,
+    secondary:
+      inputMode === 'fiat'
+        ? prettyAmount(amountInSats)
+        : inputMode === 'asset'
+          ? prettyAmount(amountInSats, asset?.ticker)
+          : prettyFiatAmount(toFiat(amountInSats), config.fiat),
+    balance:
+      inputMode === 'asset'
+        ? `${prettyAssetAmount(asset?.balance ?? BigInt(0), asset?.decimals ?? 0)} ${asset?.ticker}`
+        : inputMode === 'fiat'
+          ? prettyFiatAmount(toFiat(available), config.fiat)
+          : prettyAmount(available),
   }
 
-  const disabled = !amountInSats || Number.isNaN(amountInSats)
+  const disabled = !amountInSats && !assetInCents
 
   const gridStyle = {
-    borderTop: '1px solid var(--dark50)',
+    borderTop: '1px solid var(--neutral-500)',
     marginTop: '0.5rem',
-    textAlign: 'center',
     width: '100%',
   }
 
   const rowStyle = {
+    display: 'flex',
     fontSize: '1.5rem',
     padding: '1rem',
+  }
+
+  const keyStyle = {
+    flex: 1,
+    display: 'flex',
+    justifyContent: 'center',
+    cursor: 'pointer',
   }
 
   const keys = [
@@ -135,8 +181,8 @@ export default function Keyboard({ back, hideBalance, onSats, value }: KeyboardP
     <>
       <Header
         auxAriaLabel='Toggle currency'
-        auxFunc={handleToggleCurrency}
-        auxIcon={<SwapIcon />}
+        auxFunc={inputMode !== 'asset' ? handleToggleCurrency : undefined}
+        auxIcon={inputMode !== 'asset' ? <SwapIcon /> : undefined}
         back={back}
         text='Amount'
       />
@@ -146,7 +192,7 @@ export default function Keyboard({ back, hideBalance, onSats, value }: KeyboardP
           <Text big centered heading>
             {amount.primary}
           </Text>
-          <TextSecondary centered>{amount.secondary}</TextSecondary>
+          {asset?.assetId ? null : <TextSecondary centered>≈ {amount.secondary}</TextSecondary>}
           {hideBalance ? null : (
             <div onClick={handleMaxPress}>
               <TextSecondary centered>{amount.balance}</TextSecondary>
@@ -154,17 +200,17 @@ export default function Keyboard({ back, hideBalance, onSats, value }: KeyboardP
           )}
         </FlexCol>
       </Content>
-      <IonGrid style={gridStyle}>
+      <div style={gridStyle}>
         {keys.map((row) => (
-          <IonRow style={rowStyle} key={row[0]}>
+          <div style={rowStyle} key={row[0]}>
             {row.map((key) => (
-              <IonCol size='4' key={key} onClick={() => handleKeyPress(key)}>
+              <div style={keyStyle} key={key} onClick={() => handleKeyPress(key)}>
                 <p data-testid={`keyboard-${key}`}>{key === 'x' ? <>&larr;</> : key}</p>
-              </IonCol>
+              </div>
             ))}
-          </IonRow>
+          </div>
         ))}
-      </IonGrid>
+      </div>
       <ButtonsOnBottom>
         <Button label='Save' disabled={disabled} onClick={handleSave} />
       </ButtonsOnBottom>

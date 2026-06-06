@@ -2,8 +2,9 @@ import { emptyAspInfo } from '../../lib/asp'
 import { Pages, Tabs } from '../../providers/navigation'
 import { emptyInitInfo, emptyNoteInfo, emptyRecvInfo, emptySendInfo } from '../../providers/flow'
 import { AspInfo } from '../../providers/asp'
-import { SingleKey } from '@arkade-os/sdk'
-import { CurrencyDisplay, Fiats, Themes } from '../../lib/types'
+import { SingleKey, IVtxoManager } from '@arkade-os/sdk'
+import { CurrencyDisplay, Fiats, SettingsOptions, Themes, Unit } from '../../lib/types'
+import { AssetIconApprovalManager } from '../../lib/assetIconApproval'
 
 const mockAspInfo: AspInfo = {
   ...emptyAspInfo,
@@ -32,6 +33,19 @@ export const mockTxInfo = {
   type: 'received',
 }
 
+export const mockIssuanceTxInfo = {
+  amount: 0,
+  assets: [{ assetId: 'abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd', amount: BigInt(10_000) }],
+  boardingTxid: '',
+  redeemTxid: mockTxId,
+  roundTxid: '',
+  createdAt: Math.floor(Date.now() / 1000) - 60,
+  explorable: mockTxId,
+  preconfirmed: false,
+  settled: true,
+  type: 'sent',
+}
+
 export const mockAspContextValue = {
   aspInfo: mockAspInfo,
   calcBestMarketHour: () => undefined,
@@ -41,58 +55,102 @@ export const mockAspContextValue = {
 
 export const mockConfigContextValue = {
   config: {
+    announcementsSeen: [],
+    apps: { assets: { enabled: false }, boltz: { connected: true } },
+    aspUrl: 'http://asp.local',
+    dismissedBanners: [],
     currencyDisplay: CurrencyDisplay.Both,
+    delegate: import.meta.env.VITE_DELEGATE_ENABLED !== 'false',
     fiat: Fiats.EUR,
+    importedAssets: [],
+    haptics: true,
     nostrBackup: true,
     notifications: true,
+    pubkey: '',
+    referralSlideShowSeen: false,
+    showBalance: true,
     theme: Themes.Dark,
+    unit: Unit.BTC,
   },
-  effectiveTheme: Themes.Dark,
-  systemTheme: Themes.Dark,
+  updateConfig: () => {},
+  effectiveTheme: Themes.Dark as const,
+  systemTheme: Themes.Dark as const,
   useFiat: false,
+  backupConfig: () => Promise.resolve(),
+  configLoaded: true,
+  resetConfig: () => {},
+  setConfig: () => {},
+  showConfig: false,
+  toggleShowConfig: () => {},
 }
 
 export const mockFiatContextValue = {
+  fiatDecimals: () => 2,
   fromFiat: (amount: number) => amount,
   toFiat: (amount: number) => amount,
 }
 
-export const mockLightningContextValue = {
-  arkadeLightning: null,
+export const mockSwapsContextValue = {
+  arkadeSwaps: null,
   swapManager: null,
+  swapsInitError: null as string | null,
   connected: false,
+  calcArkToBtcSwapFee: () => 0,
+  calcBtcToArkSwapFee: () => 0,
   calcSubmarineSwapFee: () => 0,
   calcReverseSwapFee: () => 0,
+  createArkToBtcSwap: async () => null,
+  createBtcToArkSwap: async () => null,
   createSubmarineSwap: async () => null,
   createReverseSwap: async () => null,
+  claimArk: async () => {},
+  claimBtc: async () => {},
   claimVHTLC: async () => {},
+  refundArk: async () => {},
   refundVHTLC: async () => {},
+  payBtc: async () => {
+    throw new Error('Chain swap not initialized')
+  },
   payInvoice: async () => {
     throw new Error('Lightning not initialized')
   },
   getSwapHistory: async () => [],
-  getFees: async () => null,
   getApiUrl: () => null,
+  restoreSwaps: async () => 0,
   toggleConnection: () => {},
 }
 
 export const mockOptionsContextValue = {
+  direction: 'forward' as const,
+  option: SettingsOptions.Menu,
+  options: [],
+  goBack: () => {},
   setOption: () => {},
+  validOptions: () => [],
 }
 
 export const mockNavigationContextValue = {
+  direction: 'none' as const,
+  goBack: () => {},
+  popTo: () => {},
+  isInitialLoad: false,
   navigate: () => {},
+  navigationCount: 0,
   screen: Pages.Init,
   tab: Tabs.None,
 }
 
 export const mockWalletContextValue = {
+  authState: 'authenticated' as const,
   initWallet: () => Promise.resolve(),
   lockWallet: () => Promise.resolve(),
   resetWallet: () => Promise.resolve(),
   settlePreconfirmed: () => Promise.resolve(),
+  unlockWallet: () => Promise.resolve(),
   updateWallet: () => {},
   reloadWallet: () => Promise.resolve(),
+  restartWallet: () => Promise.resolve(),
+  vtxoManager: {} as IVtxoManager,
   wallet: {
     nextRollover: 0,
   },
@@ -100,8 +158,16 @@ export const mockWalletContextValue = {
   svcWallet: undefined,
   isLocked: () => Promise.resolve(true),
   balance: 0,
+  assetBalances: [],
+  assetMetadataCache: new Map(),
+  setCacheEntry: () => ({ cachedAt: 0 }) as any,
   txs: [mockTxInfo],
   vtxos: { spendable: [], spent: [] },
+  iconApprovalManager: new AssetIconApprovalManager(),
+  dataReady: false,
+  loadError: null,
+  dismissLoadError: () => {},
+  synced: false,
 }
 
 export const mockFlowContextValue = {
@@ -117,17 +183,39 @@ export const mockFlowContextValue = {
   setSendInfo: () => {},
   setSwapInfo: () => {},
   setTxInfo: () => {},
+  assetInfo: { assetId: '', supply: BigInt(0) },
+  setAssetInfo: () => {},
+  deepLinkInfo: undefined,
+  setDeepLinkInfo: () => {},
+  lnurlInfo: undefined,
+  setLnurlInfo: () => {},
+  kycAuthParams: undefined,
+  setKycAuthParams: () => {},
+  swapOrderInfo: undefined,
+  setSwapOrderInfo: () => {},
+  bankRecvInfo: { currency: 'EUR' as const, circuit: 'sepa' as const, amount: 0 },
+  setBankRecvInfo: () => {},
+  bankSendInfo: { currency: 'EUR' as const, circuit: 'sepa' as const, amount: 0 },
+  setBankSendInfo: () => {},
+  bankStatusOrder: undefined,
+  setBankStatusOrder: () => {},
+  currentBankOrderType: undefined,
+  setCurrentBankOrderType: () => {},
 }
 
 export const mockLimitsContextValue = {
   amountIsAboveMaxLimit: () => false,
   amountIsBelowMinLimit: () => false,
+  validArkToBtc: () => true,
+  validBtcToArk: () => true,
   lnSwapsAllowed: () => true,
   utxoTxsAllowed: () => true,
   vtxoTxsAllowed: () => true,
   validLnSwap: () => true,
   validUtxoTx: () => true,
   validVtxoTx: () => true,
+  arkToBtcAllowed: () => true,
+  btcToArkAllowed: () => true,
   minSwapAllowed: () => 0,
   maxSwapAllowed: () => 0,
 }

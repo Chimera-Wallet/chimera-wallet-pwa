@@ -3,7 +3,7 @@ import Button from './Button'
 import FlexCol from './FlexCol'
 import FlexRow from './FlexRow'
 import OkIcon from '../icons/Ok'
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import NostrIcon from '../icons/Nostr'
 import BoltzIcon from '../icons/Boltz'
 import Text, { TextSecondary } from './Text'
@@ -11,7 +11,7 @@ import { ConfigContext } from '../providers/config'
 import { OptionsContext } from '../providers/options'
 import { SettingsOptions, Themes } from '../lib/types'
 import LendasatIcon from '../screens/Apps/Lendasat/LendasatIcon'
-import LendaSwapIcon from '../screens/Apps/Lendaswap/LendaswapIcon'
+import SatoraIcon from '../screens/Apps/Satora/SatoraIcon'
 import { NavigationContext, Pages } from '../providers/navigation'
 
 // icon with pretty gradient background
@@ -102,6 +102,7 @@ export default function Announcement({
 }: AnnouncementProps) {
   const { navigate } = useContext(NavigationContext)
   const { setOption } = useContext(OptionsContext)
+  const [open, setOpen] = useState(true)
 
   const handleTryIt = () => {
     if (page) navigate(page)
@@ -113,7 +114,7 @@ export default function Announcement({
   }
 
   return (
-    <Modal>
+    <Modal open={open} onOpenChange={setOpen} onExitComplete={close}>
       <div style={{ maxHeight: '85vh', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         {/* Note: the negative margin on the container is to offset the negative margin top of PrettyIcon class.*/}
         <div
@@ -137,7 +138,7 @@ export default function Announcement({
         </div>
         <FlexCol gap='0.25rem'>
           <Button onClick={handleTryIt} label={`Try ${title}`} />
-          <Button onClick={close} label='Maybe later' secondary />
+          <Button onClick={() => setOpen(false)} label='Maybe later' secondary />
         </FlexCol>
       </div>
     </Modal>
@@ -169,7 +170,7 @@ export function LendaSatAnnouncement({ close }: { close: () => void }) {
       title='LendaSat'
       page={Pages.AppLendasat}
       icon={<LendasatIcon big />}
-      message='Borrow against your sats.'
+      message='Take loans with Bitcoin as collateral. Receive USDC or USDT in 2 minutes.'
       bulletPoints={[
         [
           'Choose a loan',
@@ -188,21 +189,21 @@ export function LendaSatAnnouncement({ close }: { close: () => void }) {
   )
 }
 
-export function LendaSwapAnnouncement({ close }: { close: () => void }) {
+export function SatoraAnnouncement({ close }: { close: () => void }) {
   return (
     <Announcement
       close={close}
-      title='LendaSwap'
-      page={Pages.AppLendaswap}
-      icon={<LendaSwapIcon big />}
-      message='Swap Bitcoin to USDC.'
+      title='Satora'
+      page={Pages.AppSatora}
+      icon={<SatoraIcon big />}
+      message='Swap Bitcoin to USDC or USDT instantly.'
       bulletPoints={[
         ['Swap to stablecoins', 'Swap native $BTC for $USDT or $USDC on Ethereum and Polygon.'],
         [
           'Trustless Atomic Swaps',
           'When a swap is started, both parties lock their funds in smart contracts. The swap either completes fully or both parties get refunded.',
         ],
-        ['Self-custodial', 'LendaSwap is fully self-custodial. Your keys, your coins.'],
+        ['Self-custodial', 'Satora is fully self-custodial. Your keys, your coins.'],
       ]}
     />
   )

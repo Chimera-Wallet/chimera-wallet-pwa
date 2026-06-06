@@ -1,12 +1,5 @@
 import Intercom, { show, showMessages, hide, shutdown, update } from '@intercom/messenger-js-sdk'
 
-// Extend Window interface for native Intercom API
-declare global {
-  interface Window {
-    Intercom?: (...args: any[]) => void
-  }
-}
-
 export interface IntercomConfig {
   app_id: string
   hide_default_launcher: boolean

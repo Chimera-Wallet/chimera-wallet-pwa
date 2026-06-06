@@ -1,5 +1,5 @@
-import { IonModal } from '@ionic/react'
 import CloseIcon from '../icons/Close'
+import SheetModal from './SheetModal'
 import Text from './Text'
 
 interface SelectSheetOption {
@@ -25,18 +25,8 @@ export default function SelectSheet({ isOpen, onClose, onSelect, options, select
   }
 
   return (
-    <IonModal isOpen={isOpen} onDidDismiss={onClose} backdropDismiss showBackdrop className='sheet-modal-dark'>
-      <div
-        style={{
-          borderTop: '1px solid var(--dark50)',
-          borderTopLeftRadius: '1rem',
-          borderTopRightRadius: '1rem',
-          height: '100%',
-          padding: '1rem',
-          paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))',
-          backgroundColor: '#101015',
-        }}
-      >
+    <SheetModal isOpen={isOpen} onClose={onClose}>
+      <div style={{ paddingTop: '0.5rem' }}>
         {/* Header */}
         <div
           style={{
@@ -65,15 +55,15 @@ export default function SelectSheet({ isOpen, onClose, onSelect, options, select
                   alignItems: 'center',
                   gap: '12px',
                   padding: '12px 16px',
-                  borderRadius: 'var(--info-container-radius)',
-                  border: isSelected ? '2px solid var(--blue-primary)' : '1px solid var(--grey)',
-                  backgroundColor: isSelected ? 'var(--white03)' : 'transparent',
+                  borderRadius: 'var(--info-container-radius, 12px)',
+                  border: isSelected ? '2px solid var(--purple-700)' : '1px solid var(--neutral-200)',
+                  backgroundColor: isSelected ? 'var(--neutral-50)' : 'transparent',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
                 onMouseEnter={(e) => {
                   if (!isSelected) {
-                    e.currentTarget.style.backgroundColor = 'var(--white03)'
+                    e.currentTarget.style.backgroundColor = 'var(--neutral-50)'
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -86,7 +76,7 @@ export default function SelectSheet({ isOpen, onClose, onSelect, options, select
                 <div style={{ flex: 1 }}>
                   <div
                     style={{
-                      color: 'white',
+                      color: 'var(--fg)',
                       fontSize: '14px',
                       fontWeight: 500,
                     }}
@@ -96,7 +86,7 @@ export default function SelectSheet({ isOpen, onClose, onSelect, options, select
                   {option.description ? (
                     <div
                       style={{
-                        color: 'var(--grey)',
+                        color: 'var(--neutral-500)',
                         fontSize: '12px',
                         marginTop: '2px',
                       }}
@@ -111,7 +101,7 @@ export default function SelectSheet({ isOpen, onClose, onSelect, options, select
                       width: '20px',
                       height: '20px',
                       borderRadius: '50%',
-                      backgroundColor: 'var(--blue-primary)',
+                      backgroundColor: 'var(--purple-700)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -133,6 +123,6 @@ export default function SelectSheet({ isOpen, onClose, onSelect, options, select
           })}
         </div>
       </div>
-    </IonModal>
+    </SheetModal>
   )
 }
