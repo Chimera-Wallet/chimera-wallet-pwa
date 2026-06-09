@@ -56,11 +56,11 @@ jobs:
           pnpm exec vite build --mode $MODE
 
       - name: Install API dependencies
-        run: pnpm install
+        run: npm install
         working-directory: api
 
       - name: Build API
-        run: pnpm run build
+        run: npm run build
         working-directory: api
 
       - name: Deploy to Azure Static Web Apps
