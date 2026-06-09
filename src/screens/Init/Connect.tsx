@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from 'react'
 import { FlowContext } from '../../providers/flow'
 import Content from '../../components/Content'
 import { WalletContext } from '../../providers/wallet'
-import LoadingLogo from '../../components/LoadingLogo'
+import Loading from '../../components/Loading'
 import Header from '../../components/Header'
 import { setPrivateKey } from '../../lib/privateKey'
 import { setMnemonic } from '../../lib/mnemonic'
@@ -53,10 +53,21 @@ export default function InitConnect() {
       .finally(() => setConnectDone(true))
   }, [arkadeSwaps, initialized, initInfo.restoring])
 
-  const handleExitComplete = () => {
-    setInitInfo({ ...initInfo, password: undefined, privateKey: undefined, mnemonic: undefined })
-    navigate(error ? Pages.Init : Pages.Wallet)
-  }
+  useEffect(() => {
+    if (!connectDone) return
+    if (error) {
+      setInitInfo({ restoring: initInfo.restoring })
+      navigate(Pages.Init)
+    } else if (!initInfo.backupDone && !initInfo.restoring) {
+      // First run for a new wallet — show success/backup screens
+      setInitInfo({ restoring: false, mnemonic: mnemonic ?? undefined, privateKey: mnemonic ? undefined : privateKey })
+      navigate(Pages.InitSuccess)
+    } else {
+      // Second run (after password/biometrics) or restore — go straight to wallet
+      setInitInfo({})
+      navigate(Pages.Wallet)
+    }
+  }, [connectDone])
 
   const abortConnectionWithError = (err: any) => {
     consoleError(err, 'Error during connection:')
@@ -69,12 +80,7 @@ export default function InitConnect() {
     <>
       <Header text='Connecting to server' />
       <Content>
-        <LoadingLogo
-          text={loadingStatus || 'Connecting to server'}
-          exitMode={connectDone ? 'fly-up' : 'none'}
-          onExitComplete={handleExitComplete}
-          done={connectDone}
-        />
+        <Loading text={loadingStatus || 'Connecting to server'} />
       </Content>
     </>
   )

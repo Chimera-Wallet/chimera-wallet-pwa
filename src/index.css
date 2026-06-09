@@ -583,10 +583,13 @@ hr {
 }
 
 .pill-nav-icon {
-  display: inline-flex;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .pill-nav-icon svg {
+  display: block;
   shape-rendering: geometricPrecision;
 }
 

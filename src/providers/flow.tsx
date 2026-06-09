@@ -12,6 +12,7 @@ export interface InitInfo {
   privateKey?: Uint8Array
   mnemonic?: string
   restoring?: boolean
+  backupDone?: boolean
 }
 
 export interface NoteInfo {
