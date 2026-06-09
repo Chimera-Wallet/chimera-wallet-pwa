@@ -200,6 +200,7 @@ export const OptionsProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const getParentOption = (current: SettingsOptions): SettingsOptions => {
+    if (current === SettingsOptions.Advanced) return SettingsOptions.Menu
     const section = optionSection(current)
     return section === SettingsSections.Advanced
       ? SettingsOptions.Advanced
