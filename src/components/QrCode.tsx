@@ -93,8 +93,6 @@ export default function QrCode({ value }: QrCodeProps) {
     // Hardcoded for scanner reliability — QR must always be dark-on-white regardless of theme
     const fgColor = '#040404'
     const bgColor = '#ffffff'
-    const logoColor = '#391998'
-
     const logoModules = Math.ceil(size * 0.2)
     const logoZoneSize = logoModules % 2 === 0 ? logoModules + 1 : logoModules
 
@@ -171,15 +169,16 @@ export default function QrCode({ value }: QrCodeProps) {
     const logoInnerSize = logoCircleR * 1.2
     const logoOffsetX = centerX - logoInnerSize / 2
     const logoOffsetY = centerY - logoInnerSize / 2
-    const scale = logoInnerSize / 35
 
     elements.push(
-      <g key='logo' transform={`translate(${logoOffsetX}, ${logoOffsetY}) scale(${scale})`}>
-        <path d='M0 8.75L8.75 0H26.25L35 8.75V17.5H26.25V8.75H8.75V17.5H2.45431e-07L0 8.75Z' fill={logoColor} />
-        <path d='M8.75 26.25V17.5H26.25V26.25H8.75Z' fill={logoColor} />
-        <path d='M8.75 26.25H2.45431e-07V35H8.75V26.25Z' fill={logoColor} />
-        <path d='M26.25 26.25V35H35V26.25H26.25Z' fill={logoColor} />
-      </g>,
+      <image
+        key='logo'
+        href='/arkade-icon.svg'
+        x={logoOffsetX}
+        y={logoOffsetY}
+        width={logoInnerSize}
+        height={logoInnerSize}
+      />,
     )
 
     return (

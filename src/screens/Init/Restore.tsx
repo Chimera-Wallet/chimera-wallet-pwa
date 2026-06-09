@@ -10,7 +10,7 @@ import ErrorMessage from '../../components/Error'
 import Content from '../../components/Content'
 import FlexCol from '../../components/FlexCol'
 import { extractError } from '../../lib/error'
-import LoadingLogo from '../../components/LoadingLogo'
+import Loading from '../../components/Loading'
 import { consoleError } from '../../lib/logs'
 import Button from '../../components/Button'
 import Header from '../../components/Header'
@@ -114,17 +114,16 @@ export default function InitRestore() {
     else navigate(Pages.InitConnect)
   }
 
+  // Navigate once restore is done (no exit animation with chimera Loading)
+  useEffect(() => {
+    if (!restoreDone) return
+    handleExitComplete()
+  }, [restoreDone])
+
   const disabled = Boolean((!privateKey && !mnemonic) || error)
 
   if (restoring)
-    return (
-      <LoadingLogo
-        text='Restoring wallet...'
-        done={restoreDone}
-        exitMode='fly-up'
-        onExitComplete={handleExitComplete}
-      />
-    )
+    return <Loading text='Restoring wallet...' />
 
   return (
     <>

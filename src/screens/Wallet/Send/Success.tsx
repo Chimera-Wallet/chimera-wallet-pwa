@@ -11,7 +11,7 @@ import FlexCol from '../../../components/FlexCol'
 import Padded from '../../../components/Padded'
 import Text from '../../../components/Text'
 import SuccessIcon from '../../../icons/Success'
-import { prettyAmount, prettyFiatAmount } from '../../../lib/format'
+import { fromSatoshis, prettyFiatAmount } from '../../../lib/format'
 import { ConfigContext } from '../../../providers/config'
 import { FiatContext } from '../../../providers/fiat'
 import { WalletContext } from '../../../providers/wallet'
@@ -41,11 +41,12 @@ export default function SendSuccess() {
   }, [sendInfo.total])
 
   const totalSats = sendInfo.total ?? 0
+  const btcAmount = `${fromSatoshis(totalSats).toFixed(8).replace(/\.?0+$/, '')} BTC`
   const displayAmount = isAssetSend
     ? `${prettyAssetAmount(assetAmountValue, assetDecimals)} ${assetTicker}`
     : useFiat
       ? prettyFiatAmount(toFiat(totalSats), config.fiat)
-      : prettyAmount(totalSats)
+      : btcAmount
 
   if (isAssetSend && assetId) {
     return (

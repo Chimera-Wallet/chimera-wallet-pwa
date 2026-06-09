@@ -14,7 +14,7 @@ import Content from '../../../components/Content'
 import FlexCol from '../../../components/FlexCol'
 import { collaborativeExitWithFees, sendAssets, sendOffChain } from '../../../lib/asp'
 import { extractError } from '../../../lib/error'
-import LoadingLogo from '../../../components/LoadingLogo'
+import Loading from '../../../components/Loading'
 import { consoleError } from '../../../lib/logs'
 import { LimitsContext } from '../../../providers/limits'
 import { SwapsContext } from '../../../providers/swaps'
@@ -117,10 +117,12 @@ export default function SendDetails() {
     setSendDone(true)
   }
 
-  const handleExitComplete = () => {
+  // Navigate once send is done (no exit animation with chimera Loading)
+  useEffect(() => {
+    if (!sendDone) return
     if (error) return setSending(false)
-    else navigate(Pages.SendSuccess)
-  }
+    navigate(Pages.SendSuccess)
+  }, [sendDone])
 
   const handleError = (err: any) => {
     consoleError(err, 'error sending payment')
@@ -176,26 +178,11 @@ export default function SendDetails() {
       <Content>
         {sending ? (
           details?.destination === invoice ? (
-            <LoadingLogo
-              text='Paying to Lightning'
-              done={sendDone}
-              exitMode='fly-up'
-              onExitComplete={handleExitComplete}
-            />
+            <Loading text='Paying to Lightning' />
           ) : details?.destination === arkAddress ? (
-            <LoadingLogo
-              text='Paying inside Arkade'
-              done={sendDone}
-              exitMode='fly-up'
-              onExitComplete={handleExitComplete}
-            />
+            <Loading text='Paying inside Arkade' />
           ) : (
-            <LoadingLogo
-              text='Paying to mainnet'
-              done={sendDone}
-              exitMode='fly-up'
-              onExitComplete={handleExitComplete}
-            />
+            <Loading text='Paying to mainnet' />
           )
         ) : (
           <Padded>

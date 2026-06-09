@@ -60,6 +60,44 @@ html.palette-dark {
   display: none;
 }
 
+/* ============================================================
+   Input / label field layout
+   ============================================================ */
+
+/* Row layout for label element wrapping an input + action buttons */
+.label {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 0.5rem;
+}
+
+/* Actual <input> inside .label fills all available space */
+.label .input,
+.input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  color: inherit;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* Keep buttons on the same row, never wrap */
+.label.has-buttons {
+  flex-wrap: nowrap;
+}
+
+.label.has-buttons > div {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
 /* Hide scrollbar for IE, Edge and Firefox */
 .content {
   -ms-overflow-style: none;

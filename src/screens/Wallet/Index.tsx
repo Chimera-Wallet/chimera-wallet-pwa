@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from 'react'
 import Balance from '../../components/Balance'
+import DismissibleBanner from '../../components/DismissibleBanner'
 import ErrorMessage from '../../components/Error'
 import TransactionsList from '../../components/TransactionsList'
 import AssetList from '../../components/AssetList'
@@ -18,6 +19,9 @@ import { emptyRecvInfo, emptySendInfo, FlowContext } from '../../providers/flow'
 import { NavigationContext, Pages } from '../../providers/navigation'
 import { NudgeContext } from '../../providers/nudge'
 import { EmptyTxList } from '../../components/Empty'
+import { pwaCanInstall, usePwaInstalled, canPromptInstall, promptPwaInstall } from '../../lib/pwa'
+import { isIOS, isAndroid } from '../../lib/browser'
+import HomeIcon from '../../icons/Home'
 import { InfoBox } from '../../components/AlertBox'
 import { psaMessage } from '../../lib/constants'
 import { AnnouncementContext } from '../../providers/announcements'
@@ -34,11 +38,25 @@ import StakingBanner from '../../components/StakingBanner'
 export default function Wallet() {
   const { aspInfo } = useContext(AspContext)
   const { announcement } = useContext(AnnouncementContext)
-  const { config } = useContext(ConfigContext)
+  const { config, updateConfig } = useContext(ConfigContext)
   const { setRecvInfo, setSendInfo } = useContext(FlowContext)
   const { isInitialLoad, navigate, navigationCount, screen } = useContext(NavigationContext)
   const { balance, dataReady, synced, txs } = useContext(WalletContext)
-  const { nudge } = useContext(NudgeContext)
+  const { nudge, nudgeVisible, nudgeCheckComplete } = useContext(NudgeContext)
+
+  const pwaInstalled = usePwaInstalled()
+  const dismissed = (config?.dismissedBanners ?? []).includes('pwa-install')
+  const showPwaBanner = pwaCanInstall() && (isIOS() || isAndroid()) && !pwaInstalled && !dismissed
+
+  const pwaDescription = isIOS()
+    ? "Tap the share icon in Safari's toolbar, then 'Add to Home Screen'."
+    : "Tap 'Install' to add Chimera to your home screen."
+
+  const dismissPwaBanner = () => {
+    if (!config) return
+    const dismissedBanners = [...(config.dismissedBanners ?? []), 'pwa-install']
+    updateConfig({ ...config, dismissedBanners })
+  }
 
   const [error, setError] = useState(false)
   const [selectedAsset, setSelectedAsset] = useState<AssetSymbol | null>(null)
@@ -224,6 +242,27 @@ export default function Wallet() {
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
                   {nudge ? nudge : psaMessage ? <InfoBox html={psaMessage} /> : null}
+                  <div style={{ marginTop: '1rem' }}>
+                  <DismissibleBanner
+                    id='pwa-install'
+                    icon={<HomeIcon />}
+                    title='Add Chimera to your home screen'
+                    description={pwaDescription}
+                    action={
+                      canPromptInstall()
+                        ? {
+                            label: 'Install',
+                            onClick: async () => {
+                              const outcome = await promptPwaInstall().catch(() => null)
+                              if (outcome) dismissPwaBanner()
+                            },
+                          }
+                        : undefined
+                    }
+                    onDismiss={dismissPwaBanner}
+                    visible={Boolean(nudgeCheckComplete && !nudgeVisible && showPwaBanner)}
+                  />
+                  </div>
                 </WalletStaggerChild>
               </FlexCol>
               {!dataReady || (!synced && txs.length === 0) ? null : txs.length === 0 ? (

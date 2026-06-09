@@ -35,7 +35,7 @@ function TextButton({ onClick, label }: { onClick: () => void; label: string }) 
         padding: 0,
         fontSize: '16px',
         fontWeight: 600,
-        color: 'var(--purpletext)',
+        color: 'var(--blue-dark)',
         touchAction: 'manipulation',
         fontFamily: 'inherit',
         textAlign: 'left',
@@ -49,13 +49,8 @@ function TextButton({ onClick, label }: { onClick: () => void; label: string }) 
   )
 }
 
-const baseStyle: React.CSSProperties = {
-  width: '100%',
-  touchAction: 'manipulation',
-}
-
 const containerStyle: React.CSSProperties = {
-  backgroundColor: 'var(--purple10)',
+  backgroundColor: 'rgba(31, 59, 219, 0.5)',
   borderRadius: '0.75rem',
   boxShadow: BANNER_SHADOW,
   padding: '0.75rem 0.75rem 0.25rem 0.75rem',
@@ -63,11 +58,16 @@ const containerStyle: React.CSSProperties = {
 }
 
 const iconStyle: React.CSSProperties = {
-  backgroundColor: 'var(--purple)',
+  backgroundColor: 'var(--blue-dark)',
   borderRadius: '6px',
   padding: '5px',
   flexShrink: 0,
   color: 'var(--white)',
+}
+
+const baseStyle: React.CSSProperties = {
+  width: '100%',
+  touchAction: 'manipulation',
 }
 
 function BannerContent({ icon, title, description, action, onDismiss }: DismissibleBannerProps) {
