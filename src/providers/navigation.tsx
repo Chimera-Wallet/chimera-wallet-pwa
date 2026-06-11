@@ -30,6 +30,7 @@ import AppBoltz from '../screens/Apps/Boltz/Index'
 import AppBoltzSettings from '../screens/Apps/Boltz/Settings'
 import InitSuccess from '../screens/Init/Success'
 import InitBackupKey from '../screens/Init/BackupKey'
+import InitBackupWarning from '../screens/Init/BackupWarning'
 import AppBoltzSwap from '../screens/Apps/Boltz/Swap'
 import AppLendasat from '../screens/Apps/Lendasat/Index'
 import AppSatora from '../screens/Apps/Satora/Index'
@@ -91,6 +92,7 @@ export enum Pages {
   InAppBrowser,
   InitSuccess,
   InitBackupKey,
+  InitBackupWarning,
   Loading,
   NotesRedeem,
   NotesForm,
@@ -157,6 +159,7 @@ const pageTab: Record<Pages, Tabs> = {
   [Pages.InAppBrowser]: Tabs.None,
   [Pages.InitSuccess]: Tabs.None,
   [Pages.InitBackupKey]: Tabs.None,
+  [Pages.InitBackupWarning]: Tabs.None,
   [Pages.Loading]: Tabs.None,
   [Pages.NotesRedeem]: Tabs.Settings,
   [Pages.NotesForm]: Tabs.Settings,
@@ -263,6 +266,8 @@ export const pageComponent = (page: Pages, navigationData?: Record<string, unkno
       return <InitSuccess />
     case Pages.InitBackupKey:
       return <InitBackupKey />
+    case Pages.InitBackupWarning:
+      return <InitBackupWarning />
     case Pages.Loading:
       return <LoadingLogo />
     case Pages.NotesRedeem:

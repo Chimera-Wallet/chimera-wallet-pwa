@@ -45,7 +45,7 @@ export default function InitBackupKey() {
 
   const handleProceed = () => {
     setInitInfo({ ...initInfo, backupDone: true })
-    navigate(Pages.InitBiometric)
+    navigate(Pages.InitBackupWarning)
   }
 
   return (
@@ -216,7 +216,6 @@ export default function InitBackupKey() {
       </Content>
       <ButtonsOnBottom>
         <Button onClick={handleProceed} label="I've saved it — Go to wallet" />
-        <Button onClick={handleProceed} label='Skip for now' secondary clear />
       </ButtonsOnBottom>
     </>
   )
