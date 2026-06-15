@@ -18,9 +18,8 @@ import FlexRow from '../../components/FlexRow'
 import { emptyRecvInfo, emptySendInfo, FlowContext } from '../../providers/flow'
 import { NavigationContext, Pages } from '../../providers/navigation'
 import { NudgeContext } from '../../providers/nudge'
-import { EmptyTxList } from '../../components/Empty'
 import { pwaCanInstall, usePwaInstalled, canPromptInstall, promptPwaInstall } from '../../lib/pwa'
-import { isIOS, isAndroid } from '../../lib/browser'
+import { isIOS, isAndroid, getIOSBrowser } from '../../lib/browser'
 import HomeIcon from '../../icons/Home'
 import { InfoBox } from '../../components/AlertBox'
 import { psaMessage } from '../../lib/constants'
@@ -41,15 +40,30 @@ export default function Wallet() {
   const { config, updateConfig } = useContext(ConfigContext)
   const { setRecvInfo, setSendInfo } = useContext(FlowContext)
   const { isInitialLoad, navigate, navigationCount, screen } = useContext(NavigationContext)
-  const { balance, dataReady, synced, txs } = useContext(WalletContext)
+  const { balance, dataReady, txs } = useContext(WalletContext)
   const { nudge, nudgeVisible, nudgeCheckComplete } = useContext(NudgeContext)
 
   const pwaInstalled = usePwaInstalled()
   const dismissed = (config?.dismissedBanners ?? []).includes('pwa-install')
   const showPwaBanner = pwaCanInstall() && (isIOS() || isAndroid()) && !pwaInstalled && !dismissed
 
+  const iosInstallDescription = (): string => {
+    switch (getIOSBrowser()) {
+      case 'safari':
+        return "Tap the Share icon in Safari's toolbar, then 'Add to Home Screen'."
+      case 'chrome':
+        return "Tap the Share icon in Chrome's address bar, then 'Add to Home Screen'."
+      case 'firefox':
+        return "Tap the menu icon in Firefox, then 'Add to Home Screen'. For full support, open this page in Safari."
+      case 'edge':
+        return "Tap the menu icon in Edge, then 'Add to Home Screen'. For full support, open this page in Safari."
+      default:
+        return "Tap the Share icon, then 'Add to Home Screen'. For full support, open this page in Safari."
+    }
+  }
+
   const pwaDescription = isIOS()
-    ? "Tap the share icon in Safari's toolbar, then 'Add to Home Screen'."
+    ? iosInstallDescription()
     : "Tap 'Install' to add Chimera to your home screen."
 
   const dismissPwaBanner = () => {
@@ -265,13 +279,7 @@ export default function Wallet() {
                   </div>
                 </WalletStaggerChild>
               </FlexCol>
-              {!dataReady || (!synced && txs.length === 0) ? null : txs.length === 0 ? (
-                <WalletStaggerChild animate={shouldStagger}>
-                  <div style={{ marginTop: '5rem', width: '100%' }}>
-                    <EmptyTxList />
-                  </div>
-                </WalletStaggerChild>
-              ) : (
+              {!dataReady || txs.length === 0 ? null : (
                 <WalletStaggerChild animate={shouldStagger}>
                   <TransactionsList maxItems={4} />
                   <button

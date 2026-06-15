@@ -88,7 +88,7 @@ export enum SettingsOptions {
   Notes = 'notes',
   Password = 'change password',
   Reset = 'reset wallet',
-  SecretPhrase = 'Show secret key',
+  SecretPhrase = 'Show secret phrase',
   Server = 'server',
   Support = 'support',
   Contracts = 'contracts',

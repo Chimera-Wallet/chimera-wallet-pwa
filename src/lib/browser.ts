@@ -10,6 +10,20 @@ export const isAndroid = (): boolean => {
   return /Android/.test(userAgent)
 }
 
+export type IOSBrowser = 'safari' | 'chrome' | 'firefox' | 'edge' | 'opera' | 'other'
+
+// On iOS every browser uses WebKit, so the UA must be inspected for the
+// vendor-specific token to know which browser the user is actually in.
+export const getIOSBrowser = (): IOSBrowser => {
+  const ua = window.navigator.userAgent
+  if (/CriOS/.test(ua)) return 'chrome'
+  if (/FxiOS/.test(ua)) return 'firefox'
+  if (/EdgiOS/.test(ua)) return 'edge'
+  if (/OPiOS|OPT\//.test(ua)) return 'opera'
+  if (/Safari/.test(ua)) return 'safari'
+  return 'other'
+}
+
 export const isInAppBrowser = (): boolean => {
   const ua = navigator.userAgent || navigator.vendor || (window as any).opera || ''
 

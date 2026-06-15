@@ -19,7 +19,7 @@ export function OnboardStaggerContainer({ children, centered }: OnboardStaggerCo
   if (prefersReduced) return <>{children}</>
 
   const style = centered
-    ? { display: 'flex', flexDirection: 'column' as const, alignItems: 'center' as const, gap: '1rem' }
+    ? { display: 'flex', flexDirection: 'column' as const, alignItems: 'center' as const, gap: '1rem', width: '100%' }
     : { width: '100%' }
 
   return (

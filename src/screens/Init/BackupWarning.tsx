@@ -33,6 +33,7 @@ export default function InitBackupWarning() {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '1rem',
+                
               }}
             >
               <p

@@ -58,14 +58,14 @@ export default function InitBiometric() {
                 </div>
               </OnboardStaggerChild>
               <OnboardStaggerChild>
-                <FlexCol gap='1rem'>
-                  <Text big centered heading>
+                <FlexCol gap='1rem' centered>
+                  <Text big centered heading wrap>
                     Enable Biometric Authentication
                   </Text>
                 </FlexCol>
               </OnboardStaggerChild>
               <OnboardStaggerChild>
-                <FlexCol gap='1.5rem'>
+                <FlexCol gap='1.5rem' centered>
                   {!biometricsSupported ? (
                     <TextSecondary centered wrap>
                       Biometric authentication is not supported on this device. You'll need to use your password to

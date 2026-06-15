@@ -42,7 +42,6 @@ import AppAssetMintSuccess from '../screens/Apps/Assets/MintSuccess'
 import AppAssetReissue from '../screens/Apps/Assets/Reissue'
 import AppAssetBurn from '../screens/Apps/Assets/Burn'
 import AppAssetsSettings from '../screens/Apps/Assets/Settings'
-import AppDfx from '../screens/Apps/Dfx/Index'
 import InAppBrowser from '../screens/Wallet/InAppBrowser'
 import AppStatement from '../screens/Apps/Statement/Index'
 import AppReferral from '../screens/Apps/Referral/Index'
@@ -73,7 +72,6 @@ export enum Pages {
   AppAssetReissue,
   AppAssetBurn,
   AppAssetsSettings,
-  AppDfx,
   AppStatement,
   AppReferral,
   AppGiftCards,
@@ -140,7 +138,6 @@ const pageTab: Record<Pages, Tabs> = {
   [Pages.AppAssetReissue]: Tabs.Apps,
   [Pages.AppAssetBurn]: Tabs.Apps,
   [Pages.AppAssetsSettings]: Tabs.Apps,
-  [Pages.AppDfx]: Tabs.Apps,
   [Pages.AppStatement]: Tabs.Apps,
   [Pages.AppReferral]: Tabs.Apps,
   [Pages.AppGiftCards]: Tabs.Apps,
@@ -230,8 +227,6 @@ export const pageComponent = (page: Pages, navigationData?: Record<string, unkno
       return <AppAssetBurn />
     case Pages.AppAssetsSettings:
       return <AppAssetsSettings />
-    case Pages.AppDfx:
-      return <AppDfx />
     case Pages.AppStatement:
       return <AppStatement />
     case Pages.AppReferral:

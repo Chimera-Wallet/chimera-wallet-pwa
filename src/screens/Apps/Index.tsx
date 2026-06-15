@@ -6,6 +6,7 @@ import Text from '../../components/Text'
 import Shadow from '../../components/Shadow'
 import { NavigationContext, Pages } from '../../providers/navigation'
 import LendasatIcon from './Lendasat/LendasatIcon'
+import SatoraIcon from './Satora/SatoraIcon'
 import Focusable from '../../components/Focusable'
 import { hapticSubtle } from '../../lib/haptics'
 
@@ -120,8 +121,7 @@ export default function Apps() {
 
           <div style={gridStyle}>
             <App name='LendaSat' icon={<LendasatIcon />} link='https://lendasat.com' page={Pages.AppLendasat} />
-            <App name='DFX' image='/images/apps/Transfer.svg' page={Pages.AppDfx} />
-            <App name='Satora' image='/images/apps/Transfer.svg' page={Pages.AppSatora} />
+            <App name='Satora' icon={<SatoraIcon />} page={Pages.AppSatora} />
           </div>
         </Padded>
       </Content>

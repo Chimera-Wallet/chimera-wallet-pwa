@@ -34,7 +34,7 @@ export default function InitBackupKey() {
   )
 
   const isMnemonic = words.length > 0
-  const [revealed, setRevealed] = useState(true)
+  const [revealed, setRevealed] = useState(false)
 
   const handleCopy = async () => {
     const value = isMnemonic ? mnemonic : nsec
