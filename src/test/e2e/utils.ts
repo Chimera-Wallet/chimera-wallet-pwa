@@ -241,9 +241,10 @@ export async function receiveLightning(page: Page, isMobile: boolean, sats: numb
 
 export async function resetWallet(page: Page): Promise<void> {
   await navigateToSettings(page)
-  await page.getByText('Reset wallet').click()
-  await page.getByTestId('checkbox').click()
-  await page.getByRole('contentinfo').getByText('Reset wallet').click()
+  await page.getByText('Advanced Settings').click()
+  await page.getByText('Delete Mnemonic').click()
+  await page.getByLabel('I understand and delete my account').click()
+  await page.getByText('YES DELETE MNEMONIC').click()
 }
 
 async function navigateToSettings(page: Page): Promise<void> {

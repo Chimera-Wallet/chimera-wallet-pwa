@@ -4,7 +4,6 @@ import { prettyAgo, prettyAmount, prettyLongText } from '../../lib/format'
 import Toggle from '../../components/Toggle'
 import Shadow from '../../components/Shadow'
 import Padded from '../../components/Padded'
-import SuccessIcon from '../../icons/Success'
 import Content from '../../components/Content'
 import FlexCol from '../../components/FlexCol'
 import FlexRow from '../../components/FlexRow'
@@ -98,9 +97,6 @@ function Hero() {
           </Text>
         </a>
       </FlexCol>
-      <div style={{ transform: 'translateX(30px) translateY(40px) rotate(13deg)', width: '140px' }}>
-        <SuccessIcon />
-      </div>
     </FlexRow>
   )
 }

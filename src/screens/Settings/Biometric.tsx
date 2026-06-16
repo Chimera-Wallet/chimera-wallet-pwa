@@ -10,11 +10,14 @@ import { isBiometricsSupported, registerUser } from '../../lib/biometrics'
 import { consoleError } from '../../lib/logs'
 import { hapticSubtle } from '../../lib/haptics'
 import { getPrivateKey, setPrivateKey, noUserDefinedPassword, isValidPassword } from '../../lib/privateKey'
+import { hasMnemonic, getMnemonic, setMnemonic } from '../../lib/mnemonic'
 import { defaultPassword } from '../../lib/constants'
 import NeedsPassword from '../../components/NeedsPassword'
+import { OptionsContext } from '../../providers/options'
 
 export default function Biometric() {
   const { updateWallet, wallet } = useContext(WalletContext)
+  const { goBack } = useContext(OptionsContext)
   const [currentPassword, setCurrentPassword] = useState('')
   const [authenticated, setAuthenticated] = useState(false)
   const [error, setError] = useState('')
@@ -38,28 +41,41 @@ export default function Biometric() {
     })
   }, [currentPassword])
 
+  // Re-encrypt the wallet secret from one password to another. The secret is
+  // the mnemonic when present (the primary store that lock detection and
+  // unlockWallet read), otherwise the raw private key. Mirrors Password.tsx.
+  const reencryptSecret = async (fromPassword: string, toPassword: string) => {
+    if (hasMnemonic()) {
+      const mnemonic = await getMnemonic(fromPassword)
+      await setMnemonic(mnemonic, toPassword)
+    } else {
+      const privateKey = await getPrivateKey(fromPassword)
+      await setPrivateKey(privateKey, toPassword)
+    }
+  }
+
   const handleToggle = async () => {
     hapticSubtle()
 
     if (biometricsEnabled) {
-      // Disable biometrics - re-encrypt with default password
+      // Disable biometrics - re-encrypt the secret with the default password
       try {
-        const privateKey = await getPrivateKey(currentPassword)
-        await setPrivateKey(privateKey, defaultPassword)
+        await reencryptSecret(currentPassword, defaultPassword)
         updateWallet({ ...wallet, lockedByBiometrics: false, passkeyId: undefined })
         setCurrentPassword(defaultPassword)
+        goBack()
       } catch (err) {
         consoleError(err, 'Failed to disable biometrics')
         setError('Failed to disable biometrics. Please try again.')
       }
     } else {
-      // Enable biometrics - re-encrypt with biometric password
+      // Enable biometrics - re-encrypt the secret with the biometric password
       try {
         const { password: biometricPassword, passkeyId } = await registerUser()
-        const privateKey = await getPrivateKey(currentPassword)
-        await setPrivateKey(privateKey, biometricPassword)
+        await reencryptSecret(currentPassword, biometricPassword)
         updateWallet({ ...wallet, lockedByBiometrics: true, passkeyId })
         setCurrentPassword(biometricPassword)
+        goBack()
       } catch (err) {
         consoleError(err, 'Failed to enable biometrics')
         setError('Failed to enable biometrics. Please try again.')

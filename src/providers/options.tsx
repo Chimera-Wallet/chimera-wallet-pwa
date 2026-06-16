@@ -194,25 +194,15 @@ export const OptionsProvider = ({ children }: { children: ReactNode }) => {
 
   const optionRef = useRef(SettingsOptions.Menu)
   const historyDepth = useRef(0)
-
-  const optionSection = (opt: SettingsOptions): SettingsSections => {
-    return options.find((o) => o.option === opt)?.section || SettingsSections.General
-  }
-
-  const getParentOption = (current: SettingsOptions): SettingsOptions => {
-    if (current === SettingsOptions.Advanced) return SettingsOptions.Menu
-    const section = optionSection(current)
-    return section === SettingsSections.Advanced
-      ? SettingsOptions.Advanced
-      : section === SettingsSections.Config
-        ? SettingsOptions.General
-        : SettingsOptions.Menu
-  }
+  // Explicit breadcrumb of visited options so back navigation follows the
+  // actual route taken (e.g. Advanced → Lock Wallet → back → Advanced),
+  // rather than a static section-based parent map.
+  const navStack = useRef<SettingsOptions[]>([])
 
   // Internal goBack — called by popstate handler via subNavHandler, does NOT touch browser history
   const internalGoBack = useCallback((fromButton: boolean) => {
     setDirection(fromButton ? 'back' : 'none')
-    const target = getParentOption(optionRef.current)
+    const target = navStack.current.pop() ?? SettingsOptions.Menu
     if (historyDepth.current > 0) historyDepth.current--
     optionRef.current = target
     setOption(target)
@@ -221,6 +211,7 @@ export const OptionsProvider = ({ children }: { children: ReactNode }) => {
   const navigateToOption = useCallback((o: SettingsOptions) => {
     if (o === SettingsOptions.Menu) {
       // Reset to menu — don't push history (caller handles history cleanup)
+      navStack.current = []
       historyDepth.current = 0
       optionRef.current = SettingsOptions.Menu
       setDirection('back')
@@ -229,6 +220,7 @@ export const OptionsProvider = ({ children }: { children: ReactNode }) => {
     }
     setDirection('forward')
     history.pushState({}, '', '')
+    navStack.current.push(optionRef.current)
     historyDepth.current++
     optionRef.current = o
     setOption(o)
@@ -248,6 +240,7 @@ export const OptionsProvider = ({ children }: { children: ReactNode }) => {
     subNavHandler.goBack = (fromButton: boolean) => internalGoBack(fromButton)
     subNavHandler.getDepth = () => historyDepth.current
     subNavHandler.reset = () => {
+      navStack.current = []
       historyDepth.current = 0
       optionRef.current = SettingsOptions.Menu
       setOption(SettingsOptions.Menu)

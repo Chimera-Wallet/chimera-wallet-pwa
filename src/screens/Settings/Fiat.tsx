@@ -22,7 +22,7 @@ export default function Fiat() {
         <Padded>
           <Select
             onChange={handleChange}
-            options={[Fiats.EUR, Fiats.USD, Fiats.CHF, Fiats.GBP, Fiats.JPY, Fiats.CNY]}
+            options={[Fiats.USD, Fiats.EUR, Fiats.CHF]}
             selected={config.fiat}
           />
         </Padded>

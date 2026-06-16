@@ -127,7 +127,7 @@ const wrapperStyle: React.CSSProperties = {
   position: 'relative',
   overflow: 'visible',
   width: '100%',
-  marginTop: '1.25rem',
+  height: '100%',
 }
 
 const cardStyle: React.CSSProperties = {
@@ -138,6 +138,7 @@ const cardStyle: React.CSSProperties = {
   gap: 12,
   padding: '20px 16px 16px 16px',
   width: '100%',
+  height: '100%',
   borderRadius: 20,
   backgroundColor: 'rgba(31, 59, 219, 0.5)',
   boxShadow: '0 20px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)',

@@ -1,6 +1,5 @@
 import { useContext, useEffect, useState } from 'react'
 import Balance from '../../components/Balance'
-import DismissibleBanner from '../../components/DismissibleBanner'
 import ErrorMessage from '../../components/Error'
 import TransactionsList from '../../components/TransactionsList'
 import AssetList from '../../components/AssetList'
@@ -20,7 +19,6 @@ import { NavigationContext, Pages } from '../../providers/navigation'
 import { NudgeContext } from '../../providers/nudge'
 import { pwaCanInstall, usePwaInstalled, canPromptInstall, promptPwaInstall } from '../../lib/pwa'
 import { isIOS, isAndroid, getIOSBrowser } from '../../lib/browser'
-import HomeIcon from '../../icons/Home'
 import { InfoBox } from '../../components/AlertBox'
 import { psaMessage } from '../../lib/constants'
 import { AnnouncementContext } from '../../providers/announcements'
@@ -33,6 +31,8 @@ import AssetSelector from '../../components/AssetSelector'
 import NetworkSelector from '../../components/NetworkSelector'
 import { TRANSFER_METHOD, type TransferMethod } from '../../lib/transferMethods'
 import StakingBanner from '../../components/StakingBanner'
+import InstallBanner from '../../components/InstallBanner'
+import BannerCarousel from '../../components/BannerCarousel'
 
 export default function Wallet() {
   const { aspInfo } = useContext(AspContext)
@@ -65,6 +65,8 @@ export default function Wallet() {
   const pwaDescription = isIOS()
     ? iosInstallDescription()
     : "Tap 'Install' to add Chimera to your home screen."
+
+  const showInstallBanner = true // Boolean(nudgeCheckComplete && !nudgeVisible && showPwaBanner)
 
   const dismissPwaBanner = () => {
     if (!config) return
@@ -252,31 +254,29 @@ export default function Wallet() {
                   </FlexRow>
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
-                  <StakingBanner variant='home' />
+                  <BannerCarousel>
+                    <StakingBanner variant='home' />
+                    {showInstallBanner ? (
+                      <InstallBanner
+                        description={pwaDescription}
+                        action={
+                          canPromptInstall()
+                            ? {
+                                label: 'Install',
+                                onClick: async () => {
+                                  const outcome = await promptPwaInstall().catch(() => null)
+                                  if (outcome) dismissPwaBanner()
+                                },
+                              }
+                            : undefined
+                        }
+                        onDismiss={dismissPwaBanner}
+                      />
+                    ) : null}
+                  </BannerCarousel>
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
                   {nudge ? nudge : psaMessage ? <InfoBox html={psaMessage} /> : null}
-                  <div style={{ marginTop: '1rem' }}>
-                  <DismissibleBanner
-                    id='pwa-install'
-                    icon={<HomeIcon />}
-                    title='Add Chimera to your home screen'
-                    description={pwaDescription}
-                    action={
-                      canPromptInstall()
-                        ? {
-                            label: 'Install',
-                            onClick: async () => {
-                              const outcome = await promptPwaInstall().catch(() => null)
-                              if (outcome) dismissPwaBanner()
-                            },
-                          }
-                        : undefined
-                    }
-                    onDismiss={dismissPwaBanner}
-                    visible={Boolean(nudgeCheckComplete && !nudgeVisible && showPwaBanner)}
-                  />
-                  </div>
                 </WalletStaggerChild>
               </FlexCol>
               {!dataReady || txs.length === 0 ? null : (

@@ -1,59 +1,41 @@
-import { useContext } from 'react'
 import Header from './Header'
-import { type Option } from '../../providers/options'
 import Content from '../../components/Content'
-import { SettingsSections, SettingsOptions } from '../../lib/types'
-import Menu from '../../components/Menu'
-import { DevModeContext } from '../../providers/devMode'
-import LockIcon from '../../icons/Lock'
-import ResetIcon from '../../icons/Reset'
+import { SettingsOptions } from '../../lib/types'
+import Menu, { MenuRow } from '../../components/Menu'
 import ServerIcon from '../../icons/Server'
 import LogsIcon from '../../icons/Logs'
 import VtxosIcon from '../../icons/Vtxos'
 import CogIcon from '../../icons/Cog'
+import KeyIcon from '../../icons/Key'
+import LockIcon from '../../icons/Lock'
+import HashIcon from '../../icons/Hash'
+
+// warning triangle shown on the destructive "Delete Mnemonic" row
+function WarningTriangle() {
+  return (
+    <svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+      <path d='M12 3L2 20h20L12 3z' strokeLinejoin='round' />
+      <path d='M12 9v5' strokeLinecap='round' />
+      <circle cx='12' cy='17' r='0.6' fill='currentColor' stroke='none' />
+    </svg>
+  )
+}
 
 export default function Advanced() {
-  // Create sub-items for Advanced Settings screen
-  const advancedSubItems: Option[] = [
+  const advancedSubItems: MenuRow[] = [
+    { icon: <ServerIcon />, option: SettingsOptions.Server, label: 'Server' },
+    { icon: <LogsIcon />, option: SettingsOptions.Logs, label: 'Logs' },
+    { icon: <VtxosIcon />, option: SettingsOptions.Vtxos, label: 'Coin Control' },
+    { icon: <CogIcon />, option: SettingsOptions.Delegates, label: 'Delegates' },
+    { icon: <HashIcon />, option: SettingsOptions.Contracts, label: 'Contracts' },
+    { icon: <KeyIcon size={20} />, option: SettingsOptions.Password, label: 'Change Password' },
+    { icon: <LockIcon />, option: SettingsOptions.Lock, label: 'Lock Wallet' },
     {
-      icon: <ServerIcon />,
-      option: SettingsOptions.Server,
-      section: SettingsSections.Advanced,
-    },
-    {
-      icon: <LogsIcon />,
-      option: SettingsOptions.Logs,
-      section: SettingsSections.Advanced,
-    },
-    {
-      icon: <VtxosIcon />,
-      option: SettingsOptions.Vtxos,
-      section: SettingsSections.Advanced,
-    },
-    {
-      icon: <></>,
-      option: SettingsOptions.Delegates,
-      section: SettingsSections.Advanced,
-    },
-    {
-      icon: <></>,
-      option: SettingsOptions.Contracts,
-      section: SettingsSections.Advanced,
-    },
-    {
-      icon: <CogIcon />,
-      option: SettingsOptions.Password,
-      section: SettingsSections.Advanced,
-    },
-    {
-      icon: <LockIcon />,
-      option: SettingsOptions.Lock,
-      section: SettingsSections.Advanced,
-    },
-    {
-      icon: <ResetIcon />,
+      icon: <WarningTriangle />,
       option: SettingsOptions.Reset,
-      section: SettingsSections.Advanced,
+      label: 'Delete Mnemonic',
+      badge: { text: 'High Risk', tone: 'danger' },
+      danger: true,
     },
   ]
 
