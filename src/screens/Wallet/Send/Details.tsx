@@ -22,6 +22,7 @@ import Text from '../../../components/Text'
 import { isPendingChainSwap, isPendingSubmarineSwap } from '@arkade-os/boltz-swap'
 import { FeesContext } from '../../../providers/fees'
 import { prettyAssetAmount } from '../../../lib/assets'
+import { TxResultContext } from '../../../providers/txResult'
 
 export default function SendDetails() {
   const { navigate } = useContext(NavigationContext)
@@ -31,6 +32,7 @@ export default function SendDetails() {
   const { lnSwapsAllowed, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
   const { payInvoice, payBtc } = useContext(SwapsContext)
   const { assetMetadataCache, balance, svcWallet } = useContext(WalletContext)
+  const { notifyResult } = useContext(TxResultContext)
 
   const assetId = sendInfo.assets?.[0]?.assetId
   const assetMeta = assetId ? assetMetadataCache.get(assetId) : undefined
@@ -117,11 +119,18 @@ export default function SendDetails() {
     setSendDone(true)
   }
 
-  // Navigate once send is done (no exit animation with chimera Loading)
+  // Navigate once send is done (no exit animation with chimera Loading).
+  // On failure, show the fail popup and return to the form so the user can
+  // retry; on success, hand off to SendSuccess which shows the success popup
+  // and redirects home.
   useEffect(() => {
     if (!sendDone) return
-    if (error) return setSending(false)
+    if (error) {
+      notifyResult(false, 'Transaction failed').then(() => setSending(false))
+      return
+    }
     navigate(Pages.SendSuccess)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sendDone])
 
   const handleError = (err: any) => {
@@ -132,7 +141,12 @@ export default function SendDetails() {
 
   const handleContinue = async () => {
     if (!details || !svcWallet) return
-    if (!isAssetSend && (!details.total || !details.satoshis)) return
+    // Surface these as errors instead of silently no-op'ing on tap: a "Tap to
+    // Sign" that does nothing is indistinguishable from a broken button. The
+    // net `satoshis` is the amount after deducting the onchain output fee, so a
+    // zero here means the fee consumed the whole amount.
+    if (!isAssetSend && !details.total) return handleError('Missing amount')
+    if (!isAssetSend && !details.satoshis) return handleError('Amount too low to cover network fees')
     if (isAssetSend && !arkAddress) {
       setError('Assets can only be sent to Arkade addresses')
       return

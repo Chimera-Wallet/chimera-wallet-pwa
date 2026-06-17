@@ -42,6 +42,7 @@ import {
 import { NavigationContext, Pages } from '../../../providers/navigation'
 import { FlowContext } from '../../../providers/flow'
 import { WalletContext } from '../../../providers/wallet'
+import { TxResultContext } from '../../../providers/txResult'
 import { createBankDeposit, ChimeraOrder } from '../../../providers/chimera'
 import { getReceivingAddresses } from '../../../lib/asp'
 import { addOrderToHistory } from '../../../lib/bankOrderHistory'
@@ -60,6 +61,7 @@ export default function BankReceive() {
   const { navigate, goBack } = useContext(NavigationContext)
   const { bankRecvInfo, setBankRecvInfo, recvInfo, setRecvInfo, setCurrentBankOrderType } = useContext(FlowContext)
   const { svcWallet } = useContext(WalletContext)
+  const { notifyResult } = useContext(TxResultContext)
 
   const bankConfig = getBankTransferConfigSync()
 
@@ -156,11 +158,15 @@ export default function BankReceive() {
         // Track this as the current order and add to history
         setCurrentBankOrderType('receive')
         addOrderToHistory(response.order, 'receive', circuit)
+        // Success popup; the screen then shows the bank transfer details (no redirect)
+        notifyResult(true, 'Deposit order created')
       } else {
         setError('Failed to create order - no order returned')
+        notifyResult(false, 'Failed to create order')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create deposit order')
+      notifyResult(false, 'Failed to create order')
     } finally {
       setLoading(false)
     }

@@ -12,15 +12,27 @@ import ButtonsOnBottom from './ButtonsOnBottom'
 import { WalletContext } from '../providers/wallet'
 import { authenticateUser } from '../lib/biometrics'
 import LockIcon from '../icons/Lock'
+import OnboardingLayout from './OnboardingLayout'
 
 interface NeedsPasswordProps {
   error: string
   onPassword: (password: string) => void
   loading?: boolean
   onRestore?: () => void
+  // When true, render the full-screen onboarding visual (gradient + coins +
+  // logo) instead of the standard light app-shell layout. Used by the wallet
+  // Unlock screen so it matches the onboarding design; the Settings re-auth
+  // gates leave it off and keep the plain layout.
+  onboarding?: boolean
 }
 
-export default function NeedsPassword({ error, onPassword, loading = false, onRestore }: NeedsPasswordProps) {
+export default function NeedsPassword({
+  error,
+  onPassword,
+  loading = false,
+  onRestore,
+  onboarding = false,
+}: NeedsPasswordProps) {
   const { wallet } = useContext(WalletContext)
   const [password, setPassword] = useState('')
   const [biometricFailed, setBiometricFailed] = useState(false)
@@ -37,6 +49,83 @@ export default function NeedsPassword({ error, onPassword, loading = false, onRe
 
   const handleChange = (ev: any) => setPassword(ev.target.value)
   const handleClick = () => onPassword(password)
+
+  if (onboarding) {
+    // Restore link styled for the dark gradient background.
+    const restoreLink = (label: string) =>
+      onRestore ? (
+        <span
+          onClick={onRestore}
+          style={{
+            cursor: 'pointer',
+            textAlign: 'center',
+            fontSize: '14px',
+            fontWeight: 300,
+            color: 'rgba(255, 255, 255, 0.8)',
+            textDecoration: 'underline',
+            display: 'block',
+          }}
+        >
+          {label}
+        </span>
+      ) : null
+
+    const secondaryText = (text: string) => (
+      <p
+        style={{
+          color: 'rgba(255, 255, 255, 0.8)',
+          fontFamily: 'Titillium Web',
+          fontSize: '14px',
+          textAlign: 'center',
+          margin: '0 0 1rem',
+        }}
+      >
+        {text}
+      </p>
+    )
+
+    // Biometrics active and failed → restore-only message
+    if (wallet.lockedByBiometrics && biometricFailed) {
+      return (
+        <OnboardingLayout>
+          {secondaryText('Your passkey could not be found on this device. Restore your wallet using your secret phrase.')}
+          <FlexCol gap='0'>
+            <Button onClick={handleBiometrics} label='Try again' secondary disabled={loading} />
+            {onRestore ? <Button onClick={onRestore} label='Restore from secret phrase' disabled={loading} /> : null}
+          </FlexCol>
+        </OnboardingLayout>
+      )
+    }
+
+    // Biometrics active and not yet failed → biometric prompt
+    if (wallet.lockedByBiometrics) {
+      return (
+        <OnboardingLayout>
+          <FlexCol gap='0'>
+            <Button onClick={handleBiometrics} label='Unlock using biometrics' loading={loading} disabled={loading} />
+          </FlexCol>
+        </OnboardingLayout>
+      )
+    }
+
+    // No biometrics → password input
+    return (
+      <OnboardingLayout>
+        <FlexCol gap='1rem'>
+          <InputPassword
+            focus
+            label='Insert password'
+            onChange={handleChange}
+            onEnter={handleClick}
+            placeholder='password'
+          />
+          <ErrorMessage text={error} error={Boolean(error)} />
+          <Button onClick={handleClick} label='Unlock wallet' loading={loading} disabled={loading} />
+          {restoreLink('Forgot password? Restore with private key')}
+        </FlexCol>
+      </OnboardingLayout>
+    )
+  }
 
   // Biometrics active and failed → show restore-only message
   if (wallet.lockedByBiometrics && biometricFailed) {

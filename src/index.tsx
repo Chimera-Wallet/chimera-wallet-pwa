@@ -17,13 +17,13 @@ import * as Sentry from '@sentry/react'
 import { SwapsProvider } from './providers/swaps'
 import { LnurlProvider } from './providers/lnurl'
 import { init as initPlausible } from '@plausible-analytics/tracker'
-import { LightningProvider } from './providers/lightning'
 import { shouldInitializeSentry } from './lib/sentry'
 import { FeesProvider } from './providers/fees'
 import { AnnouncementProvider } from './providers/announcements'
 import { ToastProvider } from './components/Toast'
 import ErrorBoundary from './components/ErrorBoundary'
 import { DevModeProvider } from './providers/devMode'
+import { TxResultProvider } from './providers/txResult'
 
 // Capture ?subid= from URL and store in localStorage
 (() => {
@@ -106,9 +106,11 @@ root.render(
                             <NudgeProvider>
                               <AnnouncementProvider>
                                 <ToastProvider>
-                                  <ErrorBoundary>
-                                    <App />
-                                  </ErrorBoundary>
+                                  <TxResultProvider>
+                                    <ErrorBoundary>
+                                      <App />
+                                    </ErrorBoundary>
+                                  </TxResultProvider>
                                 </ToastProvider>
                               </AnnouncementProvider>
                             </NudgeProvider>

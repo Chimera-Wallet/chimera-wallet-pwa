@@ -36,7 +36,7 @@ test('should send sats (some and max) to ark address', async ({ page, isMobile }
   await expect(page.getByText('2,000 SATS sent successfully')).toBeVisible()
 
   // main page
-  await page.getByText('Sounds good').click()
+  await page.getByTestId('tab-wallet').waitFor({ timeout: 10000 })
   await expect(page.getByText('+ 5,000 SATS')).toBeVisible()
   await page.waitForSelector('text=- 2,000 SATS', { timeout: 10000 })
   await expect(page.getByText('Sent')).toBeVisible()
@@ -63,7 +63,7 @@ test('should send sats (some and max) to ark address', async ({ page, isMobile }
   await page.waitForSelector('text=3,000 SATS sent successfully', { timeout: 10000 })
 
   // main page
-  await page.getByText('Sounds good').click()
+  await page.getByTestId('tab-wallet').waitFor({ timeout: 10000 })
   await page.waitForSelector('text=- 3,000 SATS', { timeout: 10000 })
 })
 
@@ -93,7 +93,7 @@ test('should send usds (some and max) to ark address', async ({ page, isMobile }
   await expect(page.getByText('$2.00 sent successfully')).toBeVisible()
 
   // main page
-  await page.getByText('Sounds good').click()
+  await page.getByTestId('tab-wallet').waitFor({ timeout: 10000 })
   await page.waitForSelector('text=- $2.00', { timeout: 10000 })
   await expect(page.getByText('Sent')).toBeVisible()
 
@@ -119,7 +119,7 @@ test('should send usds (some and max) to ark address', async ({ page, isMobile }
   await page.waitForSelector(`text=$${usdsRemaining} sent successfully`, { timeout: 10000 })
 
   // main page
-  await page.getByText('Sounds good').click()
+  await page.getByTestId('tab-wallet').waitFor({ timeout: 10000 })
   await page.waitForSelector(`text=- $${usdsRemaining}`, { timeout: 10000 })
 })
 
@@ -177,7 +177,7 @@ test('should send assets (some and max) to ark address', async ({ page, isMobile
   await page.waitForSelector('text=123.45 TST sent successfully', { timeout: 10000 })
 
   // main page
-  await page.getByText('Sounds good').click()
+  await page.getByTestId('tab-wallet').waitFor({ timeout: 10000 })
   await page.waitForSelector('text=-123.45 TST', { timeout: 10000 })
   await expect(page.getByText('Sent')).toBeVisible()
 
@@ -209,7 +209,7 @@ test('should send assets (some and max) to ark address', async ({ page, isMobile
   await page.waitForSelector('text=876.55 TST sent successfully', { timeout: 10000 })
 
   // main page
-  await page.getByText('Sounds good').click()
+  await page.getByTestId('tab-wallet').waitFor({ timeout: 10000 })
   await page.waitForSelector('text=-876.55 TST', { timeout: 10000 })
 })
 
@@ -234,7 +234,7 @@ test('should send sats (some and max) to onchain address with chain swap', async
   await page.getByTestId('loading-logo').waitFor({ timeout: 3000 })
 
   // main page
-  await page.getByText('Sounds good').click()
+  await page.getByTestId('tab-wallet').waitFor({ timeout: 10000 })
   await page.waitForSelector('text=Sent', { timeout: 10000 })
 
   const balanceText = await page.getByTestId('main-balance').textContent()
@@ -263,7 +263,7 @@ test('should send sats (some and max) to onchain address with chain swap', async
   await page.waitForSelector(`text=${prettyNumber(balance)} SATS sent successfully`, { timeout: 10000 })
 
   // main page
-  await page.getByText('Sounds good').click()
+  await page.getByTestId('tab-wallet').waitFor({ timeout: 10000 })
   await page.waitForSelector(`text=- ${prettyNumber(balance)} SATS`, { timeout: 10000 })
 })
 
@@ -287,7 +287,7 @@ test('should send usds (some and max) to onchain address with chain swap', async
   await expect(page.getByText(/\$[\d\,\.]+ sent successfully/)).toBeVisible()
 
   // main page
-  await page.getByText('Sounds good').click()
+  await page.getByTestId('tab-wallet').waitFor({ timeout: 10000 })
   await expect(page.getByText(/\- \$[\d\,\.]+/)).toBeVisible()
   await expect(page.getByText('Sent')).toBeVisible()
 
@@ -317,7 +317,7 @@ test('should send usds (some and max) to onchain address with chain swap', async
   await expect(page.getByText(/\$[\d\,\.]+ sent successfully/)).toBeVisible()
 
   // main page
-  await page.getByText('Sounds good').click()
+  await page.getByTestId('tab-wallet').waitFor({ timeout: 10000 })
   await expect(page.getByText(`- $${balance.toFixed(2)}`)).toBeVisible()
 })
 
@@ -348,7 +348,7 @@ test('should send sats (some and max) to onchain address with collaborative exit
   await page.waitForSelector('text=sent successfully', { timeout: 20000 })
 
   // main page
-  await page.getByText('Sounds good').click()
+  await page.getByTestId('tab-wallet').waitFor({ timeout: 10000 })
   await expect(page.getByText('Received')).toBeVisible()
   await expect(page.getByText('1,800 SATS')).toBeVisible()
   await page.waitForSelector('text=Sent', { timeout: 10000 })
@@ -378,7 +378,7 @@ test('should send sats (some and max) to onchain address with collaborative exit
   await page.waitForSelector(`text=${prettyNumber(balance)} SATS sent successfully`, { timeout: 20000 })
 
   // main page
-  await page.getByText('Sounds good').click()
+  await page.getByTestId('tab-wallet').waitFor({ timeout: 10000 })
   await page.waitForSelector(`text=- ${prettyNumber(balance)} SATS`, { timeout: 10000 })
 
   // clear fees

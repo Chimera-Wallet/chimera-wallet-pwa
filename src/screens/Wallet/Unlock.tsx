@@ -5,7 +5,6 @@ import { consoleError } from '../../lib/logs'
 import { noUserDefinedPassword } from '../../lib/privateKey'
 import { NavigationContext, Pages } from '../../providers/navigation'
 import NeedsPassword from '../../components/NeedsPassword'
-import Header from '../../components/Header'
 import { defaultPassword } from '../../lib/constants'
 import Loading from '../../components/Loading'
 import { clearStorage } from '../../lib/storage'
@@ -140,10 +139,7 @@ export default function Unlock() {
   }
 
   return tried ? (
-    <>
-      <Header text='Unlock' />
-      <NeedsPassword error={error} onPassword={setPassword} loading={unlocking} onRestore={handleRestore} />
-    </>
+    <NeedsPassword error={error} onPassword={setPassword} loading={unlocking} onRestore={handleRestore} onboarding />
   ) : (
     <Loading />
   )

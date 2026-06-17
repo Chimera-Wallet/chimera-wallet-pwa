@@ -19,7 +19,7 @@ import Success from '../../../components/Success'
 import { consoleError } from '../../../lib/logs'
 import { AspContext } from '../../../providers/asp'
 import { LimitsContext } from '../../../providers/limits'
-import { LightningContext } from '../../../providers/lightning'
+import { SwapsContext } from '../../../providers/swaps'
 import { InfoLine } from '../../../components/Info'
 import QrCode from '../../../components/QrCode'
 import ExpandAddresses from '../../../components/ExpandAddresses'
@@ -46,7 +46,7 @@ export default function ReceiveAmount() {
   const { recvInfo, setRecvInfo } = useContext(FlowContext)
   const { navigate } = useContext(NavigationContext)
   const { notifyPaymentReceived } = useContext(NotificationsContext)
-  const { arkadeLightning, createReverseSwap, calcReverseSwapFee } = useContext(LightningContext)
+  const { arkadeSwaps, createReverseSwap, calcReverseSwapFee } = useContext(SwapsContext)
   const { validLnSwap, validUtxoTx, validVtxoTx, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
   const { balance, svcWallet, wallet } = useContext(WalletContext)
 
@@ -183,7 +183,7 @@ export default function ReceiveAmount() {
       return
     }
 
-    if (!(useLightning && wallet && svcWallet && arkadeLightning)) {
+    if (!(useLightning && wallet && svcWallet && arkadeSwaps)) {
       setShowQrCode(true)
       return
     }
@@ -201,7 +201,7 @@ export default function ReceiveAmount() {
           const invoice = pendingSwap.response.invoice
           setRecvInfo({ ...recvInfo, invoice })
           setInvoice(invoice)
-          arkadeLightning
+          arkadeSwaps
             .waitAndClaim(pendingSwap)
             .then(() => {
               if (cancelled) return
@@ -226,7 +226,7 @@ export default function ReceiveAmount() {
       cancelled = true
       clearTimeout(handle)
     }
-  }, [satoshis, arkadeLightning, invoice, useLightning])
+  }, [satoshis, arkadeSwaps, invoice, useLightning])
 
   useEffect(() => {
     if (!svcWallet) return

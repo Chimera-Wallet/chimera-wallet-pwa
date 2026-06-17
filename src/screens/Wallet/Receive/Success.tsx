@@ -1,23 +1,14 @@
-import { useContext, useEffect, useState } from 'react'
-import Button from '../../../components/Button'
-import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
-import Content from '../../../components/Content'
-import FlexCol from '../../../components/FlexCol'
-import Padded from '../../../components/Padded'
-import Text from '../../../components/Text'
-import SuccessIcon from '../../../icons/Success'
-import Success from '../../../components/Success'
+import { useContext, useEffect, useRef, useState } from 'react'
 import { NotificationsContext } from '../../../providers/notifications'
 import { FlowContext } from '../../../providers/flow'
-import Header from '../../../components/Header'
 import { NavigationContext, Pages } from '../../../providers/navigation'
-import { prettyAmount, prettyFiatAmount } from '../../../lib/format'
+import { WalletContext } from '../../../providers/wallet'
+import { TxResultContext } from '../../../providers/txResult'
 import { ConfigContext } from '../../../providers/config'
 import { FiatContext } from '../../../providers/fiat'
-import { WalletContext } from '../../../providers/wallet'
 import { consoleError } from '../../../lib/logs'
+import { prettyAmount, prettyFiatAmount } from '../../../lib/format'
 import type { AssetDetails } from '@arkade-os/sdk'
-import AssetCard from '../../../components/AssetCard'
 import { prettyAssetAmount } from '../../../lib/assets'
 
 export default function ReceiveSuccess() {
@@ -27,6 +18,7 @@ export default function ReceiveSuccess() {
   const { notifyPaymentReceived } = useContext(NotificationsContext)
   const { assetMetadataCache, setCacheEntry, svcWallet } = useContext(WalletContext)
   const { navigate } = useContext(NavigationContext)
+  const { notifyResult } = useContext(TxResultContext)
 
   const receivedAssets = recvInfo.receivedAssets ?? []
   const isAssetReceive = receivedAssets.length > 0
@@ -40,7 +32,7 @@ export default function ReceiveSuccess() {
     return new Map(entries)
   })
 
-  // Fetch and cache asset metadata if not already cached
+  // Fetch and cache asset metadata if not already cached (used for the notification label)
   useEffect(() => {
     if (!receivedAssets.length || !svcWallet || assetDetails.size === receivedAssets.length) return
 
@@ -59,7 +51,9 @@ export default function ReceiveSuccess() {
   }, [receivedAssets, svcWallet])
 
   // Notify once all metadata is loaded (or immediately for non-asset receives)
+  const notified = useRef(false)
   useEffect(() => {
+    if (notified.current) return
     if (isAssetReceive) {
       if (assetDetails.size < receivedAssets.length) return
       const labels = receivedAssets.map((a) => {
@@ -68,69 +62,29 @@ export default function ReceiveSuccess() {
         const ticker = meta?.ticker ?? meta?.name ?? 'assets'
         return `${amount} ${ticker}`
       })
+      notified.current = true
       notifyPaymentReceived(recvInfo.satoshis, labels.join(', '))
     } else {
+      notified.current = true
       notifyPaymentReceived(recvInfo.satoshis)
     }
   }, [assetDetails])
 
+  // Show the success popup once, then redirect home. Navigating to Pages.Wallet
+  // is a root navigation that clears the back stack, so the back button won't
+  // return to the receive flow.
   const displayAmount = useFiat
     ? prettyFiatAmount(toFiat(recvInfo.satoshis), config.fiat)
     : prettyAmount(recvInfo.satoshis)
 
-  if (isAssetReceive) {
-    return (
-      <>
-        <Header text='Success' />
-        <Content>
-          <Padded>
-            <FlexCol gap='1.5rem' centered padding='1rem 0 0 0'>
-              <SuccessIcon small />
-              <Text centered big bold>
-                Payment received!
-              </Text>
+  const handled = useRef(false)
+  useEffect(() => {
+    if (handled.current) return
+    handled.current = true
+    const detail = isAssetReceive ? undefined : `${displayAmount} received successfully`
+    notifyResult(true, 'Payment received!', detail).then(() => navigate(Pages.Wallet))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-              {receivedAssets.map((a) => {
-                const meta = assetDetails.get(a.assetId)?.metadata
-                const name = meta?.name ?? 'Unknown Asset'
-                const ticker = meta?.ticker ?? ''
-                const icon = meta?.icon
-
-                return (
-                  <AssetCard
-                    icon={icon}
-                    name={name}
-                    ticker={ticker}
-                    key={a.assetId}
-                    assetId={a.assetId}
-                    balance={a.amount}
-                    decimals={meta?.decimals ?? 0}
-                  />
-                )
-              })}
-
-              <Text centered color='neutral-700' thin small wrap>
-                {displayAmount}
-              </Text>
-            </FlexCol>
-          </Padded>
-        </Content>
-        <ButtonsOnBottom>
-          <Button label='Sounds good' onClick={() => navigate(Pages.Wallet)} />
-        </ButtonsOnBottom>
-      </>
-    )
-  }
-
-  return (
-    <>
-      <Header text='Success' />
-      <Content>
-        <Success headline='Payment received!' text={`${displayAmount} received successfully`} />
-      </Content>
-      <ButtonsOnBottom>
-        <Button label='Sounds good' onClick={() => navigate(Pages.Wallet)} />
-      </ButtonsOnBottom>
-    </>
-  )
+  return null
 }

@@ -202,7 +202,7 @@ export async function pay(page: Page, address: string, isMobile = false, sats = 
   await page.getByText('Tap to Sign').click()
   await page.getByTestId('loading-logo').waitFor({ timeout: 3000 })
   await page.waitForSelector('text=Payment sent!', { timeout: 30000 })
-  await page.getByText('Sounds good').click()
+  await page.getByTestId('tab-wallet').waitFor({ timeout: 10000 })
 }
 
 async function receive(page: Page, type: 'btc' | 'ark' | 'invoice', isMobile = false, sats = 0): Promise<string> {
@@ -332,7 +332,7 @@ export function readClipboard(page: Page): Promise<string> {
 
 export async function waitForPaymentReceived(page: Page): Promise<void> {
   await page.waitForSelector('text=Payment received!', { timeout: 60000 })
-  await page.getByText('Sounds good').click()
+  await page.getByTestId('tab-wallet').waitFor({ timeout: 10000 })
 }
 
 export async function handleKeyboardInput(page: Page, sats: number): Promise<void> {

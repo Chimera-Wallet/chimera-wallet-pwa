@@ -9,6 +9,7 @@ import { FlowContext } from '../../providers/flow'
 import FlexCol from '../../components/FlexCol'
 import { defaultPassword } from '../../lib/constants'
 import { WalletContext } from '../../providers/wallet'
+import OnboardingLayout from '../../components/OnboardingLayout'
 
 export default function Init() {
   const { aspInfo } = useContext(AspContext)
@@ -35,80 +36,12 @@ export default function Init() {
   const handleOldWallet = () => navigate(Pages.InitRestore)
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: '100vh' }}>
-      {/* Full-screen gradient background */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(180deg, rgba(31, 59, 219, 1) 0%, rgba(3, 14, 78, 1) 100%)',
-          zIndex: 0,
-        }}
-      />
-
-      {/* Full-screen layout */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          zIndex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          paddingTop: 'calc(2.5rem + env(safe-area-inset-top))',
-          paddingBottom: 'calc(2.5rem + env(safe-area-inset-bottom))',
-        }}
-      >
-        {/* Coins image — top, fills upper portion */}
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <img
-            src='/images/chimera_coins.png'
-            alt=''
-            style={{ width: '280px', maxWidth: '80%', objectFit: 'contain' }}
-          />
-        </div>
-
-        {/* Logo + tagline + buttons — lower portion */}
-        <div
-          style={{
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '0 1.5rem',
-          }}
-        >
-          <img
-            src='/images/chimera_white_logo.png'
-            alt='Chimera'
-            style={{ width: '160px', maxWidth: '60%', objectFit: 'contain', marginBottom: '0.75rem' }}
-          />
-
-          <p
-            style={{
-              color: 'rgba(255, 255, 255, 1)',
-              fontFamily: 'Titillium Web',
-              fontSize: '14px',
-              fontWeight: 600,
-              letterSpacing: '1px',
-              textAlign: 'center',
-              margin: '0 0 2rem',
-              textTransform: 'none',
-            }}
-          >
-            Take back control of your money
-          </p>
-
-          <ErrorMessage error={error} text='Ark server unreachable' />
-
-          <div style={{ width: '100%' }}>
-            <FlexCol gap='0'>
-              <Button disabled={error} onClick={handleNewWallet} label='Create New Wallet' />
-              <Button disabled={error} onClick={handleOldWallet} label='Restore Wallet' secondary />
-            </FlexCol>
-          </div>
-        </div>
-      </div>
-    </div>
+    <OnboardingLayout>
+      <ErrorMessage error={error} text='Ark server unreachable' />
+      <FlexCol gap='0'>
+        <Button disabled={error} onClick={handleNewWallet} label='Create New Wallet' />
+        <Button disabled={error} onClick={handleOldWallet} label='Restore Wallet' secondary />
+      </FlexCol>
+    </OnboardingLayout>
   )
 }

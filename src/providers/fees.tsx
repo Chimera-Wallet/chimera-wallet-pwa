@@ -16,6 +16,16 @@ export const FeesContext = createContext<FeesContextProps>({
   calcOnchainInputFee: () => 0,
 })
 
+// Fee fields on the ASP info are optional strings and, when the server doesn't
+// provide them, default to '' (see emptyFees). `'' ?? '0'` keeps the empty
+// string, and parseInt('') is NaN — which silently poisons every amount
+// computed from a fee (e.g. `satoshis - fee` becomes NaN, blocking onchain
+// sends). Coerce anything non-numeric to 0.
+const parseFee = (value?: string): number => {
+  const fee = parseInt(value ?? '', 10)
+  return Number.isFinite(fee) ? fee : 0
+}
+
 export const FeesProvider = ({ children }: { children: ReactNode }) => {
   const { aspInfo } = useContext(AspContext)
 
@@ -24,7 +34,7 @@ export const FeesProvider = ({ children }: { children: ReactNode }) => {
    * @returns
    */
   const calcOffchainInputFee = (): number => {
-    return parseInt(aspInfo.fees?.intentFee?.offchainInput ?? '0', 10) // TODO
+    return parseFee(aspInfo.fees?.intentFee?.offchainInput)
   }
 
   /**
@@ -32,7 +42,7 @@ export const FeesProvider = ({ children }: { children: ReactNode }) => {
    * @returns
    */
   const calcOffchainOutputFee = (): number => {
-    return parseInt(aspInfo.fees?.intentFee?.offchainOutput ?? '0', 10) // TODO
+    return parseFee(aspInfo.fees?.intentFee?.offchainOutput)
   }
 
   /**
@@ -40,7 +50,7 @@ export const FeesProvider = ({ children }: { children: ReactNode }) => {
    * @returns
    */
   const calcOnchainInputFee = (): number => {
-    return parseInt(aspInfo.fees?.intentFee?.onchainInput ?? '0', 10) // TODO
+    return parseFee(aspInfo.fees?.intentFee?.onchainInput)
   }
 
   /**
@@ -48,7 +58,7 @@ export const FeesProvider = ({ children }: { children: ReactNode }) => {
    * @returns
    */
   const calcOnchainOutputFee = (): number => {
-    return parseInt(aspInfo.fees?.intentFee?.onchainOutput ?? '0', 10) // TODO
+    return parseFee(aspInfo.fees?.intentFee?.onchainOutput)
   }
 
   return (

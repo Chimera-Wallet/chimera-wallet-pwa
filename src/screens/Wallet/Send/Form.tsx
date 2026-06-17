@@ -36,7 +36,7 @@ import { LimitsContext } from '../../../providers/limits'
 import { checkLnUrlConditions, fetchInvoice, fetchArkAddress, isValidLnUrl } from '../../../lib/lnurl'
 import { extractError } from '../../../lib/error'
 import { getInvoiceSatoshis } from '@arkade-os/boltz-swap'
-import { LightningContext } from '../../../providers/lightning'
+import { SwapsContext } from '../../../providers/swaps'
 import { decodeBip21, isBip21 } from '../../../lib/bip21'
 import { FeesContext } from '../../../providers/fees'
 import { InfoLine } from '../../../components/Info'
@@ -56,7 +56,7 @@ export default function SendForm() {
   const { calcOnchainOutputFee } = useContext(FeesContext)
   const { fromFiat, toFiat } = useContext(FiatContext)
   const { sendInfo, setNoteInfo, setSendInfo } = useContext(FlowContext)
-  const { createSubmarineSwap, connected, calcSubmarineSwapFee, getApiUrl } = useContext(LightningContext)
+  const { createSubmarineSwap, connected, calcSubmarineSwapFee, getApiUrl } = useContext(SwapsContext)
   const { amountIsAboveMaxLimit, amountIsBelowMinLimit, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
   const { setOption } = useContext(OptionsContext)
   const { navigate } = useContext(NavigationContext)
@@ -81,6 +81,13 @@ export default function SendForm() {
   // Asset and network can be changed, initialized from wallet flow or defaults
   const [selectedAsset, setSelectedAsset] = useState<AssetSymbol>('BTC')
   const selectedMethod: TransferMethod = sendInfo.method ?? TRANSFER_METHOD.bitcoin
+
+  // Onchain sends deduct this fee from the amount (see SendDetails). If the
+  // amount doesn't cover it, the send can't produce a positive output, so we
+  // block it on the form rather than letting it fail at the sign step.
+  const onchainOutputFee = calcOnchainOutputFee()
+  const amountBelowOnchainFee = (sats?: number): boolean =>
+    selectedMethod === TRANSFER_METHOD.bitcoin && Boolean(sats) && (sats as number) <= onchainOutputFee
 
   const smartSetError = (str: string) => {
     setError(str === '' ? (aspInfo.unreachable ? 'Arkade server unreachable' : '') : str)
@@ -286,9 +293,11 @@ export default function SendForm() {
                 ? 'Amount above max limit'
                 : satoshis && amountIsBelowMinLimit(satoshis)
                   ? 'Amount below min limit'
-                  : 'Continue',
+                  : amountBelowOnchainFee(satoshis)
+                    ? 'Amount below network fee'
+                    : 'Continue',
     )
-  }, [sendInfo.satoshis, availableBalance, selectedMethod])
+  }, [sendInfo.satoshis, availableBalance, selectedMethod, onchainOutputFee])
 
   // manage server unreachable error
   useEffect(() => {
@@ -453,6 +462,7 @@ export default function SendForm() {
     (lnUrlLimits.min && satoshis < lnUrlLimits.min) ||
     amountIsAboveMaxLimit(satoshis) ||
     amountIsBelowMinLimit(satoshis) ||
+    amountBelowOnchainFee(satoshis) ||
     satoshis > availableBalance ||
     aspInfo.unreachable ||
     tryingToSelfSend ||

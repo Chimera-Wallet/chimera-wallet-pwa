@@ -29,6 +29,7 @@ import { NavigationContext, Pages } from '../../../providers/navigation'
 import { FlowContext } from '../../../providers/flow'
 import { WalletContext } from '../../../providers/wallet'
 import { FiatContext } from '../../../providers/fiat'
+import { TxResultContext } from '../../../providers/txResult'
 import { sendOffChain } from '../../../lib/asp'
 import { prettyNumber, fromSatoshis } from '../../../lib/format'
 import { createBankWithdraw } from '../../../providers/chimera'
@@ -54,6 +55,7 @@ export default function BankSend() {
   const { bankSendInfo, setBankSendInfo, sendInfo, setSendInfo, setCurrentBankOrderType } = useContext(FlowContext)
   const { balance, svcWallet } = useContext(WalletContext)
   const { fromCurrency } = useContext(FiatContext)
+  const { notifyResult } = useContext(TxResultContext)
 
   const bankConfig = getBankTransferConfigSync()
 
@@ -206,10 +208,13 @@ export default function BankSend() {
         setSending(true)
         await sendOffChain(svcWallet, requiredSats, companyWallet)
 
-        navigate(Pages.BankOrderStatus)
+        // Success popup, then land on the order-status screen to track the payout
+        notifyResult(true, 'Withdrawal submitted').then(() => navigate(Pages.BankOrderStatus))
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create withdrawal order')
+      setSending(false)
+      notifyResult(false, 'Withdrawal failed')
     } finally {
       setLoading(false)
     }

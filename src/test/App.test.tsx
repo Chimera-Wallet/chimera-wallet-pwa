@@ -111,14 +111,14 @@ describe('App startup routing', () => {
   it('shows unlock when authentication is required', async () => {
     const { navigate } = renderApp({ authState: 'locked', initialized: false })
 
-    expect(await screen.findByText('Unlock')).toBeInTheDocument()
+    expect(await screen.findByText(/Unlock/)).toBeInTheDocument()
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(Pages.Unlock))
   })
 
   it('shows unlock even when the wallet remains initialized', async () => {
     const { navigate } = renderApp({ authState: 'locked', initialized: true })
 
-    expect(await screen.findByText('Unlock')).toBeInTheDocument()
+    expect(await screen.findByText(/Unlock/)).toBeInTheDocument()
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(Pages.Unlock))
   })
 
@@ -173,7 +173,7 @@ describe('Navbar visibility', () => {
   it('hides navbar on unlock screen even when navigation context has Wallet tab', async () => {
     renderApp({ authState: 'locked', initialized: false, screen: Pages.Wallet, tab: Tabs.Wallet })
 
-    await screen.findByText('Unlock')
+    await screen.findByText(/Unlock/)
     const ionApp = screen.getByTestId('app')
     expect(ionApp.className).not.toContain('has-pill-navbar')
   })
