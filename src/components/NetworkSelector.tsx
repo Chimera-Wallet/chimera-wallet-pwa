@@ -40,7 +40,7 @@ export default function NetworkSelector({
     <>
       <SelectorField
         icon={selected ? <NetworkIcon network={selected} size={40} /> : undefined}
-        label={label || 'Network'}
+        label={label !== undefined ? label : 'Network'}
         onClick={() => setIsOpen(true)}
         value={selectedConfig?.name || selected || 'Select network'}
         sublabel={selectedConfig?.description}

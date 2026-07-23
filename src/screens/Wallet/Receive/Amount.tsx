@@ -301,22 +301,14 @@ export default function ReceiveAmount() {
             {isLightningMethod ? (
               <InlineAmountInput value={satoshis} onChange={setSatoshis} asset={selectedAsset} />
             ) : null}
-            <div style={{ display: 'flex', justifyContent: 'center' , width: '100%'}}>
-              <div style={{ width: '300px' }}>
             <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset}
             style = {{
                      justifyContent: 'center',
-                     width: '300px',
-                     height: '40px',
                      borderRadius : '2.5rem',
-                     fontSize: '14px',
-                     fontWeight: '600',
-                     }} />
-            </div>
-            </div> 
+            }} />
 
             <NetworkSelector
-              label='Network'
+              label=''
               selected={selectedMethod}
               onSelect={(network) => {
                 if (network === TRANSFER_METHOD.bank) {

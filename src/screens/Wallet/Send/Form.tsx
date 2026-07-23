@@ -295,7 +295,7 @@ export default function SendForm() {
                   ? 'Amount below min limit'
                   : amountBelowOnchainFee(satoshis)
                     ? 'Amount below network fee'
-                    : 'Continue',
+                    : 'Confirm Sending',
     )
   }, [sendInfo.satoshis, availableBalance, selectedMethod, onchainOutputFee])
 
@@ -505,6 +505,7 @@ export default function SendForm() {
                      borderRadius : '2.5rem',
                      fontSize: '14px',
                      fontWeight: '600',
+                     padding: '1.3rem',
                      }} />
                   </div>
                 </div>
