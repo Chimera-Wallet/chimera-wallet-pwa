@@ -6,9 +6,10 @@ interface SelectorFieldProps {
   onClick: () => void
   sublabel?: string
   value: string
+  style ?: React.CSSProperties
 }
 
-export default function SelectorField({ icon, label, onClick, sublabel, value }: SelectorFieldProps) {
+export default function SelectorField({ icon, label, onClick, sublabel, value, style }: SelectorFieldProps) {
   return (
     <div style={{ width: '100%' }}>
       {label ? (
@@ -35,6 +36,7 @@ export default function SelectorField({ icon, label, onClick, sublabel, value }:
           backgroundColor: 'var(--surface)',
           transition: 'all 0.15s ease',
           width: '100%',
+          ...style, 
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = 'var(--neutral-50)'

@@ -3,6 +3,7 @@ import { ASSET_LIST, type AssetSymbol, getAssetConfig } from '../lib/assets'
 import AssetIcon from '../icons/AssetIcon'
 import SelectSheet from './SelectSheet'
 import SelectorField from './SelectorField'
+import {fromSatoshis} from '../lib/format'
 
 interface AssetSelectorProps {
   label?: string
@@ -10,6 +11,8 @@ interface AssetSelectorProps {
   selected: AssetSymbol
   isOpen?: boolean
   setIsOpen?: (isOpen: boolean) => void
+  selectedBalance ?: number
+  style ?: React.CSSProperties
 }
 
 export default function AssetSelector({
@@ -18,6 +21,8 @@ export default function AssetSelector({
   selected,
   isOpen: externalIsOpen,
   setIsOpen: externalSetIsOpen,
+  selectedBalance,
+  style
 }: AssetSelectorProps) {
   const [internalIsOpen, setInternalIsOpen] = useState(false)
 
@@ -32,15 +37,20 @@ export default function AssetSelector({
     description: asset.symbol,
     icon: <AssetIcon symbol={asset.symbol} size={32} />,
   }))
+  const selectedBalanceLabel =
+  selectedBalance !== undefined
+    ? `${selected} · ${fromSatoshis(selectedBalance)} BTC`
+    : selected
 
   return (
     <>
       <SelectorField
-        icon={<AssetIcon symbol={selected} size={28} />}
-        label={label || 'Asset'}
+        icon={<AssetIcon symbol={selected} size={20} />}
+        label={label !== undefined ? label : 'Asset'}        
         onClick={() => setIsOpen(true)}
         value={selectedConfig?.name || selected}
-        sublabel={selected}
+        sublabel={selectedBalanceLabel}
+        style = {style}
       />
       <SelectSheet
         isOpen={isOpen}

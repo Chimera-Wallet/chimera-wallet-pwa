@@ -51,7 +51,7 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
       {
         icon: 'warning',
         color: 'orange',
-        text: 'Please ensure you send only Bitcoin to a valid Arkade or mainnet address. Any other address will cause the assets to be forever lost, and there is no option to recover it.',
+        text: 'Please send only BTC to a ARK network address. Any other asset sent will be forever lost, and there is no option to recover it.',
       },
       {
         icon: 'time',

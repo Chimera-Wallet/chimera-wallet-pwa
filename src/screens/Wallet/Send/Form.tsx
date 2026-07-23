@@ -476,6 +476,8 @@ export default function SendForm() {
     )
   }
 
+  const selectedAssetBalanceSats = selectedAsset === 'BTC' ? availableBalance : undefined
+
   return (
     <>
       <Header text='Send' back />
@@ -493,6 +495,19 @@ export default function SendForm() {
                   asset={selectedAsset}
                   disabled={amountIsReadOnly}
                 />
+                <div style={{ display: 'flex', justifyContent: 'center' , width: '100%'}}>
+                  <div style={{ width: '300px' }}>
+                   <AssetSelector label='' selected={selectedAsset} onSelect={setSelectedAsset} selectedBalance = {selectedAssetBalanceSats}
+                     style = {{
+                     justifyContent: 'center',
+                     width: '300px',
+                     height: '40px',
+                     borderRadius : '2.5rem',
+                     fontSize: '14px',
+                     fontWeight: '600',
+                     }} />
+                  </div>
+                </div>
 
                 {/* Percentage Buttons */}
                 {!amountIsReadOnly && availableBalance > 0 ? (
@@ -557,7 +572,6 @@ export default function SendForm() {
               </div>
             ) : null}
 
-            <AssetSelector label='Asset' selected={selectedAsset} onSelect={setSelectedAsset} />
             <NetworkSelector
               label='Network'
               selected={selectedMethod}
@@ -579,6 +593,10 @@ export default function SendForm() {
                   recipient: '',
                 })
               }}
+              style = {{
+                borderRadius : '2.5rem',
+              }}
+              
             />
             <InputAddress
               name='send-address'

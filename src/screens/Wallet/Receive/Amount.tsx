@@ -302,7 +302,15 @@ export default function ReceiveAmount() {
               <InlineAmountInput value={satoshis} onChange={setSatoshis} asset={selectedAsset} />
             ) : null}
 
-            <AssetSelector label='Asset' selected={selectedAsset} onSelect={setSelectedAsset} />
+            <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset}
+            style = {{
+                     justifyContent: 'center',
+                     width: '300px',
+                     height: '40px',
+                     borderRadius : '2.5rem',
+                     fontSize: '14px',
+                     fontWeight: '600',
+                     }} />
             <NetworkSelector
               label='Network'
               selected={selectedMethod}
@@ -315,6 +323,9 @@ export default function ReceiveAmount() {
                 setShowQrCode(false)
                 setRecvInfo({ ...recvInfo, method: network, invoice: undefined })
               }}
+              style = {{
+                     borderRadius : '2.5rem',
+                    }}
             />
             <InfoContainer>
               {needsAmountInput ? (
