@@ -425,7 +425,19 @@ export default function BankSend() {
             {/* Inline Amount Input with swap functionality */}
             <InlineAmountInput value={amount} onChange={setAmount} asset={selectedAsset} bankCurrency={currency} />
 
-            <AssetSelector label='Asset' selected={selectedAsset} onSelect={setSelectedAsset} />
+            <div style={{ display: 'flex', justifyContent: 'center' , width: '100%'}}>
+              <div style={{ width: '300px' }}>
+            <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset}
+            style = {{
+                     justifyContent: 'center',
+                     width: '300px',
+                     height: '40px',
+                     borderRadius : '2.5rem',
+                     fontSize: '14px',
+                     fontWeight: '600',
+                     }} />
+            </div>
+            </div> 
             <NetworkSelector
               label='Network'
               selected={selectedMethod}
@@ -434,6 +446,9 @@ export default function BankSend() {
                   setSendInfo({ ...sendInfo, method: network })
                   navigate(Pages.SendForm)
                 }
+              }}
+              style = {{
+                borderRadius : '2.5rem',
               }}
             />
 

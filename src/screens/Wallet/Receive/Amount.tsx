@@ -301,7 +301,8 @@ export default function ReceiveAmount() {
             {isLightningMethod ? (
               <InlineAmountInput value={satoshis} onChange={setSatoshis} asset={selectedAsset} />
             ) : null}
-
+            <div style={{ display: 'flex', justifyContent: 'center' , width: '100%'}}>
+              <div style={{ width: '300px' }}>
             <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset}
             style = {{
                      justifyContent: 'center',
@@ -311,11 +312,16 @@ export default function ReceiveAmount() {
                      fontSize: '14px',
                      fontWeight: '600',
                      }} />
+            </div>
+            </div> 
+
             <NetworkSelector
               label='Network'
               selected={selectedMethod}
               onSelect={(network) => {
                 if (network === TRANSFER_METHOD.bank) {
+                  setRecvInfo({ ...recvInfo, method: TRANSFER_METHOD.bank })
+
                   navigate(Pages.BankReceive)
                   return
                 }

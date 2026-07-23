@@ -578,6 +578,7 @@ export default function SendForm() {
               onSelect={(network) => {
                 // Navigate to bank send screen if bank is selected
                 if (network === TRANSFER_METHOD.bank) {
+                  setSendInfo({ ...sendInfo, method: TRANSFER_METHOD.bank })
                   navigate(Pages.BankSend)
                   return
                 }
