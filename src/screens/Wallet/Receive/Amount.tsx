@@ -40,6 +40,8 @@ import {
   type InfoItemIcon,
   type TransferMethod,
 } from '../../../lib/transferMethods'
+import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
+import clockIcon from '../../../../public/images/icons/ Clock.svg'
 
 export default function ReceiveAmount() {
   const { aspInfo } = useContext(AspContext)
@@ -146,6 +148,10 @@ export default function ReceiveAmount() {
         return undefined
       case 'info':
         return <InfoIcon />
+      case 'receipt': 
+        return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px'}} /> 
+      case 'clock':
+        return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px'}} /> 
       default:
         return <InfoIcon />
     }

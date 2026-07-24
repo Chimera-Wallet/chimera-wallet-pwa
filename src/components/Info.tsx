@@ -49,7 +49,7 @@ export function InfoLine({
   return (
     <FlexCol margin={compact ? '0' : '0 0 1rem 0'}>
       <FlexRow centered={centered}>
-        <InfoIcon color={color ?? 'neutral-500'} />
+        {icon ?? <InfoIcon color={color ?? 'neutral-500'} />}
         <Text color={color ?? 'neutral-500'} small wrap>
           {text}
         </Text>

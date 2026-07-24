@@ -49,6 +49,8 @@ import WhenIcon from '../../../icons/When'
 import FeesIcon from '../../../icons/Fees'
 import InfoIcon from '../../../icons/Info'
 import { TERMS_AND_CONDITIONS, TRANSFER_METHOD, type InfoItemIcon } from '../../../lib/transferMethods'
+import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
+import clockIcon from '../../../../public/images/icons/ Clock.svg'
 
 export default function SendForm() {
   const { aspInfo } = useContext(AspContext)
@@ -450,6 +452,10 @@ export default function SendForm() {
         return undefined
       case 'info':
         return <InfoIcon />
+      case 'receipt': 
+        return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px'}} /> 
+      case 'clock':
+        return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px'}} /> 
       default:
         return <InfoIcon />
     }
