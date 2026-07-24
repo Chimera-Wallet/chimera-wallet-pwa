@@ -16,7 +16,7 @@ export const TRANSFER_METHOD_LABELS: Record<TransferMethod, string> = {
   bank: 'Bank Transfer',
 }
 
-export type InfoItemIcon = 'time' | 'fees' | 'warning' | 'info' | 'instruction'
+export type InfoItemIcon = 'time' | 'fees' | 'warning' | 'info' | 'instruction' | 'receipt' | 'clock'
 export type InfoItemColor = 'orange' | 'default'
 
 export interface InfoItem {
@@ -51,14 +51,14 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
       {
         icon: 'warning',
         color: 'orange',
-        text: 'Please send only BTC to a ARK network address. Any other asset sent will be forever lost, and there is no option to recover it.',
+        text: 'Please ensure you send only Bitcoin to a valid Arkade or mainnet address. Any other address will cause the assets to be forever lost, and there is no option to recover it.',
       },
       {
-        icon: 'time',
+        icon: 'clock',
         text: 'The transfer time for on-chain Arkade depends on network congestion and is, on average, 10 minutes for the first confirmation. If your wallet supports Arkade VTXO the transaction will be instant.',
       },
       {
-        icon: 'fees',
+        icon: 'receipt',
         text: 'Fees are dynamic on the Arkade network and are related to how fast you want to receive your transaction and how the sending wallet manages the transactions. Fees for Arkade compatible wallets are close to 0.',
       },
     ],
@@ -69,11 +69,11 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
         text: 'Please send only using a Lighting network invoice. Any other address will cause the assets to be forever lost, and there is no option to recover it.',
       },
       {
-        icon: 'time',
+        icon: 'clock',
         text: 'The transfer time for the lightning network depends on several factors and is, on average, a few seconds.',
       },
       {
-        icon: 'fees',
+        icon: 'receipt',
         text: 'Fees are dynamic on lightning, usually less than 0.01$.',
       },
     ],
@@ -83,7 +83,7 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
         text: 'The transfer time might vary depending on the bank, from instant to 48 hours.',
       },
       {
-        icon: 'fees',
+        icon: 'receipt',
         text: 'The fees for bank withdrawals are 0.3% of the sent amount if over 1000 CHF.\nThe fees for bank withdrawals are 1% of the sent amount if under 1000 CHF.\nYour bank might charge some additional fees we are not aware of.',
       },
     ],
@@ -96,11 +96,11 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
         text: 'Please send only Bitcoin either using Arkade or mainnet. Any other asset sent will be forever lost, and there is no option to recover it.',
       },
       {
-        icon: 'time',
+        icon: 'clock',
         text: 'The transfer time for on-chain Bitcoin depends on network congestion and is, on average, 10 minutes for the first confirmation.',
       },
       {
-        icon: 'fees',
+        icon: 'receipt',
         text: 'Fees are dynamic on the Bitcoin network and are related to how fast you want to receive your transaction and how the sending wallet manages the transactions.',
       },
     ],
@@ -111,11 +111,11 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
         text: 'Please send only Bitcoin using an Arkade compatible wallet. Any other asset sent will be forever lost, and there is no option to recover it.',
       },
       {
-        icon: 'time',
+        icon: 'clock',
         text: 'If the sender supports Arkade VTXO the transaction will be instant.',
       },
       {
-        icon: 'fees',
+        icon: 'receipt',
         text: 'Fees for Arkade compatible wallets are close to 0.',
       },
     ],
@@ -130,11 +130,11 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
         text: 'To receive the funds you need to stay in the app until the transaction is completed.',
       },
       {
-        icon: 'time',
+        icon: 'clock',
         text: 'The transfer time for the lightning network depends on several factors and is, on average, a few seconds.',
       },
       {
-        icon: 'fees',
+        icon: 'receipt',
         text: 'Fees are dynamic on lightning, usually less than 0.01$.',
       },
     ],
@@ -144,7 +144,7 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
         text: 'The transfer time might vary depending on the bank, from instant to 48 hours.',
       },
       {
-        icon: 'fees',
+        icon: 'receipt',
         text: 'The fees for bank deposits are 0.6% of the received amount if over 1000 CHF.\nThe fees for bank deposits are 1% of the received amount if under 1000 CHF.\nYour bank might charge some additional fees we are not aware of.',
       },
     ],
