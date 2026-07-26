@@ -42,6 +42,7 @@ import {
 } from '../../../lib/transferMethods'
 import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
 import clockIcon from '../../../../public/images/icons/ Clock.svg'
+import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
 
 export default function ReceiveAmount() {
   const { aspInfo } = useContext(AspContext)
@@ -147,11 +148,11 @@ export default function ReceiveAmount() {
       case 'instruction':
         return undefined
       case 'info':
-        return <InfoIcon />
+        return <img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)'}} />
       case 'receipt': 
-        return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px'}} /> 
+        return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)'}} /> 
       case 'clock':
-        return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px'}} /> 
+        return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(1)'}} /> 
       default:
         return <InfoIcon />
     }
@@ -294,7 +295,7 @@ export default function ReceiveAmount() {
       </>
     )
   }
-
+  
   return (
     <>
       <Header text='Receive' back />
@@ -307,7 +308,7 @@ export default function ReceiveAmount() {
             {isLightningMethod ? (
               <InlineAmountInput value={satoshis} onChange={setSatoshis} asset={selectedAsset} />
             ) : null}
-            <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset}
+            <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset} showValue 
             style = {{
                      justifyContent: 'center',
                      borderRadius : '2.5rem',
@@ -335,7 +336,7 @@ export default function ReceiveAmount() {
               {needsAmountInput ? (
                 <InfoLine
                   compact
-                  icon={<InfoIcon />}
+                  icon={getIconComponent('info')}
                   text='For Lightning Network receives, please enter an amount above to generate your invoice and QR code.'
                 />
               ) : null}
