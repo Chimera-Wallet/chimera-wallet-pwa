@@ -427,7 +427,7 @@ export default function BankSend() {
 
             <div style={{ display: 'flex', justifyContent: 'center' , width: '100%'}}>
               <div style={{ width: '300px' }}>
-            <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset}
+            <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset} 
             style = {{
                      justifyContent: 'center',
                      width: '300px',

@@ -7,9 +7,10 @@ interface SelectorFieldProps {
   sublabel?: string
   value: string
   style ?: React.CSSProperties
+  showValue ?: boolean
 }
 
-export default function SelectorField({ icon, label, onClick, sublabel, value, style }: SelectorFieldProps) {
+export default function SelectorField({ icon, label, onClick, sublabel, value, style, showValue }: SelectorFieldProps) {
   return (
     <div style={{ width: '100%' }}>
       {label ? (
@@ -47,20 +48,16 @@ export default function SelectorField({ icon, label, onClick, sublabel, value, s
       >
         {icon ? <div style={{ flexShrink: 0 }}>{icon}</div> : null}
         <div style={{ flex: 1 }}>
-          <div
-            style={{
-              color: 'white',
-              fontSize: '14px',
-              fontWeight: 500,
-            }}
-          >
+          {showValue ? (
+          <div style={{ color: 'var(--white)', fontSize: '16px', fontWeight: 600 }}>
             {value}
           </div>
-          {sublabel ? (
+        ) : null}
+         {showValue ? null : sublabel ? (
             <div
               style={{
                 color: 'var(--white50)',
-                fontSize: '12px',
+                fontSize: '14px',
                 marginTop: '2px',
               }}
             >

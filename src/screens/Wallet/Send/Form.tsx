@@ -51,6 +51,8 @@ import InfoIcon from '../../../icons/Info'
 import { TERMS_AND_CONDITIONS, TRANSFER_METHOD, type InfoItemIcon } from '../../../lib/transferMethods'
 import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
 import clockIcon from '../../../../public/images/icons/ Clock.svg'
+import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
+
 
 export default function SendForm() {
   const { aspInfo } = useContext(AspContext)
@@ -451,11 +453,11 @@ export default function SendForm() {
       case 'instruction':
         return undefined
       case 'info':
-        return <InfoIcon />
+        return <img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)'}} />
       case 'receipt': 
-        return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px'}} /> 
+        return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)'}} /> 
       case 'clock':
-        return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px'}} /> 
+        return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(1)'}} /> 
       default:
         return <InfoIcon />
     }
@@ -623,7 +625,7 @@ export default function SendForm() {
                 <InfoLine
                   compact
                   color='neutral'
-                  icon={<InfoIcon />}
+                  icon={getIconComponent('info')}
                   text='Paste a Lightning invoice to send payment. The payment amount is encoded in the invoice.'
                 />
               ) : null}{' '}
@@ -636,7 +638,7 @@ export default function SendForm() {
                   text={item.text}
                 />
               ))}
-              {methodFeeText ? <InfoLine compact color='orange' icon={<FeesIcon />} text={methodFeeText} /> : null}
+              {methodFeeText ? <InfoLine compact color='orange' icon={getIconComponent('receipt')} text={methodFeeText} /> : null}
               {deductFromAmount ? (
                 <InfoLine compact color='orange' text='Fees will be deducted from the amount sent' />
               ) : null}

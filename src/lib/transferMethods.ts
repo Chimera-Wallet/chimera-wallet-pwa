@@ -34,22 +34,22 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
   send: {
     bitcoin: [
       {
-        icon: 'warning',
+        icon: 'info',
         color: 'orange',
         text: 'Please ensure you send only Bitcoin to a valid Arkade or mainnet address. Any other address will cause the assets to be forever lost, and there is no option to recover it.',
       },
       {
-        icon: 'time',
+        icon: 'clock',
         text: 'The transfer time for on-chain Bitcoin depends on network congestion and is, on average, 10 minutes for the first confirmation. If your wallet supports Arkade VTXO the transaction will be instant.',
       },
       {
-        icon: 'fees',
+        icon: 'receipt',
         text: 'Fees are dynamic on the Bitcoin network and are related to how fast you want to receive your transaction and how the sending wallet manages the transactions. Fees for Arkade compatible wallets are close to 0.',
       },
     ],
     ark: [
       {
-        icon: 'warning',
+        icon: 'info',
         color: 'orange',
         text: 'Please ensure you send only Bitcoin to a valid Arkade or mainnet address. Any other address will cause the assets to be forever lost, and there is no option to recover it.',
       },
@@ -64,7 +64,7 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
     ],
     lightning: [
       {
-        icon: 'warning',
+        icon: 'info',
         color: 'orange',
         text: 'Please send only using a Lighting network invoice. Any other address will cause the assets to be forever lost, and there is no option to recover it.',
       },
@@ -91,7 +91,7 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
   receive: {
     bitcoin: [
       {
-        icon: 'warning',
+        icon: 'info',
         color: 'orange',
         text: 'Please send only Bitcoin either using Arkade or mainnet. Any other asset sent will be forever lost, and there is no option to recover it.',
       },
@@ -106,7 +106,7 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
     ],
     ark: [
       {
-        icon: 'warning',
+        icon: 'info',
         color: 'orange',
         text: 'Please send only Bitcoin using an Arkade compatible wallet. Any other asset sent will be forever lost, and there is no option to recover it.',
       },
@@ -121,11 +121,11 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
     ],
     lightning: [
       {
-        icon: 'instruction',
+        icon: 'info',
         text: 'Please send only Bitcoin using the Lighting network. Any other asset sent will be forever lost, and there is no option to recover it.',
       },
       {
-        icon: 'warning',
+        icon: 'info',
         color: 'orange',
         text: 'To receive the funds you need to stay in the app until the transaction is completed.',
       },

@@ -13,6 +13,7 @@ interface AssetSelectorProps {
   setIsOpen?: (isOpen: boolean) => void
   selectedBalance ?: number
   style ?: React.CSSProperties
+  showValue ?: boolean
 }
 
 export default function AssetSelector({
@@ -22,7 +23,8 @@ export default function AssetSelector({
   isOpen: externalIsOpen,
   setIsOpen: externalSetIsOpen,
   selectedBalance,
-  style
+  style,
+  showValue
 }: AssetSelectorProps) {
   const [internalIsOpen, setInternalIsOpen] = useState(false)
 
@@ -39,7 +41,7 @@ export default function AssetSelector({
   }))
   const selectedBalanceLabel =
   selectedBalance !== undefined
-    ? `${selected} · ${fromSatoshis(selectedBalance)} BTC`
+    ? `${selectedConfig?.name} - ${fromSatoshis(selectedBalance)} BTC`
     : selected
 
   return (
@@ -51,6 +53,7 @@ export default function AssetSelector({
         value={selectedConfig?.name || selected}
         sublabel={selectedBalanceLabel}
         style = {style}
+        showValue = {showValue}
       />
       <SelectSheet
         isOpen={isOpen}

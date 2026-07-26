@@ -56,6 +56,9 @@ import {
   type BankCurrency,
 } from '../../../lib/bankTransferConfig'
 import { getUserEmailForBankTransfer } from '../../../lib/kyc'
+import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
+import clockIcon from '../../../../public/images/icons/ Clock.svg'
+import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
 
 export default function BankReceive() {
   const { navigate, goBack } = useContext(NavigationContext)
@@ -274,7 +277,7 @@ export default function BankReceive() {
 
             <div style={{ display: 'flex', justifyContent: 'center' , width: '100%'}}>
               <div style={{ width: '300px' }}>
-                <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset}
+                <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset} showValue
                 style = {{
                          justifyContent: 'center',
                          width: '300px',
@@ -331,7 +334,11 @@ export default function BankReceive() {
                     case 'fees':
                       return <FeesIcon />
                     case 'info':
-                      return <InfoIcon />
+                      return <img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)'}} />
+                    case 'receipt': 
+                      return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)'}} /> 
+                    case 'clock':
+                      return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(1)'}} /> 
                     default:
                       return <InfoIcon />
                   }
