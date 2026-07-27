@@ -99,7 +99,7 @@ export default function Button({
       onTouchStart={handlePressStart}
       onTouchEnd={handlePressEnd}
       onTouchCancel={handlePressEnd}
-      style={{ margin: '4px 0' }}
+      style={{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600 }}
     >
       {loading ? (
         <ButtonCentered>
