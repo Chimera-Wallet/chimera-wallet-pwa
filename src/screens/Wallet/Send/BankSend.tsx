@@ -46,6 +46,8 @@ import {
   type BankData,
 } from '../../../lib/bankTransferConfig'
 import { getUserEmailForBankTransfer } from '../../../lib/kyc'
+import { AspContext } from '@/providers/asp'
+import rightIcon from '../../../../public/images/icons/ Right.png'
 
 // Company Ark wallet address from environment — set VITE_BANK_WITHDRAW_WALLET in .env files
 const COMPANY_WALLET = import.meta.env.VITE_BANK_WITHDRAW_WALLET as string
@@ -84,6 +86,13 @@ export default function BankSend() {
   const numAmount = amount
   const validation = useBankTransferValidation({ amount: numAmount, currency, circuit })
 
+  const [availableBalance, setAvailableBalance] = useState(0)
+  const { aspInfo } = useContext(AspContext)
+  
+  const smartSetError = (str: string) => {
+    setError(str === '' ? (aspInfo.unreachable ? 'Arkade server unreachable' : '') : str)
+  }
+
   const handleOrderHistory = () => {
     navigate(Pages.BankOrderHistory)
   }
@@ -95,6 +104,15 @@ export default function BankSend() {
       setCircuit(getDefaultCircuit(currency))
     }
   }, [currency])
+
+    // update available balance
+  useEffect(() => {
+    if (!svcWallet) return
+    svcWallet
+      .getBalance()
+      .then((bal) => setAvailableBalance(bal.available))
+      .catch(smartSetError)
+  }, [balance])
 
   const validateBankDetails = (): BankData | null => {
     switch (circuit) {
@@ -427,7 +445,7 @@ export default function BankSend() {
 
             <div style={{ display: 'flex', justifyContent: 'center' , width: '100%', marginTop: '-1rem' }}>
               <div style={{ width: '300px' }}>
-            <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset} 
+            <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset} selectedBalance = {availableBalance}
             style = {{
                      justifyContent: 'center',
                      width: '300px',
@@ -491,6 +509,7 @@ export default function BankSend() {
         <Button
           label={loading ? 'Creating Order...' : 'Create Withdrawal'}
           onClick={handleCreateWithdraw}
+          icon = {<img src = {rightIcon} alt = 'rightArrow' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)', marginLeft: '0.5rem'}} />}
           disabled={!canSubmit}
           loading={loading}
         />
