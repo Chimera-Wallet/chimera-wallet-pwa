@@ -59,6 +59,7 @@ import { getUserEmailForBankTransfer } from '../../../lib/kyc'
 import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
 import clockIcon from '../../../../public/images/icons/ Clock.svg'
 import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
+import rightIcon from '../../../../public/images/icons/ Right.png'
 
 export default function BankReceive() {
   const { navigate, goBack } = useContext(NavigationContext)
@@ -358,6 +359,7 @@ export default function BankReceive() {
         <Button
           label={loading ? 'Creating Order...' : 'Continue'}
           onClick={handleCreateDeposit}
+          icon = {<img src = {rightIcon} alt = 'rightArrow' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)', marginLeft: '0.5rem'}} />}
           disabled={!validation.canProceed || loading}
           loading={loading}
         />

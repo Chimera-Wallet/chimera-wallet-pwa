@@ -52,6 +52,7 @@ import { TERMS_AND_CONDITIONS, TRANSFER_METHOD, type InfoItemIcon } from '../../
 import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
 import clockIcon from '../../../../public/images/icons/ Clock.svg'
 import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
+import checkMarkIcon from '../../../../public/images/icons/ CheckCheckMark.png'
 
 
 export default function SendForm() {
@@ -299,7 +300,7 @@ export default function SendForm() {
                   ? 'Amount below min limit'
                   : amountBelowOnchainFee(satoshis)
                     ? 'Amount below network fee'
-                    : 'Confirm Sending',
+                    : 'Confirm Sending'
     )
   }, [sendInfo.satoshis, availableBalance, selectedMethod, onchainOutputFee])
 
@@ -661,7 +662,7 @@ export default function SendForm() {
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        <Button onClick={handleContinue} label={label} disabled={buttonDisabled} />
+        <Button onClick={handleContinue} label={label} icon={<img src = {checkMarkIcon} alt = 'checkMark' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)', marginLeft: '0.5rem'}} />} disabled={buttonDisabled} />
       </ButtonsOnBottom>
     </>
   )
