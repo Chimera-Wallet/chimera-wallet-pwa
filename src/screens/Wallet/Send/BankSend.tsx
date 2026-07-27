@@ -425,7 +425,7 @@ export default function BankSend() {
             {/* Inline Amount Input with swap functionality */}
             <InlineAmountInput value={amount} onChange={setAmount} asset={selectedAsset} bankCurrency={currency} />
 
-            <div style={{ display: 'flex', justifyContent: 'center' , width: '100%'}}>
+            <div style={{ display: 'flex', justifyContent: 'center' , width: '100%', marginTop: '-1rem' }}>
               <div style={{ width: '300px' }}>
             <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset} 
             style = {{

@@ -503,7 +503,7 @@ export default function SendForm() {
                   asset={selectedAsset}
                   disabled={amountIsReadOnly}
                 />
-                <div style={{ display: 'flex', justifyContent: 'center' , width: '100%'}}>
+                <div style={{ display: 'flex', justifyContent: 'center' , width: '100%', marginTop: '-1rem' }}>
                   <div style={{ width: '300px' }}>
                    <AssetSelector label='' selected={selectedAsset} onSelect={setSelectedAsset} selectedBalance = {selectedAssetBalanceSats}
                      style = {{
@@ -520,7 +520,7 @@ export default function SendForm() {
 
                 {/* Percentage Buttons */}
                 {!amountIsReadOnly && availableBalance > 0 ? (
-                  <div style={{ marginTop: '-0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginTop: '-1rem' }}>
                     <FlexRow centered gap='0.5rem'>
                       {[25, 50, 75, 100].map((percent) => (
                         <button

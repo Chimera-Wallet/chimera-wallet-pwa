@@ -14,6 +14,7 @@ interface AssetSelectorProps {
   selectedBalance ?: number
   style ?: React.CSSProperties
   showValue ?: boolean
+  iconSize ?: number
 }
 
 export default function AssetSelector({
@@ -24,7 +25,8 @@ export default function AssetSelector({
   setIsOpen: externalSetIsOpen,
   selectedBalance,
   style,
-  showValue
+  showValue,
+  iconSize = 20
 }: AssetSelectorProps) {
   const [internalIsOpen, setInternalIsOpen] = useState(false)
 
@@ -47,7 +49,7 @@ export default function AssetSelector({
   return (
     <>
       <SelectorField
-        icon={<AssetIcon symbol={selected} size={20} />}
+        icon={<AssetIcon symbol={selected} size={iconSize} />}
         label={label !== undefined ? label : 'Asset'}        
         onClick={() => setIsOpen(true)}
         value={selectedConfig?.name || selected}

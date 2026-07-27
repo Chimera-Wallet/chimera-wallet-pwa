@@ -308,7 +308,7 @@ export default function ReceiveAmount() {
             {isLightningMethod ? (
               <InlineAmountInput value={satoshis} onChange={setSatoshis} asset={selectedAsset} />
             ) : null}
-            <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset} showValue 
+            <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset} showValue iconSize = {40}
             style = {{
                      justifyContent: 'center',
                      borderRadius : '2.5rem',
