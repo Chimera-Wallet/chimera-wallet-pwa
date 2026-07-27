@@ -6,7 +6,7 @@ import FlexCol from './FlexCol'
 import { useRef, useEffect, ChangeEventHandler } from 'react'
 import { hapticLight } from '../lib/haptics'
 import Paste from './Paste'
-import { ClearButtonOnInput, ScanButtonOnInput } from './Button'
+import { ClearButtonOnInput, ScanButtonOnInput, AddressButtonOnInput } from './Button'
 import FlexRow from './FlexRow'
 
 interface InputWithScannerProps {
@@ -60,7 +60,14 @@ export default function InputWithScanner({
     openScan()
   }
 
+  const handleAddressBook = () => {
+    hapticLight()
+    openAddressBook?.()
+  }
+
   const hasValue = Boolean(value && value.length > 0)
+
+
 
   return (
     <InputContainer label={label} error={error}>
@@ -79,6 +86,9 @@ export default function InputWithScanner({
             <ClearButtonOnInput onClick={handleClear} />
           ) : (
             <FlexRow gap='0.25rem'>
+               {openAddressBook ? (
+                  <AddressButtonOnInput onClick={handleAddressBook} />
+                ) : null}
               <Paste validator={validator} onPaste={handlePaste} />
               <ScanButtonOnInput onClick={handleScan} />
             </FlexRow>
