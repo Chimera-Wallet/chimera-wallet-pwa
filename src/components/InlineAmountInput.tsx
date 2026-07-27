@@ -127,7 +127,7 @@ export default function InlineAmountInput({
   const inputWidth = `${Math.max(numDigits + 1, 4)}ch` // Dynamic width based on content
 
   return (
-    <div style={{ textAlign: 'center', width: '100%', marginTop: '1rem' }}>
+    <div style={{ textAlign: 'center', width: '100%', marginTop: '-0.8rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <input
@@ -176,7 +176,7 @@ export default function InlineAmountInput({
       </button>
       </div>
       {/* Fiat/Crypto equivalent */}
-      <div style={{ fontSize: '1rem', color: 'var(--white50)', marginTop: '0.25rem' }}>{secondaryValue}</div>
+      <div style={{ fontSize: '1rem', color: 'var(--white50)', marginTop: '-3.95px' }}>{secondaryValue}</div>
     </div>
   )
 }
