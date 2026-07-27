@@ -245,7 +245,6 @@ export default function BankSend() {
         return (
           <>
             <FlexCol gap='0.5rem'>
-              <TextLabel>IBAN</TextLabel>
               <Shadow input>
                 <input
                   type='text'
@@ -264,7 +263,6 @@ export default function BankSend() {
               </Shadow>
             </FlexCol>
             <FlexCol gap='0.5rem'>
-              <TextLabel>Account Holder Name</TextLabel>
               <Shadow input>
                 <input
                   type='text'
@@ -457,7 +455,7 @@ export default function BankSend() {
             </div>
             </div> 
             <NetworkSelector
-              label='Network'
+              label=''
               selected={selectedMethod}
               onSelect={(network) => {
                 if (network !== TRANSFER_METHOD.bank) {
@@ -472,13 +470,11 @@ export default function BankSend() {
 
             {/* Currency Selection */}
             <FlexCol gap='0.5rem'>
-              <TextLabel>Receive Currency</TextLabel>
               <BankCurrencySelector selectedCurrency={currency} onSelect={setCurrency} currencies={getSupportedSendCurrencies()} />
             </FlexCol>
 
             {/* Transfer Method */}
             <FlexCol gap='0.5rem'>
-              <TextLabel>Transfer Method</TextLabel>
               <BankCircuitSelector currency={currency} selectedCircuit={circuit} onSelect={setCircuit} />
             </FlexCol>
 
@@ -495,7 +491,6 @@ export default function BankSend() {
             {/* Bank Details Section - hidden when KYC email bypasses requirement */}
             {!skipBankDetails && (
               <FlexCol gap='1rem'>
-                <TextLabel>Bank Details</TextLabel>
                 {renderBankInputs()}
               </FlexCol>
             )}

@@ -149,11 +149,11 @@ export default function ReceiveAmount() {
       case 'instruction':
         return undefined
       case 'info':
-        return <img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)'}} />
+        return <img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />
       case 'receipt': 
-        return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)'}} /> 
+        return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} /> 
       case 'clock':
-        return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(1)'}} /> 
+        return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(0.7)'}} /> 
       default:
         return <InfoIcon />
     }
@@ -380,7 +380,7 @@ export default function ReceiveAmount() {
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        <Button label='Share' onClick={handleShare} icon={<img src = {checkMarkIcon} alt = 'checkMark' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)', marginLeft: '0.5rem'}} />} disabled={disabled} />
+        <Button label='Share' onClick={handleShare} icon={<img src = {checkMarkIcon} alt = 'checkMark' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)', marginLeft: '0.5rem'}} />} disabled={disabled} />
         {showFaucetButton ? <Button disabled={!satoshis} label='Faucet' onClick={handleFaucet} secondary /> : null}
       </ButtonsOnBottom>
     </>

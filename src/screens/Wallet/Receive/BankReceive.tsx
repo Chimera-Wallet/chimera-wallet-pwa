@@ -218,7 +218,6 @@ export default function BankReceive() {
               {/* Circuit Selection */}
               {hasSepaDetails && hasSwiftDetails ? (
                 <FlexCol gap='0.5rem'>
-                  <TextLabel>Transfer Method</TextLabel>
                   <BankCircuitSelector currency={currency} selectedCircuit={circuit} onSelect={setCircuit} />
                 </FlexCol>
               ) : null}
@@ -226,7 +225,6 @@ export default function BankReceive() {
               {/* Bank Details */}
               {circuit === 'sepa' && hasSepaDetails ? (
                 <FlexCol gap='0.5rem'>
-                  <TextLabel>SEPA Bank Details</TextLabel>
                   <SepaDataView
                     iban={order.deposit_sepa_address}
                     bic={order.deposit_sepa_bic}
@@ -238,7 +236,6 @@ export default function BankReceive() {
 
               {(circuit === 'swift' || !hasSepaDetails) && hasSwiftDetails ? (
                 <FlexCol gap='0.5rem'>
-                  <TextLabel>SWIFT Bank Details</TextLabel>
                   <SwiftDataView
                     iban={order.deposit_swift_address}
                     bic={order.deposit_swift_bic}
@@ -290,7 +287,7 @@ export default function BankReceive() {
             </div>
             </div> 
             <NetworkSelector
-              label='Network'
+              label=''
               selected={selectedMethod}
               onSelect={(network) => {
                 if (network !== TRANSFER_METHOD.bank) {
@@ -305,13 +302,11 @@ export default function BankReceive() {
 
             {/* Currency Selection */}
             <FlexCol gap='0.5rem'>
-              <TextLabel>Currency</TextLabel>
               <BankCurrencySelector selectedCurrency={currency} onSelect={setCurrency} currencies={getSupportedReceiveCurrencies()} />
             </FlexCol>
 
             {/* Transfer Method */}
             <FlexCol gap='0.5rem'>
-              <TextLabel>Transfer Method</TextLabel>
               <BankCircuitSelector currency={currency} selectedCircuit={circuit} onSelect={setCircuit} />
             </FlexCol>
 
@@ -335,11 +330,11 @@ export default function BankReceive() {
                     case 'fees':
                       return <FeesIcon />
                     case 'info':
-                      return <img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)'}} />
+                      return <img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />
                     case 'receipt': 
-                      return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)'}} /> 
+                      return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} /> 
                     case 'clock':
-                      return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(1)'}} /> 
+                      return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(0.7)'}} /> 
                     default:
                       return <InfoIcon />
                   }
@@ -359,7 +354,7 @@ export default function BankReceive() {
         <Button
           label={loading ? 'Creating Order...' : 'Continue'}
           onClick={handleCreateDeposit}
-          icon = {<img src = {rightIcon} alt = 'rightArrow' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)', marginLeft: '0.5rem'}} />}
+          icon = {<img src = {rightIcon} alt = 'rightArrow' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)', marginLeft: '0.5rem'}} />}
           disabled={!validation.canProceed || loading}
           loading={loading}
         />

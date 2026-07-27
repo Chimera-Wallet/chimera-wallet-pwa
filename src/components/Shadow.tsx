@@ -57,9 +57,9 @@ export default function Shadow({
         ? `1px solid var(--${borderPurple ? 'purple' : 'dark10'})`
         : undefined,
     borderRadius: info
-      ? 'var(--info-container-radius)'
+      ? '2.5rem'
       : input
-        ? 'var(--input-border-radius)'
+        ? '2.5rem'
         : squared
           ? undefined
           : '2.5rem',

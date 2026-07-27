@@ -454,11 +454,11 @@ export default function SendForm() {
       case 'instruction':
         return undefined
       case 'info':
-        return <img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)'}} />
+        return <img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />
       case 'receipt': 
-        return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)'}} /> 
+        return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} /> 
       case 'clock':
-        return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(1)'}} /> 
+        return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(0.7)'}} /> 
       default:
         return <InfoIcon />
     }
@@ -583,7 +583,7 @@ export default function SendForm() {
             ) : null}
 
             <NetworkSelector
-              label='Network'
+              label=''
               selected={selectedMethod}
               onSelect={(network) => {
                 // Navigate to bank send screen if bank is selected
@@ -612,7 +612,7 @@ export default function SendForm() {
             <InputAddress
               name='send-address'
               focus={focus === 'recipient'}
-              label='Recipient address'
+              label=''
               placeholder={getNetworkConfig(selectedMethod)?.addressPlaceholder || 'Paste address'}
               onChange={handleRecipientChange}
               onEnter={handleEnter}
