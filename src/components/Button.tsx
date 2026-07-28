@@ -5,6 +5,7 @@ import ScanIcon from '../icons/Scan'
 import PasteIcon from '../icons/Paste'
 import XIcon from '../icons/X'
 import { cn } from '@/lib/utils'
+import addressIcon from '../../public/images/icons/ Book.png'
 
 const buttonVariants = cva('button', {
   variants: {
@@ -173,4 +174,8 @@ export function ScanButtonOnInput({ onClick }: { onClick: () => void }) {
 
 export function ClearButtonOnInput({ onClick }: { onClick: () => void }) {
   return <ButtonOnInput ariaLabel='Clear' clear icon={<XIcon />} onClick={onClick} />
+}
+
+export function AddressButtonOnInput({ onClick }: { onClick: () => void }) {
+  return <ButtonOnInput label='Address Book' icon={<img src={addressIcon} alt='Address' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(1)'}} />} onClick={onClick} />
 }
