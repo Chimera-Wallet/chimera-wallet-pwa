@@ -40,6 +40,7 @@ interface ButtonProps extends VariantProps<typeof buttonVariants> {
   secondary?: boolean
   small?: boolean
   testId?: string
+  style ?: React.CSSProperties
 }
 
 export default function Button({
@@ -60,6 +61,7 @@ export default function Button({
   secondary,
   testId,
   variant,
+  style, 
 }: ButtonProps) {
   const [pressed, setPressed] = useState(false)
 
@@ -99,7 +101,7 @@ export default function Button({
       onTouchStart={handlePressStart}
       onTouchEnd={handlePressEnd}
       onTouchCancel={handlePressEnd}
-      style={{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600 }}
+      style={style ?? { margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, }}
     >
       {loading ? (
         <ButtonCentered>

@@ -259,7 +259,7 @@ export default function BankReceive() {
   return (
     <>
       <Header
-        text='Receive'
+        text=''
         back={goBack}
         auxIcon={<TransactionsIcon />}
         auxFunc={handleOrderHistory}
@@ -274,11 +274,11 @@ export default function BankReceive() {
             <InlineAmountInput value={amount} onChange={setAmount} asset={selectedAsset} bankCurrency={currency} />
 
             <div style={{ display: 'flex', justifyContent: 'center' , width: '100%'}}>
-              <div style={{ width: '300px' }}>
+              <div style={{ width: '200px' }}>
                 <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset} showValue
                 style = {{
                          justifyContent: 'center',
-                         width: '300px',
+                         width: '240px',
                          height: '40px',
                          borderRadius : '2.5rem',
                          fontSize: '14px',
@@ -309,10 +309,10 @@ export default function BankReceive() {
             <FlexCol gap='0.5rem'>
               <BankCircuitSelector currency={currency} selectedCircuit={circuit} onSelect={setCircuit} />
             </FlexCol>
-
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' , width: '100', marginTop: '1rem'}}>
             {/* SWIFT fee notice */}
             {circuit === 'swift' ? (
-              <Info color='orange' title={`SWIFT Transfer Fee: ${SWIFT_RECEIVE_FEE} ${currency}`}>
+              <Info color='orange' icon = {<img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />} title={`SWIFT Transfer Fee: ${SWIFT_RECEIVE_FEE} ${currency}` }>
                 <TextSecondary>
                   A flat fee of {SWIFT_RECEIVE_FEE} {currency} applies to all incoming SWIFT transfers and will be
                   deducted from the received amount.
@@ -344,6 +344,7 @@ export default function BankReceive() {
                 )
               })}
             </InfoContainer>
+            </div>
 
             {/* Validation and KYC messages */}
             <BankTransferValidationMessages validation={validation} />
@@ -357,6 +358,7 @@ export default function BankReceive() {
           icon = {<img src = {rightIcon} alt = 'rightArrow' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)', marginLeft: '0.5rem'}} />}
           disabled={!validation.canProceed || loading}
           loading={loading}
+          style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '357px', height: '48px', borderRadius: '16px',}}
         />
       </ButtonsOnBottom>
     </>
