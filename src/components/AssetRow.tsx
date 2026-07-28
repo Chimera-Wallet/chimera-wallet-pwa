@@ -134,7 +134,7 @@ export default function AssetRow({
             color: 'white',
             fontSize: 13,
             fontWeight: 500,
-            fontFamily: 'monospace',
+            fontFamily: 'Titillium Web',
           }}
         >
           {formatBalance(balance)} {symbol}

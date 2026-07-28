@@ -45,7 +45,7 @@ export default function Balance({ amount, centered = false, usdOnly = false }: B
       <div style={{ textAlign: 'center', marginBottom: 24, marginTop: 24 }}>
         <div style={{ fontSize: 14, color: 'var(--white50)', marginBottom: 8 }}>Wallet Balance</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          <div style={{ fontSize: 32, fontWeight: 700, color: 'white', fontFamily: 'monospace' }}>
+          <div style={{ fontSize: 32, fontWeight: 700, color: 'white', fontFamily: 'Titillium Web' }}>
             {mainBalance}
           </div>
           {mainUnit ? <div style={{ fontSize: 20, fontWeight: 600, color: 'white', paddingTop: 8 }}>{mainUnit}</div> : null}

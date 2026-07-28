@@ -489,7 +489,7 @@ export default function SendForm() {
 
   return (
     <>
-      <Header text='Send' back />
+      <Header text='' back />
       <Content>
         <Padded>
           <FlexCol gap='2rem'>
@@ -505,11 +505,11 @@ export default function SendForm() {
                   disabled={amountIsReadOnly}
                 />
                 <div style={{ display: 'flex', justifyContent: 'center' , width: '100%', marginTop: '-1rem' }}>
-                  <div style={{ width: '300px' }}>
+                  <div style={{ width: '200px' }}>
                    <AssetSelector label='' selected={selectedAsset} onSelect={setSelectedAsset} selectedBalance = {selectedAssetBalanceSats}
                      style = {{
                      justifyContent: 'center',
-                     width: '300px',
+                     width: '240px',
                      height: '40px',
                      borderRadius : '2.5rem',
                      fontSize: '14px',
@@ -522,7 +522,7 @@ export default function SendForm() {
                 {/* Percentage Buttons */}
                 {!amountIsReadOnly && availableBalance > 0 ? (
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginTop: '-1rem' }}>
-                    <FlexRow centered gap='0.5rem'>
+                    <FlexRow centered gap='0.7rem'>
                       {[25, 50, 75, 100].map((percent) => (
                         <button
                           key={percent}
@@ -662,7 +662,8 @@ export default function SendForm() {
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        <Button onClick={handleContinue} label={label} icon={<img src = {checkMarkIcon} alt = 'checkMark' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)', marginLeft: '0.5rem'}} />} disabled={buttonDisabled} />
+        <Button onClick={handleContinue} label={label} icon={<img src = {checkMarkIcon} alt = 'checkMark' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(-1)', marginLeft: '0.5rem'}} />} disabled={buttonDisabled}
+        style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '357px', height: '48px', borderRadius: '16px', color:'rgba(16,16,21,1)' ,backgroundColor : 'rgba(255,255,255,0.5)'}} />
       </ButtonsOnBottom>
     </>
   )

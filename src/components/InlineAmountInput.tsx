@@ -143,7 +143,7 @@ export default function InlineAmountInput({
             fontSize,
             fontWeight: 700,
             color: 'white',
-            fontFamily: 'monospace',
+            fontFamily: 'Titillium Web',
             background: 'transparent',
             border: 'none',
             outline: 'none',
