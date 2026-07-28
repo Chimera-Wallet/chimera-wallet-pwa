@@ -287,7 +287,6 @@ export default function BankSend() {
         return (
           <>
             <FlexCol gap='0.5rem'>
-              <TextLabel>BIC / SWIFT Code</TextLabel>
               <Shadow input>
                 <input
                   type='text'
@@ -306,7 +305,6 @@ export default function BankSend() {
               </Shadow>
             </FlexCol>
             <FlexCol gap='0.5rem'>
-              <TextLabel>Account Holder Name</TextLabel>
               <Shadow input>
                 <input
                   type='text'
@@ -325,7 +323,6 @@ export default function BankSend() {
               </Shadow>
             </FlexCol>
             <FlexCol gap='0.5rem'>
-              <TextLabel>Account Number</TextLabel>
               <Shadow input>
                 <input
                   type='text'
@@ -350,7 +347,6 @@ export default function BankSend() {
         return (
           <>
             <FlexCol gap='0.5rem'>
-              <TextLabel>Account Number</TextLabel>
               <Shadow input>
                 <input
                   type='text'
@@ -369,7 +365,6 @@ export default function BankSend() {
               </Shadow>
             </FlexCol>
             <FlexCol gap='0.5rem'>
-              <TextLabel>Routing Number (ABA)</TextLabel>
               <Shadow input>
                 <input
                   type='text'
