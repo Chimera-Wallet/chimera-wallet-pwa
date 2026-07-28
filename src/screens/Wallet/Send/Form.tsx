@@ -509,8 +509,8 @@ export default function SendForm() {
                    <AssetSelector label='' selected={selectedAsset} onSelect={setSelectedAsset} selectedBalance = {selectedAssetBalanceSats}
                      style = {{
                      justifyContent: 'center',
-                     width: '240px',
-                     height: '40px',
+                     width: '235px',
+                     height: '36px',
                      borderRadius : '2.5rem',
                      fontSize: '14px',
                      fontWeight: '600',
@@ -581,7 +581,7 @@ export default function SendForm() {
                 </FlexCol>
               </div>
             ) : null}
-
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100', gap:'1rem'}}>
             <NetworkSelector
               label=''
               selected={selectedMethod}
@@ -620,6 +620,7 @@ export default function SendForm() {
               openScan={() => setScan(true)}
               value={recipient}
             />
+            
             <InfoContainer>
               {' '}
               {selectedMethod === TRANSFER_METHOD.lightning && !invoice ? (
@@ -644,6 +645,7 @@ export default function SendForm() {
                 <InfoLine compact color='orange' text='Fees will be deducted from the amount sent' />
               ) : null}
             </InfoContainer>
+            </div>
             {tryingToSelfSend ? (
               <div style={{ width: '100%' }}>
                 <Text centered small>

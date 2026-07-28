@@ -171,7 +171,7 @@ export function PasteButtonOnInput({ onClick }: { onClick: () => void }) {
 }
 
 export function ScanButtonOnInput({ onClick }: { onClick: () => void }) {
-  return <ButtonOnInput label='Scan QR' icon={<ScanIcon />} onClick={onClick} />
+  return <ButtonOnInput label='' icon={<ScanIcon />} onClick={onClick} />
 }
 
 export function ClearButtonOnInput({ onClick }: { onClick: () => void }) {
@@ -179,5 +179,5 @@ export function ClearButtonOnInput({ onClick }: { onClick: () => void }) {
 }
 
 export function AddressButtonOnInput({ onClick }: { onClick: () => void }) {
-  return <ButtonOnInput label='Address Book' icon={<img src={addressIcon} alt='Address' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(1)'}} />} onClick={onClick} />
+  return <ButtonOnInput label='' icon={<img src={addressIcon} alt='Address' style = {{width: '24px', height: '24px',filter: 'brightness(0) invert(1)'}} />} onClick={onClick} />
 }

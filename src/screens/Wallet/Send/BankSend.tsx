@@ -478,14 +478,15 @@ export default function BankSend() {
             <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset} selectedBalance = {availableBalance}
             style = {{
                      justifyContent: 'center',
-                     width: '240px',
-                     height: '40px',
+                     width: '235px',
+                     height: '36px',
                      borderRadius : '2.5rem',
                      fontSize: '14px',
                      fontWeight: '600',
                      }} />
             </div>
             </div> 
+            
             <NetworkSelector
               label=''
               selected={selectedMethod}

@@ -57,12 +57,12 @@ export default function Shadow({
         ? `1px solid var(--${borderPurple ? 'purple' : 'dark10'})`
         : undefined,
     borderRadius: info
-      ? '2.5rem'
+      ? 'var(--info-container-radius)'
       : input
-        ? '2.5rem'
+        ? 'var(--info-container-radius)'
         : squared
           ? undefined
-          : '2.5rem',
+          : 'var(--info-container-radius)',
     color: purple ? 'white' : '',
     cursor: onClick ? 'pointer' : undefined,
     display: info ? 'flex' : input ? 'flex' : undefined,

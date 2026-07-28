@@ -314,6 +314,7 @@ export default function ReceiveAmount() {
                      justifyContent: 'center',
                      borderRadius : '2.5rem',
             }} />
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100', gap:'1rem'}}>
 
             <NetworkSelector
               label=''
@@ -359,6 +360,7 @@ export default function ReceiveAmount() {
                 />
               ) : null}
             </InfoContainer>
+            </div>
             {noPaymentMethods ? (
               <div>No valid payment methods available for this amount</div>
             ) : showQrCode ? (
