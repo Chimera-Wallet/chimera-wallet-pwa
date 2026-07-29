@@ -57,18 +57,18 @@ export default function SelectSheet({ isOpen, onClose, onSelect, options, select
                   padding: '12px 16px',
                   borderRadius: 'var(--info-container-radius, 12px)',
                   border: isSelected ? '2px solid var(--purple-700)' : '1px solid var(--neutral-200)',
-                  backgroundColor: isSelected ? 'var(--neutral-50)' : 'transparent',
+                  backgroundColor: isSelected ? 'var(--neutral-50)' : 'var(--info-container-bg2)',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
                 onMouseEnter={(e) => {
                   if (!isSelected) {
-                    e.currentTarget.style.backgroundColor = 'var(--neutral-50)'
+                    e.currentTarget.style.backgroundColor = 'var(--info-container-bg2)'
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isSelected) {
-                    e.currentTarget.style.backgroundColor = 'transparent'
+                    e.currentTarget.style.backgroundColor = 'var(--info-container-bg2)'
                   }
                 }}
               >

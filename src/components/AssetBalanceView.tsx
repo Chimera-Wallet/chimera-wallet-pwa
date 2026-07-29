@@ -45,7 +45,7 @@ export default function AssetBalanceView({ symbol, balance }: AssetBalanceViewPr
             fontSize: 32,
             fontWeight: 700,
             color: 'white',
-            fontFamily: 'monospace',
+            fontFamily: 'Titillium Web',
           }}
         >
           {formatBalance(balance)} {symbol}

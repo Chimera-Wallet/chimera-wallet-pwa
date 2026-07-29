@@ -127,9 +127,9 @@ export default function InlineAmountInput({
   const inputWidth = `${Math.max(numDigits + 1, 4)}ch` // Dynamic width based on content
 
   return (
-    <div style={{ textAlign: 'center', width: '100%', marginTop: '1rem' }}>
-      <div style={{ marginBottom: '0.5rem', color: 'var(--white70)', fontSize: '0.875rem' }}>Amount</div>
+    <div style={{ textAlign: 'center', width: '100%', marginTop: '-0.8rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <input
           type='number'
           step='any'
@@ -143,7 +143,7 @@ export default function InlineAmountInput({
             fontSize,
             fontWeight: 700,
             color: 'white',
-            fontFamily: 'monospace',
+            fontFamily: 'Titillium Web',
             background: 'transparent',
             border: 'none',
             outline: 'none',
@@ -174,8 +174,9 @@ export default function InlineAmountInput({
           <CurrencySwapIcon />
         </div>
       </button>
+      </div>
       {/* Fiat/Crypto equivalent */}
-      <div style={{ fontSize: '1rem', color: 'var(--white50)', marginTop: '0.25rem' }}>{secondaryValue}</div>
+      <div style={{ fontSize: '1rem', color: 'var(--white50)', marginTop: '-10px' }}>{secondaryValue}</div>
     </div>
   )
 }

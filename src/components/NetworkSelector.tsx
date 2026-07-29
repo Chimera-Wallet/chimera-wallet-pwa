@@ -11,6 +11,7 @@ interface NetworkSelectorProps {
   selected: TransferMethod | undefined
   isOpen?: boolean
   setIsOpen?: (isOpen: boolean) => void
+  style ?: React.CSSProperties
 }
 
 export default function NetworkSelector({
@@ -19,6 +20,7 @@ export default function NetworkSelector({
   selected,
   isOpen: externalIsOpen,
   setIsOpen: externalSetIsOpen,
+  style
 }: NetworkSelectorProps) {
   const [internalIsOpen, setInternalIsOpen] = useState(false)
 
@@ -37,11 +39,12 @@ export default function NetworkSelector({
   return (
     <>
       <SelectorField
-        icon={selected ? <NetworkIcon network={selected} size={24} /> : undefined}
-        label={label || 'Network'}
+        icon={selected ? <NetworkIcon network={selected} size={40} /> : undefined}
+        label={label !== undefined ? label : 'Network'}
         onClick={() => setIsOpen(true)}
         value={selectedConfig?.name || selected || 'Select network'}
         sublabel={selectedConfig?.description}
+        style = {style}
       />
       <SelectSheet
         isOpen={isOpen}

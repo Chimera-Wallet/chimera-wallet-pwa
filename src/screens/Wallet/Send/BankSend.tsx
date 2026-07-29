@@ -46,6 +46,9 @@ import {
   type BankData,
 } from '../../../lib/bankTransferConfig'
 import { getUserEmailForBankTransfer } from '../../../lib/kyc'
+import { AspContext } from '@/providers/asp'
+import rightIcon from '../../../../public/images/icons/ Right.png'
+import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
 
 // Company Ark wallet address from environment — set VITE_BANK_WITHDRAW_WALLET in .env files
 const COMPANY_WALLET = import.meta.env.VITE_BANK_WITHDRAW_WALLET as string
@@ -84,6 +87,13 @@ export default function BankSend() {
   const numAmount = amount
   const validation = useBankTransferValidation({ amount: numAmount, currency, circuit })
 
+  const [availableBalance, setAvailableBalance] = useState(0)
+  const { aspInfo } = useContext(AspContext)
+  
+  const smartSetError = (str: string) => {
+    setError(str === '' ? (aspInfo.unreachable ? 'Arkade server unreachable' : '') : str)
+  }
+
   const handleOrderHistory = () => {
     navigate(Pages.BankOrderHistory)
   }
@@ -95,6 +105,15 @@ export default function BankSend() {
       setCircuit(getDefaultCircuit(currency))
     }
   }, [currency])
+
+    // update available balance
+  useEffect(() => {
+    if (!svcWallet) return
+    svcWallet
+      .getBalance()
+      .then((bal) => setAvailableBalance(bal.available))
+      .catch(smartSetError)
+  }, [balance])
 
   const validateBankDetails = (): BankData | null => {
     switch (circuit) {
@@ -227,8 +246,12 @@ export default function BankSend() {
         return (
           <>
             <FlexCol gap='0.5rem'>
-              <TextLabel>IBAN</TextLabel>
               <Shadow input>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
+                  <Text tiny color='neutral-500'>
+                    IBAN
+                  </Text>
+         
                 <input
                   type='text'
                   value={iban}
@@ -243,11 +266,15 @@ export default function BankSend() {
                     outline: 'none',
                   }}
                 />
+              </div>
               </Shadow>
             </FlexCol>
             <FlexCol gap='0.5rem'>
-              <TextLabel>Account Holder Name</TextLabel>
               <Shadow input>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
+                  <Text tiny color='neutral-500'>
+                    Account Holder Name
+                  </Text>
                 <input
                   type='text'
                   value={accountHolderName}
@@ -262,6 +289,7 @@ export default function BankSend() {
                     outline: 'none',
                   }}
                 />
+                </div>
               </Shadow>
             </FlexCol>
           </>
@@ -271,8 +299,11 @@ export default function BankSend() {
         return (
           <>
             <FlexCol gap='0.5rem'>
-              <TextLabel>BIC / SWIFT Code</TextLabel>
               <Shadow input>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
+                  <Text tiny color='neutral-500'>
+                    BIC/SWIFT
+                  </Text>
                 <input
                   type='text'
                   value={bic}
@@ -287,11 +318,15 @@ export default function BankSend() {
                     outline: 'none',
                   }}
                 />
+                </div>
               </Shadow>
             </FlexCol>
             <FlexCol gap='0.5rem'>
-              <TextLabel>Account Holder Name</TextLabel>
               <Shadow input>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
+                  <Text tiny color='neutral-500'>
+                    Account Holder Name
+                  </Text>
                 <input
                   type='text'
                   value={accountHolderName}
@@ -306,11 +341,15 @@ export default function BankSend() {
                     outline: 'none',
                   }}
                 />
+                </div>
               </Shadow>
             </FlexCol>
             <FlexCol gap='0.5rem'>
-              <TextLabel>Account Number</TextLabel>
               <Shadow input>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
+                  <Text tiny color='neutral-500'>
+                    Account Number
+                  </Text>
                 <input
                   type='text'
                   value={accountNumber}
@@ -325,6 +364,7 @@ export default function BankSend() {
                     outline: 'none',
                   }}
                 />
+                </div>
               </Shadow>
             </FlexCol>
           </>
@@ -334,8 +374,11 @@ export default function BankSend() {
         return (
           <>
             <FlexCol gap='0.5rem'>
-              <TextLabel>Account Number</TextLabel>
               <Shadow input>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
+                  <Text tiny color='neutral-500'>
+                    Account Number
+                  </Text>
                 <input
                   type='text'
                   value={accountNumber}
@@ -350,11 +393,15 @@ export default function BankSend() {
                     outline: 'none',
                   }}
                 />
+                </div>
               </Shadow>
             </FlexCol>
             <FlexCol gap='0.5rem'>
-              <TextLabel>Routing Number (ABA)</TextLabel>
               <Shadow input>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
+                  <Text tiny color='neutral-500'>
+                    Routing Number
+                  </Text>
                 <input
                   type='text'
                   value={routingNumber}
@@ -369,6 +416,7 @@ export default function BankSend() {
                     outline: 'none',
                   }}
                 />
+                </div>
               </Shadow>
             </FlexCol>
           </>
@@ -411,7 +459,7 @@ export default function BankSend() {
   return (
     <>
       <Header
-        text='Send'
+        text=''
         back={goBack}
         auxIcon={<TransactionsIcon />}
         auxFunc={handleOrderHistory}
@@ -425,9 +473,26 @@ export default function BankSend() {
             {/* Inline Amount Input with swap functionality */}
             <InlineAmountInput value={amount} onChange={setAmount} asset={selectedAsset} bankCurrency={currency} />
 
-            <AssetSelector label='Asset' selected={selectedAsset} onSelect={setSelectedAsset} />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', }}>
+                <AssetSelector
+                  label=''
+                  selected={selectedAsset}
+                  onSelect={setSelectedAsset}
+                  selectedBalance={availableBalance}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    width: '235px',
+                    height: '36px',
+                    borderRadius: '2.5rem',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
+                />
+              </div>
             <NetworkSelector
-              label='Network'
+              label=''
               selected={selectedMethod}
               onSelect={(network) => {
                 if (network !== TRANSFER_METHOD.bank) {
@@ -435,23 +500,21 @@ export default function BankSend() {
                   navigate(Pages.SendForm)
                 }
               }}
+              style = {{
+                borderRadius : '2.5rem',
+              }}
             />
 
-            {/* Currency Selection */}
-            <FlexCol gap='0.5rem'>
-              <TextLabel>Receive Currency</TextLabel>
+            <FlexCol gap='1rem'>
+              {/* Currency Selection */}
               <BankCurrencySelector selectedCurrency={currency} onSelect={setCurrency} currencies={getSupportedSendCurrencies()} />
-            </FlexCol>
 
-            {/* Transfer Method */}
-            <FlexCol gap='0.5rem'>
-              <TextLabel>Transfer Method</TextLabel>
+              {/* Transfer Method */}
               <BankCircuitSelector currency={currency} selectedCircuit={circuit} onSelect={setCircuit} />
             </FlexCol>
-
             {/* SWIFT fee notice */}
             {circuit === 'swift' ? (
-              <Info color='orange' title={`SWIFT Transfer Fee: ${SWIFT_SEND_FEE} ${currency}`}>
+              <Info color='orange' icon = {<img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />} title={`SWIFT Transfer Fee: ${SWIFT_SEND_FEE} ${currency}`}>
                 <TextSecondary>
                   A flat fee of {SWIFT_SEND_FEE} {currency} applies to all outgoing SWIFT withdrawals and will be
                   deducted from the received amount.
@@ -462,10 +525,11 @@ export default function BankSend() {
             {/* Bank Details Section - hidden when KYC email bypasses requirement */}
             {!skipBankDetails && (
               <FlexCol gap='1rem'>
-                <TextLabel>Bank Details</TextLabel>
                 {renderBankInputs()}
               </FlexCol>
             )}
+            </div>
+
 
             {/* Validation and KYC messages */}
             <BankTransferValidationMessages validation={validation} />
@@ -476,8 +540,10 @@ export default function BankSend() {
         <Button
           label={loading ? 'Creating Order...' : 'Create Withdrawal'}
           onClick={handleCreateWithdraw}
+          icon = {<img src = {rightIcon} alt = 'rightArrow' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)', marginLeft: '0.5rem'}} />}
           disabled={!canSubmit}
           loading={loading}
+          style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '357px', height: '48px', borderRadius: '16px',}}
         />
       </ButtonsOnBottom>
     </>

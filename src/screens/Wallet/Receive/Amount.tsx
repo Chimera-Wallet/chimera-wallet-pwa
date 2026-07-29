@@ -40,6 +40,10 @@ import {
   type InfoItemIcon,
   type TransferMethod,
 } from '../../../lib/transferMethods'
+import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
+import clockIcon from '../../../../public/images/icons/ Clock.svg'
+import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
+import checkMarkIcon from '../../../../public/images/icons/ CheckCheckMark.png'
 
 export default function ReceiveAmount() {
   const { aspInfo } = useContext(AspContext)
@@ -145,7 +149,11 @@ export default function ReceiveAmount() {
       case 'instruction':
         return undefined
       case 'info':
-        return <InfoIcon />
+        return <img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />
+      case 'receipt': 
+        return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} /> 
+      case 'clock':
+        return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(0.7)'}} /> 
       default:
         return <InfoIcon />
     }
@@ -288,10 +296,10 @@ export default function ReceiveAmount() {
       </>
     )
   }
-
+  
   return (
     <>
-      <Header text='Receive' back />
+      <Header text='' back />
       <Content>
         <Padded>
           <FlexCol>
@@ -301,13 +309,20 @@ export default function ReceiveAmount() {
             {isLightningMethod ? (
               <InlineAmountInput value={satoshis} onChange={setSatoshis} asset={selectedAsset} />
             ) : null}
+            <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset} showValue iconSize = {40}
+            style = {{
+                     justifyContent: 'center',
+                     borderRadius : '2.5rem',
+            }} />
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100', gap:'1rem'}}>
 
-            <AssetSelector label='Asset' selected={selectedAsset} onSelect={setSelectedAsset} />
             <NetworkSelector
-              label='Network'
+              label=''
               selected={selectedMethod}
               onSelect={(network) => {
                 if (network === TRANSFER_METHOD.bank) {
+                  setRecvInfo({ ...recvInfo, method: TRANSFER_METHOD.bank })
+
                   navigate(Pages.BankReceive)
                   return
                 }
@@ -315,12 +330,15 @@ export default function ReceiveAmount() {
                 setShowQrCode(false)
                 setRecvInfo({ ...recvInfo, method: network, invoice: undefined })
               }}
+              style = {{
+                     borderRadius : '2.5rem',
+                    }}
             />
             <InfoContainer>
               {needsAmountInput ? (
                 <InfoLine
                   compact
-                  icon={<InfoIcon />}
+                  icon={getIconComponent('info')}
                   text='For Lightning Network receives, please enter an amount above to generate your invoice and QR code.'
                 />
               ) : null}
@@ -342,6 +360,7 @@ export default function ReceiveAmount() {
                 />
               ) : null}
             </InfoContainer>
+            </div>
             {noPaymentMethods ? (
               <div>No valid payment methods available for this amount</div>
             ) : showQrCode ? (
@@ -363,7 +382,7 @@ export default function ReceiveAmount() {
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        <Button label='Share' onClick={handleShare} disabled={disabled} />
+        <Button label='Share' onClick={handleShare} icon={<img src = {checkMarkIcon} alt = 'checkMark' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)', marginLeft: '0.5rem'}} />} disabled={disabled} style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '357px', height: '48px', borderRadius: '16px',}} />
         {showFaucetButton ? <Button disabled={!satoshis} label='Faucet' onClick={handleFaucet} secondary /> : null}
       </ButtonsOnBottom>
     </>

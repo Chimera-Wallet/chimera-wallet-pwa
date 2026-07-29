@@ -56,6 +56,10 @@ import {
   type BankCurrency,
 } from '../../../lib/bankTransferConfig'
 import { getUserEmailForBankTransfer } from '../../../lib/kyc'
+import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
+import clockIcon from '../../../../public/images/icons/ Clock.svg'
+import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
+import rightIcon from '../../../../public/images/icons/ Right.png'
 
 export default function BankReceive() {
   const { navigate, goBack } = useContext(NavigationContext)
@@ -214,7 +218,6 @@ export default function BankReceive() {
               {/* Circuit Selection */}
               {hasSepaDetails && hasSwiftDetails ? (
                 <FlexCol gap='0.5rem'>
-                  <TextLabel>Transfer Method</TextLabel>
                   <BankCircuitSelector currency={currency} selectedCircuit={circuit} onSelect={setCircuit} />
                 </FlexCol>
               ) : null}
@@ -222,7 +225,6 @@ export default function BankReceive() {
               {/* Bank Details */}
               {circuit === 'sepa' && hasSepaDetails ? (
                 <FlexCol gap='0.5rem'>
-                  <TextLabel>SEPA Bank Details</TextLabel>
                   <SepaDataView
                     iban={order.deposit_sepa_address}
                     bic={order.deposit_sepa_bic}
@@ -234,7 +236,6 @@ export default function BankReceive() {
 
               {(circuit === 'swift' || !hasSepaDetails) && hasSwiftDetails ? (
                 <FlexCol gap='0.5rem'>
-                  <TextLabel>SWIFT Bank Details</TextLabel>
                   <SwiftDataView
                     iban={order.deposit_swift_address}
                     bic={order.deposit_swift_bic}
@@ -258,7 +259,7 @@ export default function BankReceive() {
   return (
     <>
       <Header
-        text='Receive'
+        text=''
         back={goBack}
         auxIcon={<TransactionsIcon />}
         auxFunc={handleOrderHistory}
@@ -272,9 +273,23 @@ export default function BankReceive() {
             {/* Amount Input */}
             <InlineAmountInput value={amount} onChange={setAmount} asset={selectedAsset} bankCurrency={currency} />
 
-            <AssetSelector label='Asset' selected={selectedAsset} onSelect={setSelectedAsset} />
+            <div style={{ display: 'flex', justifyContent: 'center' , width: '100%'}}>
+              <div style={{ width: '200px' }}>
+                <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset} showValue
+                style = {{
+                         justifyContent: 'center',
+                         width: '235px',
+                         height: '36px',
+                         borderRadius : '2.5rem',
+                         fontSize: '14px',
+                         fontWeight: '600',
+                }} />
+            </div>
+            </div> 
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100', gap:'1rem'}}>
+
             <NetworkSelector
-              label='Network'
+              label=''
               selected={selectedMethod}
               onSelect={(network) => {
                 if (network !== TRANSFER_METHOD.bank) {
@@ -282,23 +297,24 @@ export default function BankReceive() {
                   navigate(Pages.ReceiveAmount)
                 }
               }}
+              style = {{
+                borderRadius : '2.5rem',
+              }}
             />
 
             {/* Currency Selection */}
             <FlexCol gap='0.5rem'>
-              <TextLabel>Currency</TextLabel>
               <BankCurrencySelector selectedCurrency={currency} onSelect={setCurrency} currencies={getSupportedReceiveCurrencies()} />
             </FlexCol>
 
             {/* Transfer Method */}
             <FlexCol gap='0.5rem'>
-              <TextLabel>Transfer Method</TextLabel>
               <BankCircuitSelector currency={currency} selectedCircuit={circuit} onSelect={setCircuit} />
             </FlexCol>
-
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' , width: '100', marginTop: '1rem'}}>
             {/* SWIFT fee notice */}
             {circuit === 'swift' ? (
-              <Info color='orange' title={`SWIFT Transfer Fee: ${SWIFT_RECEIVE_FEE} ${currency}`}>
+              <Info color='orange' icon = {<img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />} title={`SWIFT Transfer Fee: ${SWIFT_RECEIVE_FEE} ${currency}` }>
                 <TextSecondary>
                   A flat fee of {SWIFT_RECEIVE_FEE} {currency} applies to all incoming SWIFT transfers and will be
                   deducted from the received amount.
@@ -316,7 +332,11 @@ export default function BankReceive() {
                     case 'fees':
                       return <FeesIcon />
                     case 'info':
-                      return <InfoIcon />
+                      return <img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />
+                    case 'receipt': 
+                      return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} /> 
+                    case 'clock':
+                      return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(0.7)'}} /> 
                     default:
                       return <InfoIcon />
                   }
@@ -326,6 +346,8 @@ export default function BankReceive() {
                 )
               })}
             </InfoContainer>
+            </div>
+            </div>
 
             {/* Validation and KYC messages */}
             <BankTransferValidationMessages validation={validation} />
@@ -336,8 +358,10 @@ export default function BankReceive() {
         <Button
           label={loading ? 'Creating Order...' : 'Continue'}
           onClick={handleCreateDeposit}
+          icon = {<img src = {rightIcon} alt = 'rightArrow' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)', marginLeft: '0.5rem'}} />}
           disabled={!validation.canProceed || loading}
           loading={loading}
+          style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '357px', height: '48px', borderRadius: '16px',}}
         />
       </ButtonsOnBottom>
     </>
