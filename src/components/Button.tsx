@@ -157,7 +157,6 @@ export function ButtonOnInput({ label, clear, icon, onClick, ariaLabel }: Button
       type='button'
       onClick={handleClick}
       aria-label={ariaLabel || label}
-      className='pill-base'
       style={clear ? { border: 'none', background: 'none' } : {}}
     >
       {icon}
@@ -179,5 +178,5 @@ export function ClearButtonOnInput({ onClick }: { onClick: () => void }) {
 }
 
 export function AddressButtonOnInput({ onClick }: { onClick: () => void }) {
-  return <ButtonOnInput label='' icon={<img src={addressIcon} alt='Address' style = {{width: '24px', height: '24px',filter: 'brightness(0) invert(1)'}} />} onClick={onClick} />
+  return <ButtonOnInput label='' icon={<img src={addressIcon} alt='Address' style = {{width: '24px', height: '24px',filter: 'brightness(0) invert(1)', marginRight: '0.5rem'}} />} onClick={onClick} />
 }

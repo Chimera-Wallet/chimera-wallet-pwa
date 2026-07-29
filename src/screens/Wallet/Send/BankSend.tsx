@@ -473,20 +473,24 @@ export default function BankSend() {
             {/* Inline Amount Input with swap functionality */}
             <InlineAmountInput value={amount} onChange={setAmount} asset={selectedAsset} bankCurrency={currency} />
 
-            <div style={{ display: 'flex', justifyContent: 'center' , width: '100%', marginTop: '-1rem' }}>
-              <div style={{ width: '200px' }}>
-            <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset} selectedBalance = {availableBalance}
-            style = {{
-                     justifyContent: 'center',
-                     width: '235px',
-                     height: '36px',
-                     borderRadius : '2.5rem',
-                     fontSize: '14px',
-                     fontWeight: '600',
-                     }} />
-            </div>
-            </div> 
-            
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', }}>
+                <AssetSelector
+                  label=''
+                  selected={selectedAsset}
+                  onSelect={setSelectedAsset}
+                  selectedBalance={availableBalance}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    width: '235px',
+                    height: '36px',
+                    borderRadius: '2.5rem',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
+                />
+              </div>
             <NetworkSelector
               label=''
               selected={selectedMethod}
@@ -508,7 +512,6 @@ export default function BankSend() {
               {/* Transfer Method */}
               <BankCircuitSelector currency={currency} selectedCircuit={circuit} onSelect={setCircuit} />
             </FlexCol>
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' , width: '100%', marginTop: '1rem' }}>
             {/* SWIFT fee notice */}
             {circuit === 'swift' ? (
               <Info color='orange' icon = {<img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />} title={`SWIFT Transfer Fee: ${SWIFT_SEND_FEE} ${currency}`}>

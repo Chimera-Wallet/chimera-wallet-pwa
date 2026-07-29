@@ -176,7 +176,7 @@ export default function InlineAmountInput({
       </button>
       </div>
       {/* Fiat/Crypto equivalent */}
-      <div style={{ fontSize: '1rem', color: 'var(--white50)', marginTop: '-3.95px' }}>{secondaryValue}</div>
+      <div style={{ fontSize: '1rem', color: 'var(--white50)', marginTop: '-10px' }}>{secondaryValue}</div>
     </div>
   )
 }
