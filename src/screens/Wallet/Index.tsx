@@ -67,7 +67,6 @@ export default function Wallet() {
     : "Tap 'Install' to add Chimera to your home screen."
 
   const [showInstallBanner, setShowInstallBanner] = useState(Boolean(!dismissed && !pwaInstalled))
-  console.log('showInstallBanner', showInstallBanner, !dismissed, showPwaBanner, pwaInstalled, dismissed)
   const dismissPwaBanner = () => {
     if (!config) return
     const dismissedBanners = [...(config.dismissedBanners ?? []), 'pwa-install']
