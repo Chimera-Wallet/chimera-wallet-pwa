@@ -66,12 +66,13 @@ export default function Wallet() {
     ? iosInstallDescription()
     : "Tap 'Install' to add Chimera to your home screen."
 
-  const showInstallBanner = true // Boolean(nudgeCheckComplete && !nudgeVisible && showPwaBanner)
-
+  const [showInstallBanner, setShowInstallBanner] = useState(Boolean(!dismissed && !pwaInstalled))
+  console.log('showInstallBanner', showInstallBanner, !dismissed, showPwaBanner, pwaInstalled, dismissed)
   const dismissPwaBanner = () => {
     if (!config) return
     const dismissedBanners = [...(config.dismissedBanners ?? []), 'pwa-install']
     updateConfig({ ...config, dismissedBanners })
+    setShowInstallBanner(false)
   }
 
   const [error, setError] = useState(false)
@@ -254,6 +255,7 @@ export default function Wallet() {
                   </FlexRow>
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
+                <div style={{ display: 'flex', flexDirection: 'column', paddingTop: 'var(--banner-padding-top)' }}>
                   <BannerCarousel>
                     <StakingBanner variant='home' />
                     {showInstallBanner ? (
@@ -274,6 +276,7 @@ export default function Wallet() {
                       />
                     ) : null}
                   </BannerCarousel>
+                </div>
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
                   {nudge ? nudge : psaMessage ? <InfoBox html={psaMessage} /> : null}
