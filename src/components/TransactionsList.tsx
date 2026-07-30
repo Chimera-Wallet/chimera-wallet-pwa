@@ -112,7 +112,7 @@ export default function TransactionsList({
   const focusedIndexRef = useRef(0)
 
   const key = (tx: Tx, index: number) =>
-    [tx.roundTxid, tx.redeemTxid, tx.boardingTxid].filter(Boolean).join('-') || `tx-${index}`
+    tx.boardingTxid || tx.redeemTxid || tx.roundTxid || `tx-${index}`
 
   const focusRow = (index: number) => {
     if (index < 0 || index >= txs.length) return
