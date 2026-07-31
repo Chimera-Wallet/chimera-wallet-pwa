@@ -111,12 +111,9 @@ export default function TransactionsList({
   const focusedRef = useRef(false)
   const focusedIndexRef = useRef(0)
 
-  /* This key const is taken directly from the current Arkade Wallet codebase (31/7/26) */
-  const key = (tx: Tx, index: number) => {
-    const txKey = [tx.roundTxid, tx.redeemTxid, tx.boardingTxid].filter(Boolean).join('-') || 'tx'
-    return `${txKey}-${index}`
-  }
-  
+  const key = (tx: Tx, index: number) =>
+    [tx.roundTxid, tx.redeemTxid, tx.boardingTxid].filter(Boolean).join('-') || `tx-${index}`
+
   const focusRow = (index: number) => {
     if (index < 0 || index >= txs.length) return
     focusedIndexRef.current = index
