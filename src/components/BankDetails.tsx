@@ -196,7 +196,7 @@ export function TransferReferenceBox({ reference }: TransferReferenceBoxProps) {
           </Text>
           <CopyButton value={reference} />
         </FlexRow>
-        <div style={{ fontFamily: 'monospace', fontSize: '1.1rem', color: 'var(--white)' }}>{reference}</div>
+        <div style={{ fontFamily: 'Titillium Web', fontSize: '1.1rem', color: 'var(--white)' }}>{reference}</div>
         <TextSecondary>
           You MUST include this reference in your bank transfer description for it to be processed correctly.
         </TextSecondary>

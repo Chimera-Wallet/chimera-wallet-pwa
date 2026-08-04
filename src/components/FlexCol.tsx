@@ -10,7 +10,7 @@ interface FlexColProps {
   gap?: string
   margin?: string
   padding?: string
-  strech?: boolean
+  stretch?: boolean
   testId?: string
 }
 
@@ -24,11 +24,11 @@ export default function FlexCol({
   gap,
   margin,
   padding,
-  strech,
+  stretch,
   testId,
 }: FlexColProps) {
   const style: any = {
-    alignItems: centered ? 'center' : end ? 'end' : strech ? 'strech' : 'start',
+    alignItems: centered ? 'center' : end ? 'end' : stretch ? 'stretch' : 'start',
     borderBottom: border ? '1px solid var(--neutral-200)' : undefined,
     display: 'flex',
     flexDirection: 'column',

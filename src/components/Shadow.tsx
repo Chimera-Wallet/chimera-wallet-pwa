@@ -59,10 +59,10 @@ export default function Shadow({
     borderRadius: info
       ? 'var(--info-container-radius)'
       : input
-        ? 'var(--input-border-radius)'
+        ? 'var(--info-container-radius)'
         : squared
           ? undefined
-          : '0.5rem',
+          : 'var(--info-container-radius)',
     color: purple ? 'white' : '',
     cursor: onClick ? 'pointer' : undefined,
     display: info ? 'flex' : input ? 'flex' : undefined,
@@ -77,7 +77,7 @@ export default function Shadow({
           ? '1rem'
           : input
             ? '0.5rem 1rem'
-            : '0.5rem',
+            : '1rem',
     width: flex ? undefined : '100%',
     alignItems: input ? 'center' : undefined,
     boxSizing: 'border-box',

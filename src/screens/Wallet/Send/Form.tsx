@@ -49,6 +49,11 @@ import WhenIcon from '../../../icons/When'
 import FeesIcon from '../../../icons/Fees'
 import InfoIcon from '../../../icons/Info'
 import { TERMS_AND_CONDITIONS, TRANSFER_METHOD, type InfoItemIcon } from '../../../lib/transferMethods'
+import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
+import clockIcon from '../../../../public/images/icons/ Clock.svg'
+import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
+import checkMarkIcon from '../../../../public/images/icons/ CheckCheckMark.png'
+
 
 export default function SendForm() {
   const { aspInfo } = useContext(AspContext)
@@ -295,7 +300,7 @@ export default function SendForm() {
                   ? 'Amount below min limit'
                   : amountBelowOnchainFee(satoshis)
                     ? 'Amount below network fee'
-                    : 'Continue',
+                    : 'Confirm Sending'
     )
   }, [sendInfo.satoshis, availableBalance, selectedMethod, onchainOutputFee])
 
@@ -449,7 +454,11 @@ export default function SendForm() {
       case 'instruction':
         return undefined
       case 'info':
-        return <InfoIcon />
+        return <img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />
+      case 'receipt': 
+        return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} /> 
+      case 'clock':
+        return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(0.7)'}} /> 
       default:
         return <InfoIcon />
     }
@@ -476,9 +485,11 @@ export default function SendForm() {
     )
   }
 
+  const selectedAssetBalanceSats = selectedAsset === 'BTC' ? availableBalance : undefined
+
   return (
     <>
-      <Header text='Send' back />
+      <Header text='' back />
       <Content>
         <Padded>
           <FlexCol gap='2rem'>
@@ -493,11 +504,25 @@ export default function SendForm() {
                   asset={selectedAsset}
                   disabled={amountIsReadOnly}
                 />
+                <div style={{ display: 'flex', justifyContent: 'center' , width: '100%', marginTop: '-1rem' }}>
+                  <div style={{ width: '200px' }}>
+                   <AssetSelector label='' selected={selectedAsset} onSelect={setSelectedAsset} selectedBalance = {selectedAssetBalanceSats}
+                     style = {{
+                     justifyContent: 'center',
+                     width: '235px',
+                     height: '36px',
+                     borderRadius : '2.5rem',
+                     fontSize: '14px',
+                     fontWeight: '600',
+                     padding: '1.3rem',
+                     }} />
+                  </div>
+                </div>
 
                 {/* Percentage Buttons */}
                 {!amountIsReadOnly && availableBalance > 0 ? (
-                  <div style={{ marginTop: '-0.5rem' }}>
-                    <FlexRow centered gap='0.5rem'>
+                <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginTop: '-1rem' }}>
+                    <FlexRow centered gap='0.7rem'>
                       {[25, 50, 75, 100].map((percent) => (
                         <button
                           key={percent}
@@ -556,14 +581,14 @@ export default function SendForm() {
                 </FlexCol>
               </div>
             ) : null}
-
-            <AssetSelector label='Asset' selected={selectedAsset} onSelect={setSelectedAsset} />
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100', gap:'1rem'}}>
             <NetworkSelector
-              label='Network'
+              label=''
               selected={selectedMethod}
               onSelect={(network) => {
                 // Navigate to bank send screen if bank is selected
                 if (network === TRANSFER_METHOD.bank) {
+                  setSendInfo({ ...sendInfo, method: TRANSFER_METHOD.bank })
                   navigate(Pages.BankSend)
                   return
                 }
@@ -579,11 +604,15 @@ export default function SendForm() {
                   recipient: '',
                 })
               }}
+              style = {{
+                borderRadius : '2.5rem',
+              }}
+              
             />
             <InputAddress
               name='send-address'
               focus={focus === 'recipient'}
-              label='Recipient address'
+              label=''
               placeholder={getNetworkConfig(selectedMethod)?.addressPlaceholder || 'Paste address'}
               onChange={handleRecipientChange}
               onEnter={handleEnter}
@@ -591,13 +620,14 @@ export default function SendForm() {
               openScan={() => setScan(true)}
               value={recipient}
             />
+            
             <InfoContainer>
               {' '}
               {selectedMethod === TRANSFER_METHOD.lightning && !invoice ? (
                 <InfoLine
                   compact
                   color='neutral'
-                  icon={<InfoIcon />}
+                  icon={getIconComponent('info')}
                   text='Paste a Lightning invoice to send payment. The payment amount is encoded in the invoice.'
                 />
               ) : null}{' '}
@@ -610,11 +640,12 @@ export default function SendForm() {
                   text={item.text}
                 />
               ))}
-              {methodFeeText ? <InfoLine compact color='orange' icon={<FeesIcon />} text={methodFeeText} /> : null}
+              {methodFeeText ? <InfoLine compact color='orange' icon={getIconComponent('receipt')} text={methodFeeText} /> : null}
               {deductFromAmount ? (
                 <InfoLine compact color='orange' text='Fees will be deducted from the amount sent' />
               ) : null}
             </InfoContainer>
+            </div>
             {tryingToSelfSend ? (
               <div style={{ width: '100%' }}>
                 <Text centered small>
@@ -633,7 +664,8 @@ export default function SendForm() {
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        <Button onClick={handleContinue} label={label} disabled={buttonDisabled} />
+        <Button onClick={handleContinue} label={label} icon={<img src = {checkMarkIcon} alt = 'checkMark' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(-1)', marginLeft: '0.5rem'}} />} disabled={buttonDisabled}
+        style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '100%', height: '48px', borderRadius: '16px', color:'rgba(16,16,21,1)' ,backgroundColor : 'rgba(255,255,255,0.5)'}} />
       </ButtonsOnBottom>
     </>
   )

@@ -5,6 +5,7 @@ import ScanIcon from '../icons/Scan'
 import PasteIcon from '../icons/Paste'
 import XIcon from '../icons/X'
 import { cn } from '@/lib/utils'
+import addressIcon from '../../public/images/icons/ Book.png'
 
 const buttonVariants = cva('button', {
   variants: {
@@ -40,6 +41,7 @@ interface ButtonProps extends VariantProps<typeof buttonVariants> {
   secondary?: boolean
   small?: boolean
   testId?: string
+  style ?: React.CSSProperties
 }
 
 export default function Button({
@@ -60,6 +62,7 @@ export default function Button({
   secondary,
   testId,
   variant,
+  style, 
 }: ButtonProps) {
   const [pressed, setPressed] = useState(false)
 
@@ -99,7 +102,7 @@ export default function Button({
       onTouchStart={handlePressStart}
       onTouchEnd={handlePressEnd}
       onTouchCancel={handlePressEnd}
-      style={{ margin: '4px 0' }}
+      style={style ?? { margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, }}
     >
       {loading ? (
         <ButtonCentered>
@@ -154,7 +157,6 @@ export function ButtonOnInput({ label, clear, icon, onClick, ariaLabel }: Button
       type='button'
       onClick={handleClick}
       aria-label={ariaLabel || label}
-      className='pill-base'
       style={clear ? { border: 'none', background: 'none' } : {}}
     >
       {icon}
@@ -168,9 +170,13 @@ export function PasteButtonOnInput({ onClick }: { onClick: () => void }) {
 }
 
 export function ScanButtonOnInput({ onClick }: { onClick: () => void }) {
-  return <ButtonOnInput label='Scan QR' icon={<ScanIcon />} onClick={onClick} />
+  return <ButtonOnInput label='' icon={<ScanIcon />} onClick={onClick} />
 }
 
 export function ClearButtonOnInput({ onClick }: { onClick: () => void }) {
   return <ButtonOnInput ariaLabel='Clear' clear icon={<XIcon />} onClick={onClick} />
+}
+
+export function AddressButtonOnInput({ onClick }: { onClick: () => void }) {
+  return <ButtonOnInput label='' icon={<img src={addressIcon} alt='Address' style = {{width: '24px', height: '24px',filter: 'brightness(0) invert(1)', marginRight: '0.5rem'}} />} onClick={onClick} />
 }
