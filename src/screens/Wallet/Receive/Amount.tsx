@@ -382,7 +382,7 @@ export default function ReceiveAmount() {
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        <Button label='Share' onClick={handleShare} icon={<img src = {checkMarkIcon} alt = 'checkMark' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)', marginLeft: '0.5rem'}} />} disabled={disabled} style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '357px', height: '48px', borderRadius: '16px',}} />
+        <Button label='Share' onClick={handleShare} icon={<img src = {checkMarkIcon} alt = 'checkMark' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)', marginLeft: '0.5rem'}} />} disabled={disabled} style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '100%', height: '48px', borderRadius: '16px',}} />
         {showFaucetButton ? <Button disabled={!satoshis} label='Faucet' onClick={handleFaucet} secondary /> : null}
       </ButtonsOnBottom>
     </>

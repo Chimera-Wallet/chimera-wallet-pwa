@@ -361,7 +361,7 @@ export default function BankReceive() {
           icon = {<img src = {rightIcon} alt = 'rightArrow' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)', marginLeft: '0.5rem'}} />}
           disabled={!validation.canProceed || loading}
           loading={loading}
-          style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '357px', height: '48px', borderRadius: '16px',}}
+          style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '100%', height: '48px', borderRadius: '16px',}}
         />
       </ButtonsOnBottom>
     </>

@@ -665,7 +665,7 @@ export default function SendForm() {
       </Content>
       <ButtonsOnBottom>
         <Button onClick={handleContinue} label={label} icon={<img src = {checkMarkIcon} alt = 'checkMark' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(-1)', marginLeft: '0.5rem'}} />} disabled={buttonDisabled}
-        style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '357px', height: '48px', borderRadius: '16px', color:'rgba(16,16,21,1)' ,backgroundColor : 'rgba(255,255,255,0.5)'}} />
+        style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '100%', height: '48px', borderRadius: '16px', color:'rgba(16,16,21,1)' ,backgroundColor : 'rgba(255,255,255,0.5)'}} />
       </ButtonsOnBottom>
     </>
   )

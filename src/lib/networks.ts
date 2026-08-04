@@ -45,7 +45,6 @@ export const NETWORKS: Record<TransferMethod, NetworkConfig> = {
 // List of networks for send functionality
 export const SEND_NETWORK_LIST: NetworkConfig[] = [
   NETWORKS[TRANSFER_METHOD.ark],
-  NETWORKS[TRANSFER_METHOD.lightning],
   NETWORKS[TRANSFER_METHOD.bitcoin],
   NETWORKS[TRANSFER_METHOD.bank],
 ]
