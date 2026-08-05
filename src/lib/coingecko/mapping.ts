@@ -16,7 +16,7 @@ const CRYPTO_COINGECKO_ID_MAP: Record<AssetSymbol, CoinGeckoAssetID> = {
   USDT: 'tether',
   ETH: 'ethereum',
   TRX: 'tron',
-  MATIC: 'matic-network',
+  POL: 'polygon-ecosystem-token',
   CEXT: 'bitcoin',
 }
 

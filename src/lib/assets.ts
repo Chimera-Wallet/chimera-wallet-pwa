@@ -34,7 +34,7 @@ export const ASSETS = {
     color: 'asset-trx',
     precision: 6,
   },
-  MATIC: {
+  POL: {
     symbol: 'POL',
     name: 'Polygon',
     color: 'asset-matic',
@@ -58,7 +58,7 @@ export const ASSET_LIST: AssetConfig[] = [
   ASSETS.USDT,
   ASSETS.ETH,
   ASSETS.TRX,
-  ASSETS.MATIC,
+  ASSETS.POL,
   ASSETS.CEXT,
 ]
 
