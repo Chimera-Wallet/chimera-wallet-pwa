@@ -55,3 +55,10 @@ export const ALL_NETWORK_LIST: NetworkConfig[] = Object.values(NETWORKS)
 export const getNetworkConfig = (id: TransferMethod): NetworkConfig | undefined => {
   return NETWORKS[id]
 }
+
+/** Like `getNetworkConfig` but throws a descriptive error if the id is not found. */
+export const requireNetworkConfig = (id: TransferMethod): NetworkConfig => {
+  const config = getNetworkConfig(id)
+  if (!config) throw new Error(`Unknown network id: "${id}"`)
+  return config
+}

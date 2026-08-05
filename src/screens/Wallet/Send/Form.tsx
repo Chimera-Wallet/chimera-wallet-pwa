@@ -41,9 +41,11 @@ import { decodeBip21, isBip21 } from '../../../lib/bip21'
 import { FeesContext } from '../../../providers/fees'
 import { InfoLine } from '../../../components/Info'
 import { getNetworkConfig } from '../../../lib/networks'
-import { type AssetSymbol } from '../../../lib/assets'
+import { getAssetConfig, requireAssetConfig, type AssetSymbol } from '../../../lib/assets'
+import { assetSupportsWrap, requireAssetChainOption, type SourceChainId } from '../../../lib/sourceChains'
 import AssetSelector from '../../../components/AssetSelector'
 import NetworkSelector from '../../../components/NetworkSelector'
+import AssetNetworkSelector, { type AssetNetworkChoice } from '../../../components/AssetNetworkSelector'
 import InlineAmountInput from '../../../components/InlineAmountInput'
 import WhenIcon from '../../../icons/When'
 import FeesIcon from '../../../icons/Fees'
@@ -60,7 +62,7 @@ export default function SendForm() {
   const { config, useFiat } = useContext(ConfigContext)
   const { calcOnchainOutputFee } = useContext(FeesContext)
   const { fromFiat, toFiat } = useContext(FiatContext)
-  const { sendInfo, setNoteInfo, setSendInfo } = useContext(FlowContext)
+  const { sendInfo, setNoteInfo, setSendInfo, setUnwrapSendInfo } = useContext(FlowContext)
   const { createSubmarineSwap, connected, calcSubmarineSwapFee, getApiUrl } = useContext(SwapsContext)
   const { amountIsAboveMaxLimit, amountIsBelowMinLimit, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
   const { setOption } = useContext(OptionsContext)
@@ -582,6 +584,51 @@ export default function SendForm() {
               </div>
             ) : null}
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100', gap:'1rem'}}>
+            {assetSupportsWrap(requireAssetConfig(selectedAsset).symbol) ? (
+              <AssetNetworkSelector
+                assetSymbol={requireAssetConfig(selectedAsset).symbol}
+                mode='send'
+                label=''
+                selected={
+                  selectedMethod === TRANSFER_METHOD.bank
+                    ? 'bank'
+                    : (selectedMethod as AssetNetworkChoice)
+                }
+                onSelect={(choice) => {
+                  if (choice === TRANSFER_METHOD.bank) {
+                    setSendInfo({ ...sendInfo, method: TRANSFER_METHOD.bank })
+                    navigate(Pages.BankSend)
+                    return
+                  }
+                  if (choice === TRANSFER_METHOD.ark) {
+                    setRecipient('')
+                    setSendInfo({
+                      ...sendInfo,
+                      method: TRANSFER_METHOD.ark,
+                      address: '',
+                      arkAddress: '',
+                      invoice: '',
+                      lnUrl: undefined,
+                      pendingSwap: undefined,
+                      recipient: '',
+                    })
+                    return
+                  }
+                  // Native destination chain selected -> Arkade Unwrap flow
+                  const symbol = requireAssetConfig(selectedAsset).symbol
+                  const option = requireAssetChainOption(symbol, choice as SourceChainId)
+                  setUnwrapSendInfo({
+                    assetSymbol: symbol,
+                    chainId: choice as SourceChainId,
+                    ticker: option.ticker,
+                    sender: '',
+                    receiver: '',
+                  })
+                  navigate(Pages.UnwrapSend)
+                }}
+                style={{ borderRadius: '2.5rem' }}
+              />
+            ) : (
             <NetworkSelector
               label=''
               selected={selectedMethod}
@@ -609,6 +656,7 @@ export default function SendForm() {
               }}
               
             />
+            )}
             <InputAddress
               name='send-address'
               focus={focus === 'recipient'}

@@ -26,9 +26,11 @@ import ExpandAddresses from '../../../components/ExpandAddresses'
 import { canBrowserShareData, shareData } from '../../../lib/share'
 import { NotificationsContext } from '../../../providers/notifications'
 import { encodeBip21 } from '../../../lib/bip21'
-import { ASSETS, type AssetSymbol } from '../../../lib/assets'
+import { ASSETS, getAssetConfig, requireAssetConfig, type AssetSymbol } from '../../../lib/assets'
+import { assetSupportsWrap, requireAssetChainOption, type SourceChainId } from '../../../lib/sourceChains'
 import AssetSelector from '../../../components/AssetSelector'
 import NetworkSelector from '../../../components/NetworkSelector'
+import AssetNetworkSelector, { type AssetNetworkChoice } from '../../../components/AssetNetworkSelector'
 import InlineAmountInput from '../../../components/InlineAmountInput'
 import WhenIcon from '../../../icons/When'
 import FeesIcon from '../../../icons/Fees'
@@ -47,7 +49,7 @@ import checkMarkIcon from '../../../../public/images/icons/ CheckCheckMark.png'
 
 export default function ReceiveAmount() {
   const { aspInfo } = useContext(AspContext)
-  const { recvInfo, setRecvInfo } = useContext(FlowContext)
+  const { recvInfo, setRecvInfo, setWrapRecvInfo } = useContext(FlowContext)
   const { navigate } = useContext(NavigationContext)
   const { notifyPaymentReceived } = useContext(NotificationsContext)
   const { arkadeSwaps, createReverseSwap, calcReverseSwapFee } = useContext(SwapsContext)
@@ -316,6 +318,43 @@ export default function ReceiveAmount() {
             }} />
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100', gap:'1rem'}}>
 
+            {assetSupportsWrap(requireAssetConfig(selectedAsset).symbol) ? (
+              <AssetNetworkSelector
+                assetSymbol={requireAssetConfig(selectedAsset).symbol}
+                mode='receive'
+                label=''
+                selected={
+                  selectedMethod === TRANSFER_METHOD.bank
+                    ? 'bank'
+                    : (selectedMethod as AssetNetworkChoice)
+                }
+                onSelect={(choice) => {
+                  if (choice === TRANSFER_METHOD.bank) {
+                    setRecvInfo({ ...recvInfo, method: TRANSFER_METHOD.bank })
+                    navigate(Pages.BankReceive)
+                    return
+                  }
+                  if (choice === TRANSFER_METHOD.ark) {
+                    setInvoice('')
+                    setShowQrCode(false)
+                    setRecvInfo({ ...recvInfo, method: TRANSFER_METHOD.ark, invoice: undefined })
+                    return
+                  }
+                  // Native source chain selected -> Arkade Wrap flow
+                  const symbol = requireAssetConfig(selectedAsset).symbol
+                  const option = requireAssetChainOption(symbol, choice as SourceChainId)
+                  setWrapRecvInfo({
+                    assetSymbol: symbol,
+                    chainId: choice as SourceChainId,
+                    ticker: option.ticker,
+                    receiver: recvInfo.offchainAddr ?? '',
+                    sender: '',
+                  })
+                  navigate(Pages.WrapReceive)
+                }}
+                style={{ borderRadius: '2.5rem' }}
+              />
+            ) : (
             <NetworkSelector
               label=''
               selected={selectedMethod}
@@ -334,6 +373,7 @@ export default function ReceiveAmount() {
                      borderRadius : '2.5rem',
                     }}
             />
+            )}
             <InfoContainer>
               {needsAmountInput ? (
                 <InfoLine

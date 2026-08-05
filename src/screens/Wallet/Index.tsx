@@ -24,11 +24,13 @@ import { psaMessage } from '../../lib/constants'
 import { AnnouncementContext } from '../../providers/announcements'
 import { WalletStaggerContainer, WalletStaggerChild } from '../../components/WalletLoadIn'
 import { fromSatoshis } from '../../lib/format'
-import { ASSETS, type AssetSymbol } from '../../lib/assets'
+import { ASSETS, getAssetConfig, requireAssetConfig, type AssetSymbol } from '../../lib/assets'
+import { assetSupportsWrap, requireAssetChainOption, type SourceChainId } from '../../lib/sourceChains'
 import Header from '../../components/Header'
 import TransactionsIcon from '../../icons/Transactions'
 import AssetSelector from '../../components/AssetSelector'
 import NetworkSelector from '../../components/NetworkSelector'
+import AssetNetworkSelector, { type AssetNetworkChoice } from '../../components/AssetNetworkSelector'
 import { TRANSFER_METHOD, type TransferMethod } from '../../lib/transferMethods'
 import StakingBanner from '../../components/StakingBanner'
 import InstallBanner from '../../components/InstallBanner'
@@ -38,7 +40,7 @@ export default function Wallet() {
   const { aspInfo } = useContext(AspContext)
   const { announcement } = useContext(AnnouncementContext)
   const { config, updateConfig } = useContext(ConfigContext)
-  const { setRecvInfo, setSendInfo } = useContext(FlowContext)
+  const { setRecvInfo, setSendInfo, setWrapRecvInfo, setUnwrapSendInfo } = useContext(FlowContext)
   const { isInitialLoad, navigate, navigationCount, screen } = useContext(NavigationContext)
   const { balance, dataReady, txs } = useContext(WalletContext)
   const { nudge, nudgeVisible, nudgeCheckComplete } = useContext(NudgeContext)
@@ -165,6 +167,60 @@ export default function Wallet() {
     setFlowMode(null)
   }
 
+  const handleAssetNetworkChoice = (choice: AssetNetworkChoice) => {
+    setShowNetworkSelector(false)
+    if (!flowMode) return
+
+    const symbol = requireAssetConfig(selectedFlowAsset).symbol
+
+    if (choice === TRANSFER_METHOD.bank) {
+      if (flowMode === 'send') {
+        setSendInfo({ ...emptySendInfo, method: TRANSFER_METHOD.bank })
+        navigate(Pages.BankSend)
+      } else {
+        setRecvInfo({ ...emptyRecvInfo, method: TRANSFER_METHOD.bank })
+        navigate(Pages.BankReceive)
+      }
+      setFlowMode(null)
+      return
+    }
+
+    if (choice === TRANSFER_METHOD.ark) {
+      if (flowMode === 'send') {
+        setSendInfo({ ...emptySendInfo, method: TRANSFER_METHOD.ark })
+        navigate(Pages.SendForm)
+      } else {
+        setRecvInfo({ ...emptyRecvInfo, method: TRANSFER_METHOD.ark })
+        navigate(Pages.ReceiveAmount)
+      }
+      setFlowMode(null)
+      return
+    }
+
+    // Native source/destination chain -> Arkade Wrap / Unwrap flow
+    const option = requireAssetChainOption(symbol, choice as SourceChainId)
+    if (flowMode === 'send') {
+      setUnwrapSendInfo({
+        assetSymbol: symbol,
+        chainId: choice as SourceChainId,
+        ticker: option.ticker,
+        sender: '',
+        receiver: '',
+      })
+      navigate(Pages.UnwrapSend)
+    } else {
+      setWrapRecvInfo({
+        assetSymbol: symbol,
+        chainId: choice as SourceChainId,
+        ticker: option.ticker,
+        receiver: '',
+        sender: '',
+      })
+      navigate(Pages.WrapReceive)
+    }
+    setFlowMode(null)
+  }
+
   const handleAssetClick = (symbol: AssetSymbol) => {
     setSelectedAsset(symbol)
   }
@@ -215,12 +271,23 @@ export default function Wallet() {
           />
         ) : null}
         {showNetworkSelector ? (
-          <NetworkSelector
-            selected={selectedNetwork}
-            onSelect={handleNetworkSelected}
-            isOpen={showNetworkSelector}
-            setIsOpen={setShowNetworkSelector}
-          />
+          assetSupportsWrap(requireAssetConfig(selectedFlowAsset).symbol) ? (
+            <AssetNetworkSelector
+              assetSymbol={requireAssetConfig(selectedFlowAsset).symbol}
+              mode={flowMode === 'send' ? 'send' : 'receive'}
+              selected={selectedNetwork as AssetNetworkChoice | undefined}
+              onSelect={handleAssetNetworkChoice}
+              isOpen={showNetworkSelector}
+              setIsOpen={setShowNetworkSelector}
+            />
+          ) : (
+            <NetworkSelector
+              selected={selectedNetwork}
+              onSelect={handleNetworkSelected}
+              isOpen={showNetworkSelector}
+              setIsOpen={setShowNetworkSelector}
+            />
+          )
         ) : null}
       </>
     )
@@ -323,12 +390,23 @@ export default function Wallet() {
         />
       ) : null}
       {showNetworkSelector ? (
-        <NetworkSelector
-          selected={selectedNetwork}
-          onSelect={handleNetworkSelected}
-          isOpen={showNetworkSelector}
-          setIsOpen={setShowNetworkSelector}
-        />
+        assetSupportsWrap(requireAssetConfig(selectedFlowAsset).symbol) ? (
+          <AssetNetworkSelector
+            assetSymbol={requireAssetConfig(selectedFlowAsset).symbol}
+            mode={flowMode === 'send' ? 'send' : 'receive'}
+            selected={selectedNetwork as AssetNetworkChoice | undefined}
+            onSelect={handleAssetNetworkChoice}
+            isOpen={showNetworkSelector}
+            setIsOpen={setShowNetworkSelector}
+          />
+        ) : (
+          <NetworkSelector
+            selected={selectedNetwork}
+            onSelect={handleNetworkSelected}
+            isOpen={showNetworkSelector}
+            setIsOpen={setShowNetworkSelector}
+          />
+        )
       ) : null}
     </>
   )
