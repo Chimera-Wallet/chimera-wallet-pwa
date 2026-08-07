@@ -52,7 +52,7 @@
   "scripts": {
     "prepare": "husky install",
     "start": "pnpm git-info && pnpm build:worker && vite",
-    "start:staging": "pnpm git-info && pnpm build:worker:staging && vite --mode staging",
+    "start:staging": "pnpm git-info && pnpm build:worker:staging && cross-env VITE_DELEGATE_ENABLED=false vite --mode staging",
     "start:mainnet": "pnpm git-info && pnpm build:worker && cross-env VITE_ARK_SERVER=https://arkade.computer VITE_BOLTZ_URL=https://api.boltz.exchange vite",
     "build": "pnpm git-info && pnpm build:worker && vite build",
     "build:staging": "pnpm git-info && pnpm build:worker:staging && vite build --mode staging",
