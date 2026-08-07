@@ -34,7 +34,7 @@ export const ASSETS = {
     color: 'asset-trx',
     precision: 6,
   },
-  MATIC: {
+  POL: {
     symbol: 'POL',
     name: 'Polygon',
     color: 'asset-matic',
@@ -51,12 +51,26 @@ export const ASSETS = {
 
 export type AssetSymbol = keyof typeof ASSETS
 
-// TEMPORARY: Only show BTC
-export const ASSET_LIST: AssetConfig[] = [ASSETS.BTC, ASSETS.CEXT]
-// export const ASSET_LIST: AssetConfig[] = Object.values(ASSETS)
+// Assets enabled in the wallet. BTC uses the Ark/Lightning/Bitcoin flows; the
+// remaining assets are bridged to/from their native chains via the Arkade Wrap API.
+export const ASSET_LIST: AssetConfig[] = [
+  ASSETS.BTC,
+  ASSETS.USDT,
+  ASSETS.ETH,
+  ASSETS.TRX,
+  ASSETS.POL,
+  ASSETS.CEXT,
+]
 
 export const getAssetConfig = (symbol: string): AssetConfig | undefined => {
   return ASSETS[symbol.toUpperCase() as AssetSymbol]
+}
+
+/** Like `getAssetConfig` but throws a descriptive error if the symbol is not found. */
+export const requireAssetConfig = (symbol: string): AssetConfig => {
+  const config = getAssetConfig(symbol)
+  if (!config) throw new Error(`Unknown asset symbol: "${symbol}"`)
+  return config
 }
 
 export const getAssetColor = (symbol: string): string => {

@@ -10,7 +10,7 @@ import Content from '../../../components/Content'
 import FlexCol from '../../../components/FlexCol'
 import Header from '../../../components/Header'
 import Padded from '../../../components/Padded'
-import { TextLabel, TextSecondary } from '../../../components/Text'
+import { TextSecondary } from '../../../components/Text'
 import Button from '../../../components/Button'
 import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import ErrorMessage from '../../../components/Error'
@@ -20,7 +20,7 @@ import AssetSelector from '../../../components/AssetSelector'
 import NetworkSelector from '../../../components/NetworkSelector'
 import InlineAmountInput from '../../../components/InlineAmountInput'
 import BankTransferValidationMessages from '../../../components/BankTransferValidation'
-import type { AssetSymbol } from '../../../lib/assets'
+import { getAssetConfig, requireAssetConfig, type AssetSymbol } from '../../../lib/assets'
 import {
   TRANSFER_METHOD,
   TERMS_AND_CONDITIONS,
@@ -140,7 +140,7 @@ export default function BankReceive() {
         email: getUserEmailForBankTransfer(),
         from_amount: numAmount,
         from_asset: currency,
-        to_asset: 'BTC-ARK',
+        to_asset: `${requireAssetConfig(selectedAsset).symbol}-ARK`,
         destination_address: arkAddress,
         ...(subid ? { sub_id: subid } : {}),
       })

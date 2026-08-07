@@ -16,6 +16,8 @@ import SendDetails from '../screens/Wallet/Send/Details'
 import SendSuccess from '../screens/Wallet/Send/Success'
 import BankReceive from '../screens/Wallet/Receive/BankReceive'
 import BankSend from '../screens/Wallet/Send/BankSend'
+import WrapReceive from '../screens/Wallet/Receive/WrapReceive'
+import UnwrapSend from '../screens/Wallet/Send/UnwrapSend'
 import BankOrderStatus from '../screens/Wallet/BankOrderStatus'
 import BankOrderHistory from '../screens/Wallet/BankOrderHistory'
 import Transaction from '../screens/Wallet/Transaction'
@@ -98,6 +100,8 @@ export enum Pages {
   ReceiveAmount,
   ReceiveQRCode,
   ReceiveSuccess,
+  WrapReceive,
+  UnwrapSend,
   BankReceive,
   BankSend,
   BankOrderStatus,
@@ -164,6 +168,8 @@ const pageTab: Record<Pages, Tabs> = {
   [Pages.ReceiveAmount]: Tabs.Wallet,
   [Pages.ReceiveQRCode]: Tabs.Wallet,
   [Pages.ReceiveSuccess]: Tabs.Wallet,
+  [Pages.WrapReceive]: Tabs.Wallet,
+  [Pages.UnwrapSend]: Tabs.Wallet,
   [Pages.BankReceive]: Tabs.Wallet,
   [Pages.BankSend]: Tabs.Wallet,
   [Pages.BankOrderStatus]: Tabs.Wallet,
@@ -277,6 +283,10 @@ export const pageComponent = (page: Pages, navigationData?: Record<string, unkno
       return <ReceiveQRCode />
     case Pages.ReceiveSuccess:
       return <ReceiveSuccess />
+    case Pages.WrapReceive:
+      return <WrapReceive />
+    case Pages.UnwrapSend:
+      return <UnwrapSend />
     case Pages.BankReceive:
       return <BankReceive />
     case Pages.BankSend:
