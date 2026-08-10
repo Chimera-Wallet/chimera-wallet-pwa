@@ -46,6 +46,7 @@ import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
 import clockIcon from '../../../../public/images/icons/ Clock.svg'
 import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
 import checkMarkIcon from '../../../../public/images/icons/ CheckCheckMark.png'
+import {useTranslation} from 'react-i18next'
 
 export default function ReceiveAmount() {
   const { aspInfo } = useContext(AspContext)
@@ -66,6 +67,8 @@ export default function ReceiveAmount() {
   const [qrValue, setQrValue] = useState('')
   const [bip21uri, setBip21uri] = useState('')
   const [showQrCode, setShowQrCode] = useState(false)
+  const { t } = useTranslation()
+
 
   // Asset and network can be changed, initialized from wallet flow or defaults
   const [selectedAsset, setSelectedAsset] = useState<AssetSymbol>('BTC')
@@ -388,7 +391,7 @@ export default function ReceiveAmount() {
                   compact
                   color={item.color}
                   icon={getIconComponent(item.icon)}
-                  text={item.text}
+                  text={t(item.text)}
                 />
               ))}
               {showLightningFees ? (
