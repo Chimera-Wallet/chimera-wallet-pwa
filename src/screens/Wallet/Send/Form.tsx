@@ -289,22 +289,22 @@ export default function SendForm() {
       return
     }
     const satoshis = sendInfo.satoshis ?? 0
-    setLabel(
+    setLabel(t(
       satoshis > availableBalance
-        ? 'Insufficient funds'
+        ? 'insufficient_funds_send'
         : lnUrlLimits.min && satoshis < lnUrlLimits.min
-          ? 'Amount below LNURL min limit'
+          ? 'LNURL_min_limit_error'
           : lnUrlLimits.max && satoshis > lnUrlLimits.max
-            ? 'Amount above LNURL max limit'
+            ? 'LNURL_max_limit_error'
             : satoshis && satoshis < 1
-              ? 'Amount below 1 satoshi'
+              ? 'sat_min_error'
               : amountIsAboveMaxLimit(satoshis)
-                ? 'Amount above max limit'
+                ? 'sat_max_error_limit'
                 : satoshis && amountIsBelowMinLimit(satoshis)
-                  ? 'Amount below min limit'
+                  ? 'sat_min_error_limit'
                   : amountBelowOnchainFee(satoshis)
-                    ? 'Amount below network fee'
-                    : 'Confirm Sending'
+                    ? 'network_fee_error'
+                    : 'confirm_sending')
     )
   }, [sendInfo.satoshis, availableBalance, selectedMethod, onchainOutputFee])
 
@@ -663,7 +663,7 @@ export default function SendForm() {
               name='send-address'
               focus={focus === 'recipient'}
               label=''
-              placeholder={getNetworkConfig(selectedMethod)?.addressPlaceholder || 'Paste address'}
+              placeholder={t(getNetworkConfig(selectedMethod)?.addressPlaceholder ?? 'address_placeholder_fallback') || 'Paste address'}
               onChange={handleRecipientChange}
               onEnter={handleEnter}
               openAddressBook={() => navigate(Pages.AppAddressBook, { selectionMode: true, returnTo: Pages.SendForm })}

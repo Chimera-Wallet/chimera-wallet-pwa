@@ -3,7 +3,7 @@ import { initReactI18next } from 'react-i18next'
 
 i18n.use(initReactI18next).init({
   debug: import.meta.env.DEV,
-  fallbackLng: 'es',
+  fallbackLng: 'en',
   interpolation: {
     escapeValue: false,
   },
@@ -41,6 +41,29 @@ i18n.use(initReactI18next).init({
         
         bank_time_tc_rcv: 'The transfer time might vary depending on the bank, from instant to 48 hours.',
         bank_fees_tc_rcv: 'The fees for bank deposits are 0.6% of the received amount if over 1000 CHF.\nThe fees for bank deposits are 1% of the received amount if under 1000 CHF.\nYour bank might charge some additional fees we are not aware of.',
+
+        ark_network_selector_descr: 'Instant, low-fee Bitcoin transfers',
+        lightning_network_selector_descr: 'Fast Lightning Network payments',
+        bitcoin_network_selector_descr: 'Bitcoin on-chain transactions',
+        bank_network_selector_descr: 'Traditional bank transfers',
+
+        address_placeholder_fallback: 'Paste address',
+        ark_address_placeholder: 'Paste Arkade address',
+        lightning_address_placeholder: 'Paste Lightning invoice address',
+        bitcoin_address_placeholder: 'Paste BTC address',
+        bank_address_placeholder: 'Enter bank details',
+        fallback_network_descr: 'Select a network to see its description',
+
+        insufficient_funds_send: 'Insufficient funds',
+        LNURL_min_limit_error: 'Amount below LNURL min limit',
+        LNURL_max_limit_error: 'Amount above LNURL max limit',
+        sat_min_error: 'Amount below 1 satoshi',
+        sat_max_error_limit: 'Amount above max limit',
+        sat_min_error_limit: 'Amount below min limit',
+        network_fee_error: 'Amount below network fee',
+        confirm_sending: 'Confirm Sending',
+
+
       },
     },
     es:{
@@ -76,6 +99,27 @@ i18n.use(initReactI18next).init({
 
             bank_time_tc_rcv: 'El tiempo de transferencia puede variar dependiendo del banco, desde instantáneo hasta 48 horas.',
             bank_fees_tc_rcv: 'Las tarifas para retiros bancarios son del 0.3% de la cantidad enviada si es mayor a 1000 CHF.\nLas tarifas para retiros bancarios son del 1% de la cantidad enviada si es menor a 1000 CHF.\nTu banco podría cobrar algunas tarifas adicionales de las que no somos conscientes.',
+
+            ark_network_selector_descr: 'Transferencias instantáneas y de bajo coste de Bitcoin',
+            lightning_network_selector_descr: 'Pagos rápidos con red Lightning',
+            bitcoin_network_selector_descr: 'Transferencias Bitcoin en cadena',
+            bank_network_selector_descr: 'Transferencias bancarias tradicionales',
+
+            address_placeholder_fallback: 'Pegar dirección',
+            ark_address_placeholder: 'Pegar dirección Arkade',
+            lightning_address_placeholder: 'Pegar dirección de factura Lightning',
+            bitcoin_address_placeholder: 'Pegar dirección BTC',
+            bank_address_placeholder: 'Ingresar detalles del banco',
+            fallback_network_descr: 'Selecciona una red para ver su descripción',
+
+            insufficient_funds_send: 'Fondos insuficientes',
+            LNURL_min_limit_error: 'Cantidad menor al limite mínimo LNURL',
+            LNURL_max_limit_error: 'Cantidad mayor al limite máximo LNURL ',
+            sat_min_error: 'Cantidad inferior a 1 satoshi',
+            sat_max_error_limit: 'Cantidad mayor al limite máximo',
+            sat_min_error_limit: 'Cantidad inferior al límite mínimo',
+            network_fee_error: 'Cantided inferior a la comisión de red',
+            confirm_sending: 'Confirmar envío',
         },
     },
     it: {
@@ -111,6 +155,27 @@ i18n.use(initReactI18next).init({
 
             bank_time_tc_rcv: 'Il tempo di transferimento può variare a seconda della banca, da istantaneo a 48 ore.',
             bank_fees_tc_rcv: 'Le tariffe per i prelievi bancari sono del 0.3% del importo inviato se superiore a 1000CHF\nLe tariffe per i prelievi bancari sono del 1% del importo inviato se inferiore a 1000CHF\nLa tua banca potrebbe addebitare alcune tariffe aggiuntive di cui non siamo a conoscenza.',
+
+            ark_network_selector_descr: 'Transferimenti instantanei a basso costo Bitcoin',
+            lightning_network_selector_descr: 'Pagamenti rapidi con rete Lightning',
+            bitcoin_network_selector_descr: 'Transazioni Bitcoin on-chain',
+            bank_network_selector_descr: 'Transferenze bancarie tradizionali',
+
+            address_placeholder_fallback: 'Incolla indirizzo',
+            ark_address_placeholder: 'Incolla indirizzo Arkade',
+            lightning_address_placeholder: 'Incolla indirizzo fattura Lightning',
+            bitcoin_address_placeholder: 'Incolla indirizzo BTC',
+            bank_address_placeholder: 'Inserisci dettagli bancari',
+            fallback_network_descr: 'Seleziona una rete per vedere la sua descrizione',
+
+            insufficient_funds_send: 'Fondi insufficienti',
+            LNURL_min_limit_error: 'Quantità inferiore al limite minimo LNURL',
+            LNURL_max_limit_error: 'Quantità superiore al limite massimo LNURL',
+            sat_min_error: 'Quantità inferiore a 1 satoshi',
+            sat_max_error_limit: 'Quantità superiore al limite massimo',
+            sat_min_error_limit: 'Quantità inferiore al limite minimo',
+            network_fee_error: 'Quantità inferiore alla commissione di rete ',
+            confirm_sending: 'Conferma invio',
         },
     },
   },

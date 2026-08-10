@@ -4,6 +4,7 @@ import { SEND_NETWORK_LIST, getNetworkConfig } from '../lib/networks'
 import NetworkIcon from '../icons/NetworkIcon'
 import SelectSheet from './SelectSheet'
 import SelectorField from './SelectorField'
+import {useTranslation} from 'react-i18next'
 
 interface NetworkSelectorProps {
   label?: string
@@ -27,12 +28,13 @@ export default function NetworkSelector({
   // Use external state if provided, otherwise use internal state
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen
   const setIsOpen = externalSetIsOpen || setInternalIsOpen
+  const { t } = useTranslation()
 
   const selectedConfig = selected ? getNetworkConfig(selected) : undefined
   const options = SEND_NETWORK_LIST.map((network) => ({
     id: network.id,
     label: network.name,
-    description: network.description,
+    description: t(network.description),
     icon: <NetworkIcon network={network.id} size={24} />,
   }))
 
@@ -43,7 +45,7 @@ export default function NetworkSelector({
         label={label !== undefined ? label : 'Network'}
         onClick={() => setIsOpen(true)}
         value={selectedConfig?.name || selected || 'Select network'}
-        sublabel={selectedConfig?.description}
+        sublabel={t(selectedConfig?.description ?? 'fallback_network_descr')}
         style = {style}
       />
       <SelectSheet

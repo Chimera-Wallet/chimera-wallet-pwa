@@ -60,6 +60,7 @@ import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
 import clockIcon from '../../../../public/images/icons/ Clock.svg'
 import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
 import rightIcon from '../../../../public/images/icons/ Right.png'
+import i18n from '../../../lib/i18n'
 
 export default function BankReceive() {
   const { navigate, goBack } = useContext(NavigationContext)
@@ -68,6 +69,8 @@ export default function BankReceive() {
   const { notifyResult } = useContext(TxResultContext)
 
   const bankConfig = getBankTransferConfigSync()
+
+  const { t } = i18n
 
   // Asset and network state (matching ReceiveAmount layout)
   const [selectedAsset, setSelectedAsset] = useState<AssetSymbol>('BTC')
@@ -342,7 +345,7 @@ export default function BankReceive() {
                   }
                 }
                 return (
-                  <InfoLine key={item.text} compact color={item.color} icon={getIcon(item.icon)} text={item.text} />
+                  <InfoLine key={item.text} compact color={item.color} icon={getIcon(item.icon)} text={t(item.text)} />
                 )
               })}
             </InfoContainer>
