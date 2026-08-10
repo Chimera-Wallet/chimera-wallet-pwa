@@ -55,6 +55,7 @@ import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
 import clockIcon from '../../../../public/images/icons/ Clock.svg'
 import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
 import checkMarkIcon from '../../../../public/images/icons/ CheckCheckMark.png'
+import {useTranslation} from 'react-i18next'
 
 
 export default function SendForm() {
@@ -84,6 +85,7 @@ export default function SendForm() {
   const [receivingAddresses, setReceivingAddresses] = useState<Addresses>()
   const [scan, setScan] = useState(false)
   const [tryingToSelfSend, setTryingToSelfSend] = useState(false)
+  const { t } = useTranslation()
 
   // Asset and network can be changed, initialized from wallet flow or defaults
   const [selectedAsset, setSelectedAsset] = useState<AssetSymbol>('BTC')
@@ -685,7 +687,7 @@ export default function SendForm() {
                   compact
                   color={item.color}
                   icon={getIconComponent(item.icon)}
-                  text={item.text}
+                  text={t(item.text)}
                 />
               ))}
               {methodFeeText ? <InfoLine compact color='orange' icon={getIconComponent('receipt')} text={methodFeeText} /> : null}

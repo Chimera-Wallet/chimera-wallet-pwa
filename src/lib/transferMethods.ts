@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 export type TransferMethod = 'bitcoin' | 'ark' | 'lightning' | 'bank'
 
 export const TRANSFER_METHOD = {
@@ -36,15 +37,15 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
       {
         icon: 'info',
         color: 'orange',
-        text: 'Please ensure you send only Bitcoin to a valid Arkade or mainnet address. Any other address will cause the assets to be forever lost, and there is no option to recover it.',
+        text: 'btc_address_tc',
       },
       {
         icon: 'clock',
-        text: 'The transfer time for on-chain Bitcoin depends on network congestion and is, on average, 10 minutes for the first confirmation. If your wallet supports Arkade VTXO the transaction will be instant.',
+        text: 'btc_time_tc',
       },
       {
         icon: 'receipt',
-        text: 'Fees are dynamic on the Bitcoin network and are related to how fast you want to receive your transaction and how the sending wallet manages the transactions. Fees for Arkade compatible wallets are close to 0.',
+        text: 'btc_fees_tc',
       },
     ],
     ark: [
