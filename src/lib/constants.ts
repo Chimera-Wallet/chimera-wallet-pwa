@@ -1,12 +1,7 @@
 import { Delegate } from './types'
-import { Network } from '@arkade-os/boltz-swap'
 
 export const arknoteHRP = 'arknote'
 export const defaultFee = 0
-export const testDomains = ['dev.arkade.money', 'next.arkade.money', 'pages.dev', 'localhost']
-export const devServer = 'https://signet.arkade.sh'
-export const testServer = 'https://signet.arkade.sh'
-export const mainServer = 'https://arkade.computer'
 export const defaultPassword = 'noah'
 export const minSatsToNudge = 100_000
 export const maxPercentage = import.meta.env.VITE_MAX_PERCENTAGE ?? 10
@@ -14,28 +9,36 @@ export const psaMessage = import.meta.env.VITE_PSA_MESSAGE ?? ''
 export const enableChainSwapsReceive = import.meta.env.VITE_CHAIN_SWAPS_RECEIVE_ENABLED === 'true'
 export const lnurlServerUrl: string | undefined = import.meta.env.VITE_LNURL_SERVER_URL
 
-export const defaultArkServer = () => {
-  if (import.meta.env.VITE_ARK_SERVER) return import.meta.env.VITE_ARK_SERVER
-  for (const domain of testDomains) {
-    if (window.location.hostname.includes(domain)) {
-      return window.location.hostname.includes('localhost') ? devServer : testServer
-    }
+// Hostnames used to detect a non-production (test/staging) deployment when
+// selecting environment-specific app and KYC URLs. These are Chimera app hosts,
+// not ARK server endpoints, so there is no network fallback here.
+export const testDomains = ['dev.arkade.money', 'next.arkade.money', 'pages.dev', 'localhost']
+
+// The Arkade server is resolved exclusively from the environment. There is no
+// fallback: if VITE_ARK_SERVER is not configured we throw so the app fails to
+// start instead of silently connecting to the wrong network.
+export const defaultArkServer = (): string => {
+  const url = import.meta.env.VITE_ARK_SERVER
+  if (!url || url.trim() === '') {
+    throw new Error('VITE_ARK_SERVER is not configured')
   }
-  return mainServer
+  return url
 }
 
-const DELEGATE_URL: Record<Network, string | null> = {
-  bitcoin: 'https://delegate.arkade.money',
-  mutinynet: `https://delegator.mutinynet.arkade.sh`,
-  signet: null,
-  regtest: 'http://localhost:7012',
-  testnet: null,
-}
+// Delegation is active only when the deployment enabled it and provided a
+// delegator URL. A stale user toggle can never turn it on without config.
+export const isDelegationEnabled = (): boolean =>
+  import.meta.env.VITE_DELEGATE_ENABLED === 'true' &&
+  !!import.meta.env.VITE_DELEGATOR_URL &&
+  import.meta.env.VITE_DELEGATOR_URL.trim() !== ''
 
-export const getDelegateUrlForNetwork = (network: Network): Delegate => {
-  const url = DELEGATE_URL[network]
-  if (!url) {
-    throw new Error(`Delegate URL not found for network: ${network}`)
+// The delegator service URL is resolved exclusively from the environment. There
+// is no fallback: if VITE_DELEGATOR_URL is not configured we throw so delegation
+// can never silently target the wrong endpoint.
+export const getDelegateUrl = (): Delegate => {
+  const url = import.meta.env.VITE_DELEGATOR_URL
+  if (!url || url.trim() === '') {
+    throw new Error('VITE_DELEGATOR_URL is not configured')
   }
   return {
     url,

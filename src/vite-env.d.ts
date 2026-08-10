@@ -7,9 +7,16 @@ interface ImportMetaEnv {
   readonly VITE_ARK_SERVER?: string
   readonly VITE_DEV_NSEC?: string
   readonly VITE_BOLTZ_URL?: string
+  readonly VITE_DELEGATE_ENABLED?: string
   readonly VITE_DELEGATOR_URL?: string
   // Chimera API
   readonly VITE_CHIMERA_API?: string
+  // Arkade wrapped asset IDs (differ per environment)
+  readonly VITE_ARKADE_ETH?: string
+  readonly VITE_ARKADE_USDT?: string
+  readonly VITE_ARKADE_TRX?: string
+  readonly VITE_ARKADE_POL?: string
+  readonly VITE_ARKADE_CEXT?: string
   // App URLs
   readonly VITE_GIFT_CARDS_URL?: string
   readonly VITE_GIFT_CARDS_BUY_URL?: string

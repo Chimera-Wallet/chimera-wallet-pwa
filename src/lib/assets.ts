@@ -77,7 +77,45 @@ export const getAssetColor = (symbol: string): string => {
   return getAssetConfig(symbol)?.color || 'grey'
 }
 
+// Arkade wrapped asset IDs per symbol. These are environment-specific (staging
+// vs production) and are provided via VITE_ARKADE_* env vars. BTC is native and
+// has no wrapped asset.
+const WRAPPED_ASSET_IDS: Partial<Record<AssetSymbol, string | undefined>> = {
+  ETH: import.meta.env.VITE_ARKADE_ETH,
+  USDT: import.meta.env.VITE_ARKADE_USDT,
+  TRX: import.meta.env.VITE_ARKADE_TRX,
+  POL: import.meta.env.VITE_ARKADE_POL,
+  CEXT: import.meta.env.VITE_ARKADE_CEXT,
+}
+
+/** The Arkade wrapped asset ID for a symbol, or undefined if not wrapped/unset. */
+export const getWrappedAssetId = (symbol: string): string | undefined => {
+  return WRAPPED_ASSET_IDS[symbol.toUpperCase() as AssetSymbol]
+}
+
+/** Reverse lookup: the app symbol for a given Arkade wrapped asset ID. */
+export const getAssetSymbolByAssetId = (assetId: string): AssetSymbol | undefined => {
+  for (const [symbol, id] of Object.entries(WRAPPED_ASSET_IDS)) {
+    if (id && id === assetId) return symbol as AssetSymbol
+  }
+  return undefined
+}
+
+/**
+ * Display ticker for a symbol: wrapped Arkade assets are shown as `<SYMBOL>-CX`
+ * (e.g. ETH -> ETH-CX). Native assets (BTC) keep their plain symbol.
+ */
+export const getDisplayTicker = (symbol: string): string => {
+  const upper = symbol.toUpperCase()
+  return getWrappedAssetId(upper) ? `${upper}-CX` : upper
+}
+
 import Decimal from 'decimal.js'
+
+/** Convert a base-unit asset amount to a human-readable number using its decimals. */
+export const wrappedAmountToNumber = (amount: bigint, decimals: number): number => {
+  return new Decimal(amount.toString()).div(Decimal.pow(10, decimals)).toNumber()
+}
 
 export const MAX_DECIMALS = 8 // Arbitrary value to allow at least 1 sat/asset
 

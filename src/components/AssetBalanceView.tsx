@@ -1,6 +1,6 @@
 import AssetIcon from '../icons/AssetIcon'
 import PriceChart from './PriceChart'
-import { getAssetConfig, type AssetSymbol } from '../lib/assets'
+import { getAssetConfig, getDisplayTicker, type AssetSymbol } from '../lib/assets'
 
 interface AssetBalanceViewProps {
   symbol: AssetSymbol | string
@@ -11,6 +11,7 @@ export default function AssetBalanceView({ symbol, balance }: AssetBalanceViewPr
   const config = getAssetConfig(symbol)
   const assetName = config?.name || symbol
   const precision = config?.precision || 8
+  const ticker = getDisplayTicker(symbol)
 
   // Format balance using asset's configured precision
   const formatBalance = (value: number): string => {
@@ -34,7 +35,7 @@ export default function AssetBalanceView({ symbol, balance }: AssetBalanceViewPr
         <AssetIcon symbol={symbol} size={48} />
         <div>
           <div style={{ fontSize: 20, fontWeight: 600, color: 'white' }}>{assetName}</div>
-          <div style={{ fontSize: 14, color: 'var(--white50)' }}>{symbol}</div>
+          <div style={{ fontSize: 14, color: 'var(--white50)' }}>{ticker}</div>
         </div>
       </div>
 
@@ -48,7 +49,7 @@ export default function AssetBalanceView({ symbol, balance }: AssetBalanceViewPr
             fontFamily: 'Titillium Web',
           }}
         >
-          {formatBalance(balance)} {symbol}
+          {formatBalance(balance)} {ticker}
         </div>
       </div>
 

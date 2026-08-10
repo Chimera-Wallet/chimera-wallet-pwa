@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ASSET_LIST, type AssetSymbol, getAssetConfig } from '../lib/assets'
+import { ASSET_LIST, type AssetSymbol, getAssetConfig, getDisplayTicker } from '../lib/assets'
 import AssetIcon from '../icons/AssetIcon'
 import SelectSheet from './SelectSheet'
 import SelectorField from './SelectorField'
@@ -38,13 +38,13 @@ export default function AssetSelector({
   const options = ASSET_LIST.filter((asset) => !asset.comingSoon).map((asset) => ({
     id: asset.symbol,
     label: asset.name,
-    description: asset.symbol,
+    description: getDisplayTicker(asset.symbol),
     icon: <AssetIcon symbol={asset.symbol} size={32} />,
   }))
   const selectedBalanceLabel =
   selectedBalance !== undefined
     ? `${selectedConfig?.name} - ${fromSatoshis(selectedBalance)} BTC`
-    : selected
+    : getDisplayTicker(selected)
 
   return (
     <>

@@ -20,6 +20,7 @@ import { useReducedMotion } from './hooks/useReducedMotion'
 import { useLoadingStatus } from './hooks/useLoadingStatus'
 import { defaultPassword } from './lib/constants'
 import { consoleError } from './lib/logs'
+import { getMissingRequiredConfig, logMissingRequiredConfig } from './lib/requiredConfig'
 import IntercomMessenger from './components/IntercomMessenger'
 import Verification from './screens/Settings/Verification'
 import { setupPeriodicUpdateCheck } from './lib/serviceWorkerUpdate'
@@ -56,6 +57,14 @@ export default function App() {
 
   const loadingStatus = useLoadingStatus()
   const isIAB = useMemo(() => isInAppBrowser(), [])
+
+  // Required deployment config (asset IDs, Arkade Wrap API, ark server). If any
+  // is missing the app is misconfigured and must not proceed.
+  const missingConfig = useMemo(() => getMissingRequiredConfig(), [])
+  useEffect(() => {
+    logMissingRequiredConfig(missingConfig)
+  }, [missingConfig])
+
   const [isCapable, setIsCapable] = useState(false)
   const [jsCapabilitiesChecked, setJsCapabilitiesChecked] = useState(false)
   const [bootAnimActive, setBootAnimActive] = useState(false)
@@ -103,6 +112,7 @@ export default function App() {
 
   useEffect(() => {
     if (isIAB) return navigate(Pages.InAppBrowser)
+    if (missingConfig.length) return navigate(Pages.Unavailable)
     if (aspInfo.unreachable) return navigate(Pages.Unavailable)
     if (jsCapabilitiesChecked && !isCapable) return navigate(Pages.Unavailable)
     // avoid redirect if the user is still setting up the wallet
@@ -112,7 +122,7 @@ export default function App() {
     if (import.meta.env.DEV && import.meta.env.VITE_DEV_NSEC && !initialized) return
     if (!wallet.pubkey) return navigate(Pages.Init)
     if (authState === 'locked') return navigate(Pages.Unlock)
-  }, [walletLoaded, wallet.pubkey, authState, initInfo, aspInfo.unreachable, jsCapabilitiesChecked, isCapable])
+  }, [walletLoaded, wallet.pubkey, authState, initInfo, aspInfo.unreachable, jsCapabilitiesChecked, isCapable, missingConfig])
 
   const handleCard = () => {
     hapticLight()
@@ -196,13 +206,15 @@ export default function App() {
     }
   }, [authState, dataReady, screen, navigate])
 
-  const page = !(allChecksReady || isNewUser)
-    ? Pages.Loading
-    : shouldHoldOnLoading
+  const page = missingConfig.length
+    ? Pages.Unavailable
+    : !(allChecksReady || isNewUser)
       ? Pages.Loading
-      : shouldShowUnlock
-        ? Pages.Unlock
-        : screen
+      : shouldHoldOnLoading
+        ? Pages.Loading
+        : shouldShowUnlock
+          ? Pages.Unlock
+          : screen
 
   // Boot animation: persists on Loading, then flies to the LogoIcon position when
   // Wallet is reached. For any other destination (Unlock, Init, etc.), exits with fly-up.
