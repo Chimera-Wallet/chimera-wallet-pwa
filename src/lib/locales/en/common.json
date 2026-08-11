@@ -56,7 +56,7 @@
             "pending": "Waiting for your deposit...",
             "deposited": "Deposit detected, confirming…",
             "processing": "Minting your wrapped asset...",
-            "completed": "Completed", 
+            "completedSimple": "Completed", 
             "expired": "This quote has expired",
             "failed": "The wrap failed"
         },

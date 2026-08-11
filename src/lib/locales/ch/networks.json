@@ -1,0 +1,14 @@
+{
+  "arkade": {
+    "description": "即时、低手续费的 Bitcoin 转账"
+  },
+  "lightning": {
+    "description": "快速的 Lightning Network 支付"
+  },
+  "bitcoin": {
+    "description": "Bitcoin 链上交易"
+  },
+  "bank": {
+    "description": "传统银行转账"
+  }
+}

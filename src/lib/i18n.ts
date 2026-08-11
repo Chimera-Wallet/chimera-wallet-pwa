@@ -21,6 +21,30 @@ import itPlaceholders from './locales/it/placeholders.json'
 import itErrors from './locales/it/errors.json'
 import itCommon from './locales/it/common.json'
 
+import chTerms from './locales/ch/terms.json'
+import chNetworks from './locales/ch/networks.json'
+import chPlaceholders from './locales/ch/placeholders.json'
+import chErrors from './locales/ch/errors.json'
+import chCommon from './locales/ch/common.json'
+
+import frTerms from './locales/fr/terms.json'
+import frNetworks from './locales/fr/networks.json'
+import frPlaceholders from './locales/fr/placeholders.json'
+import frErrors from './locales/fr/errors.json'
+import frCommon from './locales/fr/common.json'
+
+// import jpTerms from './locales/jp/terms.json'
+// import jpNetworks from './locales/jp/networks.json'
+// import jpPlaceholders from './locales/jp/placeholders.json'
+// import jpErrors from './locales/jp/errors.json'
+// import jpCommon from './locales/jp/common.json'
+
+import rsTerms from './locales/rs/terms.json'
+import rsNetworks from './locales/rs/networks.json'
+import rsPlaceholders from './locales/rs/placeholders.json'
+import rsErrors from './locales/rs/errors.json'
+import rsCommon from './locales/rs/common.json'
+
 i18n.use(initReactI18next).init({
   debug: import.meta.env.DEV,
   fallbackLng: 'en',
@@ -57,6 +81,51 @@ i18n.use(initReactI18next).init({
         common: itCommon
         },
     },
+    rs: {
+      translation: 
+      {
+        terms: rsTerms,
+        placeholders: rsPlaceholders,
+        networks: rsNetworks,
+        errors: rsErrors,
+        common: rsCommon
+        },
+
+    },
+    fr : {
+      translation: 
+      {
+        terms: frTerms,
+        placeholders: frPlaceholders,
+        networks: frNetworks,
+        errors: frErrors,
+        common: frCommon
+        },
+
+    },
+//    jp:{
+//      translation: 
+//      {
+//        terms: jpTerms,
+//        placeholders: jpPlaceholders,
+//        networks: jpNetworks,
+//        errors: jpErrors,
+//        common: jpCommon
+//        },
+//
+//  },
+    ch:{
+      translation: 
+      {
+        terms: chTerms,
+        placeholders: chPlaceholders,
+        networks: chNetworks,
+        errors: chErrors,
+        common: chCommon
+        },
+
+    },
+
   },
 })
 

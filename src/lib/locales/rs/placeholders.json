@@ -1,0 +1,17 @@
+{
+  "addressFallback": "Вставьте адрес",
+  "networkFallback": "Выберите сеть, чтобы увидеть её описание",
+  "arkade": {
+    "address": "Вставьте адрес Arkade"
+  },
+  "lightning": {
+    "address": "Вставьте адрес счёта Lightning",
+    "invoice": "Вставьте счёт Lightning для отправки платежа. Сумма платежа указана в счёте."
+  },
+  "bitcoin": {
+    "address": "Вставьте BTC-адрес"
+  },
+  "bank": {
+    "details": "Введите банковские реквизиты"
+  }
+}

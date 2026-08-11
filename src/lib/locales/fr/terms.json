@@ -1,0 +1,45 @@
+{
+  "send": {
+    "bitcoin": {
+      "address": "Veuillez vous assurer d’envoyer uniquement du Bitcoin à une adresse Arkade ou mainnet valide. Toute autre adresse entraînera la perte définitive des fonds, sans possibilité de les récupérer.",
+      "time": "Le délai de transfert du Bitcoin on-chain dépend de la congestion du réseau et est en moyenne de 10 minutes pour la première confirmation. Si votre portefeuille prend en charge les VTXO Arkade, la transaction sera instantanée.",
+      "fees": "Les frais sont dynamiques sur le réseau Bitcoin et dépendent de la rapidité à laquelle vous souhaitez recevoir votre transaction ainsi que de la manière dont le portefeuille émetteur gère les transactions. Les frais pour les portefeuilles compatibles avec Arkade sont proches de 0."
+    },
+    "arkade": {
+      "address": "Veuillez vous assurer d’envoyer uniquement du Bitcoin à une adresse Arkade ou mainnet valide. Toute autre adresse entraînera la perte définitive des fonds, sans possibilité de les récupérer.",
+      "time": "Le délai de transfert du Bitcoin on-chain sur Arkade dépend de la congestion du réseau et est en moyenne de 10 minutes pour la première confirmation. Si votre portefeuille prend en charge les VTXO Arkade, la transaction sera instantanée.",
+      "fees": "Les frais sont dynamiques sur le réseau Arkade et dépendent de la rapidité à laquelle vous souhaitez recevoir votre transaction ainsi que de la manière dont le portefeuille émetteur gère les transactions. Les frais pour les portefeuilles compatibles avec Arkade sont proches de 0."
+    },
+    "lightning": {
+      "address": "Veuillez envoyer des fonds uniquement à l’aide d’une facture du réseau Lightning. Toute autre adresse entraînera la perte définitive des fonds, sans possibilité de les récupérer.",
+      "time": "Le délai de transfert sur le réseau Lightning dépend de plusieurs facteurs et est en moyenne de quelques secondes.",
+      "fees": "Les frais sont dynamiques sur Lightning, généralement inférieurs à 0,01 $."
+    },
+    "bank": {
+      "time": "Le délai de transfert peut varier selon la banque, de l’instantané à 48 heures.",
+      "fees": "Les frais pour les retraits bancaires sont de 0,3 % du montant envoyé s’il est supérieur à 1 000 CHF.\nLes frais pour les retraits bancaires sont de 1 % du montant envoyé s’il est inférieur à 1 000 CHF.\nVotre banque peut facturer des frais supplémentaires dont nous n’avons pas connaissance."
+    }
+  },
+  "receive": {
+    "bitcoin": {
+      "address": "Veuillez envoyer uniquement du Bitcoin, soit via Arkade, soit via le réseau mainnet. Tout autre actif envoyé sera définitivement perdu, sans possibilité de le récupérer.",
+      "time": "Le délai de transfert du Bitcoin on-chain dépend de la congestion du réseau et est en moyenne de 10 minutes pour la première confirmation.",
+      "fees": "Les frais sont dynamiques sur le réseau Bitcoin et dépendent de la rapidité à laquelle vous souhaitez recevoir votre transaction ainsi que de la manière dont le portefeuille émetteur gère les transactions."
+    },
+    "arkade": {
+      "address": "Veuillez envoyer uniquement du Bitcoin à l’aide d’un portefeuille compatible avec Arkade. Tout autre actif envoyé sera définitivement perdu, sans possibilité de le récupérer.",
+      "time": "Si l’expéditeur prend en charge les VTXO Arkade, la transaction sera instantanée.",
+      "fees": "Les frais pour les portefeuilles compatibles avec Arkade sont proches de 0."
+    },
+    "lightning": {
+      "address": "Veuillez envoyer uniquement du Bitcoin via le réseau Lightning. Tout autre actif envoyé sera définitivement perdu, sans possibilité de le récupérer.",
+      "info": "Pour recevoir les fonds, vous devez rester dans l’application jusqu’à ce que la transaction soit terminée.",
+      "time": "Le délai de transfert sur le réseau Lightning dépend de plusieurs facteurs et est en moyenne de quelques secondes.",
+      "fees": "Les frais sont dynamiques sur Lightning, généralement inférieurs à 0,01 $."
+    },
+    "bank": {
+      "time": "Le délai de transfert peut varier selon la banque, de l’instantané à 48 heures.",
+      "fees": "Les frais pour les dépôts bancaires sont de 0,6 % du montant reçu s’il est supérieur à 1 000 CHF.\nLes frais pour les dépôts bancaires sont de 1 % du montant reçu s’il est inférieur à 1 000 CHF.\nVotre banque peut facturer des frais supplémentaires dont nous n’avons pas connaissance."
+    }
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "funds": {
+    "insufficient": "余额不足",
+    "insufficientExtra": "余额不足，您只有 {{balance}} BTC",
+    "insufficientFees": "余额不足以支付手续费"
+  },
+  "LNURL": {
+    "below": "金额低于 LNURL 最低限额",
+    "above": "金额高于 LNURL 最高限额",
+    "funds": "LNURL 余额不足",
+    "fetch": "无法获取 LNURL 条件",
+    "address": "地址或 LNURL 无效"
+  },
+  "satoshi": {
+    "minimum": "金额低于 1 satoshi",
+    "minLimit": "金额低于最低限额",
+    "maxLimit": "金额高于最高限额",
+    "invoiceAmount": "发票必须定义金额"
+  },
+  "network": {
+    "below": "金额低于网络手续费",
+    "tooLow": "金额过低，无法支付网络手续费"
+  },
+  "general": {
+    "server": "无法连接服务器",
+    "swap": "无法创建兑换",
+    "missingAddress": "缺少地址",
+    "missingAsset": "缺少资产金额",
+    "missingAmount": "缺少金额",
+    "missingAssetList": "缺少资产列表",
+    "missingTotal": "缺少总金额",
+    "missingSats": "缺少 satoshi 数量",
+    "swapAddUnavailable": "兑换地址不可用"
+  },
+  "send": {
+    "bitcoin": {
+      "address": "所选方式需要 Bitcoin 地址",
+      "type": "所选方式需要其他类型的地址",
+      "lnurl": "所选方式不支持 LNURL"
+    },
+    "arkade": {
+      "address": "所选方式需要 Arkade 地址",
+      "addressUnable": "无法获取您的 Arkade 地址",
+      "type": "所选方式需要其他类型的地址",
+      "server": "无法连接 Ark 服务器",
+      "lnurl": "LNURL 不支持 Ark 支付",
+      "addressReceiveLnurl": "从 LNURL 收到的 Arkade 地址无效",
+      "assets": "资产只能发送至 Arkade 地址",
+      "serverKeyMiss": "Ark 服务器密钥不匹配"
+    },
+    "lightning": {
+      "address": "所选方式需要 Lightning 发票地址",
+      "type": "所选方式需要其他类型的地址",
+      "swaps": "Lightning 兑换未启用"
+    },
+    "bank": {
+      "transfer": "银行转账在“转账”中处理",
+      "ibanName": "请输入您的 IBAN 和账户持有人姓名",
+      "bicSwift": "请输入您的 BIC/SWIFT 代码、账户持有人姓名和账号",
+      "accountRouting": "请输入您的账号和路由号码",
+      "invalidTransfer": "转账方式无效",
+      "insufficientBalance": "余额不足。您需要约 {{required}} BTC，但只有 {{balance}} BTC",
+      "failedWithdrawal": "创建提现订单失败"
+    },
+    "wallet": {
+      "notReady": "钱包尚未准备好",
+      "notConfigured": "提现钱包未配置"
+    },
+    "parsing": {
+      "bip21": "无法解析 bip21",
+      "recipientAddress": "收款人地址无效"
+    },
+    "chain": {
+      "on": "不允许进行链上发送",
+      "off": "不允许进行链下发送",
+      "self": "无法向自己发送",
+      "invalidAddress": "请输入有效的 {{chain}} 地址"
+    },
+    "general": {
+      "errorSend": "发送交易时出错"
+    }
+  },
+  "receive": {
+    "general": {
+      "offChain": "无法获取链下地址",
+      "boarding": "无法获取登船地址",
+      "destination": "无法获取目标地址",
+      "kycReq": "需要进行 KYC 验证",
+      "amount": "金额无效",
+      "faucetFail": "水龙头操作失败",
+      "pendingSwap": "创建反向兑换失败",
+      "chainSwap": "创建链上兑换失败",
+      "reverseSwap": "创建反向兑换失败",
+      "getAddress": "获取地址失败：{{address}}"
+    },
+    "bank": {
+      "failedOrderExtra": "创建订单失败 - 未返回订单",
+      "failedOrderSimple": "创建订单失败",
+      "failedDeposit": "创建存款订单失败"
+    },
+    "lightning": {
+      "tempUnavailable": "Lightning 暂时不可用。此二维码仅支持 Arkade 和链上支付。"
+    },
+    "wrapService": {
+      "validAddress": "请输入有效的 {{name}} 地址",
+      "arkadeRcvAddress": "无法获取您的 Arkade 接收地址",
+      "failedWrapQuote": "创建包装报价失败"
+    }
+  }
+}

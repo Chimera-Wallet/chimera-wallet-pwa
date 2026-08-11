@@ -1,0 +1,110 @@
+{
+  "funds": {
+    "insufficient": "Fonds insuffisants",
+    "insufficientExtra": "Fonds insuffisants, vous ne disposez que de {{balance}} BTC",
+    "insufficientFees": "Fonds insuffisants pour couvrir les frais"
+  },
+  "LNURL": {
+    "below": "Le montant est inférieur à la limite minimale LNURL",
+    "above": "Le montant est supérieur à la limite maximale LNURL",
+    "funds": "Fonds insuffisants pour LNURL",
+    "fetch": "Impossible de récupérer les conditions LNURL",
+    "address": "Adresse ou LNURL invalide"
+  },
+  "satoshi": {
+    "minimum": "Montant inférieur à 1 satoshi",
+    "minLimit": "Montant inférieur à la limite minimale",
+    "maxLimit": "Montant supérieur à la limite maximale",
+    "invoiceAmount": "La facture doit définir un montant"
+  },
+  "network": {
+    "below": "Montant inférieur aux frais du réseau",
+    "tooLow": "Montant trop faible pour couvrir les frais du réseau"
+  },
+  "general": {
+    "server": "Serveur inaccessible",
+    "swap": "Impossible de créer l’échange",
+    "missingAddress": "Adresse manquante",
+    "missingAsset": "Montant de l’actif manquant",
+    "missingAmount": "Montant manquant",
+    "missingAssetList": "Liste des actifs manquante",
+    "missingTotal": "Montant total manquant",
+    "missingSats": "Montant en satoshis manquant",
+    "swapAddUnavailable": "Adresse d’échange indisponible"
+  },
+  "send": {
+    "bitcoin": {
+      "address": "La méthode sélectionnée nécessite une adresse Bitcoin",
+      "type": "La méthode sélectionnée nécessite un autre type d’adresse",
+      "lnurl": "La méthode sélectionnée ne prend pas en charge LNURL"
+    },
+    "arkade": {
+      "address": "La méthode sélectionnée nécessite une adresse Arkade",
+      "addressUnable": "Impossible d’obtenir votre adresse Arkade",
+      "type": "La méthode sélectionnée nécessite un autre type d’adresse",
+      "server": "Serveur Ark inaccessible",
+      "lnurl": "LNURL ne prend pas en charge les paiements Ark",
+      "addressReceiveLnurl": "Adresse Arkade invalide reçue depuis LNURL",
+      "assets": "Les actifs peuvent uniquement être envoyés vers des adresses Arkade",
+      "serverKeyMiss": "La clé du serveur Ark ne correspond pas"
+    },
+    "lightning": {
+      "address": "La méthode sélectionnée nécessite une adresse de facture Lightning",
+      "type": "La méthode sélectionnée nécessite un autre type d’adresse",
+      "swaps": "Les échanges Lightning ne sont pas activés"
+    },
+    "bank": {
+      "transfer": "Les virements bancaires sont gérés dans Virements",
+      "ibanName": "Veuillez saisir votre IBAN et le nom du titulaire du compte",
+      "bicSwift": "Veuillez saisir votre code BIC/SWIFT, le nom du titulaire du compte et le numéro de compte",
+      "accountRouting": "Veuillez saisir votre numéro de compte et votre numéro d’acheminement",
+      "invalidTransfer": "Méthode de virement invalide",
+      "insufficientBalance": "Solde insuffisant. Vous avez besoin d’environ {{required}} BTC, mais vous ne disposez que de {{balance}} BTC",
+      "failedWithdrawal": "Échec de la création de l’ordre de retrait"
+    },
+    "wallet": {
+      "notReady": "Le portefeuille n’est pas prêt",
+      "notConfigured": "Le portefeuille de retrait n’est pas configuré"
+    },
+    "parsing": {
+      "bip21": "Impossible d’analyser le BIP21",
+      "recipientAddress": "Adresse du destinataire invalide"
+    },
+    "chain": {
+      "on": "L’envoi on-chain n’est pas autorisé",
+      "off": "L’envoi off-chain n’est pas autorisé",
+      "self": "Impossible de vous envoyer des fonds à vous-même",
+      "invalidAddress": "Saisissez une adresse {{chain}} valide"
+    },
+    "general": {
+      "errorSend": "Erreur lors de l’envoi de la transaction"
+    }
+  },
+  "receive": {
+    "general": {
+      "offChain": "Impossible d’obtenir l’adresse off-chain",
+      "boarding": "Impossible d’obtenir l’adresse d’intégration",
+      "destination": "Impossible d’obtenir l’adresse de destination",
+      "kycReq": "Vérification KYC requise",
+      "amount": "Montant invalide",
+      "faucetFail": "Échec du faucet",
+      "pendingSwap": "Échec de la création de l’échange inversé",
+      "chainSwap": "Échec de la création de l’échange de chaîne",
+      "reverseSwap": "Échec de la création de l’échange inversé",
+      "getAddress": "Échec de l’obtention de l’adresse : {{address}}"
+    },
+    "bank": {
+      "failedOrderExtra": "Échec de la création de l’ordre - aucun ordre reçu",
+      "failedOrderSimple": "Échec de la création de l’ordre",
+      "failedDeposit": "Échec de la création de l’ordre de dépôt"
+    },
+    "lightning": {
+      "tempUnavailable": "Lightning est temporairement indisponible. Ce code QR prend uniquement en charge les paiements Arkade et on-chain."
+    },
+    "wrapService": {
+      "validAddress": "Saisissez une adresse {{name}} valide",
+      "arkadeRcvAddress": "Impossible d’obtenir votre adresse de réception Arkade",
+      "failedWrapQuote": "Échec de la création de l’offre d’emballage"
+    }
+  }
+}

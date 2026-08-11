@@ -1,0 +1,132 @@
+{
+  "confirmSend": "Confirmer l’envoi",
+  "transfer": "Utiliser le virement",
+  "estimateFees": "Frais estimés",
+  "accountName": "Nom du titulaire du compte",
+  "accountNumber": "Numéro de compte",
+  "routingNumber": "Numéro d’acheminement",
+  "orderHistory": "Voir l’historique des commandes",
+  "notifications": {
+    "send": {
+      "invoiceDeets": "Détails de la facture",
+      "feesDeduction": "Les frais seront déduits du montant envoyé",
+      "rollOverVTXO": "Vouliez-vous <link>renouveler vos VTXO</link> ?",
+      "lightningSwaps": "Activez les <link>échanges Lightning</link> pour payer"
+    },
+    "bank": {
+      "submissionSuccess": "Retrait soumis",
+      "submissionFailed": "Échec du retrait",
+      "swiftFee": "Des frais fixes de {{fee}} {{currency}} s’appliquent à tous les retraits SWIFT sortants et seront déduits du montant reçu.",
+      "creatingOrder": "Création de la commande...",
+      "createWithdrawal": "Créer un retrait",
+      "failedTransaction": "Échec de la transaction",
+      "paymentSent": "Paiement envoyé !",
+      "paymentAmount": "{{displayed}} envoyé avec succès"
+    },
+    "unwrapService": {
+      "pending": "En attente de votre dépôt Arkade…",
+      "deposited": "Dépôt détecté, confirmation en cours…",
+      "processing": "Envoi de votre paiement…",
+      "completed": "Terminé",
+      "completedHeadline": "Déballage terminé !",
+      "expired": "Cette offre a expiré",
+      "failed": "Échec du déballage",
+      "failedQuote": "Échec de la création de l’offre de déballage",
+      "sent": "Paiement envoyé",
+      "sendInfo": "{{value}} {{ticker}} envoyé via {{name}}",
+      "sendInfoExtended": "Saisissez l’adresse {{name}} qui recevra le paiement. Nous réservons une adresse de dépôt Arkade ; l’envoi de vos {{ticker}} emballés à cette adresse libère les fonds sur {{name}}.",
+      "destination": "Adresse {{name}} de destination",
+      "timeSensitive": "Envoyez vos {{ticker}} emballés sur Arkade à l’adresse de trésorerie ci-dessous avant l’expiration de l’offre.",
+      "payout": "`Paiement : {{amount}} {{ticker}}`",
+      "sendHeader": "Envoyer {{ticker}} à {{name}}"
+    },
+    "wrapService": {
+      "assetReceived": "Actif emballé reçu",
+      "completed": "Emballage terminé",
+      "arkRcv": "{{amount}} {{ticker}} reçu sur Arkade",
+      "wrappedRcv": "Votre actif emballé a été reçu",
+      "rcvViaChain": "Recevoir {{ticker}} via {{name}}",
+      "addressSendFrom": "Saisissez l’adresse {{name}} depuis laquelle vous enverrez {{ticker}}. Nous réservons une adresse de dépôt et créons l’actif emballé équivalent dans votre portefeuille Arkade.",
+      "ownAddress": "Votre adresse {{name}}",
+      "expiry": "Envoyez {{ticker}} sur {{name}} à l’adresse ci-dessous avant l’expiration de l’offre.",
+      "depositDetected": "Dépôt détecté {{amount}} {{ticker}}",
+      "bridgeFee": "Frais de pont : {{amount}} {{ticker}}",
+      "getDepositAddress": "Obtenir l’adresse de dépôt",
+      "pending": "En attente de votre dépôt...",
+      "deposited": "Dépôt détecté, confirmation en cours…",
+      "processing": "Création de votre actif emballé...",
+      "completedSimple": "Terminé",
+      "expired": "Cette offre a expiré",
+      "failed": "Échec de l’emballage"
+    },
+    "receive": {
+      "fauceting": "Obtention de sats depuis un faucet. Cela peut prendre quelques instants.",
+      "faucetComplete": "Faucet terminé !",
+      "faucetReceived": "{{amount}} reçu avec succès",
+      "lightning": {
+        "lightningNetworkRcv": "Pour recevoir via le réseau Lightning, veuillez saisir un montant ci-dessus afin de générer votre facture et votre code QR.",
+        "lightningFees": "Frais Lightning {{amount}}",
+        "tabOpen": "Gardez l’onglet ouvert pour recevoir via Lightning",
+        "generateQR": "Génération du code QR...",
+        "lightningInvoice": "Facture Lightning"
+      },
+      "arkade": {
+        "arkadeAddress": "Adresse Arkade"
+      },
+      "bitcoin": {
+        "bitcoinAddress": "Adresse Bitcoin"
+      },
+      "lnurl": {
+        "lnurlAddress": "Adresse LNURL"
+      },
+      "invalidAmount": "Aucune méthode de paiement valide n’est disponible pour ce montant",
+      "depositCreated": "Ordre de dépôt créé",
+      "editAmount": "Modifier le montant",
+      "addAmount": "Ajouter un montant",
+      "copyQR": "Copier le code QR",
+      "setAmount": "Définir le montant",
+      "clearAmount": "Effacer le montant",
+      "paymentReceived": "Paiement reçu !",
+      "successAmount": "{{amount}} reçu avec succès",
+      "request": "demande de {{amount}} {{label}}",
+      "minLightning": "{{amount}} sats minimum pour Lightning",
+      "bank": {
+        "bankDeposit": "Dépôt bancaire",
+        "orderHistory": "Voir l’historique des commandes",
+        "sendTransfer": "Envoyer un virement bancaire",
+        "madeTransfer": "J’ai effectué le virement",
+        "orderStatus": "Voir l’état de la commande",
+        "swiftFee": "Des frais fixes de {{fee}} {{currency}} s’appliquent à tous les virements SWIFT entrants et seront déduits du montant reçu.",
+        "transferDetails": "Virez {{amount}} {{currency}} aux coordonnées bancaires ci-dessous. Votre Bitcoin sera crédité une fois le virement confirmé."
+      }
+    }
+  },
+  "general": {
+    "sendAsset": "Envoi d’actifs",
+    "tapSign": "Appuyez pour signer",
+    "tapCopy": "Appuyez pour copier",
+    "signTrans": "Signer la transaction",
+    "reserving": "Réservation...",
+    "continue": "Continuer",
+    "success": "Succès",
+    "receive": "Recevoir",
+    "fauceting": "Utilisation du faucet",
+    "faucet": "Faucet",
+    "copyClipboard": "Copié dans le presse-papiers",
+    "copyAddress": "Copier l’adresse",
+    "copy": "Copier",
+    "loading": "Chargement...",
+    "share": "Partager",
+    "done": "Terminé",
+    "send": "Envoyer",
+    "amount": "Montant",
+    "recipAddress": "Adresse du destinataire",
+    "directions": {
+      "arkade": "Paiement dans Arkade",
+      "lightningSwap": "Échange vers Lightning",
+      "lightningPay": "Paiement vers Lightning",
+      "mainnetSwap": "Échange vers le réseau principal",
+      "mainnetPay": "Paiement vers le réseau principal"
+    }
+  }
+}

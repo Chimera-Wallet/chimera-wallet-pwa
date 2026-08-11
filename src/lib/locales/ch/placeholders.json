@@ -1,0 +1,17 @@
+{
+  "addressFallback": "粘贴地址",
+  "networkFallback": "选择一个网络以查看其描述",
+  "arkade": {
+    "address": "粘贴 Arkade 地址"
+  },
+  "lightning": {
+    "address": "粘贴 Lightning 发票地址",
+    "invoice": "粘贴 Lightning 发票以发送付款。付款金额已编码在发票中。"
+  },
+  "bitcoin": {
+    "address": "粘贴 BTC 地址"
+  },
+  "bank": {
+    "details": "输入银行信息"
+  }
+}

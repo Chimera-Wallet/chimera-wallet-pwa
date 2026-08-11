@@ -1,0 +1,132 @@
+{
+  "confirmSend": "确认发送",
+  "transfer": "使用转账",
+  "estimateFees": "预计手续费",
+  "accountName": "账户持有人姓名",
+  "accountNumber": "账号",
+  "routingNumber": "路由号码",
+  "orderHistory": "查看订单历史",
+  "notifications": {
+    "send": {
+      "invoiceDeets": "发票详情",
+      "feesDeduction": "手续费将从发送的金额中扣除",
+      "rollOverVTXO": "您是想要<link>续期您的 VTXO</link>吗？",
+      "lightningSwaps": "启用<link>Lightning 兑换</link>以进行支付"
+    },
+    "bank": {
+      "submissionSuccess": "提现已提交",
+      "submissionFailed": "提现失败",
+      "swiftFee": "所有转出的 SWIFT 提现均收取 {{fee}} {{currency}} 的固定手续费，该手续费将从收到的金额中扣除。",
+      "creatingOrder": "正在创建订单...",
+      "createWithdrawal": "创建提现",
+      "failedTransaction": "交易失败",
+      "paymentSent": "支付已发送！",
+      "paymentAmount": "{{displayed}} 已成功发送"
+    },
+    "unwrapService": {
+      "pending": "正在等待您的 Arkade 存款…",
+      "deposited": "检测到存款，正在确认…",
+      "processing": "正在发送您的付款…",
+      "completed": "已完成",
+      "completedHeadline": "解包完成！",
+      "expired": "此报价已过期",
+      "failed": "解包失败",
+      "failedQuote": "创建解包报价失败",
+      "sent": "付款已发送",
+      "sendInfo": "{{value}} {{ticker}} 已通过 {{name}} 发送",
+      "sendInfoExtended": "请输入将接收付款的 {{name}} 地址。我们会为您预留一个 Arkade 存款地址；将您的包装版 {{ticker}} 发送至该地址后，资金将在 {{name}} 上释放。",
+      "destination": "目标 {{name}} 地址",
+      "timeSensitive": "请在报价过期前，将您在 Arkade 上的包装版 {{ticker}} 发送至下方的资金库地址。",
+      "payout": "`付款：{{amount}} {{ticker}}`",
+      "sendHeader": "将 {{ticker}} 发送至 {{name}}"
+    },
+    "wrapService": {
+      "assetReceived": "已收到包装资产",
+      "completed": "包装完成",
+      "arkRcv": "已在 Arkade 上收到 {{amount}} {{ticker}}",
+      "wrappedRcv": "已收到您的包装资产",
+      "rcvViaChain": "通过 {{name}} 接收 {{ticker}}",
+      "addressSendFrom": "请输入您将从中发送 {{ticker}} 的 {{name}} 地址。我们会为您预留一个存款地址，并将等值的包装资产铸造到您的 Arkade 钱包中。",
+      "ownAddress": "您的 {{name}} 地址",
+      "expiry": "请在报价过期前，将 {{ticker}} 通过 {{name}} 发送至下方地址。",
+      "depositDetected": "检测到存款 {{amount}} {{ticker}}",
+      "bridgeFee": "桥接手续费：{{amount}} {{ticker}}",
+      "getDepositAddress": "获取存款地址",
+      "pending": "正在等待您的存款...",
+      "deposited": "检测到存款，正在确认…",
+      "processing": "正在铸造您的包装资产...",
+      "completedSimple": "已完成",
+      "expired": "此报价已过期",
+      "failed": "包装失败"
+    },
+    "receive": {
+      "fauceting": "正在从水龙头获取 sats。这可能需要一些时间。",
+      "faucetComplete": "水龙头操作完成！",
+      "faucetReceived": "{{amount}} 已成功收到",
+      "lightning": {
+        "lightningNetworkRcv": "如需通过 Lightning Network 接收，请在上方输入金额以生成您的发票和二维码。",
+        "lightningFees": "Lightning 手续费 {{amount}}",
+        "tabOpen": "请保持此标签页打开以接收 Lightning",
+        "generateQR": "正在生成二维码...",
+        "lightningInvoice": "Lightning 发票"
+      },
+      "arkade": {
+        "arkadeAddress": "Arkade 地址"
+      },
+      "bitcoin": {
+        "bitcoinAddress": "Bitcoin 地址"
+      },
+      "lnurl": {
+        "lnurlAddress": "LNURL 地址"
+      },
+      "invalidAmount": "此金额没有可用的有效支付方式",
+      "depositCreated": "存款订单已创建",
+      "editAmount": "编辑金额",
+      "addAmount": "添加金额",
+      "copyQR": "复制二维码",
+      "setAmount": "设置金额",
+      "clearAmount": "清除金额",
+      "paymentReceived": "已收到付款！",
+      "successAmount": "{{amount}} 已成功收到",
+      "request": "请求 {{amount}} {{label}}",
+      "minLightning": "Lightning 最低金额为 {{amount}} sats",
+      "bank": {
+        "bankDeposit": "银行存款",
+        "orderHistory": "查看订单历史",
+        "sendTransfer": "发送银行转账",
+        "madeTransfer": "我已完成转账",
+        "orderStatus": "查看订单状态",
+        "swiftFee": "所有转入的 SWIFT 转账均收取 {{fee}} {{currency}} 的固定手续费，该手续费将从收到的金额中扣除。",
+        "transferDetails": "将 {{amount}} {{currency}} 转账至下方的银行信息。转账确认后，您的 Bitcoin 将到账。"
+      }
+    }
+  },
+  "general": {
+    "sendAsset": "正在发送资产",
+    "tapSign": "点击签名",
+    "tapCopy": "点击复制",
+    "signTrans": "签署交易",
+    "reserving": "正在预留...",
+    "continue": "继续",
+    "success": "成功",
+    "receive": "接收",
+    "fauceting": "使用水龙头",
+    "faucet": "水龙头",
+    "copyClipboard": "已复制到剪贴板",
+    "copyAddress": "复制地址",
+    "copy": "复制",
+    "loading": "加载中...",
+    "share": "分享",
+    "done": "完成",
+    "send": "发送",
+    "amount": "金额",
+    "recipAddress": "收款人地址",
+    "directions": {
+      "arkade": "在 Arkade 内支付",
+      "lightningSwap": "兑换为 Lightning",
+      "lightningPay": "向 Lightning 支付",
+      "mainnetSwap": "兑换为主网",
+      "mainnetPay": "向主网支付"
+    }
+  }
+}

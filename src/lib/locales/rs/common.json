@@ -1,0 +1,132 @@
+{
+  "confirmSend": "Подтвердить отправку",
+  "transfer": "Использовать перевод",
+  "estimateFees": "Расчётная комиссия",
+  "accountName": "Имя владельца счёта",
+  "accountNumber": "Номер счёта",
+  "routingNumber": "Номер маршрутизации",
+  "orderHistory": "Просмотреть историю заказов",
+  "notifications": {
+    "send": {
+      "invoiceDeets": "Детали счёта",
+      "feesDeduction": "Комиссия будет вычтена из отправляемой суммы",
+      "rollOverVTXO": "Вы имели в виду <link>продлить срок действия ваших VTXO</link>?",
+      "lightningSwaps": "Включите <link>обмены Lightning</link> для оплаты"
+    },
+    "bank": {
+      "submissionSuccess": "Вывод средств отправлен",
+      "submissionFailed": "Не удалось выполнить вывод средств",
+      "swiftFee": "Фиксированная комиссия в размере {{fee}} {{currency}} применяется ко всем исходящим выводам через SWIFT и будет вычтена из полученной суммы.",
+      "creatingOrder": "Создание заказа...",
+      "createWithdrawal": "Создать вывод средств",
+      "failedTransaction": "Транзакция не выполнена",
+      "paymentSent": "Платёж отправлен!",
+      "paymentAmount": "{{displayed}} успешно отправлено"
+    },
+    "unwrapService": {
+      "pending": "Ожидание вашего депозита Arkade…",
+      "deposited": "Депозит обнаружен, подтверждение…",
+      "processing": "Отправка вашей выплаты…",
+      "completed": "Завершено",
+      "completedHeadline": "Распаковка завершена!",
+      "expired": "Срок действия этого предложения истёк",
+      "failed": "Не удалось выполнить распаковку",
+      "failedQuote": "Не удалось создать предложение на распаковку",
+      "sent": "Выплата отправлена",
+      "sendInfo": "{{value}} {{ticker}} отправлено через {{name}}",
+      "sendInfoExtended": "Введите адрес {{name}}, который получит выплату. Мы резервируем адрес депозита Arkade; отправка ваших упакованных {{ticker}} на него разблокирует средства в {{name}}.",
+      "destination": "Адрес назначения {{name}}",
+      "timeSensitive": "Отправьте ваши упакованные {{ticker}} в Arkade на указанный ниже казначейский адрес до истечения срока действия предложения.",
+      "payout": "`Выплата: {{amount}} {{ticker}}`",
+      "sendHeader": "Отправить {{ticker}} в {{name}}"
+    },
+    "wrapService": {
+      "assetReceived": "Упакованный актив получен",
+      "completed": "Упаковка завершена",
+      "arkRcv": "{{amount}} {{ticker}} получено в Arkade",
+      "wrappedRcv": "Ваш упакованный актив получен",
+      "rcvViaChain": "Получить {{ticker}} через {{name}}",
+      "addressSendFrom": "Введите адрес {{name}}, с которого вы отправите {{ticker}}. Мы резервируем адрес депозита и создаём эквивалентный упакованный актив в вашем кошельке Arkade.",
+      "ownAddress": "Ваш адрес {{name}}",
+      "expiry": "Отправьте {{ticker}} через {{name}} на указанный ниже адрес до истечения срока действия предложения.",
+      "depositDetected": "Депозит обнаружен: {{amount}} {{ticker}}",
+      "bridgeFee": "Комиссия за мост: {{amount}} {{ticker}}",
+      "getDepositAddress": "Получить адрес депозита",
+      "pending": "Ожидание вашего депозита...",
+      "deposited": "Депозит обнаружен, подтверждение…",
+      "processing": "Создание вашего упакованного актива...",
+      "completedSimple": "Завершено",
+      "expired": "Срок действия этого предложения истёк",
+      "failed": "Не удалось выполнить упаковку"
+    },
+    "receive": {
+      "fauceting": "Получение sats из крана. Это может занять несколько мгновений.",
+      "faucetComplete": "Кран завершён!",
+      "faucetReceived": "{{amount}} успешно получено",
+      "lightning": {
+        "lightningNetworkRcv": "Для получения через сеть Lightning введите сумму выше, чтобы создать счёт и QR-код.",
+        "lightningFees": "Комиссия Lightning {{amount}}",
+        "tabOpen": "Оставьте вкладку открытой для получения через Lightning",
+        "generateQR": "Создание QR-кода...",
+        "lightningInvoice": "Счёт Lightning"
+      },
+      "arkade": {
+        "arkadeAddress": "Адрес Arkade"
+      },
+      "bitcoin": {
+        "bitcoinAddress": "Адрес Bitcoin"
+      },
+      "lnurl": {
+        "lnurlAddress": "Адрес LNURL"
+      },
+      "invalidAmount": "Для этой суммы нет доступных действительных способов оплаты",
+      "depositCreated": "Ордер на депозит создан",
+      "editAmount": "Изменить сумму",
+      "addAmount": "Добавить сумму",
+      "copyQR": "Скопировать QR-код",
+      "setAmount": "Установить сумму",
+      "clearAmount": "Очистить сумму",
+      "paymentReceived": "Платёж получен!",
+      "successAmount": "{{amount}} успешно получено",
+      "request": "запрашивается {{amount}} {{label}}",
+      "minLightning": "Минимум {{amount}} sats для Lightning",
+      "bank": {
+        "bankDeposit": "Банковский депозит",
+        "orderHistory": "Просмотреть историю заказов",
+        "sendTransfer": "Отправить банковский перевод",
+        "madeTransfer": "Я выполнил перевод",
+        "orderStatus": "Просмотреть статус заказа",
+        "swiftFee": "Фиксированная комиссия в размере {{fee}} {{currency}} применяется ко всем входящим переводам SWIFT и будет вычтена из полученной суммы.",
+        "transferDetails": "Переведите {{amount}} {{currency}} на указанные ниже банковские реквизиты. Ваш Bitcoin будет зачислен после подтверждения перевода."
+      }
+    }
+  },
+  "general": {
+    "sendAsset": "Отправка активов",
+    "tapSign": "Нажмите, чтобы подписать",
+    "tapCopy": "Нажмите, чтобы скопировать",
+    "signTrans": "Подписать транзакцию",
+    "reserving": "Резервирование...",
+    "continue": "Продолжить",
+    "success": "Успешно",
+    "receive": "Получить",
+    "fauceting": "Использование крана",
+    "faucet": "Кран",
+    "copyClipboard": "Скопировано в буфер обмена",
+    "copyAddress": "Скопировать адрес",
+    "copy": "Копировать",
+    "loading": "Загрузка...",
+    "share": "Поделиться",
+    "done": "Готово",
+    "send": "Отправить",
+    "amount": "Сумма",
+    "recipAddress": "Адрес получателя",
+    "directions": {
+      "arkade": "Оплата внутри Arkade",
+      "lightningSwap": "Обмен на Lightning",
+      "lightningPay": "Оплата через Lightning",
+      "mainnetSwap": "Обмен на основную сеть",
+      "mainnetPay": "Оплата в основной сети"
+    }
+  }
+}

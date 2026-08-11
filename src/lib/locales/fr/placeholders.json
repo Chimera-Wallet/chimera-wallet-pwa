@@ -1,0 +1,17 @@
+{
+  "addressFallback": "Collez l’adresse",
+  "networkFallback": "Sélectionnez un réseau pour voir sa description",
+  "arkade": {
+    "address": "Collez l’adresse Arkade"
+  },
+  "lightning": {
+    "address": "Collez l’adresse de la facture Lightning",
+    "invoice": "Collez une facture Lightning pour envoyer le paiement. Le montant du paiement est encodé dans la facture."
+  },
+  "bitcoin": {
+    "address": "Collez l’adresse BTC"
+  },
+  "bank": {
+    "details": "Saisissez les coordonnées bancaires"
+  }
+}

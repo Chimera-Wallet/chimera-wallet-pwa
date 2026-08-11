@@ -1,0 +1,14 @@
+{
+  "arkade": {
+    "description": "Transferts de Bitcoin instantanés et à faibles frais"
+  },
+  "lightning": {
+    "description": "Paiements rapides sur le réseau Lightning"
+  },
+  "bitcoin": {
+    "description": "Transactions Bitcoin sur la blockchain"
+  },
+  "bank": {
+    "description": "Virements bancaires traditionnels"
+  }
+}
