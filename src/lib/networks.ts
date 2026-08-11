@@ -15,30 +15,30 @@ export const NETWORKS: Record<TransferMethod, NetworkConfig> = {
   [TRANSFER_METHOD.ark]: {
     id: TRANSFER_METHOD.ark,
     name: 'Arkade',
-    description: 'ark_network_selector_descr',
+    description: 'networks.arkade.description',
     icon: '/images/icons/network-ark.svg',
-    addressPlaceholder: 'ark_address_placeholder',
+    addressPlaceholder: 'placeholders.arkade.address',
   },
   [TRANSFER_METHOD.lightning]: {
     id: TRANSFER_METHOD.lightning,
     name: 'Lightning',
-    description: 'lightning_network_selector_descr',
+    description: 'networks.lightning.description',
     icon: '/images/icons/network-lightning.svg',
-    addressPlaceholder: 'lightning_address_placeholder',
+    addressPlaceholder: 'placeholders.lightning.address',
   },
   [TRANSFER_METHOD.bitcoin]: {
     id: TRANSFER_METHOD.bitcoin,
     name: 'Native Chain',
-    description: 'bitcoin_network_selector_descr',
+    description: 'networks.bitcoin.description',
     icon: '/images/icons/network-bitcoin.svg',
-    addressPlaceholder: 'bitcoin_address_placeholder',
+    addressPlaceholder: 'placeholders.bitcoin.address',
   },
   [TRANSFER_METHOD.bank]: {
     id: TRANSFER_METHOD.bank,
     name: 'Bank Transfer',
-    description: 'bank_network_selector_descr',
+    description: 'networks.bank.description',
     icon: '/images/icons/network-bank.svg',
-    addressPlaceholder: 'bank_address_placeholder',
+    addressPlaceholder: 'placeholders.bank.details',
   },
 } as const
 

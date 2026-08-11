@@ -1,0 +1,18 @@
+{
+    "addressFallback": "Paste address",
+    "networkFallback": "Select a network to view its description",
+    "arkade":{
+        "address": "Paste Arkade address"
+    },
+    "lightning": {
+        "address": "Paste Lightning invoice address"
+    },
+    "bitcoin": {
+        "address": "Paste BTC address"
+    },
+    "bank": {
+        "details": "Enter bank details"
+    }
+
+}
+

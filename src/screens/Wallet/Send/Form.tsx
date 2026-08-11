@@ -291,20 +291,20 @@ export default function SendForm() {
     const satoshis = sendInfo.satoshis ?? 0
     setLabel(t(
       satoshis > availableBalance
-        ? 'insufficient_funds_send'
+        ? 'errors.funds.insufficient'
         : lnUrlLimits.min && satoshis < lnUrlLimits.min
-          ? 'LNURL_min_limit_error'
+          ? 'errors.LNURL.below'
           : lnUrlLimits.max && satoshis > lnUrlLimits.max
-            ? 'LNURL_max_limit_error'
+            ? 'errors.LNURL.above'
             : satoshis && satoshis < 1
-              ? 'sat_min_error'
+              ? 'errors.satoshi.minimum'
               : amountIsAboveMaxLimit(satoshis)
-                ? 'sat_max_error_limit'
+                ? 'errors.satoshi.minLimit'
                 : satoshis && amountIsBelowMinLimit(satoshis)
-                  ? 'sat_min_error_limit'
+                  ? 'errors.satoshi.maxLimit'
                   : amountBelowOnchainFee(satoshis)
-                    ? 'network_fee_error'
-                    : 'confirm_sending')
+                    ? 'errors.network.below'
+                    : 'common.confirmSend')
     )
   }, [sendInfo.satoshis, availableBalance, selectedMethod, onchainOutputFee])
 

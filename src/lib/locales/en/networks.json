@@ -1,0 +1,15 @@
+{
+    "arkade":{
+        "description": "Instant, low-fee Bitcoin transfers"
+    },
+    "lightning": {
+        "description": "Fast Lightning Network payments"
+    },
+    "bitcoin": {
+        "description": "Bitcoin on-chain transactions"
+    },
+    "bank": {
+        "description": "Traditional bank transfers"
+    }
+
+}

@@ -1,0 +1,18 @@
+{
+    "addressFallback": "Incolla indirizzo",
+    "networkFallback": "Seleziona una rete per vedere la sua descrizione",
+    "arkade":{
+        "address": "Incolla indirizzo Arkade"
+    },
+    "lightning": {
+        "address": "Incolla indirizzo fattura Lightning"
+    },
+    "bitcoin": {
+        "address": "Incolla indirizzo BTC"
+    },
+    "bank": {
+        "details": "Inserisci dettagli bancari"
+    }
+
+}
+

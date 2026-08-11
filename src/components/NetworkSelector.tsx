@@ -45,7 +45,7 @@ export default function NetworkSelector({
         label={label !== undefined ? label : 'Network'}
         onClick={() => setIsOpen(true)}
         value={selectedConfig?.name || selected || 'Select network'}
-        sublabel={t(selectedConfig?.description ?? 'fallback_network_descr')}
+        sublabel={t(selectedConfig?.description ?? 'placeholders.addressFallback')}
         style = {style}
       />
       <SelectSheet

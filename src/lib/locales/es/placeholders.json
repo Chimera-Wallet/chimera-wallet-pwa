@@ -1,0 +1,19 @@
+{
+    "addressFallback": "Pegar dirección",
+    "networkFallback": "Selecciona una red para ver su descripción",
+    "arkade":{
+        "address": "Pegar dirección Arkade"
+    },
+    "lightning": {
+        "address": "Pegar dirección de factura Lightning"
+    },
+    "bitcoin": {
+        "address": "Pegar dirección BTC"
+    },
+    "bank": {
+        "details": "Ingresar detalles del banco"
+    }
+    
+
+}
+

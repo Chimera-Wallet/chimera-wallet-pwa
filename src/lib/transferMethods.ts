@@ -37,55 +37,55 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
       {
         icon: 'info',
         color: 'orange',
-        text: 'btc_address_tc',
+        text: 'terms.send.bitcoin.address',
       },
       {
         icon: 'clock',
-        text: 'btc_time_tc',
+        text: 'terms.send.bitcoin.time',
       },
       {
         icon: 'receipt',
-        text: 'btc_fees_tc',
+        text: 'terms.send.bitcoin.fees',
       },
     ],
     ark: [
       {
         icon: 'info',
         color: 'orange',
-        text: 'ark_address_tc',
+        text: 'terms.send.arkade.address',
       },
       {
         icon: 'clock',
-        text: 'ark_time_tc',
+        text: 'terms.send.arkade.time',
       },
       {
         icon: 'receipt',
-        text: 'ark_fees_tc',
+        text: 'terms.send.arkade.fees',
       },
     ],
     lightning: [
       {
         icon: 'info',
         color: 'orange',
-        text: 'lightning_address_tc',
+        text: 'terms.send.lightning.address',
       },
       {
         icon: 'clock',
-        text: 'lightning_time_tc',
+        text: 'terms.send.lightning.time',
       },
       {
         icon: 'receipt',
-        text: 'lightning_fees_tc',
+        text: 'terms.send.lightning.fees',
       },
     ],
     bank: [
       {
         icon: 'info',
-        text: 'bank_time_tc',
+        text: 'terms.send.bank.time',
       },
       {
         icon: 'receipt',
-        text: 'bank_fees_tc',
+        text: 'terms.send.lightning.fees',
       },
     ],
   },
@@ -94,59 +94,59 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
       {
         icon: 'info',
         color: 'orange',
-        text: 'btc_address_tc_rcv',
+        text: 'terms.receive.bitcoin.address',
       },
       {
         icon: 'clock',
-        text: 'btc_time_tc_rcv',
+        text: 'terms.receive.bitcoin.time',
       },
       {
         icon: 'receipt',
-        text: 'btc_fees_tc_rcv',
+        text: 'terms.receive.bitcoin.fees',
       },
     ],
     ark: [
       {
         icon: 'info',
         color: 'orange',
-        text: 'ark_address_tc_rcv',
+        text: 'terms.receive.arkade.address',
       },
       {
         icon: 'clock',
-        text: 'ark_time_tc_rcv',
+        text: 'terms.receive.arkade.time',
       },
       {
         icon: 'receipt',
-        text: 'ark_fees_tc_rcv',
+        text: 'terms.receive.arkade.fees',
       },
     ],
     lightning: [
       {
         icon: 'info',
-        text: 'lightning_address_tc_rcv',
+        text: 'terms.receive.lightning.address',
       },
       {
         icon: 'info',
         color: 'orange',
-        text: 'lightning_info_tc_rcv',
+        text: 'terms.receive.lightning.info',
       },
       {
         icon: 'clock',
-        text: 'lightning_time_tc_rcv',
+        text: 'terms.receive.lightning.time',
       },
       {
         icon: 'receipt',
-        text: 'lightning_fees_tc_rcv',
+        text: 'terms.receive.lightning.fees',
       },
     ],
     bank: [
       {
         icon: 'info',
-        text: 'bank_time_tc_rcv',
+        text: 'terms.receive.bank.time',
       },
       {
         icon: 'receipt',
-        text: 'bank_fees_tc_rcv',
+        text: 'terms.receive.bank.fees',
       },
     ],
   },

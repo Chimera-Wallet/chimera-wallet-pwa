@@ -1,0 +1,18 @@
+{
+    "funds":{
+        "insufficient": "Insufficient funds"
+    },
+    "LNURL": {
+        "below": "Amount below LNURL min limit",
+        "above": "Amount above LNURL max limit"
+    },
+    "satoshi": {
+        "minimum": "Amount below 1 satoshi",
+        "minLimit": "Amount below min limit",
+        "maxLimit": "Amount above max limit"
+    },
+    "network": {
+        "below": "Amount below network fee"
+    }
+      
+    }
