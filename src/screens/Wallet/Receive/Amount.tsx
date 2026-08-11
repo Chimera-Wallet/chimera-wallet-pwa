@@ -104,7 +104,7 @@ export default function ReceiveAmount() {
       })
   }, [svcWallet])
 
-  if (!svcWallet) return <Loading text='Loading...' />
+  if (!svcWallet) return <Loading text= {t('common.general.loading')} />
 
   const handleFaucet = async () => {
     try {
@@ -165,7 +165,7 @@ export default function ReceiveAmount() {
   }
 
   const shareText = invoice || arkAddress || address
-  const disabled = !canBrowserShareData({ title: 'Receive', text: shareText }) || sharing
+  const disabled = !canBrowserShareData({ title: t('common.general.receive'), text: shareText }) || sharing
 
   // set the QR code value to the plain address the first time
   useEffect(() => {
@@ -274,7 +274,7 @@ export default function ReceiveAmount() {
   const handleShare = () => {
     const shareText = invoice || arkAddress || address
     setSharing(true)
-    shareData({ title: 'Receive', text: shareText })
+    shareData({ title: t('common.general.receive'), text: shareText })
       .catch(consoleError)
       .finally(() => setSharing(false))
   }
@@ -282,7 +282,7 @@ export default function ReceiveAmount() {
   if (fauceting) {
     return (
       <>
-        <Header text='Fauceting' />
+        <Header text={t('common.general.fauceting')} />
         <Content>
           <Loading text={t('common.notifications.receive.fauceting')} />
         </Content>
@@ -294,7 +294,7 @@ export default function ReceiveAmount() {
     const displayAmount = prettyAmount(satoshis ?? 0)
     return (
       <>
-        <Header text='Success' />
+        <Header text={t('common.general.success')} />
         <Content>
           <Success headline={t('common.notifications.receive.faucetComplete')} text={t('common.notifications.receive.faucetReceived', { amount: displayAmount })} />
         </Content>
@@ -425,8 +425,8 @@ export default function ReceiveAmount() {
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        <Button label='Share' onClick={handleShare} icon={<img src = {checkMarkIcon} alt = 'checkMark' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)', marginLeft: '0.5rem'}} />} disabled={disabled} style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '100%', height: '48px', borderRadius: '16px',}} />
-        {showFaucetButton ? <Button disabled={!satoshis} label='Faucet' onClick={handleFaucet} secondary /> : null}
+        <Button label={t('common.general.share')} onClick={handleShare} icon={<img src = {checkMarkIcon} alt = 'checkMark' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)', marginLeft: '0.5rem'}} />} disabled={disabled} style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '100%', height: '48px', borderRadius: '16px',}} />
+        {showFaucetButton ? <Button disabled={!satoshis} label={t('common.general.faucet')} onClick={handleFaucet} secondary /> : null}
       </ButtonsOnBottom>
     </>
   )

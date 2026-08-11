@@ -428,12 +428,12 @@ export default function ReceiveQRCode() {
                   </button>
                   {satoshis > 0 ? (
                     <div style={{ fontSize: '14px', color: 'var(--neutral-500)', marginTop: '0.5rem' }}>
-                      Requesting {prettyNumber(satoshis, 0)} {unitLabel}
+                      {t('common.notifications.receive.request', {amount: prettyNumber(satoshis, 0), label: unitLabel})}
                     </div>
                   ) : null}
                   {(!satoshis || satoshis < minSwapAllowed()) && !isAssetReceive ? (
                     <div style={{ fontSize: '13px', color: 'var(--neutral-500)', marginTop: '0.25rem' }}>
-                      {minSwapAllowed()} sats min for Lightning
+                      {t('common.notifications.receive.minLightning',{amount: minSwapAllowed()})}
                     </div>
                   ) : null}
                   {swapsTimedOut && !invoice && !isAssetReceive ? (

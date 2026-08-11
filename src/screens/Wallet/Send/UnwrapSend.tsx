@@ -47,6 +47,22 @@ const formatBaseUnits = (value: string | null, precision: number): string => {
   return new Decimal(value).div(new Decimal(10).pow(precision)).toString()
 }
 
+const statusLabel = (status: WrapQuote['status']): string => {
+    switch (status) {
+      case 'pending':
+        return ('common.notifications.unwrapService.pending')
+      case 'deposited':
+        return ('common.notifications.unwrapService.deposited')
+      case 'processing':
+        return ('common.notifications.unwrapService.processing')
+      case 'completed':
+        return ('common.notifications.unwrapService.completed')
+      case 'expired':
+        return ('common.notifications.unwrapService.expired')
+      case 'failed':
+        return ('common.notifications.unwrapService.failed')
+    }
+  }
 
 export default function UnwrapSend() {
   const { t } = useTranslation()
@@ -67,22 +83,7 @@ export default function UnwrapSend() {
 
 
 
-  const statusLabel = (status: WrapQuote['status']): string => {
-    switch (status) {
-      case 'pending':
-        return t('common.notifications.unwrapService.pending')
-      case 'deposited':
-        return t('common.notifications.unwrapService.deposited')
-      case 'processing':
-        return t('common.notifications.unwrapService.processing')
-      case 'completed':
-        return t('common.notifications.unwrapService.completed')
-      case 'expired':
-        return t('common.notifications.unwrapService.expired')
-      case 'failed':
-        return t('common.notifications.unwrapService.failed')
-    }
-  }
+  
   useEffect(() => {
     if (!unwrapSendInfo) navigate(Pages.SendForm)
   }, [unwrapSendInfo])
@@ -196,7 +197,7 @@ export default function UnwrapSend() {
             ) : (
               <>
                 <InfoContainer>
-                  <InfoLine compact text={statusLabel(quote.status)} />
+                  <InfoLine compact text={t(statusLabel(quote.status))} />
                   <InfoLine
                     compact
                     color='orange'

@@ -7,6 +7,13 @@
     "routingNumber": "Routing Number",
     "orderHistory": "View order History",
     "notifications": {
+        "send":{
+            "invoiceDeets": "Invoice Details",
+            "feesDeduction": "Fees will be deducted from the amount sent",
+            "rollOverVTXO":  "Did you mean <link>roll over your VTXOs</link>?",
+            "lightningSwaps": "Enable <link>Lightning swaps</link> to pay"
+
+        },
         "bank": {
             "submissionSuccess": "Withdrawal submitted",
             "submissionFailed": "Withdrawal failed",
@@ -45,11 +52,17 @@
             "expiry": "Send {{ticker}} on {{name}} to the address below before the quote expires.",
             "depositDetected": "Deposit detected {{amount}} {{ticker}}",
             "bridgeFee": "Bridge fee: {{amount}} {{ticker}}",
-            "getDepositAddress": "Get deposit address"
+            "getDepositAddress": "Get deposit address",
+            "pending": "Waiting for your deposit...",
+            "deposited": "Deposit detected, confirming…",
+            "processing": "Minting your wrapped asset...",
+            "completed": "Completed", 
+            "expired": "This quote has expired",
+            "failed": "The wrap failed"
         },
         "receive": {
             "fauceting": "Getting sats from a faucet. This may take a few moments.",
-            "faucetComplete": "Faucete completed!",
+            "faucetComplete": "Faucet completed!",
             "faucetReceived": "{{amount}} received successfully",
             "lightning": {
                 "lightningNetworkRcv": "For Lightning Network receives, please enter an amount above to generate your invoice and QR code.",
@@ -76,6 +89,8 @@
             "clearAmount": "Clear amount",
             "paymentReceived": "Payment received!", 
             "successAmount": "{{amount}} received successfully",
+            "request": "requesting {{amount}} {{label}}",
+            "minLightning": "{{amount}} sats min for Lightning",
             "bank": {
                 "bankDeposit": "Bank Deposit", 
                 "orderHistory": "View order History",
@@ -98,12 +113,16 @@
         "success": "Success",
         "receive": "Receive",
         "fauceting": "Fauceting", 
+        "faucet": "Faucet",
         "copyClipboard": "Copied to clipboard",
         "copyAddress": "Copy address",
         "copy": "Copy",
         "loading": "Loading...",
         "share": "Share", 
         "done": "Done",
+        "send": "Send",
+        "amount": "Amount",
+        "recipAddress": "Recipient address",
         "directions": {
             "arkade": "Paying inside Arkade",
             "lightningSwap": "Swapping to Lightning",

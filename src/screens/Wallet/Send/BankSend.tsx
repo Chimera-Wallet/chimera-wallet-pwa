@@ -453,7 +453,7 @@ export default function BankSend() {
   if (sending) {
     return (
       <>
-        <Header text='Send' />
+        <Header text= {t('common.general.send')} />
         <Content>
           <WaitingForRound />
         </Content>

@@ -173,7 +173,7 @@ export default function BankReceive() {
         notifyResult(false, t('errors.receive.general.failedOrderSimple'))
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create deposit order')
+      setError(err instanceof Error ? err.message : t('errors.receive.bank.failedDeposit'))
       notifyResult(false, t('errors.receive.general.failedOrderSimple'))
     } finally {
       setLoading(false)

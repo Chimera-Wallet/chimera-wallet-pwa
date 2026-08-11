@@ -47,7 +47,8 @@
             "server": "Ark server unreachable",
             "lnurl": "LNURL does not support Ark payments",
             "addressReceiveLnurl": "Invalid Arkade address received from LNURL" ,
-            "assets": "Assets can only be sent to Arkade addresses"  
+            "assets": "Assets can only be sent to Arkade addresses",
+            "serverKeyMiss": "Ark server key mismatch"  
         },
         "lightning": {
             "address": "Selected method requires a Lightning invoice address",

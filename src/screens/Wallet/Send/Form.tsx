@@ -55,7 +55,8 @@ import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
 import clockIcon from '../../../../public/images/icons/ Clock.svg'
 import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
 import checkMarkIcon from '../../../../public/images/icons/ CheckCheckMark.png'
-import {useTranslation} from 'react-i18next'
+import {useTranslation, Trans} from 'react-i18next'
+
 
 
 export default function SendForm() {
@@ -188,7 +189,7 @@ export default function SendForm() {
           return setNudgeBoltz(true)
         }
         const satoshis = getInvoiceSatoshis(lowerCaseData)
-        if (!satoshis) return setError('errors.satoshi.invoiceAmount')
+        if (!satoshis) return setError(t('errors.satoshi.invoiceAmount'))
         setState({ ...sendInfo, address: '', arkAddress: '', invoice: lowerCaseData, lnUrl: undefined, satoshis })
         setAmountIsReadOnly(true)
         setAmount(satoshis)
@@ -196,7 +197,7 @@ export default function SendForm() {
       }
       if (isBTCAddress(recipient)) {
         if (selectedMethod !== TRANSFER_METHOD.bitcoin) {
-          return setError('errors.send.bitcoin.type')
+          return setError(t('errors.send.bitcoin.type'))
         }
         return setState({ ...sendInfo, address: recipient, arkAddress: '', invoice: '', lnUrl: undefined })
       }
@@ -267,7 +268,7 @@ export default function SendForm() {
       const { serverPubKey: expectedServerPubKey } = decodeArkAddress(offchainAddr)
       if (serverPubKey !== expectedServerPubKey) {
         // if there's no other way to pay, show error
-        if (!address && !invoice) return setError('Ark server key mismatch')
+        if (!address && !invoice) return setError(t('errors.send.arkade.serverKeyMiss'))
         // remove ark address from possibilities to send and continue
         // we will try to pay to lightning or mainnet instead
         setSendInfo({ ...sendInfo, arkAddress: '' })
@@ -343,7 +344,7 @@ export default function SendForm() {
     setDeductFromAmount(satoshis + calcOnchainOutputFee() > availableBalance)
   }, [availableBalance, sendInfo.satoshis, sendInfo.address, sendInfo.arkAddress, sendInfo.invoice])
 
-  if (!svcWallet) return <Loading text='Loading...' />
+  if (!svcWallet) return <Loading text={t('common.general.loading')} />
 
   const gotoBoltzApp = () => {
     navigate(Pages.AppBoltzSettings)
@@ -398,7 +399,7 @@ export default function SendForm() {
           }
           const arkResponse = await fetchArkAddress(sendInfo.lnUrl)
           if (!isArkAddress(arkResponse.address)) {
-          handleError('errors.send.arkade.addressReceiveLnurl')
+          handleError(t('errors.send.arkade.addressReceiveLnurl'))
             return
           }
           setState({ ...sendInfo, arkAddress: arkResponse.address, invoice: undefined })
@@ -485,7 +486,7 @@ export default function SendForm() {
 
   if (scan) {
     return (
-      <Scanner close={() => setScan(false)} label='Recipient address' onData={setRecipient} onError={smartSetError} />
+      <Scanner close={() => setScan(false)} label={t('common.general.recipAddress')} onData={setRecipient} onError={smartSetError} />
     )
   }
 
@@ -571,12 +572,12 @@ export default function SendForm() {
                 }}
               >
                 <Text small color='var(--white70)'>
-                  Invoice Details
+                  {t('common.notifications.send.invoiceDeets')}
                 </Text>
                 <FlexCol gap='0.5rem'>
                   <FlexRow between gap='0.5rem'>
                     <Text small color='var(--white50)'>
-                      Amount
+                      {t('common.general.amount')}
                     </Text>
                     <Text small bold>
                       {prettyAmount(satoshis)}
@@ -692,21 +693,31 @@ export default function SendForm() {
               ))}
               {methodFeeText ? <InfoLine compact color='orange' icon={getIconComponent('receipt')} text={methodFeeText} /> : null}
               {deductFromAmount ? (
-                <InfoLine compact color='orange' text='Fees will be deducted from the amount sent' />
+                <InfoLine compact color='orange' text={t('common.notifications.send.feesDeduction')}/>
               ) : null}
             </InfoContainer>
             </div>
             {tryingToSelfSend ? (
               <div style={{ width: '100%' }}>
                 <Text centered small>
-                  Did you mean <a onClick={gotoRollover}>roll over your VTXOs</a>?
+                  <Trans
+                  i18nKey="common.notifications.send.rollOverVTXO"
+                  components={[
+                    <a onClick={gotoRollover} />
+                  ]}
+                />
                 </Text>
               </div>
             ) : null}
             {nudgeBoltz && getApiUrl() ? (
               <div style={{ width: '100%' }}>
                 <Text centered small>
-                  Enable <a onClick={gotoBoltzApp}>Lightning swaps</a> to pay
+                  <Trans
+                    i18nKey="common.notifications.send.lightningSwaps"
+                    components={{
+                      link: <a onClick={gotoBoltzApp} />
+                    }}
+                  />
                 </Text>
               </div>
             ) : null}

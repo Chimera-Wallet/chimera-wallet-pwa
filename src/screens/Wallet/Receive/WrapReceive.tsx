@@ -49,17 +49,17 @@ const formatBaseUnits = (value: string | null, precision: number): string => {
 const statusLabel = (status: WrapQuote['status']): string => {
   switch (status) {
     case 'pending':
-      return 'Waiting for your deposit…'
+      return ('common.notifications.wrapService.pending')
     case 'deposited':
-      return 'Deposit detected, confirming…'
+      return ('common.notifications.wrapService.deposited')
     case 'processing':
-      return 'Minting your wrapped asset…'
+      return ('common.notifications.wrapService.processing')
     case 'completed':
-      return 'Completed'
+      return ('common.notifications.wrapService.completed')
     case 'expired':
-      return 'This quote has expired'
+      return ('common.notifications.wrapService.expired')
     case 'failed':
-      return 'The wrap failed'
+      return ('common.notifications.wrapService.failed')
   }
 }
 
@@ -196,7 +196,7 @@ export default function WrapReceive() {
             ) : (
               <>
                 <InfoContainer>
-                  <InfoLine compact text={statusLabel(quote.status)} />
+                  <InfoLine compact text={t(statusLabel(quote.status))} />
                   <InfoLine
                     compact
                     color='orange'
