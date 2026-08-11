@@ -37,6 +37,7 @@ import {
   isTerminalWrapStatus,
   type WrapQuote,
 } from '../../../lib/arkadeWrap'
+import { useTranslation } from 'react-i18next'
 
 const POLL_INTERVAL = 8000
 
@@ -77,13 +78,15 @@ export default function WrapReceive() {
 
   const chain = wrapRecvInfo ? requireSourceChain(wrapRecvInfo.chainId) : undefined
   const assetConfig = wrapRecvInfo ? requireAssetConfig(wrapRecvInfo.assetSymbol) : undefined
+  
+  const {t} = useTranslation()
 
   // Redirect out if we somehow got here without a selection.
   useEffect(() => {
     if (!wrapRecvInfo) navigate(Pages.ReceiveAmount)
   }, [wrapRecvInfo])
 
-  if (!wrapRecvInfo || !chain || !assetConfig) return <Loading text='Loading...' />
+  if (!wrapRecvInfo || !chain || !assetConfig) return <Loading text={t('common.notifications.receive.loading')} />
 
   const precision = assetConfig.precision
 
@@ -109,7 +112,7 @@ export default function WrapReceive() {
           if (wrapRecvInfo) setWrapRecvInfo({ ...wrapRecvInfo, sender, receiver, quote: updated })
           if (updated.status === 'completed') {
             setCompleted(true)
-            notifyResult(true, 'Wrapped asset received')
+            notifyResult(true, t('common.notifications.wrapService.assetReceived'))
           }
           if (isTerminalWrapStatus(updated.status) && pollRef.current) clearInterval(pollRef.current)
         })
@@ -122,11 +125,11 @@ export default function WrapReceive() {
 
   const handleCreateQuote = async () => {
     if (!chain.isValidAddress(sender)) {
-      setError(`Enter a valid ${chain.name} address`)
+      setError(t('errors.receive.wrapService.validAddress', {name: chain.name}))
       return
     }
     if (!receiver) {
-      setError('Unable to get your Arkade receiving address')
+      setError(t('errors.wrapService.arkadeRcvAddress'))
       return
     }
     try {
@@ -142,7 +145,7 @@ export default function WrapReceive() {
       setWrapRecvInfo({ ...wrapRecvInfo, sender: sender.trim(), receiver, quote: created })
     } catch (err) {
       setError(extractError(err))
-      notifyResult(false, 'Failed to create wrap quote')
+      notifyResult(false, t('errors.receive.wrapService.failedWrapQuote'))
     } finally {
       setLoading(false)
     }
@@ -152,15 +155,15 @@ export default function WrapReceive() {
     const amount = formatBaseUnits(quote?.payout_amount ?? null, precision)
     return (
       <>
-        <Header text='Success' />
+        <Header text= {t('common.general.success')} />
         <Content>
           <Success
-            headline='Wrap completed!'
-            text={amount ? `${amount} ${wrapRecvInfo.ticker} received on Arkade` : 'Your wrapped asset was received'}
+            headline= {t('common.notifications.wrapService.completed')}
+            text={amount ? t('common.notifications.wrapService.arkRcv', {amount, ticker: wrapRecvInfo.ticker}) : t('common.notifications.wrapService.wrappedRcv')}
           />
         </Content>
         <ButtonsOnBottom>
-          <Button label='Done' onClick={() => navigate(Pages.Wallet)} />
+          <Button label= {t('common.general.done')} onClick={() => navigate(Pages.Wallet)} />
         </ButtonsOnBottom>
       </>
     )
@@ -168,7 +171,7 @@ export default function WrapReceive() {
 
   return (
     <>
-      <Header text={`Receive ${wrapRecvInfo.ticker} via ${chain.name}`} back={goBack} />
+      <Header text={t('common.notifications.wrapService.rcvViaChain', {ticker: wrapRecvInfo.ticker, name: chain.name})} back={goBack} />
       <Content>
         <Padded>
           <FlexCol gap='1rem'>
@@ -180,11 +183,11 @@ export default function WrapReceive() {
                   <InfoLine
                     compact
                     color='orange'
-                    text={`Enter the ${chain.name} address you will send ${wrapRecvInfo.ticker} from. We reserve a deposit address and mint the equivalent wrapped asset to your Arkade wallet.`}
+                    text={t('common.notifications.wrapService.addressSendFrom', {name: chain.name, ticker: wrapRecvInfo.ticker})}
                   />
                 </InfoContainer>
                 <Input
-                  label={`Your ${chain.name} address`}
+                  label={t('common.notifications.wrapService.ownAddress', {name: chain.name})}
                   value={sender}
                   onChange={setSender}
                   placeholder={chain.addressPlaceholder}
@@ -197,13 +200,13 @@ export default function WrapReceive() {
                   <InfoLine
                     compact
                     color='orange'
-                    text={`Send ${wrapRecvInfo.ticker} on ${chain.name} to the address below before the quote expires.`}
+                    text={t('common.notifications.wrapService.expiry', {ticker: wrapRecvInfo.ticker, name: chain.name})}
                   />
                   {quote.amount ? (
-                    <InfoLine compact text={`Deposit detected: ${formatBaseUnits(quote.amount, precision)} ${wrapRecvInfo.ticker}`} />
+                    <InfoLine compact text={t('common.notifications.wrapService.depositDetected', {amount: formatBaseUnits(quote.amount, precision), ticker: wrapRecvInfo.ticker})} />
                   ) : null}
                   {quote.fee_amount ? (
-                    <InfoLine compact text={`Bridge fee: ${formatBaseUnits(quote.fee_amount, precision)} ${wrapRecvInfo.ticker}`} />
+                    <InfoLine compact text={t('common.notifications.wrapService.bridgeFee' ,{amount: formatBaseUnits(quote.fee_amount, precision), ticker: wrapRecvInfo.ticker})} />
                   ) : null}
                 </InfoContainer>
                 <FlexCol centered gap='0.75rem'>
@@ -211,7 +214,7 @@ export default function WrapReceive() {
                   <div
                     style={{ wordBreak: 'break-all', textAlign: 'center', fontSize: '13px', cursor: 'pointer' }}
                     onClick={() => navigator.clipboard?.writeText(quote.treasury)}
-                    title='Tap to copy'
+                    title= {t('common.general.tapCopy')}
                   >
                     {quote.treasury}
                   </div>
@@ -223,9 +226,9 @@ export default function WrapReceive() {
       </Content>
       <ButtonsOnBottom>
         {!quote ? (
-          <Button label={loading ? 'Reserving…' : 'Get deposit address'} onClick={handleCreateQuote} disabled={loading || !sender} />
+          <Button label={loading ? t('common.general.reserving') : t('common.notifications.wrapService.getDepositAddress')} onClick={handleCreateQuote} disabled={loading || !sender} />
         ) : (
-          <Button label='Done' onClick={() => navigate(Pages.Wallet)} secondary />
+          <Button label={t('common.general.done')} onClick={() => navigate(Pages.Wallet)} secondary />
         )}
       </ButtonsOnBottom>
     </>

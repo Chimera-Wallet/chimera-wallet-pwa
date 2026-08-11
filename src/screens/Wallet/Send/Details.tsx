@@ -23,6 +23,7 @@ import { isPendingChainSwap, isPendingSubmarineSwap } from '@arkade-os/boltz-swa
 import { FeesContext } from '../../../providers/fees'
 import { prettyAssetAmount } from '../../../lib/assets'
 import { TxResultContext } from '../../../providers/txResult'
+import {useTranslation} from 'react-i18next'
 
 export default function SendDetails() {
   const { navigate } = useContext(NavigationContext)
@@ -47,24 +48,26 @@ export default function SendDetails() {
   const [sendDone, setSendDone] = useState(false)
 
   const { address, arkAddress, invoice, pendingSwap, satoshis } = sendInfo
+  const { t } = useTranslation()
+  
 
   useEffect(() => {
-    if (!address && !arkAddress && !invoice) return setError('Missing address')
+    if (!address && !arkAddress && !invoice) return setError(t('errors.general.missingAddress'))
     if (isAssetSend) {
-      if (!assetAmountValue) return setError('Missing asset amount')
+      if (!assetAmountValue) return setError(t('errors.general.missingAsset'))
       const destination = arkAddress ?? ''
       const feeInSats = defaultFee
       setDetails({
         destination,
-        direction: 'Sending assets',
+        direction: t('common.general.sendAsset'),
         fees: feeInSats,
         satoshis: 0,
         total: feeInSats,
       })
-      setButtonLabel('Tap to Sign')
+      setButtonLabel(t('common.general.tapSign'))
       return
     }
-    if (!satoshis) return setError('Missing amount')
+    if (!satoshis) return setError(t('errors.general.missingAmount'))
     const destination =
       arkAddress && vtxoTxsAllowed()
         ? arkAddress
@@ -75,13 +78,13 @@ export default function SendDetails() {
             : ''
     const direction =
       destination === arkAddress
-        ? 'Paying inside Arkade'
+        ? t('common.general.directions.arkade')
         : destination === invoice
-          ? 'Swapping to Lightning'
+          ? t('common.general.directions.lightningSwap')
           : pendingSwap?.type === 'chain'
-            ? 'Swapping to mainnet'
+            ? t('common.general.mainnetSwap')
             : destination === address
-              ? 'Paying to mainnet'
+              ? t('common.general.directions.mainnetPay')
               : ''
     const total = pendingSwap
       ? pendingSwap.type === 'chain'
@@ -90,7 +93,7 @@ export default function SendDetails() {
           ? pendingSwap.response.expectedAmount
           : satoshis
       : satoshis
-    const amount = direction === 'Paying to mainnet' ? satoshis - calcOnchainOutputFee() : satoshis
+    const amount = direction === t('common.general.directions.mainnetPay') ? satoshis - calcOnchainOutputFee() : satoshis
     const fees = total - amount > 0 ? total - amount : 0
     const swapId = pendingSwap?.id
     setDetails({
@@ -102,10 +105,13 @@ export default function SendDetails() {
       total,
     })
     if (balance < total) {
-      setButtonLabel('Insufficient funds')
-      setError(`Insufficient funds, you just have ${prettyNumber(fromSatoshis(balance), 8)} BTC`)
+      setButtonLabel(t('errors.funds.insufficient'))
+      setError(t('errors.funds.insufficientExtra', {
+          balance: prettyNumber(fromSatoshis(balance), 8),
+        })
+    )
     } else {
-      setButtonLabel('Tap to Sign')
+      setButtonLabel(t('common.general.tapSign'))
     }
   }, [sendInfo, balance])
 
@@ -114,7 +120,7 @@ export default function SendDetails() {
   }
 
   const handleTxid = (txid: string) => {
-    if (!txid) return handleError('Error sending transaction')
+    if (!txid) return handleError(t('errors.send.general.errorSend'))
     setSendInfo({ ...sendInfo, total: details?.total, txid })
     setSendDone(true)
   }
@@ -126,7 +132,7 @@ export default function SendDetails() {
   useEffect(() => {
     if (!sendDone) return
     if (error) {
-      notifyResult(false, 'Transaction failed').then(() => setSending(false))
+      notifyResult(false, t('common.notifications.failedTransaction')).then(() => setSending(false))
       return
     }
     navigate(Pages.SendSuccess)
@@ -145,10 +151,10 @@ export default function SendDetails() {
     // Sign" that does nothing is indistinguishable from a broken button. The
     // net `satoshis` is the amount after deducting the onchain output fee, so a
     // zero here means the fee consumed the whole amount.
-    if (!isAssetSend && !details.total) return handleError('Missing amount')
-    if (!isAssetSend && !details.satoshis) return handleError('Amount too low to cover network fees')
+    if (!isAssetSend && !details.total) return handleError(t('errors.general.missingAmount'))
+    if (!isAssetSend && !details.satoshis) return handleError(t('errors.network.tooLow'))
     if (isAssetSend && !arkAddress) {
-      setError('Assets can only be sent to Arkade addresses')
+      setError(t('errors.send.arkade.assets'))
       return
     }
 
@@ -156,18 +162,18 @@ export default function SendDetails() {
 
     if (isAssetSend && arkAddress) {
       // Asset send via wallet.send()
-      if (!sendInfo.assets || sendInfo.assets.length === 0) return handleError('Missing assets list')
+      if (!sendInfo.assets || sendInfo.assets.length === 0) return handleError(t('errors.general.missingAssetList'))
       sendAssets(svcWallet, arkAddress, sendInfo.assets)
         .then((txId: string) => handleTxid(txId))
         .catch(handleError)
     } else if (arkAddress) {
-      if (!details.total) return handleError('Missing total amount')
+      if (!details.total) return handleError(t('errors.general.missingTotal'))
       sendOffChain(svcWallet, details.total, arkAddress)
         .then((txId: string) => handleTxid(txId))
         .catch(handleError)
     } else if (invoice && pendingSwap && isPendingSubmarineSwap(pendingSwap)) {
       const swapAddress = pendingSwap.response.address
-      if (!swapAddress) return handleError('Swap address not available')
+      if (!swapAddress) return handleError(t('errors.general.swapAddUnavailable'))
       payInvoice(pendingSwap)
         .then(({ preimage, txid }) => handlePreimage({ preimage, txid }))
         .catch(handleError)
@@ -177,8 +183,8 @@ export default function SendDetails() {
           .then(({ txid }) => handleTxid(txid))
           .catch(handleError)
       } else {
-        if (!details.total) return handleError('Missing total amount')
-        if (!details.satoshis) return handleError('Missing satoshis amount')
+        if (!details.total) return handleError(t('errors.general.missingTotal'))
+        if (!details.satoshis) return handleError(t('errors.general.missingSats'))
         collaborativeExitWithFees(svcWallet, details.total, details.satoshis, address)
           .then((txId: string) => handleTxid(txId))
           .catch(handleError)
@@ -188,15 +194,15 @@ export default function SendDetails() {
 
   return (
     <>
-      <Header text='Sign transaction' back />
+      <Header text={t('common.general.signTrans')} back />
       <Content>
         {sending ? (
           details?.destination === invoice ? (
-            <Loading text='Paying to Lightning' />
+            <Loading text={t('common.general.directions.lightningPay')} />
           ) : details?.destination === arkAddress ? (
-            <Loading text='Paying inside Arkade' />
+            <Loading text={t('common.general.directions.arkade')} />
           ) : (
-            <Loading text='Paying to mainnet' />
+            <Loading text={t('common.general.directions.mainnetPay')} />
           )
         ) : (
           <Padded>

@@ -5,7 +5,8 @@
         "address": "Paste Arkade address"
     },
     "lightning": {
-        "address": "Paste Lightning invoice address"
+        "address": "Paste Lightning invoice address",
+        "invoice": "Paste a Lightning invoice to send payment. The payment amount is encoded in the invoice."
     },
     "bitcoin": {
         "address": "Paste BTC address"

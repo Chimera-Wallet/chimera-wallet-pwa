@@ -1,3 +1,117 @@
 {
-    "confirmSend": "Confirm sending"
+    "confirmSend": "Confirm sending",
+    "transfer": "Use transfer",
+    "estimateFees": "Estimated fees",
+    "accountName": "Account Holder Name",
+    "accountNumber": "Account Number",
+    "routingNumber": "Routing Number",
+    "orderHistory": "View order History",
+    "notifications": {
+        "bank": {
+            "submissionSuccess": "Withdrawal submitted",
+            "submissionFailed": "Withdrawal failed",
+            "swiftFee": "A flat fee of {{fee}} {{currency}} applies to all outgoing SWIFT withdrawals and will be deducted from the received amount.",
+            "creatingOrder": "Creating Order...",
+            "createWithdrawal": "Create Withdrawal",
+            "failedTransaction": "Transaction failed",
+            "paymentSent": "Payment sent!",
+            "paymentAmount": "{{displayed}} sent successfully"   
+        },
+        "unwrapService":{
+            "pending": "Waiting for your Arkade deposit…",
+            "deposited": "Deposit detected, confirming…",
+            "processing": "Sending your payout…",
+            "completed": "Completed",
+            "completedHeadline": "Unwrap completed!",
+            "expired": "This quote has expired",
+            "failed": "The unwrap failed",
+            "failedQuote": "Failed to create unwrap quote", 
+            "sent": "Payout sent",
+            "sendInfo": "{{value}} {{ticker}} sent on {{name}}",
+            "sendInfoExtended": "Enter the {{name}} address that will receive the payout. We reserve an Arkade deposit address; sending your wrapped {{ticker}} to it releases the funds on {{name}}.",
+            "destination": "Destination {{name}} address",
+            "timeSensitive": "Send your wrapped {{ticker}} on Arkade to the treasury address below before the quote expires.",
+            "payout": "`Payout: {{amount}} {{ticker}}`",
+            "sendHeader": "Send {{ticker}} to {{name}}"
+        },
+        "wrapService": {
+            "assetReceived": "Wrapped asset received",
+            "completed": "Wrap completed",
+            "arkRcv": "{{amount}} {{ticker}} received on Arkade",
+            "wrappedRcv": "Your wrapped asset was received",
+            "rcvViaChain": "Receive {{ticker}} via {{name}}",
+            "addressSendFrom": "Enter the {{name}} address you will send {{ticker}} from. We reserve a deposit address and mint the equivalent wrapped asset to your arkade wallet.",
+            "ownAddress": "Your {{name}} address",
+            "expiry": "Send {{ticker}} on {{name}} to the address below before the quote expires.",
+            "depositDetected": "Deposit detected {{amount}} {{ticker}}",
+            "bridgeFee": "Bridge fee: {{amount}} {{ticker}}",
+            "getDepositAddress": "Get deposit address"
+        },
+        "receive": {
+            "fauceting": "Getting sats from a faucet. This may take a few moments.",
+            "faucetComplete": "Faucete completed!",
+            "faucetReceived": "{{amount}} received successfully",
+            "lightning": {
+                "lightningNetworkRcv": "For Lightning Network receives, please enter an amount above to generate your invoice and QR code.",
+                "lightningFees": "Lightning fees {{amount}}",
+                "tabOpen": "Keep tab open to receive Lightning",
+                "generateQR": "Generating QR code...",
+                "lightningInvoice": "Lightning invoice"
+            },
+            "arkade": {
+                "arkadeAddress": "Arkade address"
+            },
+            "bitcoin":{
+                "bitcoinAddress": "Bitcoin address"
+            },
+            "lnurl": {
+                "lnurlAddress": "LNURL address"
+            },
+            "invalidAmount": "No valid payment methods available for this amount",
+            "depositCreated": "Deposit order created",
+            "editAmount": "Edit amount",
+            "addAmount": "Add amount",
+            "copyQR": "Copy QR code",
+            "setAmount": "Set amount",
+            "clearAmount": "Clear amount",
+            "paymentReceived": "Payment received!", 
+            "successAmount": "{{amount}} received successfully",
+            "bank": {
+                "bankDeposit": "Bank Deposit", 
+                "orderHistory": "View order History",
+                "sendTransfer": "Send Bank Transfer",
+                "madeTransfer": "I've Made the Transfer",
+                "orderStatus": "View Order Status",
+                "swiftFee": "A flat fee of {{fee}} {{currency}} applies to all incoming SWIFT transfers and will be deducted from the received amount.",
+                "transferDetails": "Transfer {{amount}} {{currency}} to the bank details below. Your Bitcoin will be credited once the transfer is confirmed."
+            }
+
+        }
+    },
+    "general": {
+        "sendAsset": "Sending assets",
+        "tapSign": "Tap to Sign",
+        "tapCopy": "Tap to copy",
+        "signTrans": "Sign transaction",
+        "reserving": "Reserving...",
+        "continue": "Continue",
+        "success": "Success",
+        "receive": "Receive",
+        "fauceting": "Fauceting", 
+        "copyClipboard": "Copied to clipboard",
+        "copyAddress": "Copy address",
+        "copy": "Copy",
+        "loading": "Loading...",
+        "share": "Share", 
+        "done": "Done",
+        "directions": {
+            "arkade": "Paying inside Arkade",
+            "lightningSwap": "Swapping to Lightning",
+            "lightningPay": "Paying to Lightning", 
+            "mainnetSwap": "Swapping to mainnet",
+            "mainnetPay": "Paying to mainnet"
+
+        }
+    }
+
 }

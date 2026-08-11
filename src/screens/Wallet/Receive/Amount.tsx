@@ -75,7 +75,7 @@ export default function ReceiveAmount() {
   const selectedMethod = recvInfo.method ?? TRANSFER_METHOD.bitcoin
 
   useEffect(() => {
-    setError(aspInfo.unreachable ? 'Ark server unreachable' : '')
+    setError(aspInfo.unreachable ? t('errors.send.arkade.server') : '')
   }, [aspInfo.unreachable])
 
   useEffect(() => {
@@ -88,8 +88,8 @@ export default function ReceiveAmount() {
     if (!svcWallet) return
     getReceivingAddresses(svcWallet)
       .then(({ offchainAddr, boardingAddr }) => {
-        if (!offchainAddr) throw 'Unable to get offchain address'
-        if (!boardingAddr) throw 'Unable to get boarding address'
+        if (!offchainAddr) throw t('errors.receive.general.offChain')
+        if (!boardingAddr) throw t('errors.receive.general.boarding')
         setRecvInfo({
           ...recvInfo,
           boardingAddr,
@@ -108,10 +108,10 @@ export default function ReceiveAmount() {
 
   const handleFaucet = async () => {
     try {
-      if (!satoshis) throw 'Invalid amount'
+      if (!satoshis) throw t('errors.receive.general.amount')
       setFauceting(true)
       const ok = await callFaucet(recvInfo.offchainAddr, satoshis, aspInfo)
-      if (!ok) throw 'Faucet failed'
+      if (!ok) throw t('errors.receive.general.faucetFail')
       setFauceting(false)
       setFaucetSuccess(true)
     } catch (err) {
@@ -210,7 +210,7 @@ export default function ReceiveAmount() {
       createReverseSwap(satoshis)
         .then((pendingSwap) => {
           if (cancelled) return
-          if (!pendingSwap) throw new Error('Failed to create reverse swap')
+          if (!pendingSwap) throw new Error(t('errors.receive.general.pendingSwap'))
           const invoice = pendingSwap.response.invoice
           setRecvInfo({ ...recvInfo, invoice })
           setInvoice(invoice)
@@ -284,7 +284,7 @@ export default function ReceiveAmount() {
       <>
         <Header text='Fauceting' />
         <Content>
-          <Loading text='Getting sats from a faucet. This may take a few moments.' />
+          <Loading text={t('common.notifications.receive.fauceting')} />
         </Content>
       </>
     )
@@ -296,7 +296,7 @@ export default function ReceiveAmount() {
       <>
         <Header text='Success' />
         <Content>
-          <Success headline='Faucet completed!' text={`${displayAmount} received successfully`} />
+          <Success headline={t('common.notifications.receive.faucetComplete')} text={t('common.notifications.receive.faucetReceived', { amount: displayAmount })} />
         </Content>
       </>
     )
@@ -382,7 +382,7 @@ export default function ReceiveAmount() {
                 <InfoLine
                   compact
                   icon={getIconComponent('info')}
-                  text='For Lightning Network receives, please enter an amount above to generate your invoice and QR code.'
+                  text= {t('common.notifications.receive.lightning.lightningNetworkRcv')}
                 />
               ) : null}
               {termsAndConditions.map((item) => (
@@ -399,16 +399,16 @@ export default function ReceiveAmount() {
                   compact
                   color='orange'
                   icon={<FeesIcon />}
-                  text={`Lightning fees: ${prettyAmount(reverseSwapFee)}`}
+                  text={t('common.notifications.receive.lightning.lightningFees', { amount: prettyAmount(reverseSwapFee) })}
                 />
               ) : null}
             </InfoContainer>
             </div>
             {noPaymentMethods ? (
-              <div>No valid payment methods available for this amount</div>
+              <div>{t('common.notifications.receive.invalidAmount')}</div>
             ) : showQrCode ? (
               <FlexCol centered>
-                {invoice ? <InfoLine centered color='orange' text='Keep tab open to receive Lightning' /> : null}
+                {invoice ? <InfoLine centered color='orange' text={t('common.notifications.receive.lightning.tabOpen')} /> : null}
                 <QrCode value={qrValue} />
                 <ExpandAddresses
                   bip21uri={bip21uri}
@@ -419,7 +419,7 @@ export default function ReceiveAmount() {
                 />
               </FlexCol>
             ) : (
-              <Loading text='Generating QR code...' />
+              <Loading text={t('common.notifications.receive.lightning.generateQR')} />
             )}
           </FlexCol>
         </Padded>

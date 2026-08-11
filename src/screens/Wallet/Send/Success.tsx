@@ -8,6 +8,7 @@ import { ConfigContext } from '../../../providers/config'
 import { FiatContext } from '../../../providers/fiat'
 import { WalletContext } from '../../../providers/wallet'
 import { prettyAssetAmount } from '../../../lib/assets'
+import { useTranslation } from 'react-i18next'
 
 export default function SendSuccess() {
   const { config, useFiat } = useContext(ConfigContext)
@@ -33,6 +34,9 @@ export default function SendSuccess() {
       ? prettyFiatAmount(toFiat(totalSats), config.fiat)
       : btcAmount
 
+  const { t } = useTranslation()
+
+
   // Fire the sent-payment notification and the success popup exactly once, then
   // redirect home. Navigating to Pages.Wallet is a root navigation that clears
   // the back stack, so the back button won't return to the transaction flow.
@@ -41,7 +45,7 @@ export default function SendSuccess() {
     if (handled.current) return
     handled.current = true
     if (sendInfo.total) notifyPaymentSent(sendInfo.total)
-    notifyResult(true, 'Payment sent!', `${displayAmount} sent successfully`).then(() => navigate(Pages.Wallet))
+    notifyResult(true, t('common.notifications.bank.paymentSent'), t('common.notifications.bank.paymentAmount', {displayed: displayAmount})).then(() => navigate(Pages.Wallet))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

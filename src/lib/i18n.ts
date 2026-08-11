@@ -23,7 +23,7 @@ import itCommon from './locales/it/common.json'
 
 i18n.use(initReactI18next).init({
   debug: import.meta.env.DEV,
-  fallbackLng: 'it',
+  fallbackLng: 'en',
   interpolation: {
     escapeValue: false,
   },
