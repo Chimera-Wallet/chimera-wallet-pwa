@@ -10,6 +10,48 @@
     },
     "bank": {
         "description": "Traditional bank transfers"
+    },
+    "browser":{
+        "welcomeMessage": "Welcome to Arkade 👾",
+        "compatibilityIssue": "Won't work in this browser.",
+        "copyLink": "Copy the link below",
+        "openBrowserPrompt": "Open Safari, Chrome, or your broswer", 
+        "pastePrompt": "Paste the link and go",
+        "copied": "Copied", 
+        "excitedCopy": "Copied!",
+        "copyLinkPrompt": "Copy link",
+
+        "safariShare": "Tap the Share icon in Safari's toolbar, then 'Add to Home Screen'.",
+        "chromeShare": "Tap the Share icon in Chrome's address bar, then 'Add to Home Screen'.",
+        "firefoxShare": "Tap the menu icon in Firefox, then 'Add to Home Screen'. For full support, open this page in Safari.",
+        "edgeShare": "Tap the menu icon in Edge, then 'Add to Home Screen'. For full support, open this page in Safari.",
+        "defaultShare": "Tap the Share icon, then 'Add to Home Screen'. For full support, open this page in Safari.",
+
+        "installDescr": "Tap 'Install' to add Chimera to your home screen.",
+        "install": "Install"
+    },
+
+    "transactions": {
+        "viewAll": "View all transactions",
+        "seeAll": "See all transactions",
+        "allTransactions": "All Transactions",
+    
+        "completeBoarding": "Complete Boarding",
+        "settleTransaction": "Settle transaction",
+        "settling": "Settling...",
+        "processingBoarding": "Processing your boarding transaction...",
+        "settlingTransaction": "Settling transaction...",
+        "boardingExpired": "Boarding transaction expired.",
+        "onchainUnconfirmed": "Onchain transaction unconfirmed. Please wait for confirmation.",
+        "onboardConfirmed": "Onboard transaction confirmed on-chain.",
+        "transactionSettledSucc": "Transaction settled successfully",
+        "resend": "Resend",
+        "reminder": "Add reminder",
+        "transaction": "Transaction",
+        "pendingBoarding": "Pending Boarding",
+        "preconfirmed": "Preconfirmed",
+        "boarding": "Boarding",
+        "offchain": "Offchain"
     }
 
 }

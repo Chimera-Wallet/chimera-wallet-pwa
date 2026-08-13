@@ -123,6 +123,24 @@
         "send": "Send",
         "amount": "Amount",
         "recipAddress": "Recipient address",
+        "backToWallet": "Back to Wallet",
+        "status": "Status",
+        "to": "To",
+        "from": "From",
+        "created": "Created",
+        "refreshing": "Refreshing...",
+        "wallet": "Wallet", 
+        "unkown": "Unkown",
+        "unconfirmed": "Unconfirmed",
+        "settled": "Settled",
+        "expired": "Expired",
+        "chimeraWallet": "Chimera Wallet",
+
+        "wallets": {
+            "unlockWallet": "Unlocking wallet...",
+            "loadData": "Loading wallet data..."
+
+        },
         "directions": {
             "arkade": "Paying inside Arkade",
             "lightningSwap": "Swapping to Lightning",
@@ -130,6 +148,45 @@
             "mainnetSwap": "Swapping to mainnet",
             "mainnetPay": "Paying to mainnet"
 
+        },
+        "bank": {
+            "orderHistory": "Order History",
+            "noOrders": "No Orders Yet",
+            "orderAppear": "Your bank transfer orders will appear here",
+            "orderNumber": "Order # {{id}}...",
+            "orderNumberSimple": "Order ID",
+            "orderStatus": "Order Status",
+            "orderCompleted": "Order Completed",
+            "orderCompletedDescr": "Your transfer has been completed successfully.",
+            "orderExpired": "Order Expired", 
+            "orderExpiredDescr": "This order has expired. Please create a new order.",
+            "orderCancelled": "Order Cancelled",
+            "orderCancelledDescr": "This order has been cancelled.",
+            "orderRejected": "Order Rejected",
+            "orderRejectedDescr": "This order was rejected. Please contact support.",
+            "loadingOrder": "Loading order details...",
+            "orderNotFound": "Order not found",
+            "expires": "Expires", 
+            "depositAmount": "Deposit Amount",
+            "processing": "Processing", 
+            "processingDescr": "Your bank deposit has been received and is being processed.",
+            "paymentReceived": "Your payment has been received. We are processing your withdrawal and will send the funds to your bank account.",
+            "awaitingTransfer": "Awaiting Bank Transfer", 
+            "withdrawalSubmit": "Withdrawal Submitted",
+            "waitingForTransfer": "Waiting for your bank transfer. Once received, your order will be processed",
+            "withdrawalProcessing": "Your withdrawal is being processed. You will receive {{fiat}} in your bank account once confirmed.",
+            "transferMethod": "Transfer Method",
+            "sepaDetails": "SEPA Bank Details",
+            "swiftDetails": "SWIFT Bank Details",
+            "completeMessage": "{{fiat}} has been sent to your bank account", 
+            "refreshStatus": "Refresh Status",
+            "newTransfer": "New Transfer"
+            
+
+        },
+        "notes": {
+            "note": "Note",
+            "arkNote": "Arkade note"
         }
     }
 

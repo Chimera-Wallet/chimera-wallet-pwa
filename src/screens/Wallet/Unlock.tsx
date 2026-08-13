@@ -8,6 +8,7 @@ import NeedsPassword from '../../components/NeedsPassword'
 import { defaultPassword } from '../../lib/constants'
 import Loading from '../../components/Loading'
 import { clearStorage } from '../../lib/storage'
+import {useTranslation} from 'react-i18next'
 
 export default function Unlock() {
   const { unlockWallet, dataReady, wallet, updateWallet } = useContext(WalletContext)
@@ -21,6 +22,7 @@ export default function Unlock() {
   const [shouldAutoUnlock, setShouldAutoUnlock] = useState(false)
   const [unlocking, setUnlocking] = useState(false)
   const [timeoutReached, setTimeoutReached] = useState(false)
+  const {t} = useTranslation()
   // Re-entrancy guard for the unlock effect. We can't rely on the `unlocking`
   // state flag alone: setUnlocking(true) is async, and the effect can re-fire
   // synchronously on the next render before React commits the flag. A ref
@@ -72,12 +74,12 @@ export default function Unlock() {
         // 'getAddress')".
         if (err instanceof ArkadeUnreachableError) {
           consoleError(err, 'Arkade server unreachable during unlock')
-          setError('Arkade server unreachable. Check Settings → Arkade Server.')
+          setError(t('errors.initialisation.arkadeUnreachable'))
           return
         }
         if (password) {
           consoleError(err, 'error unlocking wallet')
-          setError('Invalid password')
+          setError(t('errors.initialisation.invalidPass'))
         } else {
           // Auto-unlock failed, show unlock screen
           consoleError(err, 'Auto-unlock failed')
@@ -114,7 +116,7 @@ export default function Unlock() {
       if (unlocking && !dataReady) {
         setTimeoutReached(true)
         setUnlocking(false)
-        setError('Unlock timed out. Please try again.')
+        setError(t('errors.initialisation.unlockTimeout'))
         consoleError(new Error('Unlock timeout'), 'Wallet unlock exceeded 30 seconds')
       }
     }, 30000) // 30 second timeout
@@ -124,12 +126,12 @@ export default function Unlock() {
 
   // Show loading spinner while unlocking if unlocked but waiting for data
   if (unlocking && !timeoutReached) {
-    return <Loading text='Unlocking wallet...' />
+    return <Loading text={t('common.general.wallets.unlockWallet')} />
   }
 
   // If unlocked but data not ready and timeout not reached, keep showing loading
   if (unlocked && !dataReady && !timeoutReached) {
-    return <Loading text='Loading wallet data...' />
+    return <Loading text={t('common.general.wallets.loadData')} />
   }
 
   const handleRestore = async () => {

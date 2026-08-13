@@ -6,15 +6,18 @@ import { AspContext } from '../../providers/asp'
 import { useContext, useEffect, useState } from 'react'
 import { isIOS } from '../../lib/browser'
 import { detectJSCapabilities, getRestrictedEnvironmentMessage } from '../../lib/jsCapabilities'
+import {useTranslation} from 'react-i18next'
 
 export default function Unavailable() {
   const { aspInfo } = useContext(AspContext)
 
   const [error, setError] = useState('')
+  
+  const {t} = useTranslation()
 
   // Check JavaScript capabilities on mount
   useEffect(() => {
-    if (aspInfo.unreachable) return setError('Arkade server unreachable.')
+    if (aspInfo.unreachable) return setError(t('errors.send.arkade.server'))
     detectJSCapabilities()
       .then((result) => {
         if (result.isSupported) return
@@ -30,7 +33,7 @@ export default function Unavailable() {
     <CenterScreen>
       <WalletNewIcon />
       <Text bigger heading medium>
-        Chimera Wallet
+        {t('common.general.chimeraWallet')}
       </Text>
       <ErrorMessage error text={error} />
     </CenterScreen>

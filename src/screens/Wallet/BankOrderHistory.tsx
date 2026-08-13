@@ -18,6 +18,7 @@ import { prettyDate } from '../../lib/format'
 import FlexRow from '../../components/FlexRow'
 import TransactionsIcon from '../../icons/Transactions'
 import { getBankOrderHistory, BankOrderHistoryEntry, type BankOrderType } from '../../lib/bankOrderHistory'
+import { useTranslation } from 'react-i18next'
 
 export default function BankOrderHistory() {
   const { navigate, goBack } = useContext(NavigationContext)
@@ -59,17 +60,19 @@ export default function BankOrderHistory() {
     return type === 'receive' ? 'Deposit' : 'Withdrawal'
   }
 
+  const {t} = useTranslation() 
+
   if (orderHistory.length === 0) {
     return (
       <>
-        <Header text='Order History' back={goBack} />
+        <Header text={t('common.general.bank.orderHistory')} back={goBack} />
         <Content>
           <CenterScreen>
             <FlexCol centered gap='1rem'>
               <TransactionsIcon />
               <FlexCol centered gap='0.5rem'>
-                <Text heading>No Orders Yet</Text>
-                <TextSecondary>Your bank transfer orders will appear here</TextSecondary>
+                <Text heading>{t('common.general.bank.noOrders')}</Text>
+                <TextSecondary>{t('common.general.bank.orderAppear')}</TextSecondary>
               </FlexCol>
             </FlexCol>
           </CenterScreen>
@@ -80,7 +83,7 @@ export default function BankOrderHistory() {
 
   return (
     <>
-      <Header text='Order History' back={goBack} />
+      <Header text={t('common.general.bank.orderHistory')} back={goBack} />
       <Content>
         <Padded>
           <FlexCol gap='1rem'>
@@ -102,7 +105,7 @@ export default function BankOrderHistory() {
                     </FlexCol>
                   </FlexRow>
                   <FlexRow gap='0.5rem'>
-                    <TextSecondary small>Order #{entry.order.id.slice(0, 8)}...</TextSecondary>
+                    <TextSecondary small>{t('common.general.bank.orderNumber', {id: entry.order.id.slice(0, 8)})}</TextSecondary>
                     <TextSecondary small>→ {entry.order.to_asset}</TextSecondary>
                   </FlexRow>
                 </FlexCol>

@@ -100,7 +100,10 @@
         "bank": {
             "failedOrderExtra": "Failed to create order - no order returned",
             "failedOrderSimple": "Failed to create order",
-            "failedDeposit": "Failed to create deposit order"
+            "failedDeposit": "Failed to create deposit order",
+            "noOrderInfo": "No order information available",
+            "failedLoad": "Failed to load order",
+            "failedRefresh": "Failed to refresh order"
         },
         "lightning": {
             "tempUnavailable": "Lightning is temporarily unavailable. This QR code only supports Arkade and on-chain payments."
@@ -110,6 +113,11 @@
             "arkadeRcvAddress": "Unable to get your Arkade receiving address",
             "failedWrapQuote": "Failed to create wrap quote"
         }
+    },
+    "initialisation": {
+        "arkadeUnreachable": "Arkade server unreachable. Check Settings → Arkade Server.",
+        "invalidPass": "Invalid password", 
+        "unlockTimeout": "Unlock timed out. Please try again."
     }
       
     }

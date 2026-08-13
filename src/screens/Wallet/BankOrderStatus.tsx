@@ -25,6 +25,7 @@ import { FlowContext } from '../../providers/flow'
 import { getOrderStatus, ChimeraOrder } from '../../providers/chimera'
 import { prettyDate } from '../../lib/format'
 import { type BankCircuit } from '../../lib/bankTransferConfig'
+import { useTranslation } from 'react-i18next'
 
 // Polling interval in milliseconds
 const POLL_INTERVAL = 30000
@@ -46,12 +47,13 @@ export default function BankOrderStatus() {
   const [error, setError] = useState('')
   const [order, setOrder] = useState<ChimeraOrder | null>(initialOrder ?? null)
   const [refreshing, setRefreshing] = useState(false)
+  const {t} = useTranslation()
 
   // Fetch order status on mount and periodically
   useEffect(() => {
     if (!order?.id) {
       setLoading(false)
-      setError('No order information available')
+      setError(t('errors.receive.bank.noOrderInfo'))
       return
     }
 
@@ -61,7 +63,7 @@ export default function BankOrderStatus() {
         setOrder(orderData)
         setError('')
       } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : 'Failed to load order'
+        const errorMsg = err instanceof Error ? err.message : t('errors.receive.bank.failedLoad')
         setError(errorMsg)
       } finally {
         setLoading(false)
@@ -84,7 +86,7 @@ export default function BankOrderStatus() {
       setOrder(orderData)
       setError('')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to refresh order')
+      setError(err instanceof Error ? err.message : t('errors.receive.bank.failedRefresh'))
     } finally {
       setRefreshing(false)
     }
@@ -94,12 +96,13 @@ export default function BankOrderStatus() {
     navigate(Pages.Wallet)
   }
 
+
   if (loading) {
     return (
       <>
-        <Header text='Order Status' back={goBack} />
+        <Header text={t('common.general.bank.orderStatus')} back={goBack} />
         <Content>
-          <Loading text='Loading order details...' />
+          <Loading text={t('common.general.bank.loadingOrder')} />
         </Content>
       </>
     )
@@ -108,12 +111,12 @@ export default function BankOrderStatus() {
   if (error || !order) {
     return (
       <>
-        <Header text='Order Status' back={goBack} />
+        <Header text={t('common.general.bank.orderStatus')} back={goBack} />
         <Content>
           <Padded>
             <FlexCol gap='1rem'>
-              <ErrorMessage error text={error || 'Order not found'} />
-              <Button onClick={handleBackToWallet} label='Back to Wallet' />
+              <ErrorMessage error text={error || t('common.general.bank.orderNotFound')} />
+              <Button onClick={handleBackToWallet} label={t('common.general.backToWallet')} />
             </FlexCol>
           </Padded>
         </Content>
@@ -141,23 +144,23 @@ export default function BankOrderStatus() {
 
   // Build table data
   const tableData: TableData = [
-    ['Order ID', order.id.slice(0, 8) + '...'],
-    ['Status', order.status.replace(/_/g, ' ')],
+    [t('common.general.bank.orderNumberSimple'), order.id.slice(0, 8) + '...'],
+    [t('common.general.status'), order.status.replace(/_/g, ' ')],
     ...(isWithdrawalOrder
-      ? ([['To', `${Number(bankSendInfo.amount).toFixed(2)} ${bankSendInfo.currency}`]] as TableData)
+      ? ([[t('common.general.to'), `${Number(bankSendInfo.amount).toFixed(2)} ${bankSendInfo.currency}`]] as TableData)
       : ([
-          ['From', `${order.from_amount} ${order.from_asset}`],
-          ['To', order.to_asset],
+          [t('common.general.from'), `${order.from_amount} ${order.from_asset}`],
+          [t('common.general.to'), order.to_asset],
         ] as TableData)),
-    ['Created', prettyDate(new Date(order.created_at).getTime())],
+    [t('common.general.created'), prettyDate(new Date(order.created_at).getTime())],
   ]
 
   if (order.expires_at && isWaitingForDeposit) {
-    tableData.push(['Expires', prettyDate(new Date(order.expires_at).getTime())])
+    tableData.push([t('common.general.bank.expires'), prettyDate(new Date(order.expires_at).getTime())])
   }
 
   if (order.deposit_amount) {
-    tableData.push(['Deposit Amount', order.deposit_amount])
+    tableData.push([t('common.general.depositAmount'), order.deposit_amount])
   }
 
   // Check for bank deposit details
@@ -178,51 +181,51 @@ export default function BankOrderStatus() {
 
   return (
     <>
-      <Header text='Order Status' back={goBack} />
+      <Header text={t('common.general.bank.orderStatus')} back={goBack} />
       <Content>
         <Padded>
           <FlexCol gap='1.5rem'>
             {/* Status Banner */}
             {isCompleted ? (
-              <Info color='green' icon={<CheckMarkIcon small />} title='Order Completed'>
-                <TextSecondary>Your transfer has been completed successfully.</TextSecondary>
+              <Info color='green' icon={<CheckMarkIcon small />} title={t('common.general.bank.orderCompleted')}>
+                <TextSecondary>{t('common.general.bank.orderCompletedDescr')}</TextSecondary>
               </Info>
             ) : null}
 
             {isExpired ? (
-              <Info color='red' title='Order Expired'>
-                <TextSecondary>This order has expired. Please create a new order.</TextSecondary>
+              <Info color='red' title={t('common.general.bank.orderExpired')}>
+                <TextSecondary>{t('common.general.bank.orderExpiredDescr')}</TextSecondary>
               </Info>
             ) : null}
 
             {isCancelled ? (
-              <Info color='red' title='Order Cancelled'>
-                <TextSecondary>This order has been cancelled.</TextSecondary>
+              <Info color='red' title={t('common.general.bank.orderCancelled')}>
+                <TextSecondary>{t('common.general.bank.orderCancelledDescr')}</TextSecondary>
               </Info>
             ) : null}
 
             {isRejected ? (
-              <Info color='red' title='Order Rejected'>
-                <TextSecondary>This order was rejected. Please contact support.</TextSecondary>
+              <Info color='red' title={t('common.general.bank.orderRejected')}>
+                <TextSecondary>{t('common.general.bank.orderRejectedDescr')}</TextSecondary>
               </Info>
             ) : null}
 
             {isProcessing ? (
-              <Info color='yellow' title='Processing'>
+              <Info color='yellow' title={t('common.general.bank.processing')}>
                 <TextSecondary>
                   {isDepositOrder
-                    ? 'Your bank deposit has been received and is being processed.'
-                    : 'Your payment has been received. We are processing your withdrawal and will send the funds to your bank account.'}
+                    ? t('common.general.bank.processingDescr')
+                    : t('common.general.bank.paymentReceived')}
                 </TextSecondary>
               </Info>
             ) : null}
 
             {isWaitingForDeposit ? (
-              <Info color='blue' title={isDepositOrder ? 'Awaiting Bank Transfer' : 'Withdrawal Submitted'}>
+              <Info color='blue' title={isDepositOrder ? t('common.general.bank.awaitingtransfer') : t('common.general.bank.withdrawalSubmit')}>
                 <TextSecondary>
                   {isDepositOrder
-                    ? 'Waiting for your bank transfer. Once received, your order will be processed.'
-                    : `Your withdrawal is being processed. You will receive ${withdrawalFiatDisplay} in your bank account once confirmed.`}
+                    ? t('common.general.bank.waitingForTransfer')
+                    : t('common.genreal.bank.withdrawlProcessing', {fiat: withdrawalFiatDisplay})}
                 </TextSecondary>
               </Info>
             ) : null}
@@ -239,7 +242,7 @@ export default function BankOrderStatus() {
                 {/* Circuit switcher when both are available */}
                 {hasSepaDetails && hasSwiftDetails ? (
                   <FlexCol gap='0.5rem'>
-                    <TextLabel>Transfer Method</TextLabel>
+                    <TextLabel>{t('common.general.bank.transferMethod')}</TextLabel>
                     <BankCircuitSelector
                       currency={bankRecvInfo.currency}
                       selectedCircuit={activeCircuit}
@@ -252,7 +255,7 @@ export default function BankOrderStatus() {
                 {activeCircuit === 'sepa' && hasSepaDetails ? (
                   <Shadow fat>
                     <FlexCol gap='0.5rem'>
-                      <Text bold>SEPA Bank Details</Text>
+                      <Text bold>{t('common.general.bank.sepaDetails')}</Text>
                       <SepaDataView
                         iban={order.deposit_sepa_address}
                         bic={order.deposit_sepa_bic}
@@ -267,7 +270,7 @@ export default function BankOrderStatus() {
                 {activeCircuit === 'swift' && hasSwiftDetails ? (
                   <Shadow fat>
                     <FlexCol gap='0.5rem'>
-                      <Text bold>SWIFT Bank Details</Text>
+                      <Text bold>{t('common.general.bank.swiftDetails')}</Text>
                       <SwiftDataView
                         iban={order.deposit_swift_address}
                         bic={order.deposit_swift_bic}
@@ -284,7 +287,7 @@ export default function BankOrderStatus() {
             {isCompleted && isWithdrawalOrder ? (
               <Info color='green' title='Funds Sent'>
                 <TextSecondary>
-                  {withdrawalFiatDisplay} has been sent to your bank account.
+                  {t('common.general.bank.completeMessage', {fiat: withdrawalFiatDisplay})}
                 </TextSecondary>
               </Info>
             ) : null}
@@ -295,17 +298,17 @@ export default function BankOrderStatus() {
         {isWaitingForDeposit ? (
           <Button
             onClick={handleRefresh}
-            label={refreshing ? 'Refreshing...' : 'Refresh Status'}
+            label={refreshing ? t('common.general.refreshing') : t('common.general.bank.refreshStatus')}
             secondary
             disabled={refreshing}
             loading={refreshing}
           />
         ) : null}
-        <Button onClick={handleBackToWallet} label='Back to Wallet' />
+        <Button onClick={handleBackToWallet} label={t('common.general.backToWallet')} />
         {isCompleted || isExpired || isCancelled || isRejected ? (
           <Button
             onClick={() => navigate(isWithdrawalOrder ? Pages.BankSend : Pages.ReceiveAmount)}
-            label='New Transfer'
+            label={t('common.general.bank.newTransfer')}
             secondary
           />
         ) : null}

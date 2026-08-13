@@ -16,6 +16,7 @@ import { copyToClipboard } from '../../lib/clipboard'
 import CopyIcon from '../../icons/Copy'
 import CheckMarkIcon from '../../icons/CheckMark'
 import { hapticTap } from '../../lib/haptics'
+import {useTranslation} from 'react-i18next'
 
 function NumberedBullet({ number, text }: { number: number; text: string }) {
   return (
@@ -115,6 +116,8 @@ export default function InAppBrowser() {
       // clipboard API may be unavailable in some in-app browsers
     }
   }
+  
+  const {t} = useTranslation()
 
   const titleStyle = {
     margin: 0,
@@ -180,9 +183,9 @@ export default function InAppBrowser() {
                   }
                   transition={{ duration: 0.3, ease: EASE_OUT_QUINT_TUPLE }}
                 >
-                  <h1 style={{ ...titleStyle, paddingLeft: 4 }}>Welcome to Arkade 👾</h1>
+                  <h1 style={{ ...titleStyle, paddingLeft: 4 }}>{t('networks.browser.welcomeMessage')}</h1>
                   <Text color='neutral-500' thin wrap>
-                    Won't work in this browser.
+                    {t('networks.browser.compatibilityIssue')}
                   </Text>
                 </motion.div>
               </div>
@@ -202,13 +205,13 @@ export default function InAppBrowser() {
                 style={{ width: '100%', visibility: contentReady ? 'visible' : 'hidden' }}
               >
                 <OnboardStaggerChild>
-                  <NumberedBullet number={1} text='Copy the link below' />
+                  <NumberedBullet number={1} text={t('networks.browser.copyLink')} />
                 </OnboardStaggerChild>
                 <OnboardStaggerChild>
-                  <NumberedBullet number={2} text='Open Safari, Chrome, or your browser' />
+                  <NumberedBullet number={2} text={t('networks.browser.openBrowserPrompt')} />
                 </OnboardStaggerChild>
                 <OnboardStaggerChild>
-                  <NumberedBullet number={3} text='Paste the link and go' />
+                  <NumberedBullet number={3} text={t('networks.browser.pastePrompt')} />
                 </OnboardStaggerChild>
               </motion.div>
             </div>
@@ -267,7 +270,7 @@ export default function InAppBrowser() {
                 hapticTap()
                 handleCopy()
               }}
-              aria-label={copied ? 'Copied' : 'Copy link'}
+              aria-label={copied ? t('networks.browser.copied') : t('networks.browser.copyLinkPrompt')}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -312,8 +315,8 @@ export default function InAppBrowser() {
             </button>
           </div>
 
-          <Button onClick={handleCopy} label={copied ? 'Copied!' : 'Copy link'}>
-            <TextMorph text={copied ? 'Copied!' : 'Copy link'} reducedMotion={prefersReduced} />
+          <Button onClick={handleCopy} label={copied ? t('networks.browser.excitedCopy') : t('networks.browser.copyLinkPrompt')}>
+            <TextMorph text={copied ? t('networks.browser.excitedCopy') : t('networks.browser.copyLinkPrompt')} reducedMotion={prefersReduced} />
           </Button>
         </motion.div>
       </ButtonsOnBottom>
