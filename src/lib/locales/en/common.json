@@ -186,7 +186,13 @@
         },
         "notes": {
             "note": "Note",
-            "arkNote": "Arkade note"
+            "arkNote": "Arkade note",
+            "redeemNote": "Redeem Note",
+            "redeeming": "Redeeming...",
+            "processing": "Processing. This may take a few moments.",
+            "noteRedeemed": "Note redeemed!",
+            "redeemSuccess": "{{amount}} redeemed successfully",
+            "soundsGood": "Sounds good"
         }
     }
 
