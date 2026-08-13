@@ -21,8 +21,7 @@ import { getBankOrderHistory, BankOrderHistoryEntry, type BankOrderType } from '
 
 export default function BankOrderHistory() {
   const { navigate, goBack } = useContext(NavigationContext)
-  const { bankRecvInfo, bankSendInfo, setCurrentBankOrderType, setBankRecvInfo, setBankStatusOrder } =
-    useContext(FlowContext)
+  const { bankRecvInfo, setCurrentBankOrderType, setBankRecvInfo, setBankStatusOrder } = useContext(FlowContext)
 
   // Load order history from localStorage
   const [orderHistory, setOrderHistory] = useState<BankOrderHistoryEntry[]>([])
@@ -48,16 +47,24 @@ export default function BankOrderHistory() {
   }
 
   const getStatusColor = (status: string) => {
-    if (status === 'COMPLETED' || status === 'APPROVED') return 'var(--success)'
+    if (status === 'COMPLETED') return 'var(--success)'
     if (status === 'WAITING_FOR_DEPOSIT') return 'var(--info)'
-    if (['DEPOSIT_RECEIVED', 'DEPOSIT_CONFIRMED', 'PROCESSING'].includes(status)) return 'var(--warning)'
-    if (['EXPIRED', 'CANCELLED', 'REJECTED'].includes(status)) return 'var(--error)'
+    if (['DEPOSIT_RECEIVED', 'PROCESSING', 'PENDING_MANUAL'].includes(status)) return 'var(--warning)'
+    if (['EXPIRED', 'REJECTED', 'FAILED', 'REFUNDED'].includes(status)) return 'var(--error)'
     return 'var(--text-secondary)'
   }
 
   const getOrderTypeLabel = (type: BankOrderType) => {
     return type === 'receive' ? 'Deposit' : 'Withdrawal'
   }
+
+  // Deposits (onramp) declare the fiat leg at creation; withdrawals (offramp)
+  // declare the crypto leg — see ramp-system's "Pricing model" in CLAUDE.md.
+  const getDeclaredAmount = (order: BankOrderHistoryEntry['order']) =>
+    order.direction === 'onramp' ? `${order.fiat_amount ?? '—'} ${order.fiat_currency}` : `${order.crypto_amount ?? '—'} ${order.asset ?? ''}`
+
+  const getCounterparty = (order: BankOrderHistoryEntry['order']) =>
+    order.direction === 'onramp' ? order.asset ?? '' : order.fiat_currency
 
   if (orderHistory.length === 0) {
     return (
@@ -93,9 +100,7 @@ export default function BankOrderHistory() {
                       <TextSecondary small>{prettyDate(entry.timestamp)}</TextSecondary>
                     </FlexCol>
                     <FlexCol gap='0.25rem'>
-                      <Text bold>
-                        {entry.order.from_amount} {entry.order.from_asset}
-                      </Text>
+                      <Text bold>{getDeclaredAmount(entry.order)}</Text>
                       <Text small color={getStatusColor(entry.order.status)}>
                         {entry.order.status.replace(/_/g, ' ')}
                       </Text>
@@ -103,7 +108,7 @@ export default function BankOrderHistory() {
                   </FlexRow>
                   <FlexRow gap='0.5rem'>
                     <TextSecondary small>Order #{entry.order.id.slice(0, 8)}...</TextSecondary>
-                    <TextSecondary small>→ {entry.order.to_asset}</TextSecondary>
+                    <TextSecondary small>→ {getCounterparty(entry.order)}</TextSecondary>
                   </FlexRow>
                 </FlexCol>
               </Shadow>

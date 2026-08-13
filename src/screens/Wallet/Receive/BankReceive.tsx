@@ -2,10 +2,11 @@
  * Bank Receive (Deposit) Screen
  *
  * Allows users to deposit fiat currency via bank transfer to receive crypto.
- * Shows bank details (SEPA/SWIFT) where user should send their fiat.
+ * Shows the bank details (SEPA or SWIFT — whichever ramp-system returns for
+ * the chosen currency) where the user should send their fiat.
  */
 
-import { useContext, useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import Content from '../../../components/Content'
 import FlexCol from '../../../components/FlexCol'
 import Header from '../../../components/Header'
@@ -20,7 +21,7 @@ import AssetSelector from '../../../components/AssetSelector'
 import NetworkSelector from '../../../components/NetworkSelector'
 import InlineAmountInput from '../../../components/InlineAmountInput'
 import BankTransferValidationMessages from '../../../components/BankTransferValidation'
-import { getAssetConfig, requireAssetConfig, type AssetSymbol } from '../../../lib/assets'
+import { requireAssetConfig, type AssetSymbol } from '../../../lib/assets'
 import {
   TRANSFER_METHOD,
   TERMS_AND_CONDITIONS,
@@ -32,27 +33,18 @@ import WhenIcon from '../../../icons/When'
 import FeesIcon from '../../../icons/Fees'
 import InfoIcon from '../../../icons/Info'
 import TransactionsIcon from '../../../icons/Transactions'
-import {
-  SepaDataView,
-  SwiftDataView,
-  TransferReferenceBox,
-  BankCircuitSelector,
-  BankCurrencySelector,
-} from '../../../components/BankDetails'
+import { SepaDataView, SwiftDataView, TransferReferenceBox, BankCurrencySelector } from '../../../components/BankDetails'
 import { NavigationContext, Pages } from '../../../providers/navigation'
 import { FlowContext } from '../../../providers/flow'
 import { WalletContext } from '../../../providers/wallet'
 import { TxResultContext } from '../../../providers/txResult'
-import { createBankDeposit, ChimeraOrder } from '../../../providers/chimera'
+import { createOnRampOrder, type RampOrder, type RampBankDetails } from '../../../providers/ramp'
 import { getReceivingAddresses } from '../../../lib/asp'
 import { addOrderToHistory } from '../../../lib/bankOrderHistory'
 import { useBankTransferValidation } from '../../../hooks/useBankTransferValidation'
 import {
   getBankTransferConfigSync,
-  getDefaultCircuit,
   getSupportedReceiveCurrencies,
-  SWIFT_RECEIVE_FEE,
-  type BankCircuit,
   type BankCurrency,
 } from '../../../lib/bankTransferConfig'
 import { getUserEmailForBankTransfer } from '../../../lib/kyc'
@@ -75,19 +67,20 @@ export default function BankReceive() {
 
   // Form state
   const [currency, setCurrency] = useState<BankCurrency>(bankRecvInfo.currency || bankConfig.defaultCurrency)
-  const [circuit, setCircuit] = useState<BankCircuit>(bankRecvInfo.circuit || getDefaultCircuit(currency))
-  const isCurrencyFirstRender = useRef(true)
   const [amount, setAmount] = useState<number>(bankRecvInfo.amount || 0)
 
   // API state
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [order, setOrder] = useState<ChimeraOrder | null>(bankRecvInfo.order ?? null)
+  const [order, setOrder] = useState<RampOrder | null>(bankRecvInfo.order ?? null)
+  const [bankDetails, setBankDetails] = useState<RampBankDetails | null>(bankRecvInfo.bankDetails ?? null)
   const [arkAddress, setArkAddress] = useState<string>('')
 
-  // Validation
+  // Validation — ramp-system doesn't offer a sepa/swift choice for deposits
+  // (it returns one bank account per currency), so circuit is fixed to sepa
+  // purely for the validation hook's threshold/currency checks.
   const numAmount = amount
-  const validation = useBankTransferValidation({ amount: numAmount, currency, circuit })
+  const validation = useBankTransferValidation({ amount: numAmount, currency, circuit: 'sepa' })
 
   const handleOrderHistory = () => {
     navigate(Pages.BankOrderHistory)
@@ -108,15 +101,6 @@ export default function BankReceive() {
     loadAddress()
   }, [svcWallet])
 
-  // Update circuit when currency changes (skip on mount to preserve restored circuit)
-  useEffect(() => {
-    if (isCurrencyFirstRender.current) {
-      isCurrencyFirstRender.current = false
-      return
-    }
-    setCircuit(getDefaultCircuit(currency))
-  }, [currency])
-
   const handleCreateDeposit = async () => {
     if (!validation.canProceed) {
       if (!validation.kycVerified && validation.kycRequired) {
@@ -135,41 +119,37 @@ export default function BankReceive() {
       setLoading(true)
       setError('')
 
-      const subid = localStorage.getItem('subid')
-      const response = await createBankDeposit({
+      const response = await createOnRampOrder({
         email: getUserEmailForBankTransfer(),
-        from_amount: numAmount,
-        from_asset: currency,
-        to_asset: `${requireAssetConfig(selectedAsset).symbol}-ARK`,
-        destination_address: arkAddress,
-        ...(subid ? { sub_id: subid } : {}),
+        asset: requireAssetConfig(selectedAsset).symbol,
+        fiat_currency: currency,
+        fiat_amount: String(numAmount),
+        destination_crypto_address: arkAddress,
+        origin: 'app',
       })
 
-      if (response.kycError) {
-        setError('KYC verification required')
+      setOrder(response.order)
+      setBankDetails(response.bank_details)
+      setBankRecvInfo({
+        currency,
+        circuit: 'sepa',
+        amount: numAmount,
+        order: response.order,
+        bankDetails: response.bank_details,
+      })
+      // Track this as the current order and add to history
+      setCurrentBankOrderType('receive')
+      addOrderToHistory(response.order, 'receive')
+      // Success popup; the screen then shows the bank transfer details (no redirect)
+      notifyResult(true, 'Deposit order created')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create deposit order'
+      if (/kyc/i.test(message)) {
+        setError(message)
         navigate(Pages.SettingsKYC)
         return
       }
-
-      if (response.order) {
-        setOrder(response.order)
-        setBankRecvInfo({
-          currency,
-          circuit,
-          amount: numAmount,
-          order: response.order,
-        })
-        // Track this as the current order and add to history
-        setCurrentBankOrderType('receive')
-        addOrderToHistory(response.order, 'receive', circuit)
-        // Success popup; the screen then shows the bank transfer details (no redirect)
-        notifyResult(true, 'Deposit order created')
-      } else {
-        setError('Failed to create order - no order returned')
-        notifyResult(false, 'Failed to create order')
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create deposit order')
+      setError(message)
       notifyResult(false, 'Failed to create order')
     } finally {
       setLoading(false)
@@ -189,9 +169,8 @@ export default function BankReceive() {
   }
 
   // Show order details if we have one
-  if (order) {
-    const hasSepaDetails = Boolean(order.deposit_sepa_address)
-    const hasSwiftDetails = Boolean(order.deposit_swift_address)
+  if (order && bankDetails) {
+    const DataView = bankDetails.payment_type === 'swift' ? SwiftDataView : SepaDataView
 
     return (
       <>
@@ -213,37 +192,17 @@ export default function BankReceive() {
               </Info>
 
               {/* Transfer Reference - Most Important */}
-              {order.transfer_code ? <TransferReferenceBox reference={order.transfer_code} /> : null}
-
-              {/* Circuit Selection */}
-              {hasSepaDetails && hasSwiftDetails ? (
-                <FlexCol gap='0.5rem'>
-                  <BankCircuitSelector currency={currency} selectedCircuit={circuit} onSelect={setCircuit} />
-                </FlexCol>
-              ) : null}
+              <TransferReferenceBox reference={bankDetails.transfer_code} />
 
               {/* Bank Details */}
-              {circuit === 'sepa' && hasSepaDetails ? (
-                <FlexCol gap='0.5rem'>
-                  <SepaDataView
-                    iban={order.deposit_sepa_address}
-                    bic={order.deposit_sepa_bic}
-                    beneficiary={order.deposit_sepa_beneficiary}
-                    bankName={order.deposit_sepa_bank_name}
-                  />
-                </FlexCol>
-              ) : null}
-
-              {(circuit === 'swift' || !hasSepaDetails) && hasSwiftDetails ? (
-                <FlexCol gap='0.5rem'>
-                  <SwiftDataView
-                    iban={order.deposit_swift_address}
-                    bic={order.deposit_swift_bic}
-                    beneficiary={order.deposit_swift_beneficiary}
-                    bankName={order.deposit_swift_bank_name}
-                  />
-                </FlexCol>
-              ) : null}
+              <FlexCol gap='0.5rem'>
+                <DataView
+                  iban={bankDetails.iban}
+                  bic={bankDetails.bic}
+                  beneficiary={bankDetails.beneficiary}
+                  bankName={bankDetails.bank_name}
+                />
+              </FlexCol>
             </FlexCol>
           </Padded>
         </Content>
@@ -285,7 +244,7 @@ export default function BankReceive() {
                          fontWeight: '600',
                 }} />
             </div>
-            </div> 
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100', gap:'1rem'}}>
 
             <NetworkSelector
@@ -307,21 +266,7 @@ export default function BankReceive() {
               <BankCurrencySelector selectedCurrency={currency} onSelect={setCurrency} currencies={getSupportedReceiveCurrencies()} />
             </FlexCol>
 
-            {/* Transfer Method */}
-            <FlexCol gap='0.5rem'>
-              <BankCircuitSelector currency={currency} selectedCircuit={circuit} onSelect={setCircuit} />
-            </FlexCol>
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' , width: '100', marginTop: '1rem'}}>
-            {/* SWIFT fee notice */}
-            {circuit === 'swift' ? (
-              <Info color='orange' icon = {<img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />} title={`SWIFT Transfer Fee: ${SWIFT_RECEIVE_FEE} ${currency}` }>
-                <TextSecondary>
-                  A flat fee of {SWIFT_RECEIVE_FEE} {currency} applies to all incoming SWIFT transfers and will be
-                  deducted from the received amount.
-                </TextSecondary>
-              </Info>
-            ) : null}
-
             {/* Bank Transfer Terms & Conditions */}
             <InfoContainer>
               {TERMS_AND_CONDITIONS.receive.bank.map((item) => {
@@ -333,10 +278,10 @@ export default function BankReceive() {
                       return <FeesIcon />
                     case 'info':
                       return <img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />
-                    case 'receipt': 
-                      return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} /> 
+                    case 'receipt':
+                      return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />
                     case 'clock':
-                      return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(0.7)'}} /> 
+                      return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(0.7)'}} />
                     default:
                       return <InfoIcon />
                   }

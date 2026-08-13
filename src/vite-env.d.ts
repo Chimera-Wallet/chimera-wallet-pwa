@@ -10,6 +10,10 @@ interface ImportMetaEnv {
   readonly VITE_DELEGATOR_URL?: string
   // Chimera API
   readonly VITE_CHIMERA_API?: string
+  // ramp-system API (fiat<->crypto on/off-ramp, gift cards)
+  readonly VITE_RAMP_API?: string
+  // Off-ramp — company Ark wallet where user funds are sent before payout
+  readonly VITE_BANK_WITHDRAW_WALLET?: string
   // App URLs
   readonly VITE_GIFT_CARDS_URL?: string
   readonly VITE_GIFT_CARDS_BUY_URL?: string
