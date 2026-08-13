@@ -24,7 +24,15 @@ import { psaMessage } from '../../lib/constants'
 import { AnnouncementContext } from '../../providers/announcements'
 import { WalletStaggerContainer, WalletStaggerChild } from '../../components/WalletLoadIn'
 import { fromSatoshis } from '../../lib/format'
-import { ASSETS, getAssetConfig, requireAssetConfig, type AssetSymbol } from '../../lib/assets'
+import {
+  ASSETS,
+  ASSET_LIST,
+  getDisplayTicker,
+  getWrappedAssetId,
+  requireAssetConfig,
+  wrappedAmountToNumber,
+  type AssetSymbol,
+} from '../../lib/assets'
 import { assetSupportsWrap, requireAssetChainOption, type SourceChainId } from '../../lib/sourceChains'
 import Header from '../../components/Header'
 import TransactionsIcon from '../../icons/Transactions'
@@ -42,7 +50,7 @@ export default function Wallet() {
   const { config, updateConfig } = useContext(ConfigContext)
   const { setRecvInfo, setSendInfo, setWrapRecvInfo, setUnwrapSendInfo } = useContext(FlowContext)
   const { isInitialLoad, navigate, navigationCount, screen } = useContext(NavigationContext)
-  const { balance, dataReady, txs } = useContext(WalletContext)
+  const { balance, dataReady, txs, assetBalances } = useContext(WalletContext)
   const { nudge, nudgeVisible, nudgeCheckComplete } = useContext(NudgeContext)
 
   const pwaInstalled = usePwaInstalled()
@@ -233,21 +241,31 @@ export default function Wallet() {
     navigate(Pages.Transactions)
   }
 
-  // Get balance for the selected asset (currently only BTC is supported)
+  // Get balance for the selected asset. BTC uses the on-chain sats balance;
+  // wrapped assets use their Arkade balance matched by wrapped asset ID.
   const getAssetBalance = (symbol: AssetSymbol): number => {
-    // Currently all balance is BTC, so return the wallet balance only for BTC
-    if (symbol === ASSETS.BTC.symbol) {
-      return fromSatoshis(balance)
-    }
-    // Other assets return 0 for now (would come from multi-asset wallet support)
-    return 0
+    if (symbol === ASSETS.BTC.symbol) return fromSatoshis(balance)
+    const assetId = getWrappedAssetId(symbol)
+    if (!assetId) return 0
+    const ab = assetBalances.find((a) => a.assetId === assetId)
+    if (!ab) return 0
+    // CX wrapped assets map 1-to-1 with the original, so interpret the raw
+    // amount with the original asset's precision (not the Arkade metadata).
+    const decimals = requireAssetConfig(symbol).precision
+    return wrappedAmountToNumber(ab.amount, decimals)
   }
+
+  // Balances for every listed asset, used by the home asset list.
+  const assetBalancesForList = ASSET_LIST.map((asset) => ({
+    symbol: asset.symbol as AssetSymbol,
+    balance: getAssetBalance(asset.symbol as AssetSymbol),
+  }))
 
   // Render asset detail view
   if (selectedAsset) {
     return (
       <>
-        <Header text={selectedAsset} back={handleBackToAll} />
+        <Header text={getDisplayTicker(selectedAsset)} back={handleBackToAll} />
         {announcement}
         <Content>
           <Padded>
@@ -372,7 +390,7 @@ export default function Wallet() {
               )}
               <WalletStaggerChild animate={shouldStagger}>
                 <AssetList
-                  balances={[{ symbol: ASSETS.BTC.symbol, balance: fromSatoshis(balance) }]}
+                  balances={assetBalancesForList}
                   onAssetClick={handleAssetClick}
                 />
               </WalletStaggerChild>

@@ -1,6 +1,5 @@
 import { ReactNode, createContext, useEffect, useState } from 'react'
 import { clearStorage, readConfigFromStorage, saveConfigToStorage } from '../lib/storage'
-import { defaultArkServer, devServer } from '../lib/constants'
 import { Config, CurrencyDisplay, Fiats, Themes, Unit } from '../lib/types'
 import { BackupProvider } from '../lib/backup'
 import { consoleError } from '../lib/logs'
@@ -10,10 +9,12 @@ import { IndexedDbSwapRepository } from '@arkade-os/boltz-swap'
 const defaultConfig: Config = {
   announcementsSeen: [],
   apps: { assets: { enabled: false }, boltz: { connected: true } },
-  aspUrl: defaultArkServer(),
+  // Placeholder only: the real value comes from VITE_ARK_SERVER via the loader
+  // below, and the startup config gate blocks the app if it is missing.
+  aspUrl: import.meta.env.VITE_ARK_SERVER ?? '',
   dismissedBanners: [],
   currencyDisplay: CurrencyDisplay.Fiat,
-  delegate: import.meta.env.VITE_DELEGATE_ENABLED !== 'false',
+  delegate: import.meta.env.VITE_DELEGATE_ENABLED === 'true',
   fiat: Fiats.USD,
   importedAssets: [],
   haptics: true,
@@ -74,8 +75,6 @@ const updateDefaultConfig = (config: Partial<Config>): Config => {
   }
 }
 
-const shouldUseDevEnvArkServer = (aspUrl: string) =>
-  import.meta.env.DEV && import.meta.env.VITE_ARK_SERVER && aspUrl === devServer
 
 export const resolveTheme = (theme: Themes): Themes.Dark | Themes.Light => {
   if (theme === Themes.Auto) {
@@ -143,8 +142,20 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
     let config = stored ?? { ...defaultConfig }
     // allow upgradability
     config = { ...defaultConfig, ...config }
-    // env var sets the default server, but only when no user config is stored
-    if (import.meta.env.VITE_ARK_SERVER && !stored) config.aspUrl = import.meta.env.VITE_ARK_SERVER
+    // The build-time ARK server (VITE_ARK_SERVER) must take precedence:
+    // - always when there is no stored config, and
+    // - always in dev builds, so a staging/dev session can never keep a stale
+    //   stored URL (e.g. a previously persisted mainnet aspUrl) and silently
+    //   connect to the wrong network on refresh.
+    if (import.meta.env.VITE_ARK_SERVER && (!stored || import.meta.env.DEV)) {
+      config.aspUrl = import.meta.env.VITE_ARK_SERVER
+    }
+    // Same precedence for the delegate toggle: an explicit VITE_DELEGATE_ENABLED
+    // must win in dev builds so a stored `delegate: true` can't override it and
+    // try to resolve a delegate URL for a network that has none (e.g. signet).
+    if (import.meta.env.VITE_DELEGATE_ENABLED !== undefined && (!stored || import.meta.env.DEV)) {
+      config.delegate = import.meta.env.VITE_DELEGATE_ENABLED === 'true'
+    }
     updateConfig(config)
     setConfigLoaded(true)
   }, [configLoaded])
