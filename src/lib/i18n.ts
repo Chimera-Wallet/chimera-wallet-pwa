@@ -6,7 +6,8 @@ import enNetworks from './locales/en/networks.json'
 import enPlaceholders from './locales/en/placeholders.json'
 import enErrors from './locales/en/errors.json'
 import enCommon from './locales/en/common.json'
-
+import enInit from './locales/en/init.json'
+ 
 
 import esTerms from './locales/es/terms.json'
 import esNetworks from './locales/es/networks.json'
@@ -59,7 +60,9 @@ i18n.use(initReactI18next).init({
       placeholders: enPlaceholders,
       networks: enNetworks,
       errors: enErrors,
-      common: enCommon}
+      common: enCommon,
+      init:enInit
+    }
     },
     es:{
       translation: 

@@ -6,6 +6,7 @@ import FlexCol from '../../components/FlexCol'
 import Button from '../../components/Button'
 import ButtonsOnBottom from '../../components/ButtonsOnBottom'
 import { NavigationContext, Pages } from '../../providers/navigation'
+import { useTranslation, Trans } from 'react-i18next';
 
 export default function InitBackupWarning() {
   const { navigate, goBack } = useContext(NavigationContext)
@@ -18,9 +19,11 @@ export default function InitBackupWarning() {
     goBack()
   }
 
+  const {t} = useTranslation()
+
   return (
     <>
-      <Header text='Important Warning' />
+      <Header text={t('important')} />
       <Content>
         <Padded>
           <FlexCol gap='1.5rem'>
@@ -46,23 +49,33 @@ export default function InitBackupWarning() {
                   letterSpacing: '0.05em',
                 }}
               >
-                ⚠ WARNING
+                {t('warning')}
               </p>
               <p style={{ margin: 0, fontSize: '1rem', lineHeight: 1.6 }}>
-                If you deposit funds to your wallet <strong>without backing up your keys</strong> you are at constant
-                risk of <strong style={{ color: 'rgb(220, 38, 38)' }}>TOTAL AND IRREVERSIBLE loss of funds</strong>.
+               <Trans
+                i18nKey="init.warning.lossFunds"
+                components={{
+                  bold: <strong />,
+                  danger: <strong style={{ color: 'rgb(220, 38, 38)' }} />,
+                }}
+              />
               </p>
               <p style={{ margin: 0, fontSize: '1rem', lineHeight: 1.6 }}>
-                Chimera Wallet is a <strong>fully non-custodial wallet</strong>. <strong>NO ONE</strong> can help you
-                recover your funds if you don't have your key.
+                <Trans
+                  i18nKey="init.warning.nonCustodial"
+                  components={{
+                    bold: <strong />,
+                    strongWarning: <strong />,
+                  }}
+                />
               </p>
             </div>
           </FlexCol>
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        <Button onClick={handleProceed} label='I understand, proceed' />
-        <Button onClick={handleGoBack} label='Go back' secondary clear />
+        <Button onClick={handleProceed} label={t('init.warning.understood')} />
+        <Button onClick={handleGoBack} label={t('init.warning.goBack')} secondary clear />
       </ButtonsOnBottom>
     </>
   )

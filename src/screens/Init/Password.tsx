@@ -9,6 +9,7 @@ import Content from '../../components/Content'
 import Header from '../../components/Header'
 import { defaultPassword } from '../../lib/constants'
 import { OnboardStaggerContainer, OnboardStaggerChild } from '../../components/OnboardLoadIn'
+import {useTranslation} from 'react-i18next'
 
 export default function InitPassword() {
   const { navigate } = useContext(NavigationContext)
@@ -16,6 +17,8 @@ export default function InitPassword() {
 
   const [label, setLabel] = useState('')
   const [password, setPassword] = useState<string | null>(null)
+
+  const {t} = useTranslation()
 
   const handleContinue = () => {
     const pass = password ? password : defaultPassword
@@ -25,7 +28,7 @@ export default function InitPassword() {
 
   return (
     <>
-      <Header text='Create new wallet' back />
+      <Header text={t('init.init.createWallet')} back />
       <Content>
         <Padded>
           <OnboardStaggerContainer>

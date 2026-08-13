@@ -135,6 +135,7 @@
         "settled": "Settled",
         "expired": "Expired",
         "chimeraWallet": "Chimera Wallet",
+        "cancel": "Cancel",
 
         "wallets": {
             "unlockWallet": "Unlocking wallet...",
