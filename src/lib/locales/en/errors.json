@@ -118,6 +118,51 @@
         "arkadeUnreachable": "Arkade server unreachable. Check Settings → Arkade Server.",
         "invalidPass": "Invalid password", 
         "unlockTimeout": "Unlock timed out. Please try again."
+    },
+    "backup": {
+        "nostrFail": "Backup to Nostr failed"
+    },
+    "biometric": {
+        "failedDisable": "Failed to disable biometrics. Please try again.",
+        "failedEnable": "Failed to enable biometrics. Please try again."
+    },
+    "delegates": {
+        "invalidPubkey": "Invalid expected server pubkey",
+        "unableConnect": "Unable to connect",
+        "invalidResponse": "Invalid delegate response",
+        "missingFee": "Missing delegate fee",
+        "invalidFee": "Invalid delegate fee",
+        "negativeFee": "Delegate fee can't be negative",
+        "missingPubkey": "Missing delegate pubkey",
+        "invalidPubkeySize": "Invalid delegate pubkey size",
+        "invalidPubkeyHex": "Invalid delegate pubkey hex",
+        "missingAddress": "Missing delegate address",
+        "invalidAddress": "Invalid delegate address",
+        "invalidServerKey": "Invalid delegate server key",
+        "invalidJSONResp": "Invalid json in delegate response"
+    },
+    "password": {
+        "failedUpdate": "Failed to update password"
+    },
+    "server": {
+        "same": "Same server",
+        "unableConnect": "Unable to connect"
+    },
+    "support": {
+        "notConfigured": "Support chat is not configured",
+        "failedLoad": "Failed to load support chat",
+        "unavailable": "not available"
+    },
+    "verification": {
+        "failedAuth": "Failed to confirm authentication. Please try again." ,
+        "failedVerif": "Failed to initialize verification. Please try again.",
+        "email": "Please enter a valid email address.",
+        "failedEmailSend": "Failed to send verification email. Please try again.",
+        "failedEmailResend": "Failed to resend verification email. Please try again."
+
+    },
+    "vtxo": {
+        "failedFetch": "Failed to fetch coins"
     }
       
     }

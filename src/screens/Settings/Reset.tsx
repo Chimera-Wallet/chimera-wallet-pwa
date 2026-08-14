@@ -11,6 +11,7 @@ import FlexCol from '../../components/FlexCol'
 import FlexRow from '../../components/FlexRow'
 import { SwapsContext } from '../../providers/swaps'
 import { OptionsContext } from '../../providers/options'
+import {useTranslation} from 'react-i18next'
 
 function WarningTriangle() {
   return (
@@ -26,6 +27,8 @@ export default function Reset() {
   const { resetWallet } = useContext(WalletContext)
   const { arkadeSwaps } = useContext(SwapsContext)
   const { goBack } = useContext(OptionsContext)
+
+  const {t} = useTranslation()
 
   const [confirmed, setConfirmed] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -54,7 +57,7 @@ export default function Reset() {
 
   return (
     <>
-      <Header text='Delete Mnemonic' back />
+      <Header text={t('settings.advanced.deleteMnemonic')} back />
       <Content>
         <Padded>
           <div style={cardStyle}>
@@ -64,15 +67,14 @@ export default function Reset() {
                   <WarningTriangle />
                 </div>
                 <Text centered bold heading large color='white'>
-                  WARNING
+                 {t('common.general.warning')}
                 </Text>
               </FlexCol>
               <Text small wrap color='white'>
-                Definitively removes your seed from this device. Be extremely careful, after deletion it will be
-                impossible to retrieve your key from Chimera Wallet.
+                {t('settings.reset.removeSeed')}
               </Text>
               <Text small wrap color='white'>
-                Clicking on "Delete" will delete your mnemonic on this device. Be sure to back it up!
+                {t('settings.reset.removeMnemonic')}
               </Text>
               <label style={{ cursor: 'pointer', display: 'block' }}>
                 <FlexRow gap='0.75rem'>
@@ -80,22 +82,22 @@ export default function Reset() {
                     className='rounded-full'
                     checked={confirmed}
                     onCheckedChange={(checked) => setConfirmed(checked === true)}
-                    aria-label='I understand and delete my account'
+                    aria-label={t('settings.reset.deleteAccount')}
                   />
                   <Text small wrap color='white'>
-                    I understand and delete my account
+                    {t('settings.reset.deleteAccount')}
                   </Text>
                 </FlexRow>
               </label>
               <FlexCol gap='0'>
                 <Button
                   disabled={!confirmed || loading}
-                  label='YES DELETE MNEMONIC'
+                  label={t('settings.reset.deleteMnemConf')}
                   onClick={handleReset}
                   red
                   loading={loading}
                 />
-                <Button clear label='CANCEL' onClick={goBack} />
+                <Button clear label={t('settings.reset.cancel')} onClick={goBack} />
               </FlexCol>
             </FlexCol>
           </div>

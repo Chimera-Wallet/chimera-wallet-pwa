@@ -16,18 +16,21 @@ import { copyToClipboard } from '../../lib/clipboard'
 import { hapticSubtle } from '../../lib/haptics'
 import { useToast } from '../../components/Toast'
 import { consoleError } from '../../lib/logs'
+import {useTranslation} from 'react-i18next'
 
 function CopyRow({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout>>()
   const { toast } = useToast()
 
+  const {t} = useTranslation()
+
   useEffect(() => () => clearTimeout(timerRef.current), [])
 
   const handleCopy = async () => {
     hapticSubtle()
     await copyToClipboard(value)
-    toast('Copied to clipboard')
+    toast(t('common.general.copyClipboard'))
     setCopied(true)
     clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => setCopied(false), 2000)
@@ -45,6 +48,7 @@ function CopyRow({ label, value }: { label: string; value: string }) {
 }
 
 function ContractCard({ contract }: { contract: Contract }) {
+  const {t} = useTranslation()
   const encoded = useMemo(() => {
     try {
       return encodeArkContract(contract)
@@ -68,14 +72,14 @@ function ContractCard({ contract }: { contract: Contract }) {
               {contract.state}
             </Text>
             <Text tiny color='neutral-500'>
-              {contract.createdAt ? prettyAgo(contract.createdAt) : 'Unknown'}
+              {contract.createdAt ? prettyAgo(contract.createdAt) : t('common.genral.unkown')}
             </Text>
           </FlexCol>
         </FlexRow>
         <hr className='dashed' />
-        <CopyRow label='address' value={contract.address} />
-        <CopyRow label='script' value={contract.script} />
-        {encoded ? <CopyRow label='parameters' value={encoded} /> : null}
+        <CopyRow label={t('common.general.address')} value={contract.address} />
+        <CopyRow label={t('common.general.script')} value={contract.script} />
+        {encoded ? <CopyRow label={t('common.general.parameters')} value={encoded} /> : null}
       </FlexCol>
     </Shadow>
   )
@@ -100,6 +104,8 @@ export default function Contracts() {
   const [contracts, setContracts] = useState<Contract[]>([])
   const [loading, setLoading] = useState(true)
 
+  const {t} = useTranslation()
+
   useEffect(() => {
     if (!svcWallet) return
     const fetchContracts = async () => {
@@ -123,16 +129,16 @@ export default function Contracts() {
 
   return (
     <>
-      <Header text='Contracts' back />
+      <Header text={t('common.general.contracts')} back />
       <Content noRefresh>
         <Padded>
           <FlexCol className='scroll-fade'>
             {contracts.length === 0 ? (
-              <TextSecondary>No contracts found.</TextSecondary>
+              <TextSecondary>{t('settings.biometric.noContractFound')}</TextSecondary>
             ) : (
               <FlexCol gap='2rem'>
-                <Section title='Active' contracts={active} />
-                <Section title='Inactive' contracts={inactive} />
+                <Section title={t('common.general.active')} contracts={active} />
+                <Section title={t('common.general.inactive')} contracts={inactive} />
               </FlexCol>
             )}
           </FlexCol>

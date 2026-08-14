@@ -8,35 +8,38 @@ import { gitCommit } from '../../_gitCommit'
 import { prettyDelta } from '../../lib/format'
 import FlexCol from '../../components/FlexCol'
 import ErrorMessage from '../../components/Error'
+import {useTranslation} from 'react-i18next'
 
 export default function About() {
   const { aspInfo } = useContext(AspContext)
 
   const [error, setError] = useState(false)
 
+  const {t} = useTranslation()
+
   useEffect(() => {
     setError(aspInfo.unreachable)
   }, [aspInfo.unreachable])
 
   const data: TableData = [
-    ['Server URL', aspInfo.url],
-    ['Server pubkey', aspInfo.signerPubkey],
-    ['Forfeit address', aspInfo.forfeitAddress],
-    ['Network', aspInfo.network],
-    ['Dust', `${aspInfo.dust} SATS`],
-    ['Session duration', prettyDelta(Number(aspInfo.sessionDuration), true)],
-    ['Boarding exit delay', prettyDelta(Number(aspInfo.boardingExitDelay), true)],
-    ['Unilateral exit delay', prettyDelta(Number(aspInfo.unilateralExitDelay), true)],
-    ['Git commit hash', gitCommit],
+    [t('settings.about.serverURL'), aspInfo.url],
+    [t('settings.about.serverPubkey'), aspInfo.signerPubkey],
+    [t('settings.about.forfeitAddress'), aspInfo.forfeitAddress],
+    [t('common.general.network'), aspInfo.network],
+    [t('common.general.dust'), `${aspInfo.dust} SATS`],
+    [t('settings.about.sessionDur'), prettyDelta(Number(aspInfo.sessionDuration), true)],
+    [t('settings.about.boardingDelay'), prettyDelta(Number(aspInfo.boardingExitDelay), true)],
+    [t('settings.about.unilateralDelay'), prettyDelta(Number(aspInfo.unilateralExitDelay), true)],
+    [t('settings.about.gitHash'), gitCommit],
   ]
 
   return (
     <>
-      <Header text='About' back />
+      <Header text={t('common.general.about')} back />
       <Content>
         <Padded>
           <FlexCol>
-            <ErrorMessage error={error} text='Ark server unreachable' />
+            <ErrorMessage error={error} text={t('errors.send.arkade.server')} />
             <Table data={data} />
           </FlexCol>
         </Padded>

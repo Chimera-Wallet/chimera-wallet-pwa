@@ -7,6 +7,7 @@ import enPlaceholders from './locales/en/placeholders.json'
 import enErrors from './locales/en/errors.json'
 import enCommon from './locales/en/common.json'
 import enInit from './locales/en/init.json'
+import enSettings from './locales/en/settings.json'
  
 
 import esTerms from './locales/es/terms.json'
@@ -61,7 +62,8 @@ i18n.use(initReactI18next).init({
       networks: enNetworks,
       errors: enErrors,
       common: enCommon,
-      init:enInit
+      init:enInit,
+      settings: enSettings
     }
     },
     es:{

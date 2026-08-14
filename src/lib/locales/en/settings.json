@@ -1,0 +1,202 @@
+{
+    "about":{
+        "serverURL": "Server URL",
+        "serverPubkey": "Server pubkey",
+        "forfeitAddress": "Forfet address",
+        "sessionDur": "Session duration",
+        "boardingDelay": "Boarding exit delay",
+        "unilateralDelay": "Unilateral exit delay",
+        "gitHash": "Git commit hash"
+    },
+    "advanced": {
+        "advancedSettings": "Advanced settings",
+        "changePass": "Change Password",
+        "lockWallet": "Lock Wallet",
+        "deleteMnemonic": "Delete Mnemonic",
+        "highRisk": "High Risk"
+    },
+    "backup" : {
+        "nostrUpdate": "Nostr backup updated",
+        "mnemonicWarning": "Your recovery phrase is used to back up your wallet. Keep it secret and secure at all times.",
+        "pkWarning": "Your private key is used to back up your wallet. Keep it secret and secure at all times.",
+        "unlockPasskey": "Unlock with your passkey",
+        "enterPass": "Enter your password",
+        "keepSafeSecret": "Keep your {{secret}} safe",
+        "noShare": "Don't share it with anyone",
+        "loseNoRecover": "If you lose it you can't recover it",
+        "eyesOnly": "For your eyes only, do not share.",
+        "viewSecret": "View {{secret}}",
+        "enoughToRestore": "This is enough to restore your wallet",
+        "phraseAccess": "Your recovery phrase can be used to access everything in your wallet. Don't share it with anyone.",
+        "pkAccess": "Your private key can be used to access everything in your wallet. Don't share it with anyone.",
+        "enableNostr": "Enable Nostr backups",
+        "nostrToggle": "Turn Nostr backups on or off"
+    },
+    "biometric": {
+        "bioAuth": "Biometric Authentication",
+        "bioAuthUnsupported":"Biometric authentication is not supported on this device",
+        "useBio": "Use Biometrics",
+        "disableWarn": "Biometric authentication is active. Disabling it will remove your current lock — you can then set a password from Advanced Settings",
+        "enableFingerFace": "Enable fingerprint or face recognition to unlock your wallet. This will replace your current password.",
+        "noContractFound": "No contracts found"
+    },
+    "delegates":{
+        "delegates": "Delegates",
+        "whatIs": "What is a Delegate?",
+        "delegateDescr": "A delegate is a trusted third party you appoint to help keep your VTXOs safe and secure.",
+        "learnMore": "Learn more",
+        "renewal": "next renewal {{time}}",
+        "noRenewal": "No upcoming renewal",
+        "vtxoWarn": "Delegates can only renew your VTXOs, they cannot spend your funds or control your wallet",
+        "defaultArk": "Use default Arkade delegate",
+        "defaultArkDescr": "Use Arkade's default delegate to manage renewals",
+        "reloadWarn": "The wallet will reload to apply the change"
+    },
+    "display": {
+        "displayPref" : "Display preferences"
+    },
+    "fiat": {
+        "fiat": "Fiat"
+    },
+    "general": {
+        "settingsOpt": "{{opt}} settings",
+        "appSett": "App Settings"
+    },
+    "haptics": {
+        "haptics": "Haptics",
+        "feedback": "Haptic feedback",
+        "vibration" : "Vibration on button taps and interactions"
+    },
+    "language":{
+        "appLang": "App Language"
+    },
+    "lock":{
+        "noPass": "No password or biometrics defined",
+        "lockWallet": "Lock your wallet",
+        "lockReqs":"You need to set a password or enable biometrics to lock.",
+        "lockBioWarn": "After locking you'll need to authenticate with biometrics to unlock.",
+        "lockPassWarn": "After locking you'll need to re-enter your password to unlock.",
+        "setPass": "Set Password",
+        "lockWalletSimple": "Lock Wallet"
+    },
+    "logs": {
+        "logs": "Logs",
+        "keyboardNav": "Pressing Enter enables keyboard navigation of the logs",
+        "logMessage": "Log at {{time}} with message {{msg}}. Press Escape to exit keyboard navigation." ,
+        "exportCSV": "Export to CSV file"
+    },
+    "menu": {
+        "verified": "Verified",
+        "pending": "Pending",
+        "unverified": "Not Verified",
+        "kycVer": "KYC - Verification",
+        "knowdledgeBase": "Knowledge Base",
+        "manage": "Manage Account",
+        "addressBook": "Address Book",
+        "showPhrase": "Show Secret Phrase",
+        "currency": "Currency",
+        "setNotifs": "Set Notifications",
+        "advancedSettings": "Advanced Settings"
+    },
+    "notifications": {
+        "notifications": "Notifications",
+        "update": "Get notified when an update is available or a payment is received. You'll need to grant permission if asked.",
+        "unsupported": "Your browser does not support the Notifications API. If on iOS you'll need to 'Add to homescreen' and be running iOS 16.4 or higher." ,
+        "allow": "Allow notifications"
+    },
+    "password": {
+        "passUnavailable": "Password unavailable",
+        "bioAuth":  "Biometric authentication is active. Disable it from Settings > Biometric Authentication before setting a password.",
+        "passRemoved": "Password removed",
+        "passChanged": "Password changed"
+    },
+    "reset": {
+        "removeSeed": "Definitively removes your seed from this device. Be extremely careful, after deletion it will be impossible to retrieve your key from Chimera Wallet.",
+        "removeMnemonic": "Clicking on \"Delete\" will delete your mnemonic on this device. Be sure to back it up!",
+        "deleteAccount": "I understand and delete my account",
+        "deleteMnemConf": "YES DELETE MNEMONIC",
+        "cancel": "CANCEL"
+    },
+    "server": {
+        "server": "Server",
+        "serverURL": "Server URL",
+        "found": "Server found",
+        "walletReset": "Your wallet will be reset. Make sure you backup your wallet first.",
+        "connect": "Connect to server"
+    },
+    "support": {
+        "support": "Support",
+        "custSupp": "Customer support",
+        "helpText": "Get help with your wallet, report bugs, or ask questions. Our support team is here to assist you.",
+        "secure": "Secure Chat", 
+        "secureText": "Your conversations are secure and private. Chat history is maintained across sessions.",
+        "bugRep": "Bug Reports", 
+        "bugRepText": "Report any issues or bugs you encounter. Include steps to reproduce the problem for faster resolution.",
+        "progress": "Track Progress",
+        "progressText": "All your support tickets and conversations are saved. You can view past conversations anytime.",
+        "openSupp": "Open Support Chat"
+    },
+    "verification": {
+        "enterEmail": "Enter your email address",
+        "enterEmailVerif": "Enter your email address to begin your KYC verification.",
+        "idVerif": "Identity Verification",
+        "emailRegs": "Your email is registered. Open the verification portal to complete or check your KYC status.",
+        "emailReSub": "Changing your email address will require you to re-submit your KYC verification.",
+        "resubKyc": "Re-submit KYC",
+        "checkStat": "Check Status",
+        "r&a": "Review & Accept",
+        "reviewText": "Before we send your verification email, please review and accept the following.",
+        "acceptPP": "Accept privacy policy",
+        "agreed": "I have read and agreed to the",
+        "PP": "Privacy Policy",
+        "accTS": "Accept terms of service",
+        "TS": "Terms of Service",
+        "sending": "Sending...",
+        "proceed": "Proceed",
+        "resendIn": "Resend in {{sec}}",
+        "resendLim": "Resend limit reached",
+        "resend": "Resend email",
+        "verifTimeout": "Verification timed out",
+        "noClick": "We didn't detect a link click within 2 minutes. Please try again.",
+        "tryAg": "Try Again",
+        "checkInb": "Check your inbox",
+        "sentVerif": " We've sent a verification link to <strong>{{email}}</strong>. Click the link to continue.",
+        "waiting": "Waiting for verification…",
+        "idVerified": "Your identity has been verified!",
+        "fullAccess": "You have full access to all features.",
+        "verifProgress": "Verification in Progress",
+        "docReview": "Your documents are being reviewed. This usually takes 1-2 business days.",
+        "idUnverified": "Verification Unsuccessful",
+        "unverifText": "Unfortunately, we could not verify your identity. Please try again with valid documents.",
+        "troubleLoad": "Having trouble loading verification?",
+        "iosIssue": "iOS may have issues with embedded content. Open in Safari for the best experience.",
+        "openBrowser": "Open in Browser"
+    },
+    "vtxo":{
+        "renewVC": "Renew Virtual Coins",
+        "belowDust": "Below dust limit",
+        "completeBoardRen":"Complete boarding & renew",
+        "renew": "Renew",
+        "complBoard": "Complete boarding",
+        "settled": "settled",
+        "subdust": "subdust",
+        "swept": "swept",
+        "unconfirmed": "unconfirmed",
+        "expSoon": "expiring soon",
+        "vc": "Vitual Coins",
+        "renewal": "Next Renewal",
+        "renewVCs": "Renewing your virtual coins. This may take a few moments.",
+        "renewing": "Renewing",
+        "coinsRenewdSucc": "Coins renewed successfully",
+        "VClist": "Your virtual coins with amount and expiration",
+        "utxoList": "Your boarding utxos with amount and expiration",
+        "nextren": "Next renewal",
+        "firstExpt": "First virtual coin expiration: {{exp}}",
+        "autoRen": "Automatic renewal occurs for virtual coins expiring within",
+        "marketFees": "Settlement during market hours offers lower fees.",
+        "nextHour": "Next market hour: {{st}} {{bool}} for {{duration}}.",
+        "addRem": "Add reminder",
+        "vcRenewal": "Virtual Coin Renewal"
+
+    } 
+}
