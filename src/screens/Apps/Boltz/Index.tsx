@@ -11,10 +11,12 @@ import { SettingsIconLight } from '../../../icons/Settings'
 import { SwapsContext } from '../../../providers/swaps'
 import { GreenStatusIcon, RedStatusIcon } from '../../../icons/Status'
 import { NavigationContext, Pages } from '../../../providers/navigation'
+import {useTranslation} from 'react-i18next'
 
 export default function AppBoltz() {
   const { connected, getApiUrl } = useContext(SwapsContext)
   const { navigate } = useContext(NavigationContext)
+  const {t} = useTranslation()
 
   const ConnectionStatus = () => (
     <FlexRow end>{connected ? <GreenStatusIcon small /> : <RedStatusIcon small />}</FlexRow>
@@ -22,15 +24,15 @@ export default function AppBoltz() {
 
   return (
     <>
-      <Header auxFunc={() => navigate(Pages.AppBoltzSettings)} auxIcon={<SettingsIconLight />} text='Boltz' back />
+      <Header auxFunc={() => navigate(Pages.AppBoltzSettings)} auxIcon={<SettingsIconLight />} text={t('apps.boltz.boltz')} back />
       <Content>
         <Padded>
           <FlexCol gap='2rem'>
             <FlexCol gap='0'>
-              <TextLabel>Connection status</TextLabel>
+              <TextLabel>{t('apps.boltz.connStatus')}</TextLabel>
               <Shadow fat>
                 <FlexRow between>
-                  <Text>{getApiUrl() ?? 'No server available'}</Text>
+                  <Text>{getApiUrl() ?? t('apps.boltz.noServ')}</Text>
                   <ConnectionStatus />
                 </FlexRow>
               </Shadow>

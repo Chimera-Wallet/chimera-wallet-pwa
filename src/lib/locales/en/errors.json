@@ -163,6 +163,59 @@
     },
     "vtxo": {
         "failedFetch": "Failed to fetch coins"
+    },
+    "addressBook": {
+        "enterAdd": "Please enter an address",
+        "invalidAdd": "Invalid {{name}}}",
+        "contactName": "Please enter a contact name"
+    },
+    "assets":{
+        "positive": "Amount must be a positive number" ,
+        "idNF": "Asset ID is required",
+        "balance": "Cannot burn more than your balance {{amount}} {{tick}})",
+        "idHex": "Asset ID must be a 68-character hex string",
+        "assNF": "Asset not found",
+        "range": "Decimals must be an integer between 0 and {{max}}"
+    },
+    "boltz":{
+        "swapsRestore": "Error restoring swaps: {{error}}",
+        "integration": "Boltz integration is not ready yet. Try again in a moment.",
+        "integrationSimple": "Boltz integration is not ready yet",
+        "scan": "Could not scan: {{err}}",
+        "recover": "Recovered {{swept}} VTXO{{out}}}",
+        "noSweep": "Nothing was swept; try again later."
+    },
+    "lendasat": {
+        "walletNot": "Wallet not initialized",
+        "unableSending": "Unable to send bitcoin",
+        "unsuppAddress": "Unsupported address {{addr}}",
+        "unableSendNonBtc": "Unable to send non btc assets",
+        "unableFiat": "Unable to send fiat",
+        "arkAddrLoad": "Arkade address not yet loaded",
+        "boardAddrLoad": "Boarding address not yet loaded",
+        "unsuppAddr": "Unsupported address type: {{addr}}",
+        "unkownAddr": "Unknown address type: {{addr}}",
+        "npubSupp": "NPubs are not supported"
+    },
+    "satora": {
+        "satora": "Satora",
+        "addressType": "Address type not supported",
+        "arkAddr": "Arkade address not yet loaded",
+        "walletNot": "Wallet not initialized",
+        "invalidAm": "Invalid amount",
+        "unableSending": "Unable to send bitcoin",
+        "unsuppAddress": "Unsupported address {{addr}}",
+        "notSat": "Not implemented for Satora"
+    },
+    "swap": {
+        "noInfo": "No order information available",
+        "failedLoad": "Failed to load order",
+        "failedRefresh": "Failed to refresh order",
+        "failedCreate": "Failed to create order",
+        "failedAss": "Failed to load assets",
+        "valAm": "Please enter a valid amount",
+        "kycVer":"KYC verification is required for amounts over 1,000 EUR",
+        "destAddr": "Unable to get destination address"
     }
       
     }

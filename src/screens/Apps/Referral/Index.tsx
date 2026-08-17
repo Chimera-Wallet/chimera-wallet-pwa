@@ -16,6 +16,7 @@ import FlexRow from '../../../components/FlexRow'
 import Text from '../../../components/Text'
 import Button from '../../../components/Button'
 import Loading from '../../../components/Loading'
+import {useTranslation} from 'react-i18next'
 
 type Step = 'info' | 'main'
 
@@ -27,11 +28,13 @@ export default function AppReferral() {
   const { svcWallet } = useContext(WalletContext)
   const { fromCurrency, toCurrency } = useContext(FiatContext)
 
+  const {t} = useTranslation()
+
   const [step, setStep] = useState<Step>(config.referralSlideShowSeen ? 'main' : 'info')
   const [kycConfirmed, setKycConfirmed] = useState<boolean | null>(null)
 
   const { link, rewardChf, isLoading, error, refetch, claim, claiming, claimError, claimSuccess } = useReferral()
-
+  
   // Check KYC status on mount when in main step
   useEffect(() => {
     if (step !== 'main') return
@@ -75,7 +78,7 @@ export default function AppReferral() {
 
   return (
     <>
-      <Header text='Referral' back={handleBack} />
+      <Header text={t('apps.referral.referral')} back={handleBack} />
       <Content>
         <Padded>
           {kycConfirmed === null ? (
@@ -83,18 +86,18 @@ export default function AppReferral() {
           ) : !kycConfirmed ? (
             <FlexCol gap='1.5rem'>
               <Text bold large centered>
-                Identity Verification Required
+                {t('apps.referral.idVerif')}
               </Text>
               <Text centered wrap>
-                To access the Referral Program and earn rewards, you need to complete identity verification first.
+                {t('apps.referral.idVerifDescr')}
               </Text>
-              <Button label='Go to Verification' onClick={() => navigate(Pages.SettingsKYC)} />
+              <Button label={t('apps.referral.goVerif')}onClick={() => navigate(Pages.SettingsKYC)} />
             </FlexCol>
           ) : (
             <FlexCol gap='2rem'>
               {/* Reward balance */}
               <FlexCol gap='0.5rem'>
-                <Text bold>Your Reward Balance</Text>
+                <Text bold>{t('apps.referral.rewardBal')}</Text>
                 {isLoading ? (
                   <Loading simple />
                 ) : error ? (
@@ -111,17 +114,17 @@ export default function AppReferral() {
 
               {/* Claim button */}
               <FlexCol gap='0.5rem'>
-                {claimSuccess ? <Text centered>Reward claimed successfully!</Text> : null}
+                {claimSuccess ? <Text centered>{t('apps.referral.rewardClaim')}</Text> : null}
                 {claimError ? <Text centered>{claimError}</Text> : null}
                 <Button
-                  label='Claim Reward'
+                  label={t('apps.referral.claim')}
                   disabled={!canClaim || claiming || !svcWallet}
                   loading={claiming}
                   onClick={handleClaim}
                 />
                 {!canClaim && !isLoading && (
                   <Text small centered>
-                    Minimum {MIN_CLAIM_AMOUNT_CHF} CHF required to claim
+                    {t('apps.referral.minReq', {min: MIN_CLAIM_AMOUNT_CHF})}
                   </Text>
                 )}
               </FlexCol>
@@ -129,7 +132,7 @@ export default function AppReferral() {
               {/* Referral link */}
               {link ? (
                 <FlexCol gap='0.5rem'>
-                  <Text bold>Your Referral Link</Text>
+                  <Text bold>{t('apps.referral.referralLink')}</Text>
                   <div
                     style={{
                       background: 'var(--dark10)',
@@ -144,13 +147,13 @@ export default function AppReferral() {
                     </FlexRow>
                   </div>
                   <Text small centered>
-                    Tap the link above to copy
+                    {t('apps.referral.tapLink')}
                   </Text>
                 </FlexCol>
               ) : null}
 
               {/* Refresh */}
-              <Button label='Refresh' secondary loading={isLoading} onClick={refetch} />
+              <Button label={t('apps.referral.refresh')} secondary loading={isLoading} onClick={refetch} />
             </FlexCol>
           )}
         </Padded>

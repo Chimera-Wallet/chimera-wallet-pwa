@@ -7,6 +7,7 @@ import Padded from '../../components/Padded'
 import Text from '../../components/Text'
 import Button from '../../components/Button'
 import type { AppInfoSlide } from '../../lib/appConfig'
+import {useTranslation} from 'react-i18next'
 
 interface AppInfoPageProps {
   appName: string
@@ -29,6 +30,8 @@ const Dot = ({ active }: { active: boolean }) => (
 
 export default function AppInfoPage({ appName, slides, onContinue, onBack }: AppInfoPageProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
+
+  const {t} = useTranslation()
 
   const currentSlide = slides[currentIndex]
   const isLastSlide = currentIndex === slides.length - 1
@@ -101,8 +104,8 @@ export default function AppInfoPage({ appName, slides, onContinue, onBack }: App
               )}
 
               <FlexRow gap='1rem'>
-                {currentIndex > 0 && <Button onClick={handlePrev} label='Back' secondary />}
-                <Button onClick={handleNext} label={isLastSlide ? 'Continue' : 'Next'} />
+                {currentIndex > 0 && <Button onClick={handlePrev} label={t('common.general.back')} secondary />}
+                <Button onClick={handleNext} label={isLastSlide ? t('common.general.continue') : t('common.general.next')} />
               </FlexRow>
             </FlexCol>
           </div>

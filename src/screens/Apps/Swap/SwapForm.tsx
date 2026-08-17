@@ -18,6 +18,7 @@ import { getStoredKycStatus, KycStatus } from '../../../lib/kyc'
 import { WalletContext } from '../../../providers/wallet'
 import { prettyNumber } from '../../../lib/format'
 import { getReceivingAddresses } from '../../../lib/asp'
+import {useTranslation} from 'react-i18next'
 
 interface SwapFormProps {
   onBack: () => void
@@ -30,6 +31,8 @@ export default function SwapForm({ onBack }: SwapFormProps) {
   const { navigate } = useContext(NavigationContext)
   const { recvInfo, setSwapOrderInfo } = useContext(FlowContext)
   const { svcWallet } = useContext(WalletContext)
+
+  const {t} = useTranslation()
 
   // State
   const [loading, setLoading] = useState(true)
@@ -74,7 +77,7 @@ export default function SwapForm({ onBack }: SwapFormProps) {
           setSelectedAsset(fromAssets[0])
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load assets')
+        setError(err instanceof Error ? err.message : t('errors.swap.failedAss'))
       } finally {
         setLoading(false)
       }
@@ -122,12 +125,12 @@ export default function SwapForm({ onBack }: SwapFormProps) {
 
     const numAmount = parseFloat(amount)
     if (numAmount <= 0) {
-      setError('Please enter a valid amount')
+      setError(t('errors.swap.valAm'))
       return
     }
 
     if (kycRequired) {
-      setError('KYC verification is required for amounts over 1,000 EUR')
+      setError(t('errors.swap.kycVer'))
       return
     }
 
@@ -139,7 +142,7 @@ export default function SwapForm({ onBack }: SwapFormProps) {
       const destinationAddress = recvInfo?.offchainAddr || arkAddress
 
       if (!destinationAddress) {
-        setError('Unable to get destination address')
+        setError(t('errors.swap.destAddr'))
         return
       }
 
@@ -159,7 +162,7 @@ export default function SwapForm({ onBack }: SwapFormProps) {
       setSwapOrderInfo(orderResponse)
       navigate(Pages.AppSwapOrderDetails)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create order')
+      setError(err instanceof Error ? err.message : t('errors.swap.failedCreate'))
     } finally {
       setSubmitting(false)
     }
@@ -171,9 +174,9 @@ export default function SwapForm({ onBack }: SwapFormProps) {
   if (loading) {
     return (
       <>
-        <Header text='Swap' back={onBack} />
+        <Header text={t('apps.swap.swap')} back={onBack} />
         <Content>
-          <Loading text='Loading assets...' />
+          <Loading text={t('apps.swap.loadAss')} />
         </Content>
       </>
     )
@@ -181,7 +184,7 @@ export default function SwapForm({ onBack }: SwapFormProps) {
 
   return (
     <>
-      <Header text='Swap' back={onBack} />
+      <Header text={t('apps.swap.swap')} back={onBack} />
       <Content>
         <Padded>
           <FlexCol gap='1.5rem'>
@@ -189,21 +192,21 @@ export default function SwapForm({ onBack }: SwapFormProps) {
 
             {/* From Asset Selection */}
             <FlexCol gap='0.5rem'>
-              <TextLabel>From</TextLabel>
+              <TextLabel>{t('common.general.from')}</TextLabel>
               <Shadow fat onClick={() => setShowAssetModal(true)}>
                 <FlexRow between>
                   <FlexRow gap='0.5rem'>
-                    <Text bold>{selectedAsset?.symbol || 'Select asset'}</Text>
+                    <Text bold>{selectedAsset?.symbol || t('apps.swap.selAss')}</Text>
                     {selectedAsset?.name ? <TextSecondary>{selectedAsset.name}</TextSecondary> : null}
                   </FlexRow>
-                  <Text color='purple'>Change</Text>
+                  <Text color='purple'>{t('common.general.change')}</Text>
                 </FlexRow>
               </Shadow>
             </FlexCol>
 
             {/* To Asset (Fixed to BTC) */}
             <FlexCol gap='0.5rem'>
-              <TextLabel>To</TextLabel>
+              <TextLabel>{t('common.general.to')}</TextLabel>
               <Shadow fat>
                 <FlexRow>
                   <Text bold>{FIXED_TO_ASSET}</Text>
@@ -214,7 +217,7 @@ export default function SwapForm({ onBack }: SwapFormProps) {
 
             {/* Amount Input */}
             <FlexCol gap='0.5rem'>
-              <TextLabel>Amount ({selectedAsset?.symbol || ''})</TextLabel>
+              <TextLabel>{t('common.general.amount')} ({selectedAsset?.symbol || ''})</TextLabel>
               <Shadow fat>
                 <input
                   type='text'
@@ -234,7 +237,7 @@ export default function SwapForm({ onBack }: SwapFormProps) {
                 />
               </Shadow>
               {parseFloat(amount) > KYC_THRESHOLD_EUR ? (
-                <Text small>Amounts over {prettyNumber(KYC_THRESHOLD_EUR)} EUR require KYC verification</Text>
+                <Text small>{t('apps.swap.amountsReq', {thresh: prettyNumber(KYC_THRESHOLD_EUR)})}</Text>
               ) : null}
             </FlexCol>
 
@@ -243,12 +246,12 @@ export default function SwapForm({ onBack }: SwapFormProps) {
               <Shadow fat border>
                 <FlexCol gap='0.5rem'>
                   <Text color='red' bold>
-                    KYC Verification Required
+                    {t('apps.swap.kycVerReq')}
                   </Text>
                   <TextSecondary>
-                    Transactions over {prettyNumber(KYC_THRESHOLD_EUR)} EUR require identity verification.
+                    {t('apps.swap.transReq', {thresh: prettyNumber(KYC_THRESHOLD_EUR)})}
                   </TextSecondary>
-                  <Button onClick={handleKycNavigate} label='Complete KYC' secondary small />
+                  <Button onClick={handleKycNavigate} label={t('apps.swap.complyKyc')} secondary small />
                 </FlexCol>
               </Shadow>
             ) : null}
@@ -256,7 +259,7 @@ export default function SwapForm({ onBack }: SwapFormProps) {
             {/* Create Order Button */}
             <Button
               onClick={handleCreateOrder}
-              label={submitting ? 'Creating Order...' : 'Create Order'}
+              label={submitting ? t('apps.swap.creating') : t('apps.swap.create')}
               disabled={!canSubmit || submitting}
               loading={submitting}
             />
@@ -268,7 +271,7 @@ export default function SwapForm({ onBack }: SwapFormProps) {
       <SheetModal isOpen={showAssetModal} onClose={() => setShowAssetModal(false)}>
         <FlexCol gap='1rem'>
           <Text bold large>
-            Select Asset
+            {t('apps.swap.selAss')}
           </Text>
           <div style={{ maxHeight: '60vh', overflowY: 'auto', width: '100%' }}>
             <Select

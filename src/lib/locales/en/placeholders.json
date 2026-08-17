@@ -13,6 +13,16 @@
     },
     "bank": {
         "details": "Enter bank details"
+    },
+    "contacts": {
+        "name": "Enter contact name",
+        "accounts": "e.g., Main wallet, Savings...",
+        "enterAddr": "Enter {{name}}"
+    },
+    "assets": {
+        "token": "My Token",
+        "assIdPaste": "Paste asset ID...",
+        "controlAm": "Control Amount"
     }
 
 }

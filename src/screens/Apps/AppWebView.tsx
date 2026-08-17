@@ -1,8 +1,10 @@
+import { T } from 'vitest/dist/chunks/reporters.d.BuRON0I0.js'
 import Content from '../../components/Content'
 import FlexCol from '../../components/FlexCol'
 import Header from '../../components/Header'
 import Padded from '../../components/Padded'
 import Text from '../../components/Text'
+import {useTranslation} from 'react-i18next'
 
 interface AppWebViewProps {
   appName: string
@@ -11,6 +13,7 @@ interface AppWebViewProps {
 }
 
 export default function AppWebView({ appName, url, onBack }: AppWebViewProps) {
+  const {t} = useTranslation()
   if (!url) {
     return (
       <>
@@ -28,9 +31,9 @@ export default function AppWebView({ appName, url, onBack }: AppWebViewProps) {
                 gap: '1rem',
               }}
             >
-              <Text centered>This app is not yet available.</Text>
+              <Text centered>{t('common.general.unavailableApp')}.</Text>
               <Text small centered>
-                Please check back later.
+                {t('common.general.checkBack')}
               </Text>
             </div>
           </Padded>

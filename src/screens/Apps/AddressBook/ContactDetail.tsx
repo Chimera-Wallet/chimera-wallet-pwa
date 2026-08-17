@@ -20,6 +20,7 @@ import {
   getAddressTypeName,
   AddressBookEntry,
 } from '../../../lib/addressBook'
+import {useTranslation} from 'react-i18next'
 
 interface AddressEntryProps {
   entry: AddressBookEntry
@@ -33,6 +34,7 @@ function AddressEntry({ entry, onDelete, onSelect, selectionMode }: AddressEntry
     if (addr.length <= 20) return addr
     return `${addr.slice(0, 10)}...${addr.slice(-10)}`
   }
+  const {t} = useTranslation()
 
   return (
     <Shadow>
@@ -59,7 +61,7 @@ function AddressEntry({ entry, onDelete, onSelect, selectionMode }: AddressEntry
             <div
               onClick={() => onDelete(entry.id)}
               style={{ cursor: 'pointer', padding: '0.5rem' }}
-              aria-label='Delete address'
+              aria-label={t('apps.addressBook.delAdd')}
             >
               <TrashIcon />
             </div>
@@ -71,9 +73,10 @@ function AddressEntry({ entry, onDelete, onSelect, selectionMode }: AddressEntry
 }
 
 export default function ContactDetail() {
+  const {t} = useTranslation()
   const { navigate, navigationData, goBack, popTo } = useContext(NavigationContext)
   const { sendInfo, setSendInfo } = useContext(FlowContext)
-  const contactName = (navigationData?.contactName as string) || 'Unknown'
+  const contactName = (navigationData?.contactName as string) || t('common.general.unkown')
   const selectionMode = navigationData?.selectionMode === true
   const returnTo = navigationData?.returnTo as Pages | undefined
   const [refreshKey, setRefreshKey] = useState(0)
@@ -102,7 +105,7 @@ export default function ContactDetail() {
   }
 
   const handleDeleteAddress = (id: string) => {
-    if (confirm('Are you sure you want to delete this address?')) {
+    if (confirm(t('apps.addressBook.delAddConf'))) {
       removeAddress(id)
       setRefreshKey((k) => k + 1)
       // If no more addresses, go back to address book
@@ -113,7 +116,7 @@ export default function ContactDetail() {
   }
 
   const handleDeleteContact = () => {
-    if (confirm(`Are you sure you want to delete ${contactName} and all their addresses?`)) {
+    if (confirm(t('apps.addressBook.delContact', {name: contactName}))) {
       removeContact(contactName)
       navigate(Pages.AppAddressBook)
     }
@@ -122,7 +125,7 @@ export default function ContactDetail() {
   return (
     <>
       <Header
-        text={selectionMode ? `Select from ${contactName}` : contactName}
+        text={selectionMode ? t('apps.addressBook.selectContact', {name: contactName}) : contactName}
         back={handleBack}
         auxFunc={selectionMode ? undefined : handleAddAddress}
         auxIcon={selectionMode ? undefined : <AddIcon />}
@@ -134,7 +137,7 @@ export default function ContactDetail() {
             {/* Contact info */}
             <Shadow>
               <FlexCol gap='0.25rem'>
-                <Text tiny>Contact Name</Text>
+                <Text tiny>{t('apps.addressBook.contactName')}</Text>
                 <Text bold>{contactName}</Text>
               </FlexCol>
             </Shadow>
@@ -142,11 +145,11 @@ export default function ContactDetail() {
             {/* Addresses */}
             <FlexCol gap='0.5rem'>
               <Text bold small>
-                Addresses ({addresses.length})
+                {t('apps.addressBook.addresses')} ({addresses.length})
               </Text>
               {addresses.length === 0 ? (
                 <div style={{ padding: '1rem', textAlign: 'center' }}>
-                  <Text>No addresses for this contact.</Text>
+                  <Text>{t('apps.addressBook.noAddrContact')}</Text>
                 </div>
               ) : (
                 addresses.map((entry) => (
@@ -165,8 +168,8 @@ export default function ContactDetail() {
       </Content>
       {!selectionMode && (
         <ButtonsOnBottom>
-          <Button onClick={handleAddAddress} label='Add Address' />
-          <Button onClick={handleDeleteContact} label='Delete Contact' red />
+          <Button onClick={handleAddAddress} label={t('apps.addressBook.addAddr')} />
+          <Button onClick={handleDeleteContact} label={t('apps.addressBook.delCont')} red />
         </ButtonsOnBottom>
       )}
     </>

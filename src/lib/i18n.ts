@@ -8,6 +8,7 @@ import enErrors from './locales/en/errors.json'
 import enCommon from './locales/en/common.json'
 import enInit from './locales/en/init.json'
 import enSettings from './locales/en/settings.json'
+import enApps from './locales/en/apps.json'
  
 
 import esTerms from './locales/es/terms.json'
@@ -43,7 +44,6 @@ import frCommon from './locales/fr/common.json'
 
 import rsTerms from './locales/rs/terms.json'
 import rsNetworks from './locales/rs/networks.json'
-import rsPlaceholders from './locales/rs/placeholders.json'
 import rsErrors from './locales/rs/errors.json'
 import rsCommon from './locales/rs/common.json'
 
@@ -63,7 +63,8 @@ i18n.use(initReactI18next).init({
       errors: enErrors,
       common: enCommon,
       init:enInit,
-      settings: enSettings
+      settings: enSettings,
+      apps:enApps,
     }
     },
     es:{
@@ -90,7 +91,6 @@ i18n.use(initReactI18next).init({
       translation: 
       {
         terms: rsTerms,
-        placeholders: rsPlaceholders,
         networks: rsNetworks,
         errors: rsErrors,
         common: rsCommon

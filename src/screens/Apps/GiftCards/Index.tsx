@@ -9,6 +9,8 @@ import Content from '../../../components/Content'
 import Padded from '../../../components/Padded'
 import FlexCol from '../../../components/FlexCol'
 import Button from '../../../components/Button'
+import {useTranslation} from 'react-i18next'
+
 
 type Step = 'select' | 'webview'
 
@@ -21,6 +23,7 @@ export default function AppGiftCards() {
   const [step, setStep] = useState<Step>('select')
   const [webviewUrl, setWebviewUrl] = useState('')
   const [offchainAddr, setOffchainAddr] = useState('')
+  const {t} = useTranslation()
 
   useEffect(() => {
     if (!svcWallet) return
@@ -51,12 +54,12 @@ export default function AppGiftCards() {
 
   return (
     <>
-      <Header text='Gift Cards' back={handleBack} />
+      <Header text={t('apps.giftCards.giftCards')} back={handleBack} />
       <Content>
         <Padded>
           <FlexCol>
-            <Button label='Buy a new gift card' onClick={handleBuy} />
-            <Button label='Redeem gift card' onClick={handleRedeem} />
+            <Button label={t('apps.giftCards.buy')} onClick={handleBuy} />
+            <Button label={t('apps.giftCards.redeem')} onClick={handleRedeem} />
           </FlexCol>
         </Padded>
       </Content>

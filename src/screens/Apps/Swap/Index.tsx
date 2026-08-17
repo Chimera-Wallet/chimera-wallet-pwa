@@ -5,9 +5,11 @@ import Text from '../../../components/Text'
 import Content from '../../../components/Content'
 import Padded from '../../../components/Padded'
 import Header from '../../../components/Header'
+import {useTranslation} from 'react-i18next'
 
 export default function AppSwap() {
   const { navigate } = useContext(NavigationContext)
+  const {t} = useTranslation()
 
   const handleBack = () => {
     navigate(Pages.Apps)
@@ -15,11 +17,11 @@ export default function AppSwap() {
 
   return (
     <>
-      <Header text='Swap' />
+      <Header text={t('apps.swap.swap')} />
       <Content>
         <Padded>
           <CenterScreen>
-            <Text heading>Coming Soon</Text>
+            <Text heading>{t('apps.swap.coming')}</Text>
           </CenterScreen>
         </Padded>
       </Content>

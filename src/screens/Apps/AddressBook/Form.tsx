@@ -17,6 +17,8 @@ import ScanIcon from '../../../icons/Scan'
 import PasteIcon from '../../../icons/Paste'
 import { pasteFromClipboard } from '../../../lib/clipboard'
 import { addAddress, AddressType, getAddressTypeName, isValidAddress } from '../../../lib/addressBook'
+import {useTranslation} from 'react-i18next'
+import { t } from 'i18next'
 
 interface AddressTypeOptionProps {
   type: AddressType
@@ -58,6 +60,8 @@ export default function AddressBookForm() {
   const [error, setError] = useState('')
   const [scan, setScan] = useState(false)
 
+  const{t} = useTranslation()
+
   const handleBack = () => {
     navigate(Pages.AppAddressBook)
   }
@@ -67,18 +71,18 @@ export default function AddressBookForm() {
 
     // Validate address
     if (!address.trim()) {
-      setError('Please enter an address')
+      setError(t('errors.addressBook.enterAdd'))
       return
     }
 
     if (!isValidAddress(address, addressType)) {
-      setError(`Invalid ${getAddressTypeName(addressType).toLowerCase()}`)
+      setError(t('errors.addressBook.invalidAdd',{name : getAddressTypeName(addressType).toLowerCase()}))
       return
     }
 
     // Validate contact name if adding as contact
     if (isContact && !contactName.trim()) {
-      setError('Please enter a contact name')
+      setError(t('errors.addressBook.contactName'))
       return
     }
 
@@ -100,14 +104,14 @@ export default function AddressBookForm() {
 
   return (
     <>
-      <Header text={existingContactName ? 'Add Address' : 'New Address'} back={handleBack} />
+      <Header text={existingContactName ? t('apps.addressBook.addAddr') : t('apps.addressBook.newAddr')} back={handleBack} />
       <Content>
         <Padded>
           <FlexCol gap='1.5rem'>
               {/* Address type selector */}
               <FlexCol gap='0.5rem'>
                 <Text bold small>
-                  Address Type
+                  {t('apps.addressBook.addrType')}
                 </Text>
                 <FlexRow gap='0.5rem'>
                   {Object.values(AddressType).map((type) => (
@@ -125,12 +129,12 @@ export default function AddressBookForm() {
               {existingContactName ? null : (
                 <FlexCol gap='0.5rem'>
                   <Text bold small>
-                    Save As
+                    {t('apps.addressBook.save')}
                   </Text>
                   <TabSelector
                     options={[
-                      { value: 'account', label: 'My Account' },
-                      { value: 'contact', label: 'Contact' },
+                      { value: 'account', label: t('apps.addressBook.myAcc') },
+                      { value: 'contact', label: t('apps.addressBook.contact') },
                     ]}
                     selected={isContact ? 'contact' : 'account'}
                     onChange={(value) => setIsContact(value === 'contact')}
@@ -140,11 +144,11 @@ export default function AddressBookForm() {
 
               {/* Contact name input (shown when adding as contact) */}
               {isContact && !existingContactName ? (
-                <InputContainer label='Contact Name'>
+                <InputContainer label={t('apps.addressBook.contactName')}>
                   <input
                     className='input'
                     value={contactName}
-                    placeholder='Enter contact name'
+                    placeholder={t('placeholders.contacts.name')}
                     onChange={(e) => setContactName(e.target.value)}
                   />
                 </InputContainer>
@@ -154,7 +158,7 @@ export default function AddressBookForm() {
               {existingContactName ? (
                 <FlexCol gap='0.25rem'>
                   <Text bold small>
-                    Contact
+                    {t('apps.addressBook.contact')}
                   </Text>
                   <Shadow>
                     <Text>{existingContactName}</Text>
@@ -167,20 +171,20 @@ export default function AddressBookForm() {
                 <input
                   className='input'
                   value={label}
-                  placeholder='e.g., Main wallet, Savings...'
+                  placeholder={t('placeholders.contacts.accounts')}
                   onChange={(e) => setLabel(e.target.value)}
                 />
               </InputContainer>
 
               {/* Address input */}
               <InputContainer
-                label='Address'
+                label={t('apps.addressBook.address')}
                 right={
                   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                     <div
                       onClick={() => setScan(true)}
                       style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                      aria-label='Scan QR code'
+                      aria-label={t('apps.addressBook.scanQR')}
                     >
                       <ScanIcon />
                     </div>
@@ -198,7 +202,7 @@ export default function AddressBookForm() {
                         }
                       }}
                       style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                      aria-label='Paste from clipboard'
+                      aria-label={t('common.general.pasteClipboard')}
                     >
                       <PasteIcon />
                     </div>
@@ -208,7 +212,7 @@ export default function AddressBookForm() {
                 <input
                   className='input'
                   value={address}
-                  placeholder={`Enter ${getAddressTypeName(addressType).toLowerCase()}`}
+                  placeholder={t('placeholders.contact.enterAddr',{name: getAddressTypeName(addressType).toLowerCase()})}
                   onChange={(e) => setAddress(e.target.value)}
                 />
               </InputContainer>
@@ -225,11 +229,11 @@ export default function AddressBookForm() {
         <ButtonsOnBottom>
           <Button
             onClick={handleSubmit}
-            label={isContact || existingContactName ? 'Add Contact Address' : 'Add Account'}
+            label={isContact || existingContactName ? t('apps.addressBook.addContAddr') : t('apps.addressBook.addAcc')}
           />
         </ButtonsOnBottom>
       {scan ? (
-        <Scanner close={() => setScan(false)} label='Scan address' onData={setAddress} onError={setError} />
+        <Scanner close={() => setScan(false)} label={t('apps.addressBook.scanAddr')} onData={setAddress} onError={setError} />
       ) : null}
     </>
   )
