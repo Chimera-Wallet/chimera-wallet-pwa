@@ -13,6 +13,7 @@ import { WalletContext } from '../providers/wallet'
 import { authenticateUser } from '../lib/biometrics'
 import LockIcon from '../icons/Lock'
 import OnboardingLayout from './OnboardingLayout'
+import { useTranslation } from 'react-i18next'
 
 interface NeedsPasswordProps {
   error: string
@@ -36,6 +37,7 @@ export default function NeedsPassword({
   const { wallet } = useContext(WalletContext)
   const [password, setPassword] = useState('')
   const [biometricFailed, setBiometricFailed] = useState(false)
+  const {t} = useTranslation()
 
   const handleBiometrics = () => {
     setBiometricFailed(false)
@@ -88,10 +90,10 @@ export default function NeedsPassword({
     if (wallet.lockedByBiometrics && biometricFailed) {
       return (
         <OnboardingLayout>
-          {secondaryText('Your passkey could not be found on this device. Restore your wallet using your secret phrase.')}
+          {secondaryText(t('components.needsPass.passkeyNF'))}
           <FlexCol gap='0'>
-            <Button onClick={handleBiometrics} label='Try again' secondary disabled={loading} />
-            {onRestore ? <Button onClick={onRestore} label='Restore from secret phrase' disabled={loading} /> : null}
+            <Button onClick={handleBiometrics} label={t('components.needsPass.tryAgain')} secondary disabled={loading} />
+            {onRestore ? <Button onClick={onRestore} label={t('components.needsPass.restorePhrase')} disabled={loading} /> : null}
           </FlexCol>
         </OnboardingLayout>
       )
@@ -102,7 +104,7 @@ export default function NeedsPassword({
       return (
         <OnboardingLayout>
           <FlexCol gap='0'>
-            <Button onClick={handleBiometrics} label='Unlock using biometrics' loading={loading} disabled={loading} />
+            <Button onClick={handleBiometrics} label={t('components.needsPass.unlockBio')} loading={loading} disabled={loading} />
           </FlexCol>
         </OnboardingLayout>
       )
@@ -114,14 +116,14 @@ export default function NeedsPassword({
         <FlexCol gap='1rem'>
           <InputPassword
             focus
-            label='Insert password'
+            label={t('components.needsPass.insPass')}
             onChange={handleChange}
             onEnter={handleClick}
-            placeholder='password'
+            placeholder={t('components.needsPass.pass')}
           />
           <ErrorMessage text={error} error={Boolean(error)} />
-          <Button onClick={handleClick} label='Unlock wallet' loading={loading} disabled={loading} />
-          {restoreLink('Forgot password? Restore with private key')}
+          <Button onClick={handleClick} label={t('components.needsPass.unlock')} loading={loading} disabled={loading} />
+          {restoreLink(t('components.needsPass.forgot'))}
         </FlexCol>
       </OnboardingLayout>
     )
@@ -137,19 +139,18 @@ export default function NeedsPassword({
               <LockIcon big />
               <FlexCol centered gap='0.5rem'>
                 <Text centered heading>
-                  Passkey not found
+                  {t('components.needsPass.passkeyNFText')}
                 </Text>
                 <TextSecondary centered wrap>
-                  Your passkey could not be found on this device. You will need to restore your wallet using your secret
-                  phrase.
+                  {t('components.needsPass.pkText')}
                 </TextSecondary>
               </FlexCol>
             </CenterScreen>
           </Padded>
         </Content>
         <ButtonsOnBottom>
-          <Button onClick={handleBiometrics} label='Try again' secondary disabled={loading} />
-          {onRestore ? <Button onClick={onRestore} label='Restore from secret phrase' disabled={loading} /> : null}
+          <Button onClick={handleBiometrics} label={t('components.needsPass.tryAgain')} secondary disabled={loading} />
+          {onRestore ? <Button onClick={onRestore} label={t('components.needsPass.restorePhrase')} disabled={loading} /> : null}
         </ButtonsOnBottom>
       </>
     )
@@ -164,16 +165,16 @@ export default function NeedsPassword({
             <LockIcon big />
             <FlexCol centered gap='0.5rem'>
               <Text centered heading>
-                Welcome back
+                {t('components.needsPass.welcome')}
               </Text>
               <TextSecondary centered wrap>
-                Unlock with your passkey to continue
+                {t('components.needsPass.unlockPk')}
               </TextSecondary>
             </FlexCol>
           </CenterScreen>
         </Content>
         <ButtonsOnBottom>
-          <Button onClick={handleBiometrics} label='Unlock using biometrics' loading={loading} disabled={loading} />
+          <Button onClick={handleBiometrics} label={t('components.needsPass.unlockBio')} loading={loading} disabled={loading} />
         </ButtonsOnBottom>
       </>
     )
@@ -189,10 +190,10 @@ export default function NeedsPassword({
             <FlexCol centered gap='1rem'>
               <InputPassword
                 focus
-                label='Insert password'
+                label={t('components.needsPass.insPass')}
                 onChange={handleChange}
                 onEnter={handleClick}
-                placeholder='password'
+                placeholder={t('components.needsPass.pass')}
               />
               <ErrorMessage text={error} error={Boolean(error)} />
               {onRestore ? (
@@ -208,7 +209,7 @@ export default function NeedsPassword({
                     display: 'block',
                   }}
                 >
-                  Forgot password? Restore with private key
+                  F{t('components.needsPass.forgot')}
                 </span>
               ) : null}
             </FlexCol>
@@ -216,7 +217,7 @@ export default function NeedsPassword({
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        <Button onClick={handleClick} label='Unlock wallet' loading={loading} disabled={loading} />
+        <Button onClick={handleClick} label={t('components.needsPass.unlock')} loading={loading} disabled={loading} />
       </ButtonsOnBottom>
     </>
   )

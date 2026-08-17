@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { InputGroup, InputGroupAddon } from '@/components/ui/input-group'
 import { SearchIcon, CheckIcon } from 'lucide-react'
 
+import { useTranslation } from 'react-i18next'
+
 function Command({ className, ...props }: React.ComponentProps<typeof CommandPrimitive>) {
   return (
     <CommandPrimitive
@@ -22,8 +24,8 @@ function Command({ className, ...props }: React.ComponentProps<typeof CommandPri
 }
 
 function CommandDialog({
-  title = 'Command Palette',
-  description = 'Search for a command to run...',
+  title = 'components.command.command',
+  description = 'components.command.search',
   children,
   className,
   showCloseButton = false,
@@ -35,6 +37,7 @@ function CommandDialog({
   showCloseButton?: boolean
   children: React.ReactNode
 }) {
+  const {t} = useTranslation()
   return (
     <Dialog {...props}>
       <DialogContent
@@ -42,8 +45,8 @@ function CommandDialog({
         showCloseButton={showCloseButton}
       >
         <DialogHeader className='sr-only'>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogTitle>{t(title)}</DialogTitle>
+          <DialogDescription>{t(description)}</DialogDescription>
         </DialogHeader>
         {children}
       </DialogContent>

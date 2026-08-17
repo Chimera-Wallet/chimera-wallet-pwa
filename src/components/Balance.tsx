@@ -9,6 +9,7 @@ import FlexRow from './FlexRow'
 import EyeIcon from '../icons/Eye'
 import { ConfigContext } from '../providers/config'
 import { ASSETS } from '../lib/assets'
+import { useTranslation } from 'react-i18next'
 
 interface BalanceProps {
   amount: number
@@ -19,6 +20,8 @@ interface BalanceProps {
 export default function Balance({ amount, centered = false, usdOnly = false }: BalanceProps) {
   const { config, updateConfig } = useContext(ConfigContext)
   const { toFiat, fiatDecimals } = useContext(FiatContext)
+
+  const {t} = useTranslation()
 
   const fiatAmount = toFiat(amount)
   const btcAmount = fromSatoshis(amount)
@@ -43,7 +46,7 @@ export default function Balance({ amount, centered = false, usdOnly = false }: B
   if (centered) {
     return (
       <div style={{ textAlign: 'center', marginBottom: 24, marginTop: 24 }}>
-        <div style={{ fontSize: 14, color: 'var(--white50)', marginBottom: 8 }}>Wallet Balance</div>
+        <div style={{ fontSize: 14, color: 'var(--white50)', marginBottom: 8 }}>{t('components.balance.wallet')}</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           <div style={{ fontSize: 32, fontWeight: 700, color: 'white', fontFamily: 'Titillium Web' }}>
             {mainBalance}

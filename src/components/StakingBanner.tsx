@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import Button from './Button'
+import { useTranslation } from 'react-i18next'
 
 const LAUNCH_DATE = new Date('2026-09-08T12:00:00+00:00')
 
-const TITLE = 'Be ready for the Chimera Token TGE'
+const TITLE = 'components.stakingBanner.title'
 const DESCRIPTION =
-  'Lock your CEXT and watch your rewards grow over time, with annual returns of up to 15%, paid directly in CEXT to your wallet.'
+  'components.stakingBanner.descr'
 
 const TELEGRAM_URL = 'https://t.me/Chimera_Community'
 
@@ -161,9 +162,10 @@ interface StakingBannerProps {
 
 export default function StakingBanner({ variant }: StakingBannerProps) {
   const parts = useCountdown()
+  const {t} = useTranslation()
   const launchingIn = parts.expired
-    ? 'Live now!'
-    : `Launching in ${pad(parts.days)}d ${pad(parts.hours)}:${pad(parts.minutes)}:${pad(parts.seconds)}`
+    ? t('components.stakingBanner.live')
+    : t('components.stakingBanner.launch')+` ${pad(parts.days)}d ${pad(parts.hours)}:${pad(parts.minutes)}:${pad(parts.seconds)}`
 
   if (variant === 'asset') {
     return (
@@ -172,10 +174,10 @@ export default function StakingBanner({ variant }: StakingBannerProps) {
           <CoinStack />
           <div style={topContentStyle}>
             <span style={{ color: 'white', fontWeight: 600, fontSize: 15, lineHeight: 1.3, fontFamily: FONT }}>
-              {TITLE}
+              {t(TITLE)}
             </span>
             <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, lineHeight: 1.5, fontFamily: FONT }}>
-              {DESCRIPTION}
+              {t(DESCRIPTION)}
             </span>
             <div
               style={{
@@ -205,12 +207,12 @@ export default function StakingBanner({ variant }: StakingBannerProps) {
         <CoinStack />
         <div style={topContentStyle}>
           <span style={{ color: 'white', fontWeight: 600, fontSize: 15, lineHeight: 1.3, fontFamily: FONT }}>
-            {TITLE}
+            {t(TITLE)}
           </span>
           <CountdownDisplay parts={parts} />
         </div>
         <Button
-          label='Join The Community'
+          label={t('components.stakingBanner.joinComm')}
           onClick={() => window.open(TELEGRAM_URL, '_blank', 'noopener,noreferrer')}
         />
       </div>

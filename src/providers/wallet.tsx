@@ -60,6 +60,7 @@ import { AssetIconApprovalManager } from '../lib/assetIconApproval'
 import { IndexedDBStorageAdapter } from '@arkade-os/sdk/adapters/indexedDB'
 import { Indexer } from '../lib/indexer'
 import { IndexedDbSwapRepository, migrateToSwapRepository, Network } from '@arkade-os/boltz-swap'
+import { useTranslation } from 'react-i18next'
 
 const SERVICE_WORKER_ACTIVATION_TIMEOUT_MS = 5_000
 const MESSAGE_BUS_INIT_TIMEOUT_MS = 30_000
@@ -174,6 +175,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const reinitInProgress = useRef(false)
   const initAbortRef = useRef<AbortController | null>(null)
   const reinitSvcWalletRef = useRef<((identity: Identity) => Promise<void>) | null>(null)
+  const {t} = useTranslation()
 
   // Each init gets its own AbortSignal; lock/reset aborts the current signal
   // with 'lock-reset' so stale paths can decide whether to tear down the SW.
@@ -402,14 +404,14 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     const isFirstLoad = !hasLoadedOnce.current
     if (isFirstLoad) setLoadError(null)
     try {
-      if (isFirstLoad) setLoadingStatus('Fetching coins...')
+      if (isFirstLoad) setLoadingStatus(t('lib.wallet.fetchCoins'))
       const vtxos = await getVtxos(swWallet)
-      if (isFirstLoad) setLoadingStatus('Fetching transactions...')
+      if (isFirstLoad) setLoadingStatus(t('lib.wallet.fetchTrans'))
       const txs = await getTxHistory(swWallet)
-      if (isFirstLoad) setLoadingStatus('Updating balance...')
+      if (isFirstLoad) setLoadingStatus(t('lib.wallet.updBal'))
       const { total, assets } = await getBalance(swWallet)
       // prefetch asset metadata before triggering re-renders
-      if (isFirstLoad && assets.length > 0) setLoadingStatus('Loading asset metadata...')
+      if (isFirstLoad && assets.length > 0) setLoadingStatus(t('lib.wallet.loadingMeta'))
       for (const ab of assets) {
         const cached = assetMetadataCache.current.get(ab.assetId)
         if (cached && Date.now() - cached.cachedAt < ASSET_METADATA_TTL_MS) continue
@@ -437,7 +439,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       consoleError(err, 'Error reloading wallet')
       if (!hasLoadedOnce.current) {
-        setLoadError('Unable to load wallet data. Check your connection and try again.')
+        setLoadError(t('lib.wallet.unableLoadWall'))
       }
     }
   }
@@ -462,7 +464,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   ): Promise<boolean> => {
     const { arkServerUrl, esploraUrl, skipMigration = false, retryCount = 0, maxRetries = 2, delegatorUrl } = params
     try {
-      setLoadingStatus('Starting wallet...')
+      setLoadingStatus(t('lib.wallet.startWall'))
       const walletRepository = new IndexedDBWalletRepository()
       const contractRepository = new IndexedDBContractRepository()
 
@@ -513,7 +515,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       })
 
       if (!skipMigration) {
-        setLoadingStatus('Migrating data...')
+        setLoadingStatus(t('lib.wallet.migrateData'))
         try {
           const oldStorage = new IndexedDBStorageAdapter('arkade-service-worker')
           const walletStatus = await getMigrationStatus('wallet', oldStorage)
@@ -620,7 +622,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       if (isTimeoutError && retryCount < maxRetries) {
         // exponential backoff: wait 1s, 2s, 4s, 8s, 16s for each retry
         const delay = Math.pow(2, retryCount) * 1000
-        setLoadingStatus('Retrying connection...')
+        setLoadingStatus(t('lib.wallet.retryConn'))
         consoleError(
           new Error(
             `Service worker activation timed out, retrying in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`,

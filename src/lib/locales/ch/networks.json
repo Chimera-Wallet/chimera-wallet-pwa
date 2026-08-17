@@ -1,6 +1,6 @@
 {
   "arkade": {
-    "description": "即时、低手续费的 Bitcoin 转账"
+    "description": "即时、低费用的 Bitcoin 转账"
   },
   "lightning": {
     "description": "快速的 Lightning Network 支付"
@@ -10,5 +10,43 @@
   },
   "bank": {
     "description": "传统银行转账"
+  },
+  "browser": {
+    "welcomeMessage": "欢迎使用 Arkade 👾",
+    "compatibilityIssue": "此浏览器无法运行。",
+    "copyLink": "复制下面的链接",
+    "openBrowserPrompt": "打开 Safari、Chrome 或您的浏览器",
+    "pastePrompt": "粘贴链接并访问",
+    "copied": "已复制",
+    "excitedCopy": "复制成功！",
+    "copyLinkPrompt": "复制链接",
+    "safariShare": "点击 Safari 工具栏中的分享图标，然后选择“添加到主屏幕”。",
+    "chromeShare": "点击 Chrome 地址栏中的分享图标，然后选择“添加到主屏幕”。",
+    "firefoxShare": "点击 Firefox 中的菜单图标，然后选择“添加到主屏幕”。如需完整支持，请在 Safari 中打开此页面。",
+    "edgeShare": "点击 Edge 中的菜单图标，然后选择“添加到主屏幕”。如需完整支持，请在 Safari 中打开此页面。",
+    "defaultShare": "点击分享图标，然后选择“添加到主屏幕”。如需完整支持，请在 Safari 中打开此页面。",
+    "installDescr": "点击“安装”将 Chimera 添加到您的主屏幕。",
+    "install": "安装"
+  },
+  "transactions": {
+    "viewAll": "查看所有交易",
+    "seeAll": "查看全部交易",
+    "allTransactions": "所有交易",
+    "completeBoarding": "完成登船",
+    "settleTransaction": "结算交易",
+    "settling": "结算中...",
+    "processingBoarding": "正在处理您的登船交易...",
+    "settlingTransaction": "正在结算交易...",
+    "boardingExpired": "登船交易已过期。",
+    "onchainUnconfirmed": "链上交易尚未确认。请等待确认。",
+    "onboardConfirmed": "登船交易已在链上确认。",
+    "transactionSettledSucc": "交易结算成功",
+    "resend": "重新发送",
+    "reminder": "添加提醒",
+    "transaction": "交易",
+    "pendingBoarding": "待处理登船",
+    "preconfirmed": "预确认",
+    "boarding": "登船",
+    "offchain": "链下"
   }
 }

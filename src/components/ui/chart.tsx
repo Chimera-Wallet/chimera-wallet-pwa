@@ -4,6 +4,8 @@ import type { TooltipValueType } from 'recharts'
 
 import { cn } from '@/lib/utils'
 
+import { useTranslation } from 'react-i18next'
+
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: '', dark: 'html.palette-dark' } as const
 
@@ -26,9 +28,10 @@ const ChartContext = React.createContext<ChartContextProps | null>(null)
 
 function useChart() {
   const context = React.useContext(ChartContext)
+  const {t} = useTranslation()
 
   if (!context) {
-    throw new Error('useChart must be used within a <ChartContainer />')
+    throw new Error(t('components.chart.error'))
   }
 
   return context

@@ -1,14 +1,56 @@
 {
   "arkade": {
-    "description": "Transferts de Bitcoin instantanés et à faibles frais"
+    "description": "Transferts Bitcoin instantanés à faibles frais"
   },
   "lightning": {
-    "description": "Paiements rapides sur le réseau Lightning"
+    "description": "Paiements rapides via le réseau Lightning"
   },
   "bitcoin": {
-    "description": "Transactions Bitcoin sur la blockchain"
+    "description": "Transactions Bitcoin on-chain"
   },
   "bank": {
     "description": "Virements bancaires traditionnels"
+  },
+  "browser": {
+    "welcomeMessage": "Bienvenue sur Arkade 👾",
+    "compatibilityIssue": "Ne fonctionne pas dans ce navigateur.",
+    "copyLink": "Copiez le lien ci-dessous",
+    "openBrowserPrompt": "Ouvrez Safari, Chrome ou votre navigateur",
+    "pastePrompt": "Collez le lien et accédez-y",
+    "copied": "Copié",
+    "excitedCopy": "Copié !",
+    "copyLinkPrompt": "Copier le lien",
+
+    "safariShare": "Touchez l’icône Partager dans la barre d’outils de Safari, puis « Ajouter à l’écran d’accueil ».",
+    "chromeShare": "Touchez l’icône Partager dans la barre d’adresse de Chrome, puis « Ajouter à l’écran d’accueil ».",
+    "firefoxShare": "Touchez l’icône du menu dans Firefox, puis « Ajouter à l’écran d’accueil ». Pour une prise en charge complète, ouvrez cette page dans Safari.",
+    "edgeShare": "Touchez l’icône du menu dans Edge, puis « Ajouter à l’écran d’accueil ». Pour une prise en charge complète, ouvrez cette page dans Safari.",
+    "defaultShare": "Touchez l’icône Partager, puis « Ajouter à l’écran d’accueil ». Pour une prise en charge complète, ouvrez cette page dans Safari.",
+
+    "installDescr": "Touchez « Installer » pour ajouter Chimera à votre écran d’accueil.",
+    "install": "Installer"
+  },
+
+  "transactions": {
+    "viewAll": "Voir toutes les transactions",
+    "seeAll": "Voir toutes les transactions",
+    "allTransactions": "Toutes les transactions",
+
+    "completeBoarding": "Finaliser l’embarquement",
+    "settleTransaction": "Régler la transaction",
+    "settling": "Règlement en cours...",
+    "processingBoarding": "Traitement de votre transaction d’embarquement...",
+    "settlingTransaction": "Règlement de la transaction...",
+    "boardingExpired": "La transaction d’embarquement a expiré.",
+    "onchainUnconfirmed": "Transaction on-chain non confirmée. Veuillez attendre la confirmation.",
+    "onboardConfirmed": "Transaction d’embarquement confirmée sur la blockchain.",
+    "transactionSettledSucc": "Transaction réglée avec succès",
+    "resend": "Renvoyer",
+    "reminder": "Ajouter un rappel",
+    "transaction": "Transaction",
+    "pendingBoarding": "Embarquement en attente",
+    "preconfirmed": "Préconfirmé",
+    "boarding": "Embarquement",
+    "offchain": "Hors chaîne"
   }
 }

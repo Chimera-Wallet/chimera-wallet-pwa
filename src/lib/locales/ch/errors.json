@@ -1,25 +1,25 @@
 {
   "funds": {
-    "insufficient": "余额不足",
-    "insufficientExtra": "余额不足，您只有 {{balance}} BTC",
-    "insufficientFees": "余额不足以支付手续费"
+    "insufficient": "资金不足",
+    "insufficientExtra": "资金不足，您目前只有 {{balance}} BTC",
+    "insufficientFees": "资金不足以支付费用"
   },
   "LNURL": {
     "below": "金额低于 LNURL 最低限额",
     "above": "金额高于 LNURL 最高限额",
-    "funds": "LNURL 余额不足",
+    "funds": "LNURL 资金不足",
     "fetch": "无法获取 LNURL 条件",
-    "address": "地址或 LNURL 无效"
+    "address": "无效地址或 LNURL"
   },
   "satoshi": {
     "minimum": "金额低于 1 satoshi",
     "minLimit": "金额低于最低限额",
     "maxLimit": "金额高于最高限额",
-    "invoiceAmount": "发票必须定义金额"
+    "invoiceAmount": "发票必须指定金额"
   },
   "network": {
-    "below": "金额低于网络手续费",
-    "tooLow": "金额过低，无法支付网络手续费"
+    "below": "金额低于网络费用",
+    "tooLow": "金额过低，无法支付网络费用"
   },
   "general": {
     "server": "无法连接服务器",
@@ -29,7 +29,7 @@
     "missingAmount": "缺少金额",
     "missingAssetList": "缺少资产列表",
     "missingTotal": "缺少总金额",
-    "missingSats": "缺少 satoshi 数量",
+    "missingSats": "缺少 satoshi 金额",
     "swapAddUnavailable": "兑换地址不可用"
   },
   "send": {
@@ -54,25 +54,25 @@
       "swaps": "Lightning 兑换未启用"
     },
     "bank": {
-      "transfer": "银行转账在“转账”中处理",
+      "transfer": "银行转账请在“转账”中进行",
       "ibanName": "请输入您的 IBAN 和账户持有人姓名",
-      "bicSwift": "请输入您的 BIC/SWIFT 代码、账户持有人姓名和账号",
-      "accountRouting": "请输入您的账号和路由号码",
-      "invalidTransfer": "转账方式无效",
-      "insufficientBalance": "余额不足。您需要约 {{required}} BTC，但只有 {{balance}} BTC",
+      "bicSwift": "请输入您的 BIC/SWIFT 代码、账户持有人姓名和账户号码",
+      "accountRouting": "请输入您的账户号码和路由号码",
+      "invalidTransfer": "无效的转账方式",
+      "insufficientBalance": "余额不足。您需要约 {{required}} BTC，但目前只有 {{balance}} BTC",
       "failedWithdrawal": "创建提现订单失败"
     },
     "wallet": {
-      "notReady": "钱包尚未准备好",
-      "notConfigured": "提现钱包未配置"
+      "notReady": "钱包尚未准备就绪",
+      "notConfigured": "未配置提现钱包"
     },
     "parsing": {
-      "bip21": "无法解析 bip21",
-      "recipientAddress": "收款人地址无效"
+      "bip21": "无法解析 BIP21",
+      "recipientAddress": "收款地址无效"
     },
     "chain": {
-      "on": "不允许进行链上发送",
-      "off": "不允许进行链下发送",
+      "on": "不允许发送链上交易",
+      "off": "不允许发送链下交易",
       "self": "无法向自己发送",
       "invalidAddress": "请输入有效的 {{chain}} 地址"
     },
@@ -87,7 +87,7 @@
       "destination": "无法获取目标地址",
       "kycReq": "需要进行 KYC 验证",
       "amount": "金额无效",
-      "faucetFail": "水龙头操作失败",
+      "faucetFail": "水龙头领取失败",
       "pendingSwap": "创建反向兑换失败",
       "chainSwap": "创建链上兑换失败",
       "reverseSwap": "创建反向兑换失败",
@@ -96,15 +96,120 @@
     "bank": {
       "failedOrderExtra": "创建订单失败 - 未返回订单",
       "failedOrderSimple": "创建订单失败",
-      "failedDeposit": "创建存款订单失败"
+      "failedDeposit": "创建存款订单失败",
+      "noOrderInfo": "没有可用的订单信息",
+      "failedLoad": "加载订单失败",
+      "failedRefresh": "刷新订单失败"
     },
     "lightning": {
       "tempUnavailable": "Lightning 暂时不可用。此二维码仅支持 Arkade 和链上支付。"
     },
     "wrapService": {
       "validAddress": "请输入有效的 {{name}} 地址",
-      "arkadeRcvAddress": "无法获取您的 Arkade 接收地址",
-      "failedWrapQuote": "创建包装报价失败"
+      "arkadeRcvAddress": "无法获取您的 Arkade 收款地址",
+      "failedWrapQuote": "创建封装报价失败"
     }
+  },
+  "initialisation": {
+    "arkadeUnreachable": "无法连接 Arkade 服务器。请检查“设置 → Arkade 服务器”。",
+    "invalidPass": "密码无效",
+    "unlockTimeout": "解锁超时。请重试。"
+  },
+  "backup": {
+    "nostrFail": "备份至 Nostr 失败"
+  },
+  "biometric": {
+    "failedDisable": "禁用生物识别失败。请重试。",
+    "failedEnable": "启用生物识别失败。请重试。"
+  },
+  "delegates": {
+    "invalidPubkey": "预期服务器公钥无效",
+    "unableConnect": "无法连接",
+    "invalidResponse": "委托服务器响应无效",
+    "missingFee": "缺少委托费用",
+    "invalidFee": "委托费用无效",
+    "negativeFee": "委托费用不能为负数",
+    "missingPubkey": "缺少委托公钥",
+    "invalidPubkeySize": "委托公钥大小无效",
+    "invalidPubkeyHex": "委托公钥十六进制格式无效",
+    "missingAddress": "缺少委托地址",
+    "invalidAddress": "委托地址无效",
+    "invalidServerKey": "委托服务器密钥无效",
+    "invalidJSONResp": "委托服务器响应中的 JSON 无效"
+  },
+  "password": {
+    "failedUpdate": "更新密码失败"
+  },
+  "server": {
+    "same": "相同的服务器",
+    "unableConnect": "无法连接"
+  },
+  "support": {
+    "notConfigured": "支持聊天未配置",
+    "failedLoad": "加载支持聊天失败",
+    "unavailable": "不可用"
+  },
+  "verification": {
+    "failedAuth": "确认身份验证失败。请重试。",
+    "failedVerif": "初始化验证失败。请重试。",
+    "email": "请输入有效的电子邮件地址。",
+    "failedEmailSend": "发送验证邮件失败。请重试。",
+    "failedEmailResend": "重新发送验证邮件失败。请重试。"
+  },
+  "vtxo": {
+    "failedFetch": "获取币失败"
+  },
+  "addressBook": {
+    "enterAdd": "请输入地址",
+    "invalidAdd": "{{name}} 无效",
+    "contactName": "请输入联系人姓名"
+  },
+  "assets": {
+    "positive": "金额必须为正数",
+    "idNF": "必须提供资产 ID",
+    "balance": "无法销毁超过您余额的资产 {{amount}} {{tick}}",
+    "idHex": "资产 ID 必须是 68 个字符的十六进制字符串",
+    "assNF": "未找到资产",
+    "range": "小数位数必须是 0 到 {{max}} 之间的整数"
+  },
+  "boltz": {
+    "swapsRestore": "恢复兑换时出错：{{error}}",
+    "integration": "Boltz 集成尚未准备就绪。请稍后再试。",
+    "integrationSimple": "Boltz 集成尚未准备就绪",
+    "scan": "无法扫描：{{err}}",
+    "recover": "已恢复 {{swept}} 个 VTXO{{out}}",
+    "noSweep": "没有可恢复的资金；请稍后重试。"
+  },
+  "lendasat": {
+    "walletNot": "钱包尚未初始化",
+    "unableSending": "无法发送 Bitcoin",
+    "unsuppAddress": "不支持的地址 {{addr}}",
+    "unableSendNonBtc": "无法发送非 BTC 资产",
+    "unableFiat": "无法发送法定货币",
+    "arkAddrLoad": "Arkade 地址尚未加载",
+    "boardAddrLoad": "登船地址尚未加载",
+    "unsuppAddr": "不支持的地址类型：{{addr}}",
+    "unkownAddr": "未知地址类型：{{addr}}",
+    "npubSupp": "不支持 NPub"
+  },
+  "satora": {
+    "satora": "Satora",
+    "addressType": "不支持的地址类型",
+    "arkAddr": "Arkade 地址尚未加载",
+    "walletNot": "钱包尚未初始化",
+    "invalidAm": "金额无效",
+    "unableSending": "无法发送 Bitcoin",
+    "unsuppAddress": "不支持的地址 {{addr}}",
+    "notSat": "Satora 尚未实现此功能"
+  },
+  "swap": {
+    "noInfo": "没有可用的订单信息",
+    "failedLoad": "加载订单失败",
+    "failedRefresh": "刷新订单失败",
+    "failedCreate": "创建订单失败",
+    "failedAss": "加载资产失败",
+    "valAm": "请输入有效的金额",
+    "kycVer": "金额超过 1,000 EUR 时需要进行 KYC 验证",
+    "destAddr": "无法获取目标地址"
   }
 }

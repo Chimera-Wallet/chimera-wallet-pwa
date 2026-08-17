@@ -1,0 +1,201 @@
+{
+  "about": {
+    "serverURL": "URL del servidor",
+    "serverPubkey": "Clave pública del servidor",
+    "forfeitAddress": "Dirección de confiscación",
+    "sessionDur": "Duración de la sesión",
+    "boardingDelay": "Retraso de salida de incorporación",
+    "unilateralDelay": "Retraso de salida unilateral",
+    "gitHash": "Hash del commit de Git"
+  },
+  "advanced": {
+    "advancedSettings": "Configuración avanzada",
+    "changePass": "Cambiar contraseña",
+    "lockWallet": "Bloquear billetera",
+    "deleteMnemonic": "Eliminar frase mnemónica",
+    "highRisk": "Alto riesgo"
+  },
+  "backup": {
+    "nostrUpdate": "Copia de seguridad de Nostr actualizada",
+    "mnemonicWarning": "Tu frase de recuperación se utiliza para respaldar tu billetera. Mantenla siempre secreta y segura.",
+    "pkWarning": "Tu clave privada se utiliza para respaldar tu billetera. Mantenla siempre secreta y segura.",
+    "unlockPasskey": "Desbloquear con tu passkey",
+    "enterPass": "Introduce tu contraseña",
+    "keepSafeSecret": "Mantén tu {{secret}} seguro",
+    "noShare": "No lo compartas con nadie",
+    "loseNoRecover": "Si lo pierdes, no podrás recuperarlo",
+    "eyesOnly": "Solo para tus ojos, no lo compartas.",
+    "viewSecret": "Ver {{secret}}",
+    "enoughToRestore": "Esto es suficiente para restaurar tu billetera",
+    "phraseAccess": "Tu frase de recuperación puede utilizarse para acceder a todo lo que hay en tu billetera. No la compartas con nadie.",
+    "pkAccess": "Tu clave privada puede utilizarse para acceder a todo lo que hay en tu billetera. No la compartas con nadie.",
+    "enableNostr": "Activar copias de seguridad en Nostr",
+    "nostrToggle": "Activar o desactivar las copias de seguridad en Nostr"
+  },
+  "biometric": {
+    "bioAuth": "Autenticación biométrica",
+    "bioAuthUnsupported": "La autenticación biométrica no es compatible con este dispositivo",
+    "useBio": "Usar biometría",
+    "disableWarn": "La autenticación biométrica está activa. Al desactivarla se eliminará tu bloqueo actual; después podrás establecer una contraseña desde Configuración avanzada",
+    "enableFingerFace": "Activa el reconocimiento facial o de huella dactilar para desbloquear tu billetera. Esto reemplazará tu contraseña actual.",
+    "noContractFound": "No se encontraron contratos"
+  },
+  "delegates": {
+    "delegates": "Delegados",
+    "whatIs": "¿Qué es un delegado?",
+    "delegateDescr": "Un delegado es un tercero de confianza que designas para ayudarte a mantener tus VTXO seguros.",
+    "learnMore": "Más información",
+    "renewal": "próxima renovación {{time}}",
+    "noRenewal": "No hay renovaciones próximas",
+    "vtxoWarn": "Los delegados solo pueden renovar tus VTXO; no pueden gastar tus fondos ni controlar tu billetera",
+    "defaultArk": "Usar el delegado predeterminado de Arkade",
+    "defaultArkDescr": "Usar el delegado predeterminado de Arkade para gestionar renovaciones",
+    "reloadWarn": "La billetera se recargará para aplicar el cambio"
+  },
+  "display": {
+    "displayPref": "Preferencias de visualización"
+  },
+  "fiat": {
+    "fiat": "Moneda fiduciaria"
+  },
+  "general": {
+    "settingsOpt": "Configuración de {{opt}}",
+    "appSett": "Configuración de la aplicación"
+  },
+  "haptics": {
+    "haptics": "Respuesta háptica",
+    "feedback": "Retroalimentación háptica",
+    "vibration": "Vibración al pulsar botones e interactuar"
+  },
+  "language": {
+    "appLang": "Idioma de la aplicación"
+  },
+  "lock": {
+    "noPass": "No hay contraseña ni biometría configuradas",
+    "lockWallet": "Bloquea tu billetera",
+    "lockReqs": "Necesitas establecer una contraseña o activar la biometría para bloquearla.",
+    "lockBioWarn": "Después de bloquearla, deberás autenticarte con biometría para desbloquearla.",
+    "lockPassWarn": "Después de bloquearla, deberás volver a introducir tu contraseña para desbloquearla.",
+    "setPass": "Establecer contraseña",
+    "lockWalletSimple": "Bloquear billetera"
+  },
+  "logs": {
+    "logs": "Registros",
+    "keyboardNav": "Pulsar Enter habilita la navegación por teclado en los registros",
+    "logMessage": "Registro a las {{time}} con el mensaje {{msg}}. Pulsa Escape para salir de la navegación por teclado.",
+    "exportCSV": "Exportar a archivo CSV"
+  },
+  "menu": {
+    "verified": "Verificado",
+    "pending": "Pendiente",
+    "unverified": "No verificado",
+    "kycVer": "KYC - Verificación",
+    "knowdledgeBase": "Base de conocimiento",
+    "manage": "Gestionar cuenta",
+    "addressBook": "Libreta de direcciones",
+    "showPhrase": "Mostrar frase secreta",
+    "currency": "Moneda",
+    "setNotifs": "Configurar notificaciones",
+    "advancedSettings": "Configuración avanzada"
+  },
+  "notifications": {
+    "notifications": "Notificaciones",
+    "update": "Recibe notificaciones cuando haya una actualización disponible o se reciba un pago. Tendrás que conceder permisos si se solicita.",
+    "unsupported": "Tu navegador no es compatible con la API de Notificaciones. Si usas iOS, deberás añadir la aplicación a la pantalla de inicio y utilizar iOS 16.4 o superior.",
+    "allow": "Permitir notificaciones"
+  },
+  "password": {
+    "passUnavailable": "Contraseña no disponible",
+    "bioAuth": "La autenticación biométrica está activa. Desactívala desde Configuración > Autenticación biométrica antes de establecer una contraseña.",
+    "passRemoved": "Contraseña eliminada",
+    "passChanged": "Contraseña cambiada"
+  },
+  "reset": {
+    "removeSeed": "Elimina definitivamente tu semilla de este dispositivo. Ten mucho cuidado: después de eliminarla será imposible recuperar tu clave desde Chimera Wallet.",
+    "removeMnemonic": "Al hacer clic en \"Eliminar\", se borrará tu frase mnemónica de este dispositivo. ¡Asegúrate de tener una copia de seguridad!",
+    "deleteAccount": "Entiendo y elimino mi cuenta",
+    "deleteMnemConf": "SÍ, ELIMINAR FRASE MNEMÓNICA",
+    "cancel": "CANCELAR"
+  },
+  "server": {
+    "server": "Servidor",
+    "serverURL": "URL del servidor",
+    "found": "Servidor encontrado",
+    "walletReset": "Tu billetera será restablecida. Asegúrate de hacer una copia de seguridad antes.",
+    "connect": "Conectar al servidor"
+  },
+  "support": {
+    "support": "Soporte",
+    "custSupp": "Atención al cliente",
+    "helpText": "Obtén ayuda con tu billetera, informa errores o haz preguntas. Nuestro equipo de soporte está aquí para ayudarte.",
+    "secure": "Chat seguro",
+    "secureText": "Tus conversaciones son seguras y privadas. El historial de chat se mantiene entre sesiones.",
+    "bugRep": "Informes de errores",
+    "bugRepText": "Informa de cualquier problema o error que encuentres. Incluye los pasos para reproducirlo y agilizar la resolución.",
+    "progress": "Seguimiento del progreso",
+    "progressText": "Todos tus tickets y conversaciones de soporte se guardan. Puedes consultar conversaciones anteriores en cualquier momento.",
+    "openSupp": "Abrir chat de soporte"
+  },
+  "verification": {
+    "enterEmail": "Introduce tu dirección de correo electrónico",
+    "enterEmailVerif": "Introduce tu dirección de correo electrónico para comenzar tu verificación KYC.",
+    "idVerif": "Verificación de identidad",
+    "emailRegs": "Tu correo electrónico está registrado. Abre el portal de verificación para completar o consultar el estado de tu KYC.",
+    "emailReSub": "Cambiar tu dirección de correo electrónico requerirá volver a enviar tu verificación KYC.",
+    "resubKyc": "Volver a enviar KYC",
+    "checkStat": "Consultar estado",
+    "r&a": "Revisar y aceptar",
+    "reviewText": "Antes de enviar tu correo de verificación, revisa y acepta lo siguiente.",
+    "acceptPP": "Aceptar la política de privacidad",
+    "agreed": "He leído y acepto la",
+    "PP": "Política de privacidad",
+    "accTS": "Aceptar los términos del servicio",
+    "TS": "Términos del servicio",
+    "sending": "Enviando...",
+    "proceed": "Continuar",
+    "resendIn": "Reenviar en {{sec}}",
+    "resendLim": "Límite de reenvíos alcanzado",
+    "resend": "Reenviar correo",
+    "verifTimeout": "Tiempo de verificación agotado",
+    "noClick": "No detectamos ningún clic en el enlace dentro de los 2 minutos. Por favor, inténtalo de nuevo.",
+    "tryAg": "Intentar de nuevo",
+    "checkInb": "Revisa tu bandeja de entrada",
+    "sentVerif": "Hemos enviado un enlace de verificación a <strong>{{email}}</strong>. Haz clic en el enlace para continuar.",
+    "waiting": "Esperando verificación…",
+    "idVerified": "¡Tu identidad ha sido verificada!",
+    "fullAccess": "Tienes acceso completo a todas las funciones.",
+    "verifProgress": "Verificación en progreso",
+    "docReview": "Tus documentos están siendo revisados. Esto suele tardar entre 1 y 2 días laborables.",
+    "idUnverified": "Verificación no satisfactoria",
+    "unverifText": "Lamentablemente, no pudimos verificar tu identidad. Por favor, inténtalo de nuevo con documentos válidos.",
+    "troubleLoad": "¿Tienes problemas para cargar la verificación?",
+    "iosIssue": "iOS puede tener problemas con contenido incrustado. Ábrelo en Safari para obtener la mejor experiencia.",
+    "openBrowser": "Abrir en el navegador"
+  },
+  "vtxo": {
+    "renewVC": "Renovar monedas virtuales",
+    "belowDust": "Por debajo del límite de polvo",
+    "completeBoardRen": "Completar incorporación y renovar",
+    "renew": "Renovar",
+    "complBoard": "Completar incorporación",
+    "settled": "liquidado",
+    "subdust": "subpolvo",
+    "swept": "recuperado",
+    "unconfirmed": "sin confirmar",
+    "expSoon": "expira pronto",
+    "vc": "Monedas virtuales",
+    "renewal": "Próxima renovación",
+    "renewVCs": "Renovando tus monedas virtuales. Esto puede tardar unos momentos.",
+    "renewing": "Renovando",
+    "coinsRenewdSucc": "Monedas renovadas correctamente",
+    "VClist": "Tus monedas virtuales con importe y fecha de expiración",
+    "utxoList": "Tus UTXO de incorporación con importe y fecha de expiración",
+    "nextren": "Próxima renovación",
+    "firstExpt": "Primera expiración de moneda virtual: {{exp}}",
+    "autoRen": "La renovación automática se realiza para monedas virtuales que expiran dentro de",
+    "marketFees": "La liquidación durante el horario de mercado ofrece comisiones más bajas.",
+    "nextHour": "Próxima hora de mercado: {{st}} {{bool}} durante {{duration}}.",
+    "addRem": "Añadir recordatorio",
+    "vcRenewal": "Renovación de moneda virtual"
+  }
+}

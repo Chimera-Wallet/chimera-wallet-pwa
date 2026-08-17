@@ -1,14 +1,56 @@
 {
   "arkade": {
-    "description": "Мгновенные переводы биткоинов с низкой комиссией"
+    "description": "Мгновенные переводы Bitcoin с низкими комиссиями"
   },
   "lightning": {
-    "description": "Быстрые платежи через сеть Lightning"
+    "description": "Быстрые платежи через Lightning Network"
   },
   "bitcoin": {
-    "description": "Ончейн-транзакции биткоина"
+    "description": "Транзакции Bitcoin в основной сети"
   },
   "bank": {
     "description": "Традиционные банковские переводы"
+  },
+  "browser": {
+    "welcomeMessage": "Добро пожаловать в Arkade 👾",
+    "compatibilityIssue": "Не работает в этом браузере.",
+    "copyLink": "Скопируйте ссылку ниже",
+    "openBrowserPrompt": "Откройте Safari, Chrome или другой браузер",
+    "pastePrompt": "Вставьте ссылку и перейдите по ней",
+    "copied": "Скопировано",
+    "excitedCopy": "Скопировано!",
+    "copyLinkPrompt": "Скопировать ссылку",
+
+    "safariShare": "Нажмите значок «Поделиться» на панели Safari, затем выберите «На экран Домой».",
+    "chromeShare": "Нажмите значок «Поделиться» в адресной строке Chrome, затем выберите «На экран Домой».",
+    "firefoxShare": "Нажмите значок меню в Firefox, затем выберите «На экран Домой». Для полной поддержки откройте эту страницу в Safari.",
+    "edgeShare": "Нажмите значок меню в Edge, затем выберите «На экран Домой». Для полной поддержки откройте эту страницу в Safari.",
+    "defaultShare": "Нажмите значок «Поделиться», затем выберите «На экран Домой». Для полной поддержки откройте эту страницу в Safari.",
+
+    "installDescr": "Нажмите «Установить», чтобы добавить Chimera на главный экран.",
+    "install": "Установить"
+  },
+
+  "transactions": {
+    "viewAll": "Просмотреть все транзакции",
+    "seeAll": "Показать все транзакции",
+    "allTransactions": "Все транзакции",
+
+    "completeBoarding": "Завершить boarding",
+    "settleTransaction": "Подтвердить транзакцию",
+    "settling": "Подтверждение...",
+    "processingBoarding": "Обработка вашей boarding-транзакции...",
+    "settlingTransaction": "Подтверждение транзакции...",
+    "boardingExpired": "Срок действия boarding-транзакции истёк.",
+    "onchainUnconfirmed": "On-chain транзакция не подтверждена. Пожалуйста, дождитесь подтверждения.",
+    "onboardConfirmed": "Onboard-транзакция подтверждена в сети.",
+    "transactionSettledSucc": "Транзакция успешно подтверждена",
+    "resend": "Отправить повторно",
+    "reminder": "Добавить напоминание",
+    "transaction": "Транзакция",
+    "pendingBoarding": "Ожидающий boarding",
+    "preconfirmed": "Предварительно подтверждена",
+    "boarding": "Boarding",
+    "offchain": "Вне сети"
   }
 }

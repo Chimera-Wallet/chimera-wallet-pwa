@@ -11,6 +11,7 @@ import Button from './Button'
 import Text from './Text'
 import { NavigationContext, Pages } from '../providers/navigation'
 import type { BankTransferValidation } from '../hooks/useBankTransferValidation'
+import { useTranslation } from 'react-i18next'
 
 interface BankTransferValidationMessagesProps {
   validation: BankTransferValidation
@@ -18,6 +19,7 @@ interface BankTransferValidationMessagesProps {
 
 export default function BankTransferValidationMessages({ validation }: BankTransferValidationMessagesProps) {
   const { navigate } = useContext(NavigationContext)
+  const {t} = useTranslation()
 
   // No error message to display
   if (!validation.errorMessage) {
@@ -27,7 +29,7 @@ export default function BankTransferValidationMessages({ validation }: BankTrans
   // Determine if this is a KYC error (requires call-to-action)
   const isKycError = validation.kycRequired && !validation.kycVerified
   const color = isKycError ? 'red' : 'orange'
-  const title = isKycError ? 'KYC Required' : 'Validation'
+  const title = isKycError ? t('components.bankVal.kycReq') : t('components.bankVal.val')
 
   return (
     <Info color={color} title={title}>
@@ -35,7 +37,7 @@ export default function BankTransferValidationMessages({ validation }: BankTrans
         {validation.errorMessage}
       </Text>
       {isKycError ? (
-        <Button label='Complete Verification' onClick={() => navigate(Pages.SettingsKYC)} secondary />
+        <Button label={t('components.bankVal.complVer')} onClick={() => navigate(Pages.SettingsKYC)} secondary />
       ) : null}
     </Info>
   )

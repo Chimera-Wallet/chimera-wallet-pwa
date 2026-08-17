@@ -1,0 +1,202 @@
+{
+  "carousel": {
+    "error": "useCarousel doit être utilisé dans un <Carousel />",
+    "previous": "Diapositive précédente",
+    "next": "Diapositive suivante"
+  },
+  "chart": {
+    "error": "useChart doit être utilisé dans un <ChartContainer />"
+  },
+  "command": {
+    "command": "Palette de commandes",
+    "search": "Rechercher une commande à exécuter..."
+  },
+  "pagination": {
+    "previous": "Précédent",
+    "goPrev": "Aller à la page précédente",
+    "next": "Suivant",
+    "goNext": "Aller à la page suivante",
+    "more": "Plus de pages"
+  },
+  "sidebar": {
+    "sidebar": "Barre latérale",
+    "error": "useSidebar doit être utilisé dans un SidebarProvider.",
+    "mobile": "Affiche la barre latérale mobile",
+    "toggle": "Afficher/Masquer la barre latérale"
+  },
+  "alert": {
+    "protectPass": "Protégez votre portefeuille avec un mot de passe"
+  },
+  "announcements": {
+    "intro": "Présentation de : ",
+    "whatDo": "Ce que vous pouvez faire :",
+    "try": "Essayer {{title}}",
+    "later": "Peut-être plus tard",
+    "lightWork": "Lightning qui fonctionne",
+    "bridge": "Pont",
+    "bridgeDescr": "Échangez entre différentes couches Bitcoin tout en gardant le contrôle total.",
+    "fast": "Rapide",
+    "fastDescr": "Boltz utilise des technologies de mise à l'échelle de couche 2 comme le réseau Lightning.",
+    "safe": "Sécurisé",
+    "safeDescr": "Les swaps sur Boltz sont atomiques ; la cryptographie garantit que les utilisateurs gardent toujours le contrôle de leur argent.",
+    "lendaMess": "Obtenez des prêts avec du Bitcoin comme garantie. Recevez des USDC ou USDT en 2 minutes.",
+    "chooseLoan": "Choisir un prêt",
+    "chooseLoanDescr": "Sélectionnez les conditions de prêt qui vous conviennent parmi une liste d'offres ou publiez votre propre demande. Nous trouverons la meilleure correspondance.",
+    "lock": "Bloquez votre Bitcoin",
+    "lockDescr": "Bloquez un montant de Bitcoin supérieur à celui de votre prêt comme garantie. Votre Bitcoin reste en sécurité pendant que vous obtenez les fonds dont vous avez besoin.",
+    "rcv": "Recevoir les fonds",
+    "rcvDescr": "Recevez votre prêt instantanément via votre méthode préférée : virement bancaire, stablecoins (USDT/USDC) ou carte VISA.",
+    "satoraMessage": "Échangez instantanément du Bitcoin contre des USDC ou USDT.",
+    "swapStable": "Échanger contre des stablecoins",
+    "swapDescr": "Échangez des $BTC natifs contre des $USDT ou $USDC sur Ethereum et Polygon.",
+    "atomic": "Swaps atomiques sans confiance",
+    "atomicDescr": "Lorsqu’un swap est lancé, les deux parties verrouillent leurs fonds dans des contrats intelligents. Le swap est soit exécuté intégralement, soit les deux parties sont remboursées.",
+    "selfCust": "Auto-garde",
+    "selfCustDescr": "Satora est entièrement en auto-garde. Vos clés, vos bitcoins.",
+    "nostrBack": "Sauvegardes Nostr",
+    "nostrMsg": "Sauvegardez sur Nostr.",
+    "backSett": "Paramètres de sauvegarde",
+    "backMsg": "Sauvegardez en toute sécurité les paramètres de votre portefeuille Chimera sur Nostr.",
+    "boltzSw": "Swaps Boltz",
+    "boltzMsg": "Restaurez facilement votre historique de swaps Boltz si vous changez d'appareil.",
+    "secure": "Sécurisé",
+    "secureMsg": "Toutes les sauvegardes sont chiffrées et stockées en toute sécurité sur le réseau Nostr."
+  },
+  "assetCard": {
+    "name": "Nom de l'actif"
+  },
+  "assetNet": {
+    "rcvArk": "Recevoir directement sur Arkade",
+    "sendArk": "Envoyer directement sur Arkade",
+    "depFrom": "Déposer depuis {{name}}",
+    "withdrawTo": "Retirer vers {{name}}",
+    "arkNet": "Réseau Arkade",
+    "select": "Sélectionner un réseau",
+    "net": "Réseau",
+    "selectAsset": "Sélectionner un actif",
+    "ass": "Actif"
+  },
+  "balance": {
+    "wallet": "Solde du portefeuille"
+  },
+  "bankDet": {
+    "req": "Obligatoire",
+    "iban": "IBAN",
+    "bicSwift": "Code BIC / SWIFT",
+    "benef": "Bénéficiaire",
+    "name": "Nom de la banque",
+    "accNum": "Numéro de compte",
+    "routeNum": "Numéro de routage",
+    "benefAdd": "Adresse du bénéficiaire",
+    "bankAdd": "Adresse de la banque",
+    "refCode": "Code de référence (obligatoire)",
+    "mustIncl": "Vous DEVEZ inclure cette référence dans la description de votre virement bancaire pour qu'il soit traité correctement.",
+    "change": "Modifier",
+    "selTrans": "Sélectionner la méthode de transfert",
+    "selCurr": "Sélectionner la devise"
+  },
+  "bankVal": {
+    "kycReq": "KYC requis",
+    "val": "Validation",
+    "complVer": "Terminer la vérification"
+  },
+  "bootErr": {
+    "retry": "Réessayer",
+    "continue": "Continuer quand même"
+  },
+  "checkList": {
+    "pass": "Définissez un mot de passe fort avec :"
+  },
+  "details": {
+    "addr": "Adresse",
+    "arkNote": "Note Ark",
+    "inv": "Facture",
+    "swapId": "ID du swap",
+    "dest": "Destination",
+    "transId": "ID de transaction",
+    "assId": "ID de l'actif",
+    "dir": "Direction",
+    "ty": "Type",
+    "stat": "Statut",
+    "when": "Quand",
+    "date": "Date",
+    "exp": "Expiration",
+    "am": "Montant",
+    "netFee": "Frais réseau",
+    "total": "Total"
+  },
+  "empty": {
+    "noAss": "Aucun actif pour le moment",
+    "import": "Importez-en ou émettez-en un pour commencer",
+    "noVirt": "Aucune pièce virtuelle disponible",
+    "genImp": "Générez ou importez des pièces pour continuer",
+    "noLogs": "Aucun journal disponible",
+    "useApp": "Commencez à utiliser l'application pour générer des journaux.",
+    "noSwap": "Aucun swap pour le moment",
+    "swapHist": "Votre historique de swaps apparaîtra ici une fois que vous aurez commencé à effectuer des swaps.",
+    "noTrans": "Aucune transaction pour le moment",
+    "makeTrans": "Effectuez une transaction pour commencer."
+  },
+  "errorBoundary": {
+    "somethingWrong": "Une erreur s'est produite",
+    "unexpError": "L'application a rencontré une erreur inattendue",
+    "reloadPrompt": "Veuillez recharger pour continuer",
+    "reload": "Recharger"
+  },
+  "expandAddr": {
+    "btc": "Adresse BTC",
+    "ark": "Adresse Arkade",
+    "light": "Adresse Lightning"
+  },
+  "installBanner": {
+    "addChimera": "Ajouter CHIMERA à votre écran d'accueil"
+  },
+  "needsPass": {
+    "passkeyNF": "Votre clé d'accès n'a pas pu être trouvée sur cet appareil. Restaurez votre portefeuille à l'aide de votre phrase secrète.",
+    "tryAgain": "Réessayer",
+    "restorePhrase": "Restaurer à partir de la phrase secrète",
+    "unlockBio": "Déverrouiller avec la biométrie",
+    "insPass": "Saisir le mot de passe",
+    "pass": "mot de passe",
+    "unlock": "Déverrouiller le portefeuille",
+    "forgot": "Mot de passe oublié ? Restaurer avec la clé privée",
+    "passkeyNFText": "Clé d'accès introuvable",
+    "pkText": "Votre clé d'accès n'a pas pu être trouvée sur cet appareil. Vous devrez restaurer votre portefeuille à l'aide de votre phrase secrète.",
+    "welcome": "Bon retour",
+    "unlockPk": "Déverrouillez avec votre clé d'accès pour continuer"
+  },
+  "newPass": {
+    "passwordMatch": "Les mots de passe doivent correspondre",
+    "save": "Enregistrer le mot de passe",
+    "charMin": "8 caractères minimum",
+    "num": "contenir au moins 1 chiffre",
+    "special": "contenir au moins 1 caractère spécial",
+    "pass": "Mot de passe",
+    "confirm": "Confirmer le mot de passe"
+  },
+  "onboarding": {
+    "takeBack": "Reprenez le contrôle de votre argent"
+  },
+  "pillNav": {
+    "card": "Carte",
+    "trade": "Échanger",
+    "apps": "Applications",
+    "settings": "Paramètres"
+  },
+  "reminder": {
+    "googleCal": "Google Agenda",
+    "appleCal": "Calendrier Apple",
+    "outlook": "Outlook"
+  },
+  "scanner": {
+    "camera": "Caméra non disponible",
+    "cancel": "Annuler"
+  },
+  "stakingBanner": {
+    "title": "Soyez prêt pour le TGE du jeton Chimera",
+    "descr": "Verrouillez vos CEXT et regardez vos récompenses augmenter au fil du temps, avec des rendements annuels pouvant atteindre 15 %, versés directement en CEXT dans votre portefeuille.",
+    "live": "Disponible dès maintenant !",
+    "launch": "Lancement dans",
+    "joinComm": "Rejoindre la communauté"
+  }
+}

@@ -1,0 +1,26 @@
+{
+    "wallet":{
+        "fetchCoins": "Fetching coins...",
+        "fetchTrans": "Fetching transactions...",
+        "updBal": "Updating balance...",
+        "loadingMeta": "Loading asset metadata..",
+        "unableLoadWall": "Unable to load wallet data. Check your connection and try again.",
+        "startWall": "Starting wallet...",
+        "migrateData": "Migrating data",
+        "retryConn": "Retrying connection..."
+    },
+    "config": {
+        "statement": "Statement",
+        "stateDescr": "View your transaction history and account statements",
+        "stateInfoTitle": "Your Financial Overview",
+        "stateInfoDescr":"Access detailed statements of all your transactions, balances, and account activity in one place.",
+        "referral": "Referral",
+        "referralDescr":"Invite friends and earn rewards",
+        "referralInfoTitle": "What is the Referral Program?",
+        "referralInfoDescr":"You're at the centre, and the rewards are endless!\n\nEarn 20% of all fees from every friend who signs up with your link—forever.\nNo caps,no limits, no expiration; just continuous rewards. The more you share, the more you earn. Ready?\n\nCopy your link, spread the word, and let the rewards roll in!",
+        "giftCard": "Gift Cards",
+        "giftCardDescr": "Buy and redeem gift cards with Bitcoin",
+        "cardReserve": "Card Reservation",
+        "cardReserveDescr": "Reserve your Chimera debit card"
+    }
+}

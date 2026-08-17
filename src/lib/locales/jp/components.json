@@ -1,0 +1,202 @@
+{
+  "carousel": {
+    "error": "useCarousel は <Carousel /> 内で使用する必要があります",
+    "previous": "前のスライド",
+    "next": "次のスライド"
+  },
+  "chart": {
+    "error": "useChart は <ChartContainer /> 内で使用する必要があります"
+  },
+  "command": {
+    "command": "コマンドパレット",
+    "search": "実行するコマンドを検索..."
+  },
+  "pagination": {
+    "previous": "前へ",
+    "goPrev": "前のページへ移動",
+    "next": "次へ",
+    "goNext": "次のページへ移動",
+    "more": "さらにページを表示"
+  },
+  "sidebar": {
+    "sidebar": "サイドバー",
+    "error": "useSidebar は SidebarProvider 内で使用する必要があります。",
+    "mobile": "モバイル用サイドバーを表示",
+    "toggle": "サイドバーを切り替え"
+  },
+  "alert": {
+    "protectPass": "パスワードでウォレットを保護してください"
+  },
+  "announcements": {
+    "intro": "ご紹介: ",
+    "whatDo": "できること:",
+    "try": "{{title}} を試す",
+    "later": "後で",
+    "lightWork": "本当に使えるLightning",
+    "bridge": "ブリッジ",
+    "bridgeDescr": "完全な自己管理を維持したまま、異なるBitcoinレイヤー間でスワップできます。",
+    "fast": "高速",
+    "fastDescr": "BoltzはLightning Networkなどのレイヤー2スケーリング技術を活用しています。",
+    "safe": "安全",
+    "safeDescr": "Boltzのスワップはアトミックであり、暗号技術によって常にユーザーが資金を管理できます。",
+    "lendaMess": "Bitcoinを担保にローンを利用。2分でUSDCまたはUSDTを受け取れます。",
+    "chooseLoan": "ローンを選択",
+    "chooseLoanDescr": "提供されている条件から選択するか、自分でローンリクエストを投稿できます。最適な相手を見つけます。",
+    "lock": "Bitcoinをロック",
+    "lockDescr": "ローン額を上回る価値のBitcoinを担保としてロックします。資産を守りながら必要な資金を受け取れます。",
+    "rcv": "資金を受け取る",
+    "rcvDescr": "銀行振込、ステーブルコイン（USDT/USDC）、またはVISAカードで即座にローンを受け取れます。",
+    "satoraMessage": "BitcoinをUSDCまたはUSDTに即時交換。",
+    "swapStable": "ステーブルコインへスワップ",
+    "swapDescr": "ネイティブBTCをEthereumおよびPolygon上のUSDTまたはUSDCへ交換します。",
+    "atomic": "信頼不要のアトミックスワップ",
+    "atomicDescr": "スワップ開始時に双方がスマートコントラクトへ資金をロックします。完全に成立するか、双方に返金されます。",
+    "selfCust": "セルフカストディ",
+    "selfCustDescr": "Satoraは完全なセルフカストディです。鍵はあなたのもの、コインもあなたのものです。",
+    "nostrBack": "Nostrバックアップ",
+    "nostrMsg": "Nostrへバックアップ。",
+    "backSett": "バックアップ設定",
+    "backMsg": "Chimeraウォレット設定をNostr上に安全にバックアップします。",
+    "boltzSw": "Boltzスワップ",
+    "boltzMsg": "デバイスを変更してもBoltzのスワップ履歴を簡単に復元できます。",
+    "secure": "安全",
+    "secureMsg": "すべてのバックアップは暗号化され、安全にNostrネットワークへ保存されます。"
+  },
+  "assetCard": {
+    "name": "アセット名"
+  },
+  "assetNet": {
+    "rcvArk": "Arkadeで直接受け取る",
+    "sendArk": "Arkadeで直接送信する",
+    "depFrom": "{{name}} から入金",
+    "withdrawTo": "{{name}} へ出金",
+    "arkNet": "Arkadeネットワーク",
+    "select": "ネットワークを選択",
+    "net": "ネットワーク",
+    "selectAsset": "アセットを選択",
+    "ass": "アセット"
+  },
+  "balance": {
+    "wallet": "ウォレット残高"
+  },
+  "bankDet": {
+    "req": "必須",
+    "iban": "IBAN",
+    "bicSwift": "BIC / SWIFTコード",
+    "benef": "受取人",
+    "name": "銀行名",
+    "accNum": "口座番号",
+    "routeNum": "ルーティング番号",
+    "benefAdd": "受取人住所",
+    "bankAdd": "銀行住所",
+    "refCode": "参照コード（必須）",
+    "mustIncl": "正しく処理するため、銀行振込の説明欄にこの参照コードを必ず含めてください。",
+    "change": "変更",
+    "selTrans": "送金方法を選択",
+    "selCurr": "通貨を選択"
+  },
+  "bankVal": {
+    "kycReq": "KYCが必要です",
+    "val": "認証",
+    "complVer": "認証を完了"
+  },
+  "bootErr": {
+    "retry": "再試行",
+    "continue": "そのまま続行"
+  },
+  "checkList": {
+    "pass": "次の条件を満たす強力なパスワードを設定してください:"
+  },
+  "details": {
+    "addr": "アドレス",
+    "arkNote": "Arkノート",
+    "inv": "請求書",
+    "swapId": "スワップID",
+    "dest": "送信先",
+    "transId": "取引ID",
+    "assId": "アセットID",
+    "dir": "方向",
+    "ty": "種類",
+    "stat": "状態",
+    "when": "日時",
+    "date": "日付",
+    "exp": "有効期限",
+    "am": "数量",
+    "netFee": "ネットワーク手数料",
+    "total": "合計"
+  },
+  "empty": {
+    "noAss": "まだアセットがありません",
+    "import": "インポートまたはミントして開始してください",
+    "noVirt": "利用可能な仮想コインがありません",
+    "genImp": "コインを生成またはインポートして続行してください",
+    "noLogs": "ログがありません",
+    "useApp": "アプリを利用してログを生成してください。",
+    "noSwap": "まだスワップはありません",
+    "swapHist": "スワップを開始すると履歴がここに表示されます。",
+    "noTrans": "まだ取引はありません",
+    "makeTrans": "取引を行って開始してください。"
+  },
+  "errorBoundary": {
+    "somethingWrong": "問題が発生しました",
+    "unexpError": "アプリで予期しないエラーが発生しました",
+    "reloadPrompt": "続行するには再読み込みしてください",
+    "reload": "再読み込み"
+  },
+  "expandAddr": {
+    "btc": "BTCアドレス",
+    "ark": "Arkadeアドレス",
+    "light": "Lightningアドレス"
+  },
+  "installBanner": {
+    "addChimera": "CHIMERAをホーム画面に追加"
+  },
+  "needsPass": {
+    "passkeyNF": "このデバイスでパスキーが見つかりませんでした。シークレットフレーズを使ってウォレットを復元してください。",
+    "tryAgain": "再試行",
+    "restorePhrase": "シークレットフレーズから復元",
+    "unlockBio": "生体認証でロック解除",
+    "insPass": "パスワードを入力",
+    "pass": "パスワード",
+    "unlock": "ウォレットを解除",
+    "forgot": "パスワードを忘れましたか？秘密鍵で復元",
+    "passkeyNFText": "パスキーが見つかりません",
+    "pkText": "このデバイスでパスキーが見つかりませんでした。シークレットフレーズを使用してウォレットを復元する必要があります。",
+    "welcome": "おかえりなさい",
+    "unlockPk": "続行するにはパスキーでロックを解除してください"
+  },
+  "newPass": {
+    "passwordMatch": "パスワードが一致する必要があります",
+    "save": "パスワードを保存",
+    "charMin": "8文字以上",
+    "num": "数字を1文字以上含める",
+    "special": "特殊文字を1文字以上含める",
+    "pass": "パスワード",
+    "confirm": "パスワードを確認"
+  },
+  "onboarding": {
+    "takeBack": "お金の管理を自分の手に取り戻そう"
+  },
+  "pillNav": {
+    "card": "カード",
+    "trade": "取引",
+    "apps": "アプリ",
+    "settings": "設定"
+  },
+  "reminder": {
+    "googleCal": "Googleカレンダー",
+    "appleCal": "Appleカレンダー",
+    "outlook": "Outlook"
+  },
+  "scanner": {
+    "camera": "カメラを利用できません",
+    "cancel": "キャンセル"
+  },
+  "stakingBanner": {
+    "title": "Chimera Token TGEに備えよう",
+    "descr": "CEXTをロックして報酬を積み上げましょう。年利最大15%の報酬がCEXTで直接ウォレットへ支払われます。",
+    "live": "現在利用可能！",
+    "launch": "開始まで",
+    "joinComm": "コミュニティに参加"
+  }
+}

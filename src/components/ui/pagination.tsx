@@ -3,6 +3,7 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 function Pagination({ className, ...props }: React.ComponentProps<'nav'>) {
   return (
@@ -45,31 +46,34 @@ function PaginationLink({ className, isActive, size = 'icon', ...props }: Pagina
 
 function PaginationPrevious({
   className,
-  text = 'Previous',
+  text = 'components.pagination.previous',
   ...props
 }: React.ComponentProps<typeof PaginationLink> & { text?: string }) {
+  const {t} = useTranslation()
   return (
-    <PaginationLink aria-label='Go to previous page' size='default' className={cn('pl-1.5!', className)} {...props}>
+    <PaginationLink aria-label={t('components.pagination.goPrev')} size='default' className={cn('pl-1.5!', className)} {...props}>
       <ChevronLeftIcon data-icon='inline-start' />
-      <span className='hidden sm:block'>{text}</span>
+      <span className='hidden sm:block'>{t(text)}</span>
     </PaginationLink>
   )
 }
 
 function PaginationNext({
   className,
-  text = 'Next',
+  text = 'components.pagination.next',
   ...props
 }: React.ComponentProps<typeof PaginationLink> & { text?: string }) {
+  const {t} = useTranslation()
   return (
-    <PaginationLink aria-label='Go to next page' size='default' className={cn('pr-1.5!', className)} {...props}>
-      <span className='hidden sm:block'>{text}</span>
+    <PaginationLink aria-label={t('components.pagination.goNext')} size='default' className={cn('pr-1.5!', className)} {...props}>
+      <span className='hidden sm:block'>{t(text)}</span>
       <ChevronRightIcon data-icon='inline-end' />
     </PaginationLink>
   )
 }
 
 function PaginationEllipsis({ className, ...props }: React.ComponentProps<'span'>) {
+  const {t} = useTranslation()
   return (
     <span
       aria-hidden
@@ -78,7 +82,7 @@ function PaginationEllipsis({ className, ...props }: React.ComponentProps<'span'
       {...props}
     >
       <MoreHorizontalIcon />
-      <span className='sr-only'>More pages</span>
+      <span className='sr-only'>{t('components.pagination.more')}</span>
     </span>
   )
 }

@@ -1,19 +1,27 @@
 {
-    "addressFallback": "Pegar dirección",
-    "networkFallback": "Selecciona una red para ver su descripción",
-    "arkade":{
-        "address": "Pegar dirección Arkade"
-    },
-    "lightning": {
-        "address": "Pegar dirección de factura Lightning"
-    },
-    "bitcoin": {
-        "address": "Pegar dirección BTC"
-    },
-    "bank": {
-        "details": "Ingresar detalles del banco"
-    }
-    
-
+  "addressFallback": "Pegar dirección",
+  "networkFallback": "Selecciona una red para ver su descripción",
+  "arkade": {
+    "address": "Pegar dirección de Arkade"
+  },
+  "lightning": {
+    "address": "Pegar dirección de factura Lightning",
+    "invoice": "Pega una factura Lightning para enviar un pago. El importe del pago está codificado en la factura."
+  },
+  "bitcoin": {
+    "address": "Pegar dirección BTC"
+  },
+  "bank": {
+    "details": "Introducir datos bancarios"
+  },
+  "contacts": {
+    "name": "Introduce el nombre del contacto",
+    "accounts": "p. ej., Billetera principal, Ahorros...",
+    "enterAddr": "Introduce {{name}}"
+  },
+  "assets": {
+    "token": "Mi Token",
+    "assIdPaste": "Pega el ID del activo...",
+    "controlAm": "Cantidad de control"
+  }
 }
-

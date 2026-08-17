@@ -4,6 +4,7 @@ import AppsIcon from '../icons/Apps'
 import SettingsIcon from '../icons/Settings'
 import CardReservationIcon from '../icons/CardReservation'
 import SwapIcon from '../icons/Swap'
+import { useTranslation } from 'react-i18next'
 
 interface PillNavbarProps {
   activeTab: string
@@ -27,6 +28,7 @@ export default function PillNavbar({
   const walletRef = useRef<HTMLDivElement>(null)
   const appsRef = useRef<HTMLDivElement>(null)
   const settingsRef = useRef<HTMLDivElement>(null)
+  const {t} = useTranslation()
 
   useEffect(() => {
     const ref =
@@ -58,26 +60,26 @@ export default function PillNavbar({
         onClick={onCardClick}
         role='tab'
         aria-selected={activeTab === 'card'}
-        aria-label='Card'
+        aria-label={t('components.pillNav.card')}
         data-testid='tab-card'
       >
         <div ref={cardRef} className='pill-nav-icon'>
           <CardReservationIcon />
         </div>
-        <span className='pill-nav-label'>Card</span>
+        <span className='pill-nav-label'>{t('components.pillNav.card')}</span>
       </button>
       <button
         className={`pill-nav-btn ${activeTab === 'trade' ? 'pill-nav-btn--active' : ''}`}
         onClick={onTradeClick}
         role='tab'
         aria-selected={activeTab === 'trade'}
-        aria-label='Trade'
+        aria-label={t('components.pillNav.trade')}
         data-testid='tab-trade'
       >
         <div ref={tradeRef} className='pill-nav-icon'>
           <SwapIcon />
         </div>
-        <span className='pill-nav-label'>Trade</span>
+        <span className='pill-nav-label'>{t('components.pillNav.trade')}</span>
       </button>
       <button
         className={`pill-nav-btn pill-nav-btn--wallet ${activeTab === 'wallet' ? 'pill-nav-btn--active' : ''}`}
@@ -96,26 +98,26 @@ export default function PillNavbar({
         onClick={onAppsClick}
         role='tab'
         aria-selected={activeTab === 'apps'}
-        aria-label='Apps'
+        aria-label={t('components.pillNav.apps')}
         data-testid='tab-apps'
       >
         <div ref={appsRef} className='pill-nav-icon'>
           <AppsIcon />
         </div>
-        <span className='pill-nav-label'>Apps</span>
+        <span className='pill-nav-label'>{t('components.pillNav.apps')}</span>
       </button>
       <button
         className={`pill-nav-btn ${activeTab === 'settings' ? 'pill-nav-btn--active' : ''}`}
         onClick={onSettingsClick}
         role='tab'
         aria-selected={activeTab === 'settings'}
-        aria-label='Settings'
+        aria-label={t('components.pillNav.settings')}
         data-testid='tab-settings'
       >
         <div ref={settingsRef} className='pill-nav-icon'>
           <SettingsIcon />
         </div>
-        <span className='pill-nav-label'>Settings</span>
+        <span className='pill-nav-label'>{t('components.pillNav.settings')}</span>
       </button>
     </nav>
   )

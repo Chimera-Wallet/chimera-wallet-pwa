@@ -1,0 +1,26 @@
+{
+  "wallet": {
+    "fetchCoins": "正在获取币...",
+    "fetchTrans": "正在获取交易...",
+    "updBal": "正在更新余额...",
+    "loadingMeta": "正在加载资产元数据..",
+    "unableLoadWall": "无法加载钱包数据。请检查您的网络连接后重试。",
+    "startWall": "正在启动钱包...",
+    "migrateData": "正在迁移数据",
+    "retryConn": "正在重试连接..."
+  },
+  "config": {
+    "statement": "账单",
+    "stateDescr": "查看您的交易历史和账户账单",
+    "stateInfoTitle": "您的财务概览",
+    "stateInfoDescr": "在一个地方查看您的所有交易、余额和账户活动的详细账单。",
+    "referral": "推荐计划",
+    "referralDescr": "邀请好友并赚取奖励",
+    "referralInfoTitle": "什么是推荐计划？",
+    "referralInfoDescr": "您是核心参与者，奖励源源不断！\n\n每当好友通过您的链接注册，您都可以永久获得其所有费用的 20%。\n没有上限、没有限制、没有过期时间；只有持续不断的奖励。分享得越多，赚得越多。准备好了吗？\n\n复制您的链接，分享给更多人，让奖励源源不断地到来！",
+    "giftCard": "礼品卡",
+    "giftCardDescr": "使用 Bitcoin 购买和兑换礼品卡",
+    "cardReserve": "卡片预订",
+    "cardReserveDescr": "预订您的 Chimera 借记卡"
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "arkade": {
+    "description": "即時・低手数料のBitcoin送金"
+  },
+  "lightning": {
+    "description": "高速なLightning Network決済"
+  },
+  "bitcoin": {
+    "description": "Bitcoinオンチェーン取引"
+  },
+  "bank": {
+    "description": "従来の銀行振込"
+  },
+  "browser": {
+    "welcomeMessage": "Arkadeへようこそ 👾",
+    "compatibilityIssue": "このブラウザでは動作しません。",
+    "copyLink": "以下のリンクをコピーしてください",
+    "openBrowserPrompt": "Safari、Chrome、またはお使いのブラウザで開いてください",
+    "pastePrompt": "リンクを貼り付けてアクセスしてください",
+    "copied": "コピーしました",
+    "excitedCopy": "コピーしました！",
+    "copyLinkPrompt": "リンクをコピー",
+
+    "safariShare": "Safariのツールバーにある共有アイコンをタップし、「ホーム画面に追加」を選択してください。",
+    "chromeShare": "Chromeのアドレスバーにある共有アイコンをタップし、「ホーム画面に追加」を選択してください。",
+    "firefoxShare": "Firefoxのメニューアイコンをタップし、「ホーム画面に追加」を選択してください。完全なサポートのためにはSafariでこのページを開いてください。",
+    "edgeShare": "Edgeのメニューアイコンをタップし、「ホーム画面に追加」を選択してください。完全なサポートのためにはSafariでこのページを開いてください。",
+    "defaultShare": "共有アイコンをタップし、「ホーム画面に追加」を選択してください。完全なサポートのためにはSafariでこのページを開いてください。",
+
+    "installDescr": "「インストール」をタップしてChimeraをホーム画面に追加してください。",
+    "install": "インストール"
+  },
+
+  "transactions": {
+    "viewAll": "すべての取引を表示",
+    "seeAll": "すべての取引を見る",
+    "allTransactions": "すべての取引",
+
+    "completeBoarding": "ボーディングを完了",
+    "settleTransaction": "取引を確定",
+    "settling": "確定中...",
+    "processingBoarding": "ボーディング取引を処理中...",
+    "settlingTransaction": "取引を確定中...",
+    "boardingExpired": "ボーディング取引の有効期限が切れました。",
+    "onchainUnconfirmed": "オンチェーン取引は未承認です。承認をお待ちください。",
+    "onboardConfirmed": "ボーディング取引がオンチェーンで承認されました。",
+    "transactionSettledSucc": "取引が正常に確定しました",
+    "resend": "再送信",
+    "reminder": "リマインダーを追加",
+    "transaction": "取引",
+    "pendingBoarding": "ボーディング保留中",
+    "preconfirmed": "事前承認済み",
+    "boarding": "ボーディング",
+    "offchain": "オフチェーン"
+  }
+}

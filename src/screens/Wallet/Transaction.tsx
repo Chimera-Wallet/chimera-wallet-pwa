@@ -230,7 +230,7 @@ export default function Transaction() {
 
   return (
     <>
-      <Header text={t('networks.transaction.transaction')} back />
+      <Header text={t('networks.transactions.transaction')} back />
       <Body />
       <Buttons />
     </>
