@@ -142,6 +142,7 @@
         "wallet": "Wallet", 
         "unkown": "Unkown",
         "unconfirmed": "Unconfirmed",
+        "confirm": "confirm",
         "settled": "Settled",
         "expired": "Expired",
         "expires": "Expires",

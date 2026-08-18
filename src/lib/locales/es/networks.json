@@ -6,9 +6,11 @@
     "description": "Pagos rápidos mediante Lightning Network"
   },
   "bitcoin": {
+    "onChain": "Cadena Nativa",
     "description": "Transacciones de Bitcoin en cadena"
   },
   "bank": {
+    "bank": "Transferencia bancaria",
     "description": "Transferencias bancarias tradicionales"
   },
   "browser": {

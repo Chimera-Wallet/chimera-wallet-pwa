@@ -12,6 +12,7 @@ import Text from '../../../components/Text'
 import InfoContainer from '../../../components/InfoContainer'
 import { InfoLine } from '../../../components/Info'
 import Loading from '../../../components/Loading'
+import { useTranslation } from 'react-i18next'
 
 export default function Statement() {
   const { txs, balance, dataReady } = useContext(WalletContext)
@@ -31,6 +32,8 @@ export default function Statement() {
 
   // Today's date in YYYY-MM-DD format for max date validation
   const todayString = today.toISOString().split('T')[0]
+  
+  const {t} = useTranslation()
 
   const filteredData: StatementData[] = useMemo(() => {
     if (!dataReady || !txs) return []
@@ -97,7 +100,7 @@ export default function Statement() {
   if (!dataReady) {
     return (
       <>
-        <Header back text='Account Statement' />
+        <Header back text={t('apps.statement.header')} />
         <Content>
           <Padded>
             <Loading simple />
@@ -109,28 +112,28 @@ export default function Statement() {
 
   return (
     <>
-      <Header back text='Account Statement' />
+      <Header back text={t('apps.statement.header')} />
       <Content>
         <Padded>
           <FlexCol gap='1rem'>
-            <Text wrap>Generate a PDF statement of your transaction history for a specified date range.</Text>
+            <Text wrap>{t('apps.statement.descr')}</Text>
 
-            <InputDate label='Starting Date' value={startDate} onChange={handleStartDateChange} max={todayString} />
+            <InputDate label={t('apps.statement.start')} value={startDate} onChange={handleStartDateChange} max={todayString} />
 
-            <InputDate label='Ending Date' value={endDate} onChange={handleEndDateChange} max={todayString} />
+            <InputDate label={t('apps.statement.end')} value={endDate} onChange={handleEndDateChange} max={todayString} />
 
             {filteredData.length > 0 && (
               <InfoContainer>
                 <InfoLine
                   compact
-                  text={`${filteredData.length} transaction${filteredData.length === 1 ? '' : 's'} found in selected period`}
+                  text={t('apps.statement.transFound',{len1: filteredData.length , len2: filteredData.length === 1 ? '' : 's'})}
                 />
               </InfoContainer>
             )}
 
             {filteredData.length === 0 && !isGenerating && (
               <InfoContainer>
-                <InfoLine compact color='orange' text='No transactions found in selected period' />
+                <InfoLine compact color='orange' text={t('apps.statement.noTrans')} />
               </InfoContainer>
             )}
 
@@ -142,7 +145,7 @@ export default function Statement() {
 
             <Button
               disabled={!isButtonEnabled}
-              label={isGenerating ? 'Generating PDF...' : 'Generate PDF'}
+              label={isGenerating ? t('apps.statement.geningPDF') : t('apps.statement.genPDF')}
               loading={isGenerating}
               main
               onClick={handleGeneratePdf}
@@ -150,7 +153,7 @@ export default function Statement() {
 
             {txs.length === 0 ? (
               <Text centered small color='grey'>
-                No transactions available yet
+                {t('apps.statement.noTransYet')}
               </Text>
             ) : null}
           </FlexCol>

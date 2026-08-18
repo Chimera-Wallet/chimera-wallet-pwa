@@ -28,14 +28,14 @@ export const NETWORKS: Record<TransferMethod, NetworkConfig> = {
   },
   [TRANSFER_METHOD.bitcoin]: {
     id: TRANSFER_METHOD.bitcoin,
-    name: 'Native Chain',
+    name: 'networks.bitcoin.onChain',
     description: 'networks.bitcoin.description',
     icon: '/images/icons/network-bitcoin.svg',
     addressPlaceholder: 'placeholders.bitcoin.address',
   },
   [TRANSFER_METHOD.bank]: {
     id: TRANSFER_METHOD.bank,
-    name: 'Bank Transfer',
+    name: 'networks.bank.bank',
     description: 'networks.bank.description',
     icon: '/images/icons/network-bank.svg',
     addressPlaceholder: 'placeholders.bank.details',

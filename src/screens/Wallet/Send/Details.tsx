@@ -78,13 +78,13 @@ export default function SendDetails() {
             : ''
     const direction =
       destination === arkAddress
-        ? t('common.general.directions.arkade')
+        ? t('common.directions.arkade')
         : destination === invoice
-          ? t('common.general.directions.lightningSwap')
+          ? t('common.directions.lightningSwap')
           : pendingSwap?.type === 'chain'
-            ? t('common.general.mainnetSwap')
+            ? t('common.directions.mainnetSwap')
             : destination === address
-              ? t('common.general.directions.mainnetPay')
+              ? t('common.directions.mainnetPay')
               : ''
     const total = pendingSwap
       ? pendingSwap.type === 'chain'
@@ -198,11 +198,11 @@ export default function SendDetails() {
       <Content>
         {sending ? (
           details?.destination === invoice ? (
-            <Loading text={t('common.general.directions.lightningPay')} />
+            <Loading text={t('common.directions.lightningPay')} />
           ) : details?.destination === arkAddress ? (
-            <Loading text={t('common.general.directions.arkade')} />
+            <Loading text={t('common.directions.arkade')} />
           ) : (
-            <Loading text={t('common.general.directions.mainnetPay')} />
+            <Loading text={t('common.directions.mainnetPay')} />
           )
         ) : (
           <Padded>

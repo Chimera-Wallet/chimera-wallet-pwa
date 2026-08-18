@@ -1,4 +1,5 @@
 {
+    "select": "Select network",
     "arkade":{
         "description": "Instant, low-fee Bitcoin transfers"
     },
@@ -6,9 +7,11 @@
         "description": "Fast Lightning Network payments"
     },
     "bitcoin": {
+        "onChain": "Native Chain",
         "description": "Bitcoin on-chain transactions"
     },
     "bank": {
+        "bank": "Bank Transfer",
         "description": "Traditional bank transfers"
     },
     "browser":{

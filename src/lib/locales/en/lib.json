@@ -22,5 +22,15 @@
         "giftCardDescr": "Buy and redeem gift cards with Bitcoin",
         "cardReserve": "Card Reservation",
         "cardReserveDescr": "Reserve your Chimera debit card"
+    },
+    "transactions": {
+        "sentAss": "Sent {{ass}}",
+        "rcvAss": "Received {{ass}}",
+        "recent": "Recent Transactions",
+        "assets": "Assets",
+        "confirmed": "Confirmed",
+        "pending": "Pending",
+        "failed": "Failed",
+        "copyAddr": "Copy {{title}}"
     }
 }

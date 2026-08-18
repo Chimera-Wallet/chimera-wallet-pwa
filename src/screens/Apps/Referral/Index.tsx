@@ -66,8 +66,21 @@ export default function AppReferral() {
 
   if (step === 'info') {
     const appConfig = getAppConfig('referral')
-    const slides = appConfig?.infoSlides ?? []
-    return <AppInfoPage appName='Referral' slides={slides} onContinue={handleInfoContinue} onBack={handleBack} />
+    if (!appConfig) return null
+
+    const slides = t('apps.referral.infoSlides', { returnObjects: true }) as {
+      title: string
+      description: string
+      image: string
+    }[]
+    return (
+      <AppInfoPage
+        appName={t('apps.referral.referral')}
+        slides={slides}
+        onContinue={handleInfoContinue}
+        onBack={handleBack}
+      />
+    )
   }
 
   // Main referral screen

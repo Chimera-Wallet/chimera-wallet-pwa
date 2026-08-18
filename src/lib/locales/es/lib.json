@@ -22,5 +22,15 @@
     "giftCardDescr": "Compra y canjea tarjetas regalo con Bitcoin",
     "cardReserve": "Reserva de tarjeta",
     "cardReserveDescr": "Reserva tu tarjeta de débito Chimera"
-  }
+  },
+  "transactions": {
+    "sentAss": "{{ass}} enviado",
+    "rcvAss": "{{ass}} recibido",
+    "recent": "Transacciones recientes",
+    "assets": "Activos",
+    "confirmed": "Confirmada",
+    "pending": "Pendiente",
+    "failed": "Fallida",
+    "copyAddr": "Copiar {{title}}"
+}
 }

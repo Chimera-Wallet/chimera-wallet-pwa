@@ -12,13 +12,14 @@ import { hapticSubtle } from '../lib/haptics'
 import { ASSETS } from '../lib/assets'
 import { getTxStatus, TxStatus } from '../lib/txStatus'
 import { AspContext } from '../providers/asp'
+import { useTranslation } from 'react-i18next'
 
 const STATUS_STYLE: Record<TxStatus, { text: string; color: string }> = {
-  Settled: { text: 'Confirmed', color: 'var(--green)' },
-  Preconfirmed: { text: 'Confirmed', color: 'var(--green)' },
-  'Pending boarding': { text: 'Pending', color: 'var(--orange)' },
-  Unconfirmed: { text: 'Pending', color: 'var(--orange)' },
-  Expired: { text: 'Failed', color: 'var(--red)' },
+  Settled: { text: 'lib.transactions.confirmed', color: 'var(--green)' },
+  Preconfirmed: { text: 'lib.transactions.confirmed', color: 'var(--green)' },
+  'Pending boarding': { text: 'lib.transactions.pending', color: 'var(--orange)' },
+  Unconfirmed: { text: 'lib.transactions.pending', color: 'var(--orange)' },
+  Expired: { text: 'lib.transactions.failed', color: 'var(--red)' },
 }
 
 const TransactionLine = ({ tx, onClick, isFirst }: { tx: Tx; onClick: () => void; isFirst?: boolean }) => {
@@ -26,6 +27,8 @@ const TransactionLine = ({ tx, onClick, isFirst }: { tx: Tx; onClick: () => void
   const { toFiat } = useContext(FiatContext)
   const { aspInfo } = useContext(AspContext)
   const boardingExitDelay = Number(aspInfo?.boardingExitDelay || 0)
+
+  const {t} = useTranslation()
 
   const prefix = tx.type === 'sent' ? '-' : '+'
   const btcAmount = fromSatoshis(tx.amount)
@@ -41,7 +44,7 @@ const TransactionLine = ({ tx, onClick, isFirst }: { tx: Tx; onClick: () => void
   const statusKey = getTxStatus(tx, boardingExitDelay)
   const status = STATUS_STYLE[statusKey] ?? { text: statusKey, color: 'var(--grey)' }
   const date = tx.createdAt ? prettyDate(tx.createdAt) : 'Unknown date'
-  const action = tx.type === 'sent' ? `Sent ${ASSETS.BTC.symbol}` : `Received ${ASSETS.BTC.symbol}`
+  const action = tx.type === 'sent' ? t('lib.transactions.sentAss', {ass: ASSETS.BTC.symbol}) : t('lib.transactions.rcvAss', {ass: ASSETS.BTC.symbol})
 
   const iconSrc = tx.type === 'sent' ? '/images/icons/sent.svg' : '/images/icons/received.svg'
   const iconAlt = tx.type === 'sent' ? 'Sent' : 'Received'
@@ -72,7 +75,7 @@ const TransactionLine = ({ tx, onClick, isFirst }: { tx: Tx; onClick: () => void
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
         <div style={{ fontSize: '11px', color: 'var(--neutral-500)', fontWeight: 400 }}>{date}</div>
         <div style={{ fontSize: '14px', fontWeight: 500 }}>{action}</div>
-        <div style={{ fontSize: '12px', color: status.color, fontWeight: 500 }}>{status.text}</div>
+        <div style={{ fontSize: '12px', color: status.color, fontWeight: 500 }}>{t(status.text)}</div>
       </div>
 
       {/* Amounts */}
@@ -94,6 +97,7 @@ export default function TransactionsList({
   const { setTxInfo } = useContext(FlowContext)
   const { navigate } = useContext(NavigationContext)
   const { txs: allTxs } = useContext(WalletContext)
+  const {t} = useTranslation()
 
   const txs = (() => {
     let list = allTxs
@@ -157,7 +161,7 @@ export default function TransactionsList({
     navigate(Pages.Transaction)
   }
 
-  const label = filterAsset ? `${filterAsset} transactions` : 'Recent Transactions'
+  const label = filterAsset ? `${filterAsset} transactions` : t('lib.transactions.recent')
 
   const containerStyle: React.CSSProperties = {
     border: '1px solid var(--neutral-200)',

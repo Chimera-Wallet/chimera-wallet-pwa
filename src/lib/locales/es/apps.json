@@ -164,7 +164,14 @@
     "referralLink": "Tu enlace de referido",
     "tapLink": "Toca el enlace de arriba para copiarlo",
     "refresh": "Actualizar",
-    "claim": "Reclamar recompensa"
+    "claim": "Reclamar recompensa",
+    "infoSlides": [
+    {
+        "title": "¿Qué es el Programa de Referidos?",
+        "description": "¡Tú estás en el centro y las recompensas son ilimitadas!\n\nGana el 20% de todas las comisiones generadas por cada amigo que se registre con tu enlace, para siempre.\nSin límites, sin restricciones y sin fecha de vencimiento; solo recompensas continuas. Cuanto más compartas, más ganarás. ¿Listo?\n\nCopia tu enlace, corre la voz y deja que las recompensas lleguen solas.",
+        "image": "/rocket.png"
+    }
+]
   },
   "swap": {
     "swap": "Intercambio",
@@ -210,5 +217,24 @@
   },
   "staking": {
     "staking": "Staking"
-  }
+  },
+  "statement": {
+    "statement": "Extracto",
+    "header": "Extracto de cuenta",
+    "descr": "Genera un extracto PDF de tu historial de transacciones para un rango de fechas específico.",
+    "start": "Fecha de inicio",
+    "end": "Fecha de finalización",
+    "noTrans": "No se encontraron transacciones en el período seleccionado",
+    "transFound": "{{len1}} transacciones{{len2}} encontradas en el período seleccionado",
+    "genPDF": "Generar PDF",
+    "geningPDF": "Generando PDF...",
+    "noTransYet": "Aún no hay transacciones disponibles",
+    "infoSlides": [
+        {
+            "title": "Tu resumen financiero",
+            "description": "Accede a extractos detallados de todas tus transacciones, saldos y actividad de la cuenta en un solo lugar.",
+            "image": "/images/apps/statement.png"
+        }
+    ]
+}
 }

@@ -21,7 +21,6 @@ import { Network } from '@arkade-os/boltz-swap'
 import { copyToClipboard } from '../../lib/clipboard'
 import { useToast } from '../../components/Toast'
 import{useTranslation} from 'react-i18next'
-import { T } from 'vitest/dist/chunks/reporters.d.BuRON0I0.js'
 
 // format the URL to ensure it has the correct protocol and no trailing slashes
 const formatUrl = (host: string, path: string): string => {
@@ -37,8 +36,7 @@ const formatUrl = (host: string, path: string): string => {
 }
 
 // test connection to delegate by fetching delegate info and validating the response
-const testConnection = (aspInfo: AspInfo): Promise<Delegate> => {
-  const {t} = useTranslation()
+const testConnection = (aspInfo: AspInfo, t: (k: string, o?: any) => string): Promise<Delegate> => {
   return new Promise((resolve, reject) => {
     // ensure expected pubkey is in xonly format
     const expectedPubKey = aspInfo.signerPubkey.length === 66 ? aspInfo.signerPubkey.slice(2) : aspInfo.signerPubkey
@@ -133,13 +131,13 @@ function DelegateCard() {
   // test connection to delegate when url changes
   useEffect(() => {
     if (!config.delegate) return
-    testConnection(aspInfo)
+    testConnection(aspInfo, t)
       .then((delegate) => {
         setDelegate(delegate)
         setActive(true)
       })
       .catch(() => setActive(false))
-  }, [config.delegate, aspInfo.signerPubkey])
+  }, [config.delegate, aspInfo.signerPubkey, t])
 
   if (!config.delegate) return null
 

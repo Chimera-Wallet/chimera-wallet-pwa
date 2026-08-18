@@ -33,7 +33,7 @@ export default function NetworkSelector({
   const selectedConfig = selected ? getNetworkConfig(selected) : undefined
   const options = SEND_NETWORK_LIST.map((network) => ({
     id: network.id,
-    label: network.name,
+    label: t(network.name),
     description: t(network.description),
     icon: <NetworkIcon network={network.id} size={24} />,
   }))
@@ -44,7 +44,7 @@ export default function NetworkSelector({
         icon={selected ? <NetworkIcon network={selected} size={40} /> : undefined}
         label={label !== undefined ? label : 'Network'}
         onClick={() => setIsOpen(true)}
-        value={selectedConfig?.name || selected || 'Select network'}
+        value={selectedConfig?.name || selected || t('networks.select')}
         sublabel={t(selectedConfig?.description ?? 'placeholders.addressFallback')}
         style = {style}
       />
@@ -54,7 +54,7 @@ export default function NetworkSelector({
         onSelect={(id) => onSelect(id as TransferMethod)}
         options={options}
         selected={selected}
-        title='Select Network'
+        title={t('networks.select')}
       />
     </>
   )

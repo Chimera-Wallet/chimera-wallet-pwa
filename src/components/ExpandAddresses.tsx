@@ -95,7 +95,7 @@ export default function ExpandAddresses({
       <Focusable onEnter={handleExpand}>
         <Shadow testId='expand-addresses'>
           <FlexRow between onClick={handleExpand}>
-            <Text>Copy address</Text>
+            <Text>{t('common.general.copyAddress')}</Text>
             {expand ? <ChevronUpIcon /> : <ChevronDownIcon />}
           </FlexRow>
         </Shadow>

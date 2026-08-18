@@ -28,13 +28,13 @@ import * as Sentry from '@sentry/react'
 import Grid from '../../components/Grid'
 import { prettyAssetAmount } from '../../lib/assets'
 import {useTranslation} from 'react-i18next'
-import { t } from 'i18next'
 
 export default function Vtxos() {
   const { aspInfo, calcBestMarketHour } = useContext(AspContext)
   const { config } = useContext(ConfigContext)
   const { utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
   const { assetMetadataCache, reloadWallet, vtxos, vtxoManager, wallet, svcWallet } = useContext(WalletContext)
+  const {t} = useTranslation()
 
   const defaultLabel = t('settings.vtxo.renewVC')
 
@@ -316,7 +316,7 @@ export default function Vtxos() {
                 {listableVtxos.length > 0 ? (
                   <FlexCol gap='0.5rem'>
                     <Text capitalize color='neutral-500' smaller>
-                      {t('settings.verification.VClist')}
+                      {t('settings.vtxo.VClist')}
                     </Text>
                     {listableVtxos.map((v: ExtendedVirtualCoin) => (
                       <VtxoLine key={v.txid} vtxo={v} />
@@ -326,7 +326,7 @@ export default function Vtxos() {
                 {!hideUtxos && allUtxos.length > 0 ? (
                   <FlexCol gap='0.5rem'>
                     <Text capitalize color='neutral-500' smaller>
-                      {t('settings.verification.utxoList')}
+                      {t('settings.vtxo.utxoList')}
                     </Text>
                     {allUtxos.map((u: ExtendedCoin) => (
                       <UtxoLine key={u.txid} utxo={u} />
@@ -338,7 +338,7 @@ export default function Vtxos() {
               <>
                 <FlexCol gap='0.5rem' margin='0 0 1rem 0'>
                   <Text capitalize color='neutral-500' smaller>
-                    {t('settings.verification.nextren')}
+                    {t('settings.vtxo.nextren')}
                   </Text>
                   <Box>
                     <Text>{prettyDate(wallet.nextRollover)}</Text>
@@ -347,18 +347,18 @@ export default function Vtxos() {
                   {success ? <WarningBox green text='Coins renewed successfully' /> : null}
                 </FlexCol>
                 <FlexCol gap='0.5rem' margin='2rem 0 0 0'>
-                  <TextSecondary>{t('settings.verification.firstExpt', {exp: prettyAgo(wallet.nextRollover)})}.</TextSecondary>
+                  <TextSecondary>{t('settings.vtxo.firstExpt', {exp: prettyAgo(wallet.nextRollover)})}.</TextSecondary>
                   {wallet.thresholdMs ? (
                     <TextSecondary>
-                      {t('settings.verification.autoRen')}{' '}
+                      {t('settings.vtxo.autoRen')}{' '}
                       {prettyDelta(Math.floor(wallet.thresholdMs / 1_000))}.
                     </TextSecondary>
                   ) : null}
                   {startTime && duration ? (
                     <>
-                      <TextSecondary>{t('settings.verification.marketFees')}</TextSecondary>
+                      <TextSecondary>{t('settings.vtxo.marketFees')}</TextSecondary>
                       <TextSecondary>
-                        {t('settings.verification.nextHour', {st: prettyDate(startTime) , bool: prettyAgo(startTime,true) , duration: prettyDelta(duration)})}
+                        {t('settings.vtxo.nextHour', {st: prettyDate(startTime) , bool: prettyAgo(startTime,true) , duration: prettyDelta(duration)})}
                       </TextSecondary>
                     </>
                   ) : null}
@@ -375,14 +375,14 @@ export default function Vtxos() {
               <Button onClick={handleRollover} label={label} disabled={rollingover || !aboveDust} />
             ) : null}
             {wallet.nextRollover ? (
-              <Button onClick={() => setReminderIsOpen(true)} label={t('settings.verification.addRem')} secondary />
+              <Button onClick={() => setReminderIsOpen(true)} label={t('settings.vtxo.addRem')} secondary />
             ) : null}
           </ButtonsOnBottom>
           <Reminder
             callback={() => setReminderIsOpen(false)}
             duration={duration}
             isOpen={reminderIsOpen}
-            name={t('settings.verification.vcRenewal')}
+            name={t('settings.vtxo.vcRenewal')}
             startTime={wallet.nextRollover}
           />
         </>

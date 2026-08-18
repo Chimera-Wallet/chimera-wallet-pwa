@@ -56,13 +56,13 @@ export default function Lock() {
           <ErrorMessage error={Boolean(error)} text={error} />
           <CenterScreen>
             <LockIcon big />
-            <Text centered>{!canLock ? t('settings.lock.noPass') : t('settings.pass.lockWallet')}</Text>
+            <Text centered>{!canLock ? t('settings.lock.noPass') : t('settings.lock.lockWallet')}</Text>
             <TextSecondary centered>
               {!canLock
-                ? t('settings.pass.lockReqs')
+                ? t('settings.lock.lockReqs')
                 : biometricsEnabled
-                  ? t('settings.pass.lockBioWarn')
-                  : t('settings.pass.lockPassWarn')}
+                  ? t('settings.lock.lockBioWarn')
+                  : t('settings.lock.lockPassWarn')}
             </TextSecondary>
           </CenterScreen>
         </Padded>

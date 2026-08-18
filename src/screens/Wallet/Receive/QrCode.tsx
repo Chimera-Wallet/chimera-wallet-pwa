@@ -465,7 +465,7 @@ export default function ReceiveQRCode() {
             {t('common.notifications.receive.addAmount')}
           </Text>
           <InputAmount
-            label='Amount'
+            label={t('common.general.amount')}
             asset={assetOption}
             value={amountTextValue}
             focus={!isMobileBrowser}
@@ -596,6 +596,7 @@ function AddressLine({
   onSelect: (value: string) => void
   copied: string
 }) {
+  const {t} = useTranslation()
   return (
     <Focusable
       onEnter={() => {
@@ -610,7 +611,7 @@ function AddressLine({
         </FlexCol>
         <Button
           copy
-          ariaLabel={`Copy ${title}`}
+          ariaLabel={t('lib.transactions.copyAddr', {title:title})}
           testId={testId + '-address-copy'}
           onClick={(event) => {
             event.stopPropagation()
