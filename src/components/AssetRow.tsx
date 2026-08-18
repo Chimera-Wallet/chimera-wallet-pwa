@@ -4,6 +4,7 @@ import { Fiats } from '../lib/types'
 
 interface AssetRowProps {
   symbol: AssetSymbol | string
+  ticker?: string
   name: string
   balance?: number
   balanceFiat?: number
@@ -16,6 +17,7 @@ interface AssetRowProps {
 
 export default function AssetRow({
   symbol,
+  ticker,
   name,
   balance = 0,
   balanceFiat = 0,
@@ -27,6 +29,7 @@ export default function AssetRow({
 }: AssetRowProps) {
   const config = getAssetConfig(symbol)
   const precision = config?.precision || 8
+  const displayTicker = ticker ?? symbol
 
   const isPositive = percentChange >= 0
   const changeColor = isPositive ? 'var(--green-positive)' : 'var(--red-negative)'
@@ -137,7 +140,7 @@ export default function AssetRow({
             fontFamily: 'Titillium Web',
           }}
         >
-          {formatBalance(balance)} {symbol}
+          {formatBalance(balance)} {displayTicker}
         </span>
         <span
           style={{

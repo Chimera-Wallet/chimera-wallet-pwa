@@ -7,6 +7,7 @@ import { useContext, useEffect, useState } from 'react'
 import { isIOS } from '../../lib/browser'
 import { detectJSCapabilities, getRestrictedEnvironmentMessage } from '../../lib/jsCapabilities'
 import {useTranslation} from 'react-i18next'
+import { getMissingRequiredConfig } from '../../lib/requiredConfig'
 
 export default function Unavailable() {
   const { aspInfo } = useContext(AspContext)
@@ -17,6 +18,10 @@ export default function Unavailable() {
 
   // Check JavaScript capabilities on mount
   useEffect(() => {
+    const missingConfig = getMissingRequiredConfig()
+    if (missingConfig.length) {
+      return setError('Chimera could not start due to a configuration error. Please contact support.')
+    }
     if (aspInfo.unreachable) return setError(t('errors.send.arkade.server'))
     detectJSCapabilities()
       .then((result) => {

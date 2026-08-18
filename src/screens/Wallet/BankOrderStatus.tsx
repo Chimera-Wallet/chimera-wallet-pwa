@@ -10,7 +10,7 @@ import Content from '../../components/Content'
 import FlexCol from '../../components/FlexCol'
 import Header from '../../components/Header'
 import Padded from '../../components/Padded'
-import Text, { TextLabel, TextSecondary } from '../../components/Text'
+import Text, { TextSecondary } from '../../components/Text'
 import Button from '../../components/Button'
 import ButtonsOnBottom from '../../components/ButtonsOnBottom'
 import Shadow from '../../components/Shadow'
@@ -19,12 +19,11 @@ import ErrorMessage from '../../components/Error'
 import Info from '../../components/Info'
 import Table, { TableData } from '../../components/Table'
 import CheckMarkIcon from '../../icons/CheckMark'
-import { SepaDataView, SwiftDataView, TransferReferenceBox, BankCircuitSelector } from '../../components/BankDetails'
+import { SepaDataView, SwiftDataView, TransferReferenceBox } from '../../components/BankDetails'
 import { NavigationContext, Pages } from '../../providers/navigation'
 import { FlowContext } from '../../providers/flow'
-import { getOrderStatus, ChimeraOrder } from '../../providers/chimera'
+import { getRampOrderStatus, type RampOrder } from '../../providers/ramp'
 import { prettyDate } from '../../lib/format'
-import { type BankCircuit } from '../../lib/bankTransferConfig'
 import { useTranslation } from 'react-i18next'
 
 // Polling interval in milliseconds
@@ -45,7 +44,7 @@ export default function BankOrderStatus() {
 
   const [loading, setLoading] = useState(!initialOrder)
   const [error, setError] = useState('')
-  const [order, setOrder] = useState<ChimeraOrder | null>(initialOrder ?? null)
+  const [order, setOrder] = useState<RampOrder | null>(initialOrder ?? null)
   const [refreshing, setRefreshing] = useState(false)
   const {t} = useTranslation()
 
@@ -59,7 +58,7 @@ export default function BankOrderStatus() {
 
     const fetchStatus = async () => {
       try {
-        const orderData = await getOrderStatus(order.id)
+        const orderData = await getRampOrderStatus(order.id)
         setOrder(orderData)
         setError('')
       } catch (err) {
@@ -82,7 +81,7 @@ export default function BankOrderStatus() {
     if (!order?.id) return
     setRefreshing(true)
     try {
-      const orderData = await getOrderStatus(order.id)
+      const orderData = await getRampOrderStatus(order.id)
       setOrder(orderData)
       setError('')
     } catch (err) {
@@ -126,31 +125,33 @@ export default function BankOrderStatus() {
 
   // Status helpers
   const isWaitingForDeposit = order.status === 'WAITING_FOR_DEPOSIT'
-  const isCompleted = order.status === 'COMPLETED' || order.status === 'APPROVED'
+  const isCompleted = order.status === 'COMPLETED'
   const isExpired = order.status === 'EXPIRED'
-  const isCancelled = order.status === 'CANCELLED'
-  const isRejected = order.status === 'REJECTED'
-  const isProcessing = ['DEPOSIT_RECEIVED', 'DEPOSIT_CONFIRMED', 'PROCESSING'].includes(order.status)
+  const isRejected = order.status === 'REJECTED' || order.status === 'FAILED'
+  const isProcessing = ['DEPOSIT_RECEIVED', 'PROCESSING', 'PENDING_MANUAL'].includes(order.status)
 
-  // Use currentBankOrderType as the source of truth. Fallback: anything with BTC/BTC-ARK as from_asset is a withdrawal.
-  const isWithdrawalOrder =
-    currentBankOrderType === 'send' ||
-    (currentBankOrderType === undefined &&
-      (order.from_asset === 'BTC' || order.from_asset?.startsWith('BTC')))
+  const isWithdrawalOrder = order.direction === 'offramp'
   const isDepositOrder = !isWithdrawalOrder
 
-  // Fiat amount the user specified for a withdrawal
-  const withdrawalFiatDisplay = `${Number(bankSendInfo.amount).toFixed(2)} ${bankSendInfo.currency}`
+  // Fiat amount — known immediately for a deposit (on-ramp), only known after
+  // settlement for a withdrawal (off-ramp); fall back to what the user
+  // declared in the form until then. See CLAUDE.md "Pricing model".
+  const withdrawalFiatDisplay = order.fiat_amount
+    ? `${order.fiat_amount} ${order.fiat_currency}`
+    : `${Number(bankSendInfo.amount).toFixed(2)} ${bankSendInfo.currency}`
 
   // Build table data
   const tableData: TableData = [
     [t('common.general.bank.orderNumberSimple'), order.id.slice(0, 8) + '...'],
     [t('common.general.status'), order.status.replace(/_/g, ' ')],
     ...(isWithdrawalOrder
-      ? ([[t('common.general.to'), `${Number(bankSendInfo.amount).toFixed(2)} ${bankSendInfo.currency}`]] as TableData)
+      ? ([
+          ['From', `${order.crypto_amount ?? bankSendInfo.amount} ${order.asset ?? ''}`],
+          ['To', withdrawalFiatDisplay],
+        ] as TableData)
       : ([
-          [t('common.general.from'), `${order.from_amount} ${order.from_asset}`],
-          [t('common.general.to'), order.to_asset],
+          ['From', `${order.fiat_amount} ${order.fiat_currency}`],
+          ['To', order.crypto_amount ? `${order.crypto_amount} ${order.asset}` : (order.asset ?? '')],
         ] as TableData)),
     [t('common.general.created'), prettyDate(new Date(order.created_at).getTime())],
   ]
@@ -159,25 +160,9 @@ export default function BankOrderStatus() {
     tableData.push([t('common.general.bank.expires'), prettyDate(new Date(order.expires_at).getTime())])
   }
 
-  if (order.deposit_amount) {
-    tableData.push([t('common.general.depositAmount'), order.deposit_amount])
-  }
-
-  // Check for bank deposit details
-  const hasSepaDetails = Boolean(order.deposit_sepa_address)
-  const hasSwiftDetails = Boolean(order.deposit_swift_address)
-  const hasBankDetails = hasSepaDetails || hasSwiftDetails
-
-  // Active circuit state: default to what the user originally selected, fall back to whatever is available
-  const defaultCircuit: BankCircuit =
-    bankRecvInfo.circuit === 'swift' && hasSwiftDetails
-      ? 'swift'
-      : bankRecvInfo.circuit === 'sepa' && hasSepaDetails
-        ? 'sepa'
-        : hasSepaDetails
-          ? 'sepa'
-          : 'swift'
-  const [activeCircuit, setActiveCircuit] = useState<BankCircuit>(defaultCircuit)
+  // Bank deposit details — ramp-system returns exactly one bank account per
+  // currency (no sepa/swift choice), unlike the old dual-circuit response.
+  const hasBankDetails = Boolean(order.deposit_iban)
 
   return (
     <>
@@ -195,12 +180,6 @@ export default function BankOrderStatus() {
             {isExpired ? (
               <Info color='red' title={t('common.general.bank.orderExpired')}>
                 <TextSecondary>{t('common.general.bank.orderExpiredDescr')}</TextSecondary>
-              </Info>
-            ) : null}
-
-            {isCancelled ? (
-              <Info color='red' title={t('common.general.bank.orderCancelled')}>
-                <TextSecondary>{t('common.general.bank.orderCancelledDescr')}</TextSecondary>
               </Info>
             ) : null}
 
@@ -239,47 +218,26 @@ export default function BankOrderStatus() {
                 {/* Transfer Reference */}
                 {order.transfer_code ? <TransferReferenceBox reference={order.transfer_code} /> : null}
 
-                {/* Circuit switcher when both are available */}
-                {hasSepaDetails && hasSwiftDetails ? (
+                <Shadow fat>
                   <FlexCol gap='0.5rem'>
-                    <TextLabel>{t('common.general.bank.transferMethod')}</TextLabel>
-                    <BankCircuitSelector
-                      currency={bankRecvInfo.currency}
-                      selectedCircuit={activeCircuit}
-                      onSelect={setActiveCircuit}
-                    />
-                  </FlexCol>
-                ) : null}
-
-                {/* SEPA Details */}
-                {activeCircuit === 'sepa' && hasSepaDetails ? (
-                  <Shadow fat>
-                    <FlexCol gap='0.5rem'>
-                      <Text bold>{t('common.general.bank.sepaDetails')}</Text>
-                      <SepaDataView
-                        iban={order.deposit_sepa_address}
-                        bic={order.deposit_sepa_bic}
-                        beneficiary={order.deposit_sepa_beneficiary}
-                        bankName={order.deposit_sepa_bank_name}
-                      />
-                    </FlexCol>
-                  </Shadow>
-                ) : null}
-
-                {/* SWIFT Details */}
-                {activeCircuit === 'swift' && hasSwiftDetails ? (
-                  <Shadow fat>
-                    <FlexCol gap='0.5rem'>
-                      <Text bold>{t('common.general.bank.swiftDetails')}</Text>
+                    <Text bold>{order.deposit_payment_type === 'swift' ? 'SWIFT' : 'SEPA'} Bank Details</Text>
+                    {order.deposit_payment_type === 'swift' ? (
                       <SwiftDataView
-                        iban={order.deposit_swift_address}
-                        bic={order.deposit_swift_bic}
-                        beneficiary={order.deposit_swift_beneficiary}
-                        bankName={order.deposit_swift_bank_name}
+                        iban={order.deposit_iban ?? undefined}
+                        bic={order.deposit_bic ?? undefined}
+                        beneficiary={order.deposit_beneficiary ?? undefined}
+                        bankName={order.deposit_bank_name ?? undefined}
                       />
-                    </FlexCol>
-                  </Shadow>
-                ) : null}
+                    ) : (
+                      <SepaDataView
+                        iban={order.deposit_iban ?? undefined}
+                        bic={order.deposit_bic ?? undefined}
+                        beneficiary={order.deposit_beneficiary ?? undefined}
+                        bankName={order.deposit_bank_name ?? undefined}
+                      />
+                    )}
+                  </FlexCol>
+                </Shadow>
               </FlexCol>
             ) : null}
 
@@ -305,7 +263,7 @@ export default function BankOrderStatus() {
           />
         ) : null}
         <Button onClick={handleBackToWallet} label={t('common.general.backToWallet')} />
-        {isCompleted || isExpired || isCancelled || isRejected ? (
+        {isCompleted || isExpired || isRejected ? (
           <Button
             onClick={() => navigate(isWithdrawalOrder ? Pages.BankSend : Pages.ReceiveAmount)}
             label={t('common.general.bank.newTransfer')}

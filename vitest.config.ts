@@ -18,5 +18,16 @@ export default defineConfig({
     globals: true,
     setupFiles: './src/test/setup.ts',
     exclude: ['**/e2e/**', '**/node_modules/**'],
+    // Required deployment config so startup validation passes in tests.
+    env: {
+      VITE_ARK_SERVER: 'https://signet.arkade.sh',
+      VITE_DELEGATE_ENABLED: 'false',
+      VITE_ARKADEWRAP_API: 'https://api.arkadewrap.test',
+      VITE_ARKADE_ETH: 'test-eth',
+      VITE_ARKADE_USDT: 'test-usdt',
+      VITE_ARKADE_TRX: 'test-trx',
+      VITE_ARKADE_POL: 'test-pol',
+      VITE_ARKADE_CEXT: 'test-cext',
+    },
   },
 })

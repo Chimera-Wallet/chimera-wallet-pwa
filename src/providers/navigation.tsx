@@ -48,6 +48,8 @@ import InAppBrowser from '../screens/Wallet/InAppBrowser'
 import AppStatement from '../screens/Apps/Statement/Index'
 import AppReferral from '../screens/Apps/Referral/Index'
 import AppGiftCards from '../screens/Apps/GiftCards/Index'
+import AppGiftCardPurchase from '../screens/Apps/GiftCards/Purchase'
+import AppGiftCardRedeem from '../screens/Apps/GiftCards/Redeem'
 import AppCardReservation from '../screens/Apps/CardReservation/Index'
 import AppSwap from '../screens/Apps/Swap/Index'
 import AppSwapOrderDetails from '../screens/Apps/Swap/OrderDetails'
@@ -77,6 +79,8 @@ export enum Pages {
   AppStatement,
   AppReferral,
   AppGiftCards,
+  AppGiftCardPurchase,
+  AppGiftCardRedeem,
   AppCardReservation,
   AppSwap,
   AppSwapOrderDetails,
@@ -145,6 +149,8 @@ const pageTab: Record<Pages, Tabs> = {
   [Pages.AppStatement]: Tabs.Apps,
   [Pages.AppReferral]: Tabs.Apps,
   [Pages.AppGiftCards]: Tabs.Apps,
+  [Pages.AppGiftCardPurchase]: Tabs.Apps,
+  [Pages.AppGiftCardRedeem]: Tabs.Apps,
   [Pages.AppCardReservation]: Tabs.Card,
   [Pages.AppSwap]: Tabs.Trade,
   [Pages.AppSwapOrderDetails]: Tabs.Trade,
@@ -239,6 +245,10 @@ export const pageComponent = (page: Pages, navigationData?: Record<string, unkno
       return <AppReferral />
     case Pages.AppGiftCards:
       return <AppGiftCards />
+    case Pages.AppGiftCardPurchase:
+      return <AppGiftCardPurchase />
+    case Pages.AppGiftCardRedeem:
+      return <AppGiftCardRedeem />
     case Pages.AppCardReservation:
       return <AppCardReservation />
     case Pages.AppSwap:

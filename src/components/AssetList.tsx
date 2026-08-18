@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react'
 import AssetRow from './AssetRow'
-import { ASSET_LIST, type AssetSymbol } from '../lib/assets'
+import { ASSET_LIST, getDisplayTicker, type AssetSymbol } from '../lib/assets'
 import { CoinGeckoConversionService, type ConversionRateResult } from '../lib/coingecko/service'
 import { consoleError } from '../lib/logs'
 import { ConfigContext } from '../providers/config'
@@ -138,6 +138,7 @@ export default function AssetList({ balances = [], onAssetClick }: AssetListProp
               <AssetRow
                 key={asset.symbol}
                 symbol={asset.symbol}
+                ticker={getDisplayTicker(asset.symbol)}
                 name={asset.name}
                 balance={balance}
                 balanceFiat={balanceFiat}

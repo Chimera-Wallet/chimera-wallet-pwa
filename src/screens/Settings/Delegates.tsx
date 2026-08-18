@@ -12,12 +12,11 @@ import WarningBox from '../../components/Warning'
 import { Delegate, SettingsOptions } from '../../lib/types'
 import { ConfigContext } from '../../providers/config'
 import { WalletContext } from '../../providers/wallet'
-import { getDelegateUrlForNetwork } from '../../lib/constants'
+import { getDelegateUrl, isDelegationEnabled } from '../../lib/constants'
 import { useContext, useEffect, useState } from 'react'
 import { OptionsContext } from '../../providers/options'
 import Text, { TextSecondary } from '../../components/Text'
 import { decodeArkAddress, isArkAddress } from '../../lib/address'
-import { Network } from '@arkade-os/boltz-swap'
 import { copyToClipboard } from '../../lib/clipboard'
 import { useToast } from '../../components/Toast'
 import{useTranslation} from 'react-i18next'
@@ -40,8 +39,8 @@ const testConnection = (aspInfo: AspInfo, t: (k: string, o?: any) => string): Pr
   return new Promise((resolve, reject) => {
     // ensure expected pubkey is in xonly format
     const expectedPubKey = aspInfo.signerPubkey.length === 66 ? aspInfo.signerPubkey.slice(2) : aspInfo.signerPubkey
-    if (expectedPubKey.length !== 64) return reject(new Error(t('errors.delegates.invalidPubkey')))
-    const delegate = getDelegateUrlForNetwork(aspInfo.network as Network)
+    if (expectedPubKey.length !== 64) return reject(new Error('Invalid expected server pubkey'))
+    const delegate = getDelegateUrl()
     // fetch delegate info from the delegate server
     fetch(formatUrl(delegate.url, '/v1/delegator/info'))
       .then((res) => {
@@ -126,12 +125,14 @@ function DelegateCard() {
   const { toast } = useToast()
 
   const [active, setActive] = useState(false)
-  const [delegate, setDelegate] = useState<Delegate>(getDelegateUrlForNetwork(aspInfo.network as Network))
+  const [delegate, setDelegate] = useState<Delegate | undefined>(() =>
+    isDelegationEnabled() ? getDelegateUrl() : undefined,
+  )
 
   // test connection to delegate when url changes
   useEffect(() => {
-    if (!config.delegate) return
-    testConnection(aspInfo, t)
+    if (!config.delegate || !isDelegationEnabled()) return
+    testConnection(aspInfo,t)
       .then((delegate) => {
         setDelegate(delegate)
         setActive(true)
@@ -139,7 +140,7 @@ function DelegateCard() {
       .catch(() => setActive(false))
   }, [config.delegate, aspInfo.signerPubkey, t])
 
-  if (!config.delegate) return null
+  if (!config.delegate || !isDelegationEnabled() || !delegate) return null
 
   const handleCopy = async (value: string) => {
     await copyToClipboard(value)

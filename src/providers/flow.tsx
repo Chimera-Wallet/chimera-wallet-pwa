@@ -4,6 +4,7 @@ import type { Asset, AssetDetails } from '@arkade-os/sdk'
 import { Tx } from '../lib/types'
 import type { TransferMethod } from '../lib/transferMethods'
 import { ChimeraOrder } from './chimera'
+import type { RampOrder, RampBankDetails } from './ramp'
 import { DEFAULT_BANK_CURRENCY, DEFAULT_BANK_CIRCUIT, type BankCircuit, type BankCurrency, type BankData } from '../lib/bankTransferConfig'
 import type { WrapQuote } from '../lib/arkadeWrap'
 import type { SourceChainId } from '../lib/sourceChains'
@@ -48,21 +49,22 @@ export interface RecvInfo {
   received: boolean
 }
 
-// Bank Receive (Deposit) Info - for fiat → crypto
+// Bank Receive (Deposit) Info - for fiat → crypto — backed by ramp-system
 export interface BankRecvInfo {
   currency: BankCurrency
   circuit: BankCircuit
   amount: number
-  order?: ChimeraOrder
+  order?: RampOrder
+  bankDetails?: RampBankDetails
 }
 
-// Bank Send (Withdraw) Info - for crypto → fiat
+// Bank Send (Withdraw) Info - for crypto → fiat — backed by ramp-system
 export interface BankSendInfo {
   currency: BankCurrency
   circuit: BankCircuit
   amount: number
   bankData?: BankData
-  order?: ChimeraOrder
+  order?: RampOrder
 }
 
 // Bank Order Type - track which order is currently active
@@ -128,7 +130,7 @@ interface FlowContextProps {
   txInfo: TxInfo
   bankRecvInfo: BankRecvInfo
   bankSendInfo: BankSendInfo
-  bankStatusOrder: ChimeraOrder | undefined
+  bankStatusOrder: RampOrder | undefined
   currentBankOrderType?: BankOrderType
   wrapRecvInfo: WrapRecvInfo | undefined
   unwrapSendInfo: UnwrapSendInfo | undefined
@@ -147,7 +149,7 @@ interface FlowContextProps {
   setLnurlInfo: (arg0: LnUrlInfo) => void
   setBankRecvInfo: (arg0: BankRecvInfo) => void
   setBankSendInfo: (arg0: BankSendInfo) => void
-  setBankStatusOrder: (order: ChimeraOrder | undefined) => void
+  setBankStatusOrder: (order: RampOrder | undefined) => void
   setCurrentBankOrderType: (type: BankOrderType | undefined) => void
   setWrapRecvInfo: (arg0: WrapRecvInfo | undefined) => void
   setUnwrapSendInfo: (arg0: UnwrapSendInfo | undefined) => void
@@ -246,7 +248,7 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
   const [lnurlInfo, setLnurlInfo] = useState<LnUrlInfo>()
   const [bankRecvInfo, setBankRecvInfo] = useState<BankRecvInfo>(emptyBankRecvInfo)
   const [bankSendInfo, setBankSendInfo] = useState<BankSendInfo>(emptyBankSendInfo)
-  const [bankStatusOrder, setBankStatusOrder] = useState<ChimeraOrder | undefined>()
+  const [bankStatusOrder, setBankStatusOrder] = useState<RampOrder | undefined>()
   const [currentBankOrderType, setCurrentBankOrderType] = useState<BankOrderType | undefined>()
   const [wrapRecvInfo, setWrapRecvInfo] = useState<WrapRecvInfo | undefined>()
   const [unwrapSendInfo, setUnwrapSendInfo] = useState<UnwrapSendInfo | undefined>()

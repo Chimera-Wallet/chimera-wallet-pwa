@@ -4,8 +4,9 @@ import ButtonsOnBottom from '../../components/ButtonsOnBottom'
 import { useContext, useEffect, useState } from 'react'
 import { ConfigContext } from '../../providers/config'
 import { BackupProvider } from '../../lib/backup'
-import { defaultPassword } from '../../lib/constants'
+import { defaultArkServer, defaultPassword } from '../../lib/constants'
 import { FlowContext } from '../../providers/flow'
+import type { Config } from '../../lib/types'
 import ErrorMessage from '../../components/Error'
 import Content from '../../components/Content'
 import FlexCol from '../../components/FlexCol'
@@ -26,8 +27,27 @@ import { deriveNostrKeyFromMnemonic } from '../../lib/mnemonic'
 import { AspContext } from '../../providers/asp'
 import {useTranslation} from 'react-i18next'
 
+// The ARK server is env-only (single source of truth). A backup made on another
+// network carries a different aspUrl; this detects that so we can refuse to
+// cross networks instead of silently connecting to the backup's server.
+const serverHost = (url?: string): string | undefined => {
+  if (!url) return undefined
+  const withProto = /^https?:\/\//.test(url) ? url : `https://${url}`
+  try {
+    return new URL(withProto).host
+  } catch {
+    return undefined
+  }
+}
+
+const isForeignArkServer = (backupUrl?: string): boolean => {
+  const backup = serverHost(backupUrl)
+  if (!backup) return false // no server in backup means nothing to cross
+  return backup !== serverHost(defaultArkServer())
+}
+
 export default function InitRestore() {
-  const { updateConfig } = useContext(ConfigContext)
+  const { config, updateConfig } = useContext(ConfigContext)
   const { navigate } = useContext(NavigationContext)
   const { setInitInfo } = useContext(FlowContext)
   const { aspInfo } = useContext(AspContext)
@@ -104,11 +124,24 @@ export default function InitRestore() {
       seckey = privateKey!
     }
     new BackupProvider({ seckey }, new IndexedDbSwapRepository())
-      .restore((conf) =>
-        // we enforce delegates on restore
-        updateConfig({ ...conf, delegate: true }),
-      )
-      .catch((err) => consoleError(err, 'Error restoring from nostr'))
+      .restore((conf) => {
+        // Refuse to restore a wallet from a different network: the ARK server is
+        // fixed by the environment and must never be taken from the backup.
+        if (isForeignArkServer(conf.aspUrl)) throw new Error('NETWORK_MISMATCH')
+        // Never adopt network-critical fields (aspUrl, delegate) from a backup;
+        // only the user's preferences are safe to restore.
+        const preferences: Partial<Config> = { ...conf }
+        delete preferences.aspUrl
+        delete preferences.delegate
+        updateConfig({ ...config, ...preferences })
+      })
+      .catch((err) => {
+        if (err instanceof Error && err.message === 'NETWORK_MISMATCH') {
+          setError('This recovery phrase belongs to a wallet on a different network and cannot be restored here.')
+        } else {
+          consoleError(err, 'Error restoring from nostr')
+        }
+      })
       .finally(() => setRestoreDone(true))
   }
 

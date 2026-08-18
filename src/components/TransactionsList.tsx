@@ -9,7 +9,7 @@ import { ConfigContext } from '../providers/config'
 import { FiatContext } from '../providers/fiat'
 import Focusable from './Focusable'
 import { hapticSubtle } from '../lib/haptics'
-import { ASSETS } from '../lib/assets'
+import { ASSETS, getWrappedAssetId, prettyAssetAmount, prettyAssetAmountHide } from '../lib/assets'
 import { getTxStatus, TxStatus } from '../lib/txStatus'
 import { AspContext } from '../providers/asp'
 import { useTranslation } from 'react-i18next'
@@ -26,25 +26,45 @@ const TransactionLine = ({ tx, onClick, isFirst }: { tx: Tx; onClick: () => void
   const { config } = useContext(ConfigContext)
   const { toFiat } = useContext(FiatContext)
   const { aspInfo } = useContext(AspContext)
+  const { assetMetadataCache } = useContext(WalletContext)
   const boardingExitDelay = Number(aspInfo?.boardingExitDelay || 0)
 
   const {t} = useTranslation()
 
   const prefix = tx.type === 'sent' ? '-' : '+'
-  const btcAmount = fromSatoshis(tx.amount)
-  const formattedBTC = config.showBalance
-    ? `${prefix} ${btcAmount.toFixed(5)} ${ASSETS.BTC.symbol}`
-    : prettyHide(btcAmount, ASSETS.BTC.symbol)
 
-  const fiatValue = toFiat(tx.amount)
-  const formattedFiat = config.showBalance
-    ? `${prefix} ${prettyFiatAmount(fiatValue, config.fiat)}`
-    : prettyFiatHide(fiatValue, config.fiat)
+  // Wrapped-asset transactions carry the real amount/ticker in `tx.assets`;
+  // `tx.amount` is only the BTC carrier value. Fall back to BTC for native txs.
+  const assetEntry = tx.assets?.[0]
+  const assetMeta = assetEntry ? assetMetadataCache.get(assetEntry.assetId)?.metadata : undefined
+
+  let formattedAmount: string
+  let formattedFiat: string
+  let assetLabel: string
+
+  if (assetEntry) {
+    const decimals = assetMeta?.decimals ?? 8
+    assetLabel = assetMeta?.ticker ?? assetMeta?.name ?? `${assetEntry.assetId.slice(0, 8)}…`
+    formattedAmount = config.showBalance
+      ? `${prefix} ${prettyAssetAmount(assetEntry.amount, decimals)} ${assetLabel}`
+      : prettyAssetAmountHide(assetEntry.amount, assetLabel)
+    formattedFiat = ''
+  } else {
+    assetLabel = ASSETS.BTC.symbol
+    const btcAmount = fromSatoshis(tx.amount)
+    formattedAmount = config.showBalance
+      ? `${prefix} ${btcAmount.toFixed(5)} ${ASSETS.BTC.symbol}`
+      : prettyHide(btcAmount, ASSETS.BTC.symbol)
+    const fiatValue = toFiat(tx.amount)
+    formattedFiat = config.showBalance
+      ? `${prefix} ${prettyFiatAmount(fiatValue, config.fiat)}`
+      : prettyFiatHide(fiatValue, config.fiat)
+  }
 
   const statusKey = getTxStatus(tx, boardingExitDelay)
   const status = STATUS_STYLE[statusKey] ?? { text: statusKey, color: 'var(--grey)' }
   const date = tx.createdAt ? prettyDate(tx.createdAt) : 'Unknown date'
-  const action = tx.type === 'sent' ? t('lib.transactions.sentAss', {ass: ASSETS.BTC.symbol}) : t('lib.transactions.rcvAss', {ass: ASSETS.BTC.symbol})
+  const action = tx.type === 'sent' ? t('lib.transactions.sentAss', {ass: assetLabel}) : t('lib.transactions.rcvAss', {ass: assetLabel})
 
   const iconSrc = tx.type === 'sent' ? '/images/icons/sent.svg' : '/images/icons/received.svg'
   const iconAlt = tx.type === 'sent' ? 'Sent' : 'Received'
@@ -80,8 +100,10 @@ const TransactionLine = ({ tx, onClick, isFirst }: { tx: Tx; onClick: () => void
 
       {/* Amounts */}
       <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '2px', flexShrink: 0 }}>
-        <div style={{ fontSize: '14px', fontWeight: 500, fontFamily: 'Geist Mono, monospace' }}>{formattedBTC}</div>
-        <div style={{ fontSize: '12px', color: 'var(--neutral-500)', fontWeight: 400 }}>{formattedFiat}</div>
+        <div style={{ fontSize: '14px', fontWeight: 500, fontFamily: 'Geist Mono, monospace' }}>{formattedAmount}</div>
+        {formattedFiat ? (
+          <div style={{ fontSize: '12px', color: 'var(--neutral-500)', fontWeight: 400 }}>{formattedFiat}</div>
+        ) : null}
       </div>
     </div>
   )
@@ -102,8 +124,13 @@ export default function TransactionsList({
   const txs = (() => {
     let list = allTxs
     if (filterAsset) {
-      list = list.filter(
-        (tx) => tx.assets?.some((a) => a.assetId === filterAsset) || (!tx.assets?.length && filterAsset === 'BTC'),
+      // `filterAsset` is an app symbol (e.g. 'ETH'); BTC matches native txs,
+      // wrapped assets match by their Arkade asset ID.
+      const wrappedId = getWrappedAssetId(filterAsset)
+      list = list.filter((tx) =>
+        filterAsset === 'BTC'
+          ? !tx.assets?.length
+          : tx.assets?.some((a) => a.assetId === (wrappedId ?? filterAsset)),
       )
     }
     if (typeof maxItems === 'number') {

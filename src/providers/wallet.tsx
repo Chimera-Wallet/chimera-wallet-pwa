@@ -41,7 +41,7 @@ import { calcBatchLifetimeMs, calcNextRollover } from '../lib/wallet'
 import { hex } from '@scure/base'
 import * as secp from '@noble/secp256k1'
 import { ConfigContext } from './config'
-import { defaultPassword, getDelegateUrlForNetwork, maxPercentage } from '../lib/constants'
+import { defaultPassword, getDelegateUrl, isDelegationEnabled, maxPercentage } from '../lib/constants'
 import { setLoadingStatus } from '../lib/loadingStatus'
 
 // Thrown by initWallet when we refuse to boot the service worker because the
@@ -608,7 +608,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       // Renew expiring coins on startup (non-delegate mode only).
       // When delegation is enabled, the SDK's VtxoManager auto-delegates
       // via onContractEvent, so no wallet-side call is needed.
-      if (!config.delegate) {
+      if (!(config.delegate && isDelegationEnabled())) {
         vtxoMgr.renewVtxos().catch(() => {})
       }
       return true
@@ -663,7 +663,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     let identity: Identity
     let pubkey: string
 
-    const delegatorUrl = config.delegate ? getDelegateUrlForNetwork(network).url : undefined
+    const delegatorUrl = config.delegate && isDelegationEnabled() ? getDelegateUrl().url : undefined
 
     if (credentials.mnemonic) {
       const mnemonicIdentity = MnemonicIdentity.fromMnemonic(credentials.mnemonic, { isMainnet: isMainnet(network) })
@@ -721,7 +721,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     const identity = svcWallet.identity as Identity
     const arkServerUrl = aspInfo.url
     const esploraUrl = getRestApiExplorerURL(aspInfo.network as NetworkName) ?? ''
-    const delegatorUrl = delegateEnabled ? getDelegateUrlForNetwork(aspInfo.network as Network).url : undefined
+    const delegatorUrl = delegateEnabled && isDelegationEnabled() ? getDelegateUrl().url : undefined
     await initSvcWorkerWallet({
       identity,
       arkServerUrl,
@@ -743,7 +743,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     try {
       const arkServerUrl = aspInfo.url
       const esploraUrl = getRestApiExplorerURL(aspInfo.network as NetworkName) ?? ''
-      const delegatorUrl = config.delegate ? getDelegateUrlForNetwork(aspInfo.network as Network).url : undefined
+      const delegatorUrl = config.delegate && isDelegationEnabled() ? getDelegateUrl().url : undefined
       const initialized = await initSvcWorkerWallet({
         identity,
         arkServerUrl,
