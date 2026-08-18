@@ -1,0 +1,63 @@
+{
+  "key": {
+    "savePhrase": "Enregistrez votre phrase de récupération",
+    "saveKey": "Enregistrez votre clé privée",
+    "mnemonicWarning": "C'est le seul moyen de restaurer votre portefeuille sur un autre navigateur ou appareil. Conservez-la dans un endroit sûr — gestionnaire de mots de passe, notes chiffrées ou copie écrite en lieu sûr.",
+    "keyWarning": "Ceci est votre clé privée. Conservez-la dans un endroit sûr — gestionnaire de mots de passe, notes chiffrées ou copie écrite en lieu sûr.",
+    "mnemonicSafe": "Gardez votre phrase de récupération en sécurité",
+    "keySafe": "Gardez votre clé privée en sécurité",
+    "privacyWarning": "Ne la partagez avec personne",
+    "lossWarning": "Si vous la perdez, vous ne pourrez pas récupérer votre portefeuille",
+    "hideKey": "Masquer la clé privée",
+    "revealKey": "Afficher la clé privée",
+    "hidePhrase": "Masquer la phrase",
+    "revealPhrase": "Afficher la phrase",
+    "copyPhrase": "Copier la phrase de récupération",
+    "copykey": "Copier la clé privée",
+    "saved": "Je l'ai enregistrée — Aller au portefeuille"
+  },
+  "warning": {
+    "important": "Avertissement important",
+    "warning": "⚠ AVERTISSEMENT",
+    "lossFunds": "Si vous déposez des fonds dans votre portefeuille <bold>sans sauvegarder vos clés</bold>, vous courez en permanence le risque d'une <danger>PERTE TOTALE ET IRRÉVERSIBLE DE VOS FONDS</danger>.",
+    "nonCustodial": "Chimera Wallet est un <bold>portefeuille entièrement non dépositaire</bold>. <strongWarning>PERSONNE</strongWarning> ne pourra vous aider à récupérer vos fonds si vous n'avez pas votre clé.",
+    "understood": "J'ai compris, continuer",
+    "goBack": "Retour"
+  },
+  "biometrics": {
+    "secureWallet": "Sécurisez votre portefeuille",
+    "enableBioAuth": "Activer l'authentification biométrique",
+    "bioAuthUnsupported": "L'authentification biométrique n'est pas prise en charge sur cet appareil. Vous devrez utiliser votre mot de passe pour déverrouiller votre portefeuille.",
+    "fingerFaceAuth": "Pour votre sécurité, activez l'authentification biométrique afin de déverrouiller votre portefeuille à l'aide de votre empreinte digitale ou de la reconnaissance faciale.",
+    "enableBio": "Activer la biométrie",
+    "usePass": "Utiliser un mot de passe à la place"
+  },
+  "connection": {
+    "missingCreds": "Identifiants manquants",
+    "restoringSwaps": "Restauration des swaps...",
+    "swapsInfo": "{{num}} swaps restaurés depuis le réseau",
+    "connectionFailed": "Échec de la connexion",
+    "serverConnection": "Connexion au serveur"
+  },
+  "init": {
+    "createWallet": "Créer un nouveau portefeuille",
+    "restoreWallet": "Restaurer un portefeuille"
+  },
+  "restore": {
+    "invalidPhrase": "Phrase de récupération invalide",
+    "validationUnable": "Impossible de valider le format de la clé privée",
+    "validationUnableSimple": "Impossible de valider le format de la clé",
+    "restoringWallet": "Restauration du portefeuille...",
+    "pk": "clé-privée",
+    "recoveryPhraseKey": "Phrase de récupération ou clé privée",
+    "phraseEntry": "Saisissez votre phrase de récupération de 12 mots ou une clé privée commençant par « nsec » ou une clé hexadécimale brute. Ne la partagez avec personne."
+  },
+  "success": {
+    "walletRestore": "Portefeuille restauré !",
+    "liveWallet": "Votre nouveau portefeuille est prêt à être utilisé !",
+    "walletRestoreSucc": "Votre portefeuille a été restauré avec succès et est maintenant prêt à être utilisé.",
+    "walletCreatedSucc": "Votre portefeuille a été créé avec succès et est maintenant prêt à être utilisé.",
+    "takeControl": "Reprenez le contrôle de votre argent",
+    "goWallet": "ACCÉDER AU PORTEFEUILLE"
+  }
+}

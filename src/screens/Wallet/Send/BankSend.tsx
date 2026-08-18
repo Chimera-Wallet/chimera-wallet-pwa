@@ -49,6 +49,8 @@ import { getUserEmailForBankTransfer } from '../../../lib/kyc'
 import { AspContext } from '@/providers/asp'
 import rightIcon from '../../../../public/images/icons/ Right.png'
 import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
+import {useTranslation} from 'react-i18next'
+
 
 // Company Ark wallet address from environment — set VITE_BANK_WITHDRAW_WALLET in .env files
 const COMPANY_WALLET = import.meta.env.VITE_BANK_WITHDRAW_WALLET as string
@@ -96,9 +98,11 @@ export default function BankSend() {
 
   const [availableBalance, setAvailableBalance] = useState(0)
   const { aspInfo } = useContext(AspContext)
+  const { t } = useTranslation()
+
 
   const smartSetError = (str: string) => {
-    setError(str === '' ? (aspInfo.unreachable ? 'Arkade server unreachable' : '') : str)
+    setError(str === '' ? (aspInfo.unreachable ? t('errors.send.arkade.server') : '') : str)
   }
 
   const handleOrderHistory = () => {
@@ -132,7 +136,7 @@ export default function BankSend() {
     switch (circuit) {
       case 'sepa':
         if (!iban || !accountHolderName) {
-          setError('Please enter your IBAN and account holder name')
+          setError(t('errors.send.bank.ibanName'))
           return null
         }
         return {
@@ -171,7 +175,7 @@ export default function BankSend() {
         }
 
       default:
-        setError('Invalid transfer method')
+        setError(t('errors.send.bank.invalidTransfer'))
         return null
     }
   }
@@ -257,19 +261,20 @@ export default function BankSend() {
 
       // Check balance before doing anything
       if (balance < requiredSats) {
-        setError(
-          `Insufficient balance. You need ~${prettyNumber(fromSatoshis(requiredSats), 8)} BTC but only have ${prettyNumber(fromSatoshis(balance), 8)} BTC`,
-        )
+        t('errors.insufficientBalance', {
+          required: prettyNumber(fromSatoshis(requiredSats), 8),
+          balance: prettyNumber(fromSatoshis(balance), 8),
+        });
         return
       }
 
       if (!svcWallet) {
-        setError('Wallet not ready')
+        setError(t('errors.send.wallet.notReady'))
         return
       }
 
       if (!COMPANY_WALLET) {
-        setError('Withdrawal wallet not configured')
+        setError(t('errors.send.wallet.notConfigured'))
         return
       }
 
@@ -299,11 +304,11 @@ export default function BankSend() {
       await sendOffChain(svcWallet, requiredSats, companyWallet)
 
       // Success popup, then land on the order-status screen to track the payout
-      notifyResult(true, 'Withdrawal submitted').then(() => navigate(Pages.BankOrderStatus))
+      notifyResult(true, t('common.notifications.bank.submissionSuccess')).then(() => navigate(Pages.BankOrderStatus))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create withdrawal order')
+      setError(err instanceof Error ? err.message : t('errors.send.bank.failedWithdrawal'))
       setSending(false)
-      notifyResult(false, 'Withdrawal failed')
+      notifyResult(false, t('common.notifications.bank.submissionFailed'))
     } finally {
       setLoading(false)
     }
@@ -343,7 +348,7 @@ export default function BankSend() {
               <Shadow input>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
                   <Text tiny color='neutral-500'>
-                    Account Holder Name
+                    {t('common.accountName')}
                   </Text>
                 <input
                   type='text'
@@ -412,7 +417,7 @@ export default function BankSend() {
               <Shadow input>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
                   <Text tiny color='neutral-500'>
-                    Account Holder Name
+                    {t('common.accountName')}
                   </Text>
                   <input
                     type='text'
@@ -435,7 +440,7 @@ export default function BankSend() {
               <Shadow input>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
                   <Text tiny color='neutral-500'>
-                    Account Number
+                    {t('common.accountNumber')}
                   </Text>
                 <input
                   type='text'
@@ -458,7 +463,7 @@ export default function BankSend() {
               <Shadow input>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
                   <Text tiny color='neutral-500'>
-                    Routing Number
+                    {t('common.routingNumber')}
                   </Text>
                 <input
                   type='text'
@@ -504,7 +509,7 @@ export default function BankSend() {
   if (sending) {
     return (
       <>
-        <Header text='Send' />
+        <Header text= {t('common.general.send')} />
         <Content>
           <WaitingForRound />
         </Content>
@@ -519,7 +524,7 @@ export default function BankSend() {
         back={goBack}
         auxIcon={<TransactionsIcon />}
         auxFunc={handleOrderHistory}
-        auxAriaLabel='View order history'
+        auxAriaLabel= {t('common.orderHistory')}
       />
       <Content>
         <Padded>
@@ -572,8 +577,10 @@ export default function BankSend() {
             {circuit === 'swift' ? (
               <Info color='orange' icon = {<img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />} title={`SWIFT Transfer Fee: ${SWIFT_SEND_FEE} ${currency}`}>
                 <TextSecondary>
-                  A flat fee of {SWIFT_SEND_FEE} {currency} applies to all outgoing SWIFT withdrawals and will be
-                  deducted from the received amount.
+                  {t('common.notifications.bank.swiftFee', {
+                    fee: SWIFT_SEND_FEE,
+                    currency,
+                  })}
                 </TextSecondary>
               </Info>
             ) : null}
@@ -594,7 +601,7 @@ export default function BankSend() {
       </Content>
       <ButtonsOnBottom>
         <Button
-          label={loading ? 'Creating Order...' : 'Create Withdrawal'}
+          label={loading ? t('common.notifications.bank.creatingOrder') : t('common.notifications.bank.createWithdrawal')}
           onClick={handleCreateWithdraw}
           icon = {<img src = {rightIcon} alt = 'rightArrow' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)', marginLeft: '0.5rem'}} />}
           disabled={!canSubmit}

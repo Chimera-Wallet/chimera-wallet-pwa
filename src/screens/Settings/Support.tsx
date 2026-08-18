@@ -19,12 +19,15 @@ import ErrorMessage from '../../components/Error'
 import { hasChatwootVars } from '../../lib/chatwoot'
 import { getDefaultAddress } from '../../lib/address'
 import { gitCommit } from '../../_gitCommit'
+import {useTranslation} from 'react-i18next'
 
 export default function Support() {
   const { aspInfo } = useContext(AspContext)
   const { config } = useContext(ConfigContext)
   const { getApiUrl } = useContext(SwapsContext)
   const { wallet, svcWallet } = useContext(WalletContext)
+
+  const {t} = useTranslation()
 
   const [error, setError] = useState('')
   const [addresses, setAddresses] = useState<Addresses>()
@@ -49,11 +52,11 @@ export default function Support() {
     }
 
     // Not all networks may have Chatwoot configured, check for required vars before waiting
-    if (!hasChatwootVars()) return setError('Support chat is not configured')
+    if (!hasChatwootVars()) return setError(t('errors.support.notConfigured'))
 
     // Timeout to detect if Chatwoot fails to load
     const loadTimeout = setTimeout(() => {
-      if (!supportChatLoaded) setError('Failed to load support chat')
+      if (!supportChatLoaded) setError(t('errors.support.failedLoad'))
     }, 5_000)
 
     // Listen for Chatwoot ready event to set loaded state
@@ -85,18 +88,18 @@ export default function Support() {
     // Set custom attributes including addresses and service URLs
     window.$chatwoot.setCustomAttributes({
       wallet_pubkey: wallet.pubkey,
-      network: wallet.network || 'not available',
+      network: wallet.network || t('errors.support.unavailable'),
       location_origin: window.location.origin,
       default_address: defaultAddress,
-      ark_address: addresses.offchainAddr || 'not available',
-      boltz_url: getApiUrl() || 'not available',
-      indexer_url: aspInfo.url || config.aspUrl || 'not available',
-      btc_boarding_address: addresses.boardingAddr || 'not available',
-      ark_server_url: aspInfo.url || config.aspUrl || 'not available',
-      app_version: import.meta.env.VITE_APP_VERSION || 'not available',
-      lendasat_url: import.meta.env.VITE_LENDASAT_IFRAME_URL || 'not available',
-      satora_url: import.meta.env.VITE_SATORA_IFRAME_URL || 'not available',
-      explorer_url: wallet.network ? getWebExplorerURL(wallet.network as NetworkName) : 'not available',
+      ark_address: addresses.offchainAddr || t('errors.support.unavailable'),
+      boltz_url: getApiUrl() || t('errors.support.unavailable'),
+      indexer_url: aspInfo.url || config.aspUrl || t('errors.support.unavailable'),
+      btc_boarding_address: addresses.boardingAddr || t('errors.support.unavailable'),
+      ark_server_url: aspInfo.url || config.aspUrl || t('errors.support.unavailable'),
+      app_version: import.meta.env.VITE_APP_VERSION || t('errors.support.unavailable'),
+      lendasat_url: import.meta.env.VITE_LENDASAT_IFRAME_URL || t('errors.support.unavailable'),
+      satora_url: import.meta.env.VITE_SATORA_IFRAME_URL || t('errors.support.unavailable'),
+      explorer_url: wallet.network ? getWebExplorerURL(wallet.network as NetworkName) : t('errors.support.unavailable'),
       git_commit: gitCommit,
     })
   }, [addresses, wallet.pubkey, supportChatLoaded])
@@ -120,20 +123,20 @@ export default function Support() {
           <FlexCol gap='1rem'>
             <ErrorMessage error={Boolean(error)} text={error} />
             <Section
-              title='Customer support'
-              text='Get help with your wallet, report bugs, or ask questions. Our support team is here to assist you.'
+              title={t('settings.support.custSupp')}
+              text={t('settings.support.custSuppText')}
             />
             <Section
-              title='Secure Chat'
-              text='Your conversations are secure and private. Chat history is maintained across sessions.'
+              title={t('settings.support.secure')}
+              text={t('settings.support.secureText')}
             />
             <Section
-              title='Bug Reports'
-              text='Report any issues or bugs you encounter. Include steps to reproduce the problem for faster resolution.'
+              title={t('settings.support.bugRep')}
+              text={t('settings.support.bugRepText')}
             />
             <Section
-              title='Track Progress'
-              text='All your support tickets and conversations are saved. You can view past conversations anytime.'
+              title={t('settings.support.progress')}
+              text={t('settings.support.progressText')}
             />
             <ChatwootWidget />
           </FlexCol>
@@ -144,7 +147,7 @@ export default function Support() {
           <Button
             onClick={handleOpenChat}
             disabled={!supportChatLoaded}
-            label={supportChatLoaded ? 'Open Support Chat' : 'Loading...'}
+            label={supportChatLoaded ? t('settings.support.openSupp') : t('common.settings.loading')}
           />
         )}
       </ButtonsOnBottom>

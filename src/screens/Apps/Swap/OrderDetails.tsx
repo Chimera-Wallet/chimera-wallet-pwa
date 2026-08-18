@@ -19,6 +19,7 @@ import { FlowContext } from '../../../providers/flow'
 import { getOrderStatus, ChimeraOrder } from '../../../providers/chimera'
 import { prettyDate } from '../../../lib/format'
 import { copyToClipboard } from '../../../lib/clipboard'
+import {useTranslation} from 'react-i18next'
 
 // Copy button component
 function CopyButton({ value }: { value: string }) {
@@ -45,12 +46,13 @@ export default function SwapOrderDetails() {
   const [error, setError] = useState('')
   const [order, setOrder] = useState<ChimeraOrder | null>(swapOrderInfo || null)
   const [refreshing, setRefreshing] = useState(false)
+  const {t} = useTranslation()
 
   // Fetch order status on mount and periodically
   useEffect(() => {
     if (!swapOrderInfo?.id && !order?.id) {
       setLoading(false)
-      setError('No order information available')
+      setError(t('errors.swap.noInfo'))
       return
     }
 
@@ -62,7 +64,7 @@ export default function SwapOrderDetails() {
         setOrder(orderData)
         setError('')
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load order')
+        setError(err instanceof Error ? err.message : t('errors.swap.failedLoad'))
       } finally {
         setLoading(false)
         setRefreshing(false)
@@ -84,7 +86,7 @@ export default function SwapOrderDetails() {
       setOrder(orderData)
       setError('')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to refresh order')
+      setError(err instanceof Error ? err.message : t('errors.swap.failedRefresh'))
     } finally {
       setRefreshing(false)
     }
@@ -101,9 +103,9 @@ export default function SwapOrderDetails() {
   if (loading) {
     return (
       <>
-        <Header text='Order Details' back={handleBack} />
+        <Header text={t('apps.swap.orderDet')} back={handleBack} />
         <Content>
-          <Loading text='Loading order details...' />
+          <Loading text={t('apps.swap.loading')} />
         </Content>
       </>
     )
@@ -112,12 +114,12 @@ export default function SwapOrderDetails() {
   if (error || !order) {
     return (
       <>
-        <Header text='Order Details' back={handleBack} />
+        <Header text={t('apps.swap.orderDet')} back={handleBack} />
         <Content>
           <Padded>
             <FlexCol gap='1rem'>
-              <ErrorMessage error text={error || 'Order not found'} />
-              <Button onClick={handleBack} label='Back to Swap' />
+              <ErrorMessage error text={error || t('apps.swap.orderMiss')} />
+              <Button onClick={handleBack} label={t('apps.swap.backSwap')} />
             </FlexCol>
           </Padded>
         </Content>
@@ -132,19 +134,19 @@ export default function SwapOrderDetails() {
   const isProcessing = ['DEPOSIT_RECEIVED', 'DEPOSIT_CONFIRMED', 'PROCESSING'].includes(order.status)
 
   const tableData: TableData = [
-    ['Order ID', order.id],
-    ['Status', order.status.replace(/_/g, ' ')],
-    ['From', `${order.from_amount} ${order.from_asset}`],
-    ['To', order.to_asset],
-    ['Created', prettyDate(new Date(order.created_at).getTime())],
+    [t('apps.swap.orderId'), order.id],
+    [t('common.general.status'), order.status.replace(/_/g, ' ')],
+    [t('common.general.from'), `${order.from_amount} ${order.from_asset}`],
+    [t('common.general.to'), order.to_asset],
+    [t('common.general.created'), prettyDate(new Date(order.created_at).getTime())],
   ]
 
   if (order.expires_at && isWaitingForDeposit) {
-    tableData.push(['Expires', prettyDate(new Date(order.expires_at).getTime())])
+    tableData.push([t('common.general.expires'), prettyDate(new Date(order.expires_at).getTime())])
   }
 
   if (order.deposit_amount) {
-    tableData.push(['Deposit Amount', order.deposit_amount])
+    tableData.push([t('common.general.depositAm'), order.deposit_amount])
   }
 
   // Determine deposit address/info to show
@@ -154,32 +156,32 @@ export default function SwapOrderDetails() {
 
   return (
     <>
-      <Header text='Order Details' back={handleBack} />
+      <Header text={t('apps.swap.orderDet')} back={handleBack} />
       <Content>
         <Padded>
           <FlexCol gap='1.5rem'>
             {/* Status Banner */}
             {isCompleted ? (
-              <Info color='green' icon={<CheckMarkIcon small />} title='Order Completed'>
-                <TextSecondary>Your swap has been completed successfully.</TextSecondary>
+              <Info color='green' icon={<CheckMarkIcon small />} title={t('apps.swap.orderComp')}>
+                <TextSecondary>{t('apps.swap.swapSucc')}</TextSecondary>
               </Info>
             ) : null}
 
             {isExpired ? (
-              <Info color='red' title='Order Expired'>
-                <TextSecondary>This order has expired. Please create a new order.</TextSecondary>
+              <Info color='red' title={t('apps.swap.orderExp')}>
+                <TextSecondary>{t('apps.swap.orderExpDesc')}</TextSecondary>
               </Info>
             ) : null}
 
             {isCancelled ? (
-              <Info color='red' title='Order Cancelled'>
-                <TextSecondary>This order has been cancelled.</TextSecondary>
+              <Info color='red' title={t('apps.swap.orderCanc')}>
+                <TextSecondary>{t('apps.swap.orderCancDescr')}.</TextSecondary>
               </Info>
             ) : null}
 
             {isProcessing ? (
-              <Info color='yellow' title='Processing'>
-                <TextSecondary>Your deposit has been received and is being processed.</TextSecondary>
+              <Info color='yellow' title={t('apps.swap.processing')}>
+                <TextSecondary>{t('apps.swap.depositRec')}.</TextSecondary>
               </Info>
             ) : null}
 
@@ -189,14 +191,14 @@ export default function SwapOrderDetails() {
             {/* Deposit Information for Waiting Orders */}
             {isWaitingForDeposit ? (
               <FlexCol gap='1rem'>
-                <TextLabel>Deposit Instructions</TextLabel>
+                <TextLabel>{t('apps.swap.depositInstr')}</TextLabel>
 
                 {/* Crypto Deposit */}
                 {hasCryptoDeposit && depositAddress ? (
                   <FlexCol gap='0.75rem'>
                     <Shadow fat>
                       <FlexCol gap='0.5rem'>
-                        <Text bold>Send {order.from_asset} to:</Text>
+                        <Text bold>{t('apps.swap.sendTo', {asset: order.from_asset})}</Text>
                         <FlexRow between>
                           <Text small wrap>
                             {depositAddress}
@@ -213,11 +215,11 @@ export default function SwapOrderDetails() {
                 {hasBankDeposit && order.deposit_sepa_address ? (
                   <Shadow fat>
                     <FlexCol gap='0.5rem'>
-                      <Text bold>SEPA Bank Transfer</Text>
+                      <Text bold>{t('apps.swap.sepa')}</Text>
 
                       {order.deposit_sepa_address ? (
                         <FlexRow between>
-                          <TextSecondary>IBAN:</TextSecondary>
+                          <TextSecondary>{t('apps.swap.iban')}</TextSecondary>
                           <FlexRow gap='0.25rem'>
                             <Text small>{order.deposit_sepa_address}</Text>
                             <CopyButton value={order.deposit_sepa_address} />
@@ -227,7 +229,7 @@ export default function SwapOrderDetails() {
 
                       {order.deposit_sepa_bic ? (
                         <FlexRow between>
-                          <TextSecondary>BIC:</TextSecondary>
+                          <TextSecondary>{t('apps.swap.bic')}</TextSecondary>
                           <FlexRow gap='0.25rem'>
                             <Text small>{order.deposit_sepa_bic}</Text>
                             <CopyButton value={order.deposit_sepa_bic} />
@@ -237,14 +239,14 @@ export default function SwapOrderDetails() {
 
                       {order.deposit_sepa_beneficiary ? (
                         <FlexRow between>
-                          <TextSecondary>Beneficiary:</TextSecondary>
+                          <TextSecondary>{t('apps.swap.benef')}</TextSecondary>
                           <Text small>{order.deposit_sepa_beneficiary}</Text>
                         </FlexRow>
                       ) : null}
 
                       {order.deposit_sepa_bank_name ? (
                         <FlexRow between>
-                          <TextSecondary>Bank:</TextSecondary>
+                          <TextSecondary>{t('apps.swap.bank')}</TextSecondary>
                           <Text small>{order.deposit_sepa_bank_name}</Text>
                         </FlexRow>
                       ) : null}
@@ -256,11 +258,11 @@ export default function SwapOrderDetails() {
                 {hasBankDeposit && order.deposit_swift_address && !order.deposit_sepa_address ? (
                   <Shadow fat>
                     <FlexCol gap='0.5rem'>
-                      <Text bold>SWIFT Bank Transfer</Text>
+                      <Text bold>{t('apps.swap.swift')}</Text>
 
                       {order.deposit_swift_address ? (
                         <FlexRow between>
-                          <TextSecondary>IBAN:</TextSecondary>
+                          <TextSecondary>{t('apps.swap.bank')}</TextSecondary>
                           <FlexRow gap='0.25rem'>
                             <Text small>{order.deposit_swift_address}</Text>
                             <CopyButton value={order.deposit_swift_address} />
@@ -270,7 +272,7 @@ export default function SwapOrderDetails() {
 
                       {order.deposit_swift_bic ? (
                         <FlexRow between>
-                          <TextSecondary>BIC:</TextSecondary>
+                          <TextSecondary>{t('apps.swap.bic')}</TextSecondary>
                           <FlexRow gap='0.25rem'>
                             <Text small>{order.deposit_swift_bic}</Text>
                             <CopyButton value={order.deposit_swift_bic} />
@@ -280,14 +282,14 @@ export default function SwapOrderDetails() {
 
                       {order.deposit_swift_beneficiary ? (
                         <FlexRow between>
-                          <TextSecondary>Beneficiary:</TextSecondary>
+                          <TextSecondary>{t('apps.swap.benef')}</TextSecondary>
                           <Text small>{order.deposit_swift_beneficiary}</Text>
                         </FlexRow>
                       ) : null}
 
                       {order.deposit_swift_bank_name ? (
                         <FlexRow between>
-                          <TextSecondary>Bank:</TextSecondary>
+                          <TextSecondary>{t('apps.swap.bank')}</TextSecondary>
                           <Text small>{order.deposit_swift_bank_name}</Text>
                         </FlexRow>
                       ) : null}
@@ -301,13 +303,13 @@ export default function SwapOrderDetails() {
                     <FlexCol gap='0.5rem'>
                       <FlexRow between>
                         <Text bold color='red'>
-                          Reference (Required)
+                          {t('apps.swap.ref')}
                         </Text>
                         <CopyButton value={order.transfer_code} />
                       </FlexRow>
                       <Text>{order.transfer_code}</Text>
                       <TextSecondary>
-                        You MUST include this reference in your transfer for it to be processed correctly.
+                        {t('apps.swap.mustIncl')}
                       </TextSecondary>
                     </FlexCol>
                   </Shadow>
@@ -320,17 +322,17 @@ export default function SwapOrderDetails() {
               {isWaitingForDeposit ? (
                 <Button
                   onClick={handleRefresh}
-                  label={refreshing ? 'Refreshing...' : 'Refresh Status'}
+                  label={refreshing ? t('apps.swap.refresh') : t('apps.swap.refreshStat')}
                   secondary
                   disabled={refreshing}
                   loading={refreshing}
                 />
               ) : null}
 
-              <Button onClick={handleBackToWallet} label='Back to Wallet' />
+              <Button onClick={handleBackToWallet} label={t('apps.swap.backToWal')} />
 
               {isCompleted || isExpired || isCancelled ? (
-                <Button onClick={() => navigate(Pages.AppSwap)} label='Create New Swap' secondary />
+                <Button onClick={() => navigate(Pages.AppSwap)} label={t('apps.swap.createSwap')}secondary />
               ) : null}
             </FlexCol>
           </FlexCol>

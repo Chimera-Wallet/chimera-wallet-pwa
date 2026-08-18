@@ -2,16 +2,19 @@ import { useContext } from 'react'
 import Button from '../../components/Button'
 import { FlowContext } from '../../providers/flow'
 import { NavigationContext, Pages } from '../../providers/navigation'
+import {useTranslation} from 'react-i18next'
 
 export default function InitSuccess() {
   const { initInfo } = useContext(FlowContext)
   const { navigate } = useContext(NavigationContext)
 
+  const {t} = useTranslation()
+
   const isRestoring = initInfo.restoring
-  const headline = isRestoring ? 'Wallet restored!' : 'Your new wallet is live!'
+  const headline = isRestoring ? t('init.success.walletRestore') : t('init.success.liveWallet')
   const text = isRestoring
-    ? 'Your wallet has been successfully restored and is now ready to use.'
-    : 'Your wallet has been successfully created and is now ready to use.'
+    ? t('init.success.walletRestoreSucc')
+    : t('init.success.walletCreatedSucc')
 
   const handleGoToWallet = () => {
     navigate(isRestoring ? Pages.Wallet : Pages.InitBackupKey)
@@ -46,7 +49,7 @@ export default function InitSuccess() {
         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 1.5rem' }}>
           <img src='/images/chimera_white_logo.png' alt='Chimera' style={{ width: '160px', maxWidth: '60%', objectFit: 'contain', marginBottom: '0.75rem' }} />
           <p style={{ color: 'white', fontFamily: 'Titillium Web', fontSize: '14px', fontWeight: 600, letterSpacing: '1px', textAlign: 'center', margin: '0 0 2rem' }}>
-            Take back control of your money
+            {t('init.success.takeControl')}
           </p>
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <div style={{ height: 52, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.2)' }} />
@@ -90,7 +93,7 @@ export default function InitSuccess() {
               {text}
             </p>
           </div>
-          <Button label='GO TO WALLET' onClick={handleGoToWallet} />
+          <Button label={t('init.success.goWallet')} onClick={handleGoToWallet} />
         </div>
       </div>
     </div>

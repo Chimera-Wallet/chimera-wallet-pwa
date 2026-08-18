@@ -7,6 +7,7 @@ import Text from '../../components/Text'
 import Button from '../../components/Button'
 import Checkbox from '../../components/Checkbox'
 import type { AppTerms } from '../../lib/appConfig'
+import {useTranslation} from 'react-i18next'
 
 interface AppTermsPageProps {
   appName: string
@@ -17,6 +18,7 @@ interface AppTermsPageProps {
 
 export default function AppTermsPage({ appName, terms, onAccept, onBack }: AppTermsPageProps) {
   const [accepted, setAccepted] = useState(false)
+  const {t} = useTranslation()
 
   const handleToggle = () => {
     setAccepted((prev) => !prev)
@@ -61,7 +63,7 @@ export default function AppTermsPage({ appName, terms, onAccept, onBack }: AppTe
             <FlexCol gap='1rem'>
               <Checkbox onChange={handleToggle} text={terms.checkboxLabel} />
 
-              <Button onClick={onAccept} label='Continue' disabled={!accepted} />
+              <Button onClick={onAccept} label={t('common.general.continue')} disabled={!accepted} />
             </FlexCol>
           </div>
         </Padded>

@@ -26,18 +26,20 @@ import Info from '../../../components/Info'
 import LoadingLogo from '../../../components/LoadingLogo'
 import FlexRow from '../../../components/FlexRow'
 import { InfoIconDark } from '../../../icons/Info'
+import {useTranslation} from 'react-i18next'
 
 function friendlySwapError(message: string): string {
   const locktimeMatch = message.match(/locktime=(\d+)/)
+  const {t} = useTranslation()
   if (locktimeMatch) {
     const date = prettyDate(parseInt(locktimeMatch[1], 10))
-    return `Refund not yet available. Your funds will be recoverable after ${date}.`
+    return t('apps.boltz.unvavailableRefund', {date: date})
   }
-  if (message.includes('VHTLC is already spent')) {
-    return 'This swap has already been refunded or claimed.'
+  if (message.includes(t('apps.boltz.VHTLCspent'))) {
+    return t('apps.boltz.swapSpent')
   }
-  if (message.includes('VHTLC not found')) {
-    return 'No funds found at the swap address. The swap may not have been funded.'
+  if (message.includes(t('apps.boltz.VHTLCnf'))) {
+    return t('apps.boltz.noFundsSwap')
   }
   return message
 }
@@ -94,6 +96,8 @@ export default function AppBoltzSwap() {
   const preimage = swapInfo.preimage
   const status = swapInfo.status
 
+  const {t} = useTranslation()
+
   let tableData: TableData = []
 
   if (swapInfo.type === 'chain') {
@@ -103,34 +107,34 @@ export default function AppBoltzSwap() {
       swapInfo.request.from === 'ARK' ? swapInfo.toAddress : swapInfo.response.claimDetails?.lockupAddress
 
     tableData = [
-      ['When', when],
-      ['Kind', 'Chain Swap'],
-      ['Swap ID', swapId],
-      ['Direction', swapInfo.request.from === 'ARK' ? 'Arkade to BTC' : 'BTC to Arkade'],
-      ['Date', date],
-      ['Preimage', preimage],
-      ['BTC Address', btcAddress],
-      ['Status', status],
-      ['Amount', formatAmount(rcvdSats)],
-      ['Fees', formatAmount(diff(sentSats, rcvdSats))],
-      ['Total', formatAmount(sentSats)],
+      [t('apps.boltz.'), when],
+      [t('apps.boltz.kind'), t('apps.boltz.chainS')],
+      [t('apps.boltz.swapId'), swapId],
+      [t('apps.boltz.direction'), swapInfo.request.from === 'ARK' ? 'Arkade to BTC' : 'BTC to Arkade'],
+      [t('apps.boltz.date'), date],
+      [t('apps.boltz.preimage'), preimage],
+      [t('apps.boltz.btcAd'), btcAddress],
+      [t('apps.boltz.status'), status],
+      [t('apps.boltz.amount'), formatAmount(rcvdSats)],
+      [t('apps.boltz.fees'), formatAmount(diff(sentSats, rcvdSats))],
+      [t('apps.boltz.total'), formatAmount(sentSats)],
     ]
   } else if (swapInfo.type === 'reverse') {
     const sentSats = swapInfo.request.invoiceAmount
     const rcvdSats = swapInfo.response.onchainAmount
 
     tableData = [
-      ['When', when],
-      ['Kind', 'Reverse Swap'],
-      ['Swap ID', swapId],
-      ['Direction', 'Lightning to Arkade'],
-      ['Date', date],
-      ['Preimage', preimage],
-      ['Invoice', swapInfo.response.invoice],
-      ['Status', swapInfo.status],
-      ['Amount', formatAmount(rcvdSats)],
-      ['Fees', formatAmount(diff(sentSats, rcvdSats))],
-      ['Total', formatAmount(sentSats)],
+      [t('apps.boltz.when'), when],
+      [t('apps.boltz.kind'), t('apps.boltz.reverseS')],
+      [t('apps.boltz.swapId'), swapId],
+      [t('apps.boltz.direction'), 'Lightning to Arkade'],
+      [t('apps.boltz.date'), date],
+      [t('apps.boltz.preimage'), preimage],
+      [t('apps.boltz.invoice'), swapInfo.response.invoice],
+      [t('apps.boltz.status'), swapInfo.status],
+      [t('apps.boltz.amount'), formatAmount(rcvdSats)],
+      [t('apps.boltz.fees'), formatAmount(diff(sentSats, rcvdSats))],
+      [t('apps.boltz.total'), formatAmount(sentSats)],
     ]
   } else if (swapInfo.type === 'submarine') {
     const sentSats = swapInfo.response.expectedAmount
@@ -139,23 +143,23 @@ export default function AppBoltzSwap() {
       : undefined
 
     tableData = [
-      ['When', when],
-      ['Kind', 'Submarine Swap'],
-      ['Swap ID', swapId],
-      ['Direction', 'Arkade to Lightning'],
-      ['Date', date],
-      ['Preimage', preimage],
-      ['Invoice', swapInfo.request.invoice],
-      ['Status', status],
-      ['Amount', formatAmount(rcvdSats)],
-      ['Fees', formatAmount(diff(sentSats, rcvdSats))],
-      ['Total', formatAmount(sentSats)],
+      [t('apps.boltz.when'), when],
+      [t('apps.boltz.kind'), 'Submarine Swap'],
+      [t('apps.boltz.swapId'), swapId],
+      [t('apps.boltz.direction'), 'Arkade to Lightning'],
+      [t('apps.boltz.date'), date],
+      [t('apps.boltz.preimage'), preimage],
+      [t('apps.boltz.invoice'), swapInfo.request.invoice],
+      [t('apps.boltz.status'), status],
+      [t('apps.boltz.amount'), formatAmount(rcvdSats)],
+      [t('apps.boltz.fees'), formatAmount(diff(sentSats, rcvdSats))],
+      [t('apps.boltz.total'), formatAmount(sentSats)],
     ]
   }
 
   const isRefundable = isSubmarineSwapRefundable(swapInfo) || isChainSwapRefundable(swapInfo)
   const isClaimable = isReverseSwapClaimable(swapInfo) || isChainSwapClaimable(swapInfo)
-  const buttonLabel = isClaimable ? 'Complete swap' : 'Refund swap'
+  const buttonLabel = isClaimable ? t('apps.boltz.complS') : t('apps.boltz.refundS')
   const refunded = swapInfo.status === 'transaction.refunded'
 
   const buttonHandler = async () => {
@@ -197,12 +201,12 @@ export default function AppBoltzSwap() {
 
   return (
     <>
-      <Header text='Swap' back />
+      <Header text={t('apps.boltz.swap')} back />
       <Content>
         <Padded>
           {processing ? (
             <LoadingLogo
-              text='Processing swap...'
+              text={t('apps.boltz.processing')}
               done={opDone}
               exitMode='fly-up'
               onExitComplete={handleExitComplete}
@@ -211,13 +215,13 @@ export default function AppBoltzSwap() {
             <FlexCol gap='2rem'>
               <ErrorMessage error={Boolean(error)} text={error} />
               {success ? (
-                <Info color='green' icon={<CheckMarkIcon small />} title='Success'>
-                  <TextSecondary>Swap {isRefundable ? 'refunded' : 'completed'}</TextSecondary>
+                <Info color='green' icon={<CheckMarkIcon small />} title={t('common.general.success')}>
+                  <TextSecondary>Swap {isRefundable ?t('apps.boltz.refunded') : t('apps.boltz.completed')}</TextSecondary>
                 </Info>
               ) : refunded ? (
                 <FlexRow alignItems='flex-start'>
                   <InfoIconDark color='green' />
-                  <TextSecondary>Swap refunded</TextSecondary>
+                  <TextSecondary>{t('apps.boltz.swapRef')}</TextSecondary>
                 </FlexRow>
               ) : null}
               <Table data={tableData} />

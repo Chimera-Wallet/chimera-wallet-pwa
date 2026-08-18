@@ -25,6 +25,7 @@ import Reminder from '../../components/Reminder'
 import { LimitsContext } from '../../providers/limits'
 import { getInputsToSettle } from '../../lib/asp'
 import { prettyAssetAmount } from '../../lib/assets'
+import {useTranslation} from 'react-i18next'
 
 export default function Transaction() {
   const { utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
@@ -32,11 +33,13 @@ export default function Transaction() {
   const { aspInfo, calcBestMarketHour } = useContext(AspContext)
   const { assetMetadataCache, settlePreconfirmed, vtxos, vtxoManager, wallet, svcWallet } = useContext(WalletContext)
 
+  const {t} = useTranslation()
+
   const tx = txInfo
   const issuanceTx = tx ? isIssuance(tx) : false
   const burnTx = tx ? isBurn(tx) : false
   const boardingTx = Boolean(tx?.boardingTxid)
-  const defaultButtonLabel = boardingTx ? 'Complete boarding' : 'Settle transaction'
+  const defaultButtonLabel = boardingTx ? t('networks.transactions.completeBoarding') : t('networks.transactions.settleTransaction')
   const boardingExitDelay = Number(aspInfo?.boardingExitDelay || 0)
   const unconfirmedBoardingTx = boardingTx && !tx?.createdAt
   const expiredBoardingTx =
@@ -57,7 +60,7 @@ export default function Transaction() {
   const hideStatusBanners = settling || settleSuccess
 
   useEffect(() => {
-    setButtonLabel(settling ? 'Settling...' : defaultButtonLabel)
+    setButtonLabel(settling ? t('networks.transactions.settling') : defaultButtonLabel)
   }, [settling, defaultButtonLabel])
 
   useEffect(() => {
@@ -110,20 +113,20 @@ export default function Transaction() {
   if (!tx) return <></>
 
   const details: DetailsProps = {
-    direction: issuanceTx ? 'Issuance' : burnTx ? 'Burn' : tx.type === 'sent' ? 'Sent' : 'Received',
-    when: tx.createdAt ? prettyAgo(tx.createdAt) : !unconfirmedBoardingTx ? 'Unknown' : 'Unconfirmed',
-    date: tx.createdAt ? prettyDate(tx.createdAt) : !unconfirmedBoardingTx ? 'Unknown' : 'Unconfirmed',
+    direction: issuanceTx ? 'Issuance' : burnTx ? 'Burn' : tx.type === 'sent' ? t('common.general.sent') : t('common.general.received'),
+    when: tx.createdAt ? prettyAgo(tx.createdAt) : !unconfirmedBoardingTx ? t('common.general.unkown') : t('common.general.unconfirmed'),
+    date: tx.createdAt ? prettyDate(tx.createdAt) : !unconfirmedBoardingTx ? t('common.general.unkown') : t('common.general.unconfirmed'),
     status:
       settleSuccess || tx.settled
-        ? 'Settled'
+        ? t('common.general.settled')
         : expiredBoardingTx
-          ? 'Expired'
+          ? t('common.general.expired')
           : unconfirmedBoardingTx
-            ? 'Unconfirmed'
+            ? t('common.general.unconfirmed')
             : boardingTx && tx.preconfirmed
-              ? 'Pending boarding'
-              : 'Preconfirmed',
-    type: boardingTx ? 'Boarding' : 'Offchain',
+              ? t('networks.transactions.pendingBoarding')
+              : t('networks.transactions.preconfirmed'),
+    type: boardingTx ? t('networks.transactions.boarding') : t('networks.transactions.offchain'),
     txid: tx.boardingTxid || tx.redeemTxid || '',
     isOffchainTx: !tx.boardingTxid && Boolean(tx.redeemTxid),
     assetId: tx.assets?.[0]?.assetId,
@@ -139,26 +142,26 @@ export default function Transaction() {
         <FlexCol>
           <ErrorMessage error={Boolean(error)} text={error} />
           {settling ? (
-            <Info color='purpletext' icon={<LoadingIcon small />} title='Settling'>
-              <Text wrap>{boardingTx ? 'Processing your boarding transaction...' : 'Settling transaction...'}</Text>
+            <Info color='purpletext' icon={<LoadingIcon small />} title={t('networks.transactions.settling')}>
+              <Text wrap>{boardingTx ? t('networks.transactions.processingBoarding') : t('networks.transactions.settlingTransaction')}</Text>
             </Info>
           ) : null}
           {expiredBoardingTx && !hideStatusBanners ? (
-            <Info color='red' icon={<VtxosIcon />} title='Expired'>
-              <Text wrap>Boarding transaction expired.</Text>
+            <Info color='red' icon={<VtxosIcon />} title={t('common.general.expired')}>
+              <Text wrap>{t('networks.transactions.boardingExpired')}</Text>
             </Info>
           ) : unconfirmedBoardingTx ? (
-            <Info color='orange' icon={<VtxosIcon />} title='Unconfirmed'>
-              <Text wrap>Onchain transaction unconfirmed. Please wait for confirmation.</Text>
+            <Info color='orange' icon={<VtxosIcon />} title={t('common.general.unconfirmed')}>
+              <Text wrap>{t('networks.transactions.onchainUnconfirmed')}.</Text>
             </Info>
           ) : tx.preconfirmed && tx.boardingTxid && !hideStatusBanners ? (
-            <Info color='orange' icon={<VtxosIcon />} title='Pending boarding'>
-              <Text wrap>Onboard transaction confirmed on-chain.</Text>
+            <Info color='orange' icon={<VtxosIcon />} title={t('networks.transactions.pendingBoarding')}>
+              <Text wrap>{t('networks.transactions.onboardConfirmed')}</Text>
             </Info>
           ) : null}
           {settleSuccess ? (
-            <Info color='green' icon={<CheckMarkIcon small />} title='Success'>
-              <TextSecondary>Transaction settled successfully</TextSecondary>
+            <Info color='green' icon={<CheckMarkIcon small />} title={t('common.general.success')}>
+              <TextSecondary>{t('networks.transactions.transactionSettledSucc')}</TextSecondary>
             </Info>
           ) : null}
           {tx.assets?.length ? (
@@ -207,19 +210,19 @@ export default function Transaction() {
   const Buttons = () =>
     expiredBoardingTx && !hideStatusBanners ? (
       <ButtonsOnBottom>
-        <Button onClick={handleResend} label='Resend' disabled={resending || true} />
+        <Button onClick={handleResend} label={t('networks.transactions.resend')} disabled={resending || true} />
       </ButtonsOnBottom>
     ) : showSettleButtons ? (
       <>
         <ButtonsOnBottom>
           <Button onClick={handleSettle} label={buttonLabel} disabled={settling} />
-          <Button onClick={() => setReminderIsOpen(true)} label='Add reminder' secondary />
+          <Button onClick={() => setReminderIsOpen(true)} label={t('networks.transaction.reminder')} secondary />
         </ButtonsOnBottom>
         <Reminder
           isOpen={reminderIsOpen}
           callback={() => setReminderIsOpen(false)}
           duration={duration}
-          name='Settle transaction'
+          name={t('networks.transaction.settleTransaction')}
           startTime={startTime}
         />
       </>
@@ -227,7 +230,7 @@ export default function Transaction() {
 
   return (
     <>
-      <Header text='Transaction' back />
+      <Header text={t('networks.transactions.transaction')} back />
       <Body />
       <Buttons />
     </>

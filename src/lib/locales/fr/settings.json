@@ -1,0 +1,201 @@
+{
+  "about": {
+    "serverURL": "URL du serveur",
+    "serverPubkey": "Clé publique du serveur",
+    "forfeitAddress": "Adresse de confiscation",
+    "sessionDur": "Durée de session",
+    "boardingDelay": "Délai de sortie d'embarquement",
+    "unilateralDelay": "Délai de sortie unilatérale",
+    "gitHash": "Hash du commit Git"
+  },
+  "advanced": {
+    "advancedSettings": "Paramètres avancés",
+    "changePass": "Changer le mot de passe",
+    "lockWallet": "Verrouiller le portefeuille",
+    "deleteMnemonic": "Supprimer la phrase mnémonique",
+    "highRisk": "Risque élevé"
+  },
+  "backup": {
+    "nostrUpdate": "Sauvegarde Nostr mise à jour",
+    "mnemonicWarning": "Votre phrase de récupération est utilisée pour sauvegarder votre portefeuille. Gardez-la secrète et en sécurité à tout moment.",
+    "pkWarning": "Votre clé privée est utilisée pour sauvegarder votre portefeuille. Gardez-la secrète et en sécurité à tout moment.",
+    "unlockPasskey": "Déverrouiller avec votre passkey",
+    "enterPass": "Saisissez votre mot de passe",
+    "keepSafeSecret": "Gardez votre {{secret}} en sécurité",
+    "noShare": "Ne le partagez avec personne",
+    "loseNoRecover": "Si vous le perdez, vous ne pourrez pas le récupérer",
+    "eyesOnly": "Pour vos yeux uniquement, ne le partagez pas.",
+    "viewSecret": "Afficher {{secret}}",
+    "enoughToRestore": "Cela suffit pour restaurer votre portefeuille",
+    "phraseAccess": "Votre phrase de récupération permet d'accéder à tout le contenu de votre portefeuille. Ne la partagez avec personne.",
+    "pkAccess": "Votre clé privée permet d'accéder à tout le contenu de votre portefeuille. Ne la partagez avec personne.",
+    "enableNostr": "Activer les sauvegardes Nostr",
+    "nostrToggle": "Activer ou désactiver les sauvegardes Nostr"
+  },
+  "biometric": {
+    "bioAuth": "Authentification biométrique",
+    "bioAuthUnsupported": "L'authentification biométrique n'est pas prise en charge sur cet appareil",
+    "useBio": "Utiliser la biométrie",
+    "disableWarn": "L'authentification biométrique est active. La désactiver supprimera votre verrouillage actuel — vous pourrez ensuite définir un mot de passe dans les paramètres avancés",
+    "enableFingerFace": "Activez l'empreinte digitale ou la reconnaissance faciale pour déverrouiller votre portefeuille. Cela remplacera votre mot de passe actuel.",
+    "noContractFound": "Aucun contrat trouvé"
+  },
+  "delegates": {
+    "delegates": "Délégués",
+    "whatIs": "Qu'est-ce qu'un délégué ?",
+    "delegateDescr": "Un délégué est un tiers de confiance que vous désignez pour aider à protéger vos VTXO.",
+    "learnMore": "En savoir plus",
+    "renewal": "prochain renouvellement {{time}}",
+    "noRenewal": "Aucun renouvellement à venir",
+    "vtxoWarn": "Les délégués peuvent uniquement renouveler vos VTXO ; ils ne peuvent ni dépenser vos fonds ni contrôler votre portefeuille",
+    "defaultArk": "Utiliser le délégué Arkade par défaut",
+    "defaultArkDescr": "Utiliser le délégué par défaut d'Arkade pour gérer les renouvellements",
+    "reloadWarn": "Le portefeuille sera rechargé pour appliquer la modification"
+  },
+  "display": {
+    "displayPref": "Préférences d'affichage"
+  },
+  "fiat": {
+    "fiat": "Monnaie fiduciaire"
+  },
+  "general": {
+    "settingsOpt": "Paramètres {{opt}}",
+    "appSett": "Paramètres de l'application"
+  },
+  "haptics": {
+    "haptics": "Retour haptique",
+    "feedback": "Retour haptique",
+    "vibration": "Vibration lors des appuis sur les boutons et des interactions"
+  },
+  "language": {
+    "appLang": "Langue de l'application"
+  },
+  "lock": {
+    "noPass": "Aucun mot de passe ou paramètre biométrique défini",
+    "lockWallet": "Verrouiller votre portefeuille",
+    "lockReqs": "Vous devez définir un mot de passe ou activer la biométrie pour verrouiller.",
+    "lockBioWarn": "Après verrouillage, vous devrez vous authentifier par biométrie pour déverrouiller.",
+    "lockPassWarn": "Après verrouillage, vous devrez ressaisir votre mot de passe pour déverrouiller.",
+    "setPass": "Définir un mot de passe",
+    "lockWalletSimple": "Verrouiller le portefeuille"
+  },
+  "logs": {
+    "logs": "Journaux",
+    "keyboardNav": "Appuyer sur Entrée active la navigation clavier dans les journaux",
+    "logMessage": "Journal à {{time}} avec le message {{msg}}. Appuyez sur Échap pour quitter la navigation clavier.",
+    "exportCSV": "Exporter au format CSV"
+  },
+  "menu": {
+    "verified": "Vérifié",
+    "pending": "En attente",
+    "unverified": "Non vérifié",
+    "kycVer": "KYC - Vérification",
+    "knowdledgeBase": "Base de connaissances",
+    "manage": "Gérer le compte",
+    "addressBook": "Carnet d'adresses",
+    "showPhrase": "Afficher la phrase secrète",
+    "currency": "Devise",
+    "setNotifs": "Configurer les notifications",
+    "advancedSettings": "Paramètres avancés"
+  },
+  "notifications": {
+    "notifications": "Notifications",
+    "update": "Recevez une notification lorsqu'une mise à jour est disponible ou lorsqu'un paiement est reçu. Vous devrez peut-être accorder l'autorisation.",
+    "unsupported": "Votre navigateur ne prend pas en charge l'API Notifications. Sur iOS, vous devez ajouter l'application à l'écran d'accueil et utiliser iOS 16.4 ou une version supérieure.",
+    "allow": "Autoriser les notifications"
+  },
+  "password": {
+    "passUnavailable": "Mot de passe indisponible",
+    "bioAuth": "L'authentification biométrique est active. Désactivez-la dans Paramètres > Authentification biométrique avant de définir un mot de passe.",
+    "passRemoved": "Mot de passe supprimé",
+    "passChanged": "Mot de passe modifié"
+  },
+  "reset": {
+    "removeSeed": "Supprime définitivement votre seed de cet appareil. Soyez extrêmement prudent : après suppression, il sera impossible de récupérer votre clé depuis Chimera Wallet.",
+    "removeMnemonic": "Cliquer sur « Supprimer » supprimera votre phrase mnémonique de cet appareil. Assurez-vous de l'avoir sauvegardée !",
+    "deleteAccount": "Je comprends et je supprime mon compte",
+    "deleteMnemConf": "OUI SUPPRIMER LA PHRASE MNÉMONIQUE",
+    "cancel": "ANNULER"
+  },
+  "server": {
+    "server": "Serveur",
+    "serverURL": "URL du serveur",
+    "found": "Serveur trouvé",
+    "walletReset": "Votre portefeuille sera réinitialisé. Assurez-vous d'abord d'en faire une sauvegarde.",
+    "connect": "Se connecter au serveur"
+  },
+  "support": {
+    "support": "Support",
+    "custSupp": "Assistance client",
+    "helpText": "Obtenez de l'aide pour votre portefeuille, signalez des bugs ou posez des questions. Notre équipe d'assistance est là pour vous aider.",
+    "secure": "Chat sécurisé",
+    "secureText": "Vos conversations sont sécurisées et privées. L'historique des discussions est conservé entre les sessions.",
+    "bugRep": "Rapports de bugs",
+    "bugRepText": "Signalez tout problème ou bug rencontré. Incluez les étapes permettant de reproduire le problème pour une résolution plus rapide.",
+    "progress": "Suivre l'avancement",
+    "progressText": "Tous vos tickets d'assistance et conversations sont enregistrés. Vous pouvez consulter les échanges précédents à tout moment.",
+    "openSupp": "Ouvrir le chat d'assistance"
+  },
+  "verification": {
+    "enterEmail": "Saisissez votre adresse e-mail",
+    "enterEmailVerif": "Saisissez votre adresse e-mail pour commencer votre vérification KYC.",
+    "idVerif": "Vérification d'identité",
+    "emailRegs": "Votre adresse e-mail est enregistrée. Ouvrez le portail de vérification pour terminer ou consulter le statut de votre KYC.",
+    "emailReSub": "Modifier votre adresse e-mail nécessitera de soumettre à nouveau votre vérification KYC.",
+    "resubKyc": "Soumettre à nouveau le KYC",
+    "checkStat": "Vérifier le statut",
+    "r&a": "Lire et accepter",
+    "reviewText": "Avant d'envoyer votre e-mail de vérification, veuillez lire et accepter les éléments suivants.",
+    "acceptPP": "Accepter la politique de confidentialité",
+    "agreed": "J'ai lu et accepté la",
+    "PP": "Politique de confidentialité",
+    "accTS": "Accepter les conditions d'utilisation",
+    "TS": "Conditions d'utilisation",
+    "sending": "Envoi...",
+    "proceed": "Continuer",
+    "resendIn": "Renvoyer dans {{sec}}",
+    "resendLim": "Limite de renvoi atteinte",
+    "resend": "Renvoyer l'e-mail",
+    "verifTimeout": "Délai de vérification expiré",
+    "noClick": "Nous n'avons détecté aucun clic sur le lien dans les 2 minutes. Veuillez réessayer.",
+    "tryAg": "Réessayer",
+    "checkInb": "Vérifiez votre boîte de réception",
+    "sentVerif": "Nous avons envoyé un lien de vérification à <strong>{{email}}</strong>. Cliquez sur le lien pour continuer.",
+    "waiting": "En attente de vérification…",
+    "idVerified": "Votre identité a été vérifiée !",
+    "fullAccess": "Vous avez un accès complet à toutes les fonctionnalités.",
+    "verifProgress": "Vérification en cours",
+    "docReview": "Vos documents sont en cours d'examen. Cela prend généralement 1 à 2 jours ouvrables.",
+    "idUnverified": "Échec de la vérification",
+    "unverifText": "Malheureusement, nous n'avons pas pu vérifier votre identité. Veuillez réessayer avec des documents valides.",
+    "troubleLoad": "Des difficultés pour charger la vérification ?",
+    "iosIssue": "iOS peut rencontrer des problèmes avec le contenu intégré. Ouvrez dans Safari pour une expérience optimale.",
+    "openBrowser": "Ouvrir dans le navigateur"
+  },
+  "vtxo": {
+    "renewVC": "Renouveler les pièces virtuelles",
+    "belowDust": "Sous la limite dust",
+    "completeBoardRen": "Finaliser l'embarquement et renouveler",
+    "renew": "Renouveler",
+    "complBoard": "Finaliser l'embarquement",
+    "settled": "réglé",
+    "subdust": "sous dust",
+    "swept": "balayé",
+    "unconfirmed": "non confirmé",
+    "expSoon": "expire bientôt",
+    "vc": "Pièces virtuelles",
+    "renewal": "Prochain renouvellement",
+    "renewVCs": "Renouvellement de vos pièces virtuelles. Cela peut prendre quelques instants.",
+    "renewing": "Renouvellement en cours",
+    "coinsRenewdSucc": "Pièces renouvelées avec succès",
+    "VClist": "Vos pièces virtuelles avec montant et date d'expiration",
+    "utxoList": "Vos UTXO d'embarquement avec montant et date d'expiration",
+    "nextren": "Prochain renouvellement",
+    "firstExpt": "Première expiration de pièce virtuelle : {{exp}}",
+    "autoRen": "Le renouvellement automatique s'effectue pour les pièces virtuelles expirant dans",
+    "marketFees": "Le règlement pendant les heures de marché offre des frais réduits.",
+    "nextHour": "Prochaine heure de marché : {{st}} {{bool}} pendant {{duration}}.",
+    "addRem": "Ajouter un rappel",
+    "vcRenewal": "Renouvellement des pièces virtuelles"
+  }
+}

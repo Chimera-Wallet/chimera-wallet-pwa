@@ -16,6 +16,7 @@ import { extractError } from '../../../lib/error'
 import InputAssetId from '../../../components/InputAssetId'
 import Scanner from '../../../components/Scanner'
 import { isValidAssetId } from '../../../lib/assets'
+import {useTranslation} from 'react-i18next'
 
 export default function AppAssetImport() {
   const { navigate } = useContext(NavigationContext)
@@ -28,10 +29,12 @@ export default function AppAssetImport() {
   const [loading, setLoading] = useState(false)
   const [scan, setScan] = useState(false)
 
+  const {t} = useTranslation()
+
   const handleImport = async () => {
     if (!svcWallet) return
     if (!isValidAssetId(assetId)) {
-      setError('Asset ID must be a 68-character hex string')
+      setError(t('errors.assets.idHex'))
       return
     }
 
@@ -40,7 +43,7 @@ export default function AppAssetImport() {
 
     try {
       const details = await svcWallet.assetManager.getAssetDetails(assetId)
-      if (!details) throw new Error('Asset not found')
+      if (!details) throw new Error(t('errors.assets.assNF'))
 
       const moderated = setCacheEntry(assetId, details)
 
@@ -59,13 +62,13 @@ export default function AppAssetImport() {
     }
   }
 
-  if (loading) return <LoadingLogo text='Fetching asset details...' />
+  if (loading) return <LoadingLogo text={t('apps.assets.fetchingAssDet')}/>
 
-  if (scan) return <Scanner close={() => setScan(false)} label='Ark note' onData={setAssetId} onError={setError} />
+  if (scan) return <Scanner close={() => setScan(false)} label={t('apps.assets.arkNotez')} onData={setAssetId} onError={setError} />
 
   return (
     <>
-      <Header text='Import Asset' back={() => navigate(Pages.AppAssets)} />
+      <Header text={t('apps.assets.impAss')} back={() => navigate(Pages.AppAssets)} />
       <Content>
         <Padded>
           <FlexCol>
@@ -73,7 +76,7 @@ export default function AppAssetImport() {
             <InputAssetId
               name='asset-id'
               focus
-              label='Asset ID'
+              label={t('apps.assets.assId')}
               onChange={setAssetId}
               onEnter={handleImport}
               openScan={() => setScan(true)}
@@ -83,7 +86,7 @@ export default function AppAssetImport() {
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        <Button label='Import' onClick={handleImport} disabled={!assetId} />
+        <Button label={t('apps.assets.import')} onClick={handleImport} disabled={!assetId} />
       </ButtonsOnBottom>
     </>
   )

@@ -1,4 +1,5 @@
 import { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface OnboardingLayoutProps {
   children: ReactNode
@@ -9,6 +10,7 @@ interface OnboardingLayoutProps {
 // is passed as children. Shared by the Init landing screen and the Unlock
 // screen so they stay visually identical.
 export default function OnboardingLayout({ children }: OnboardingLayoutProps) {
+  const {t} = useTranslation()
   return (
     // Fill the page area (PageTransition is position:absolute/inset:0, so this
     // resolves to the visible viewport) and lay out as a flex column. We must
@@ -66,7 +68,7 @@ export default function OnboardingLayout({ children }: OnboardingLayoutProps) {
             textTransform: 'none',
           }}
         >
-          Take back control of your money
+         {t('components.onboarding.takeBack')}
         </p>
 
         <div style={{ width: '100%' }}>{children}</div>

@@ -19,6 +19,7 @@ import { privateKeyToNsec } from '../../lib/privateKey'
 import { NavigationContext, Pages } from '../../providers/navigation'
 import { useToast } from '../../components/Toast'
 import { FlowContext } from '../../providers/flow'
+import {useTranslation} from 'react-i18next'
 
 export default function InitBackupKey() {
   const { navigate } = useContext(NavigationContext)
@@ -35,12 +36,14 @@ export default function InitBackupKey() {
 
   const isMnemonic = words.length > 0
   const [revealed, setRevealed] = useState(false)
+  
+  const {t} = useTranslation()
 
   const handleCopy = async () => {
     const value = isMnemonic ? mnemonic : nsec
     if (!value) return
     await copyToClipboard(value)
-    toast('Copied to clipboard')
+    toast(t('common.general.copyClipboard'))
   }
 
   const handleProceed = () => {
@@ -50,7 +53,7 @@ export default function InitBackupKey() {
 
   return (
     <>
-      <Header text={isMnemonic ? 'Save your Recovery Phrase' : 'Save your Private Key'} />
+      <Header text={isMnemonic ? t('init.key.savePhrase') : t('init.key.saveKey')} />
       <Content>
         <Padded>
           <FlexCol gap='1.5rem'>
@@ -73,22 +76,22 @@ export default function InitBackupKey() {
                 <div style={{ textAlign: 'center' }}>
                   <TextSecondary wrap>
                     {isMnemonic
-                      ? 'This is the only way to restore your wallet on another browser or device. Store it somewhere safe — a password manager, encrypted notes, or written down securely.'
-                      : 'This is your private key. Store it somewhere safe — a password manager, encrypted notes, or written down securely.'}
+                      ? t('init.key.mnemonicWarning')
+                      : t('init.key.keyWarning')}
                   </TextSecondary>
                 </div>
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                   <FlexRow gap='0.5rem'>
                     <SafeIcon />
-                    <TextSecondary>{isMnemonic ? 'Keep your recovery phrase safe' : 'Keep your private key safe'}</TextSecondary>
+                    <TextSecondary>{isMnemonic ? t('init.key.mnemonicSafe') : t('init.key.keySafe')}</TextSecondary>
                   </FlexRow>
                   <FlexRow gap='0.5rem'>
                     <DontIcon />
-                    <TextSecondary>Don't share it with anyone</TextSecondary>
+                    <TextSecondary>{t('init.key.privacyWarning')}</TextSecondary>
                   </FlexRow>
                   <FlexRow gap='0.5rem'>
                     <XIcon />
-                    <TextSecondary>If you lose it you can't recover it</TextSecondary>
+                    <TextSecondary>{t('init.ley.lossWarning')}</TextSecondary>
                   </FlexRow>
                 </div>
 
@@ -156,7 +159,7 @@ export default function InitBackupKey() {
                       }}
                     >
                       <EyeIcon size={16} />
-                      {revealed ? 'Hide phrase' : 'Reveal phrase'}
+                      {revealed ? t('init.key.hidePhrase') : t('init.key.revealPhrase')}
                     </button>
                   </div>
                 ) : (
@@ -184,7 +187,7 @@ export default function InitBackupKey() {
                     />
                     <button
                       onClick={() => setRevealed((v) => !v)}
-                      aria-label={revealed ? 'Hide private key' : 'Reveal private key'}
+                      aria-label={revealed ? t('init.key.hideKey') : t('init.key.revealPhrase')}
                       style={{
                         position: 'absolute',
                         right: '0.5rem',
@@ -206,7 +209,7 @@ export default function InitBackupKey() {
 
                 <Button
                   onClick={handleCopy}
-                  label={isMnemonic ? 'Copy Recovery Phrase' : 'Copy Private Key'}
+                  label={isMnemonic ? t('init.key.copyPhrase') : t('init.key.copyKey')}
                   icon={<CopyIcon />}
                 />
               </div>
@@ -215,7 +218,7 @@ export default function InitBackupKey() {
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        <Button onClick={handleProceed} label="I've saved it — Go to wallet" />
+        <Button onClick={handleProceed} label={t('init.key.saved')} />
       </ButtonsOnBottom>
     </>
   )

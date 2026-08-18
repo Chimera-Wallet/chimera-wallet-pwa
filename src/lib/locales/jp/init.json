@@ -1,0 +1,63 @@
+{
+  "key": {
+    "savePhrase": "リカバリーフレーズを保存",
+    "saveKey": "秘密鍵を保存",
+    "mnemonicWarning": "これは別のブラウザやデバイスでウォレットを復元する唯一の方法です。パスワードマネージャー、暗号化されたメモ、または安全な場所への書き留めなど、安全な場所に保管してください。",
+    "keyWarning": "これはあなたの秘密鍵です。パスワードマネージャー、暗号化されたメモ、または安全な場所への書き留めなど、安全な場所に保管してください。",
+    "mnemonicSafe": "リカバリーフレーズを安全に保管してください",
+    "keySafe": "秘密鍵を安全に保管してください",
+    "privacyWarning": "誰にも共有しないでください",
+    "lossWarning": "失うと復元できません",
+    "hideKey": "秘密鍵を隠す",
+    "revealKey": "秘密鍵を表示",
+    "hidePhrase": "フレーズを隠す",
+    "revealPhrase": "フレーズを表示",
+    "copyPhrase": "リカバリーフレーズをコピー",
+    "copykey": "秘密鍵をコピー",
+    "saved": "保存しました — ウォレットへ進む"
+  },
+  "warning": {
+    "important": "重要な警告",
+    "warning": "⚠ 警告",
+    "lossFunds": "鍵をバックアップせずにウォレットへ資金を入金すると、<danger>資金を完全かつ永久に失う</danger>リスクが常にあります。",
+    "nonCustodial": "Chimera Walletは<bold>完全なセルフカストディウォレット</bold>です。鍵を持っていない場合、<strongWarning>誰も</strongWarning>資金の復元を手助けできません。",
+    "understood": "理解しました。続行します",
+    "goBack": "戻る"
+  },
+  "biometrics": {
+    "secureWallet": "ウォレットを保護",
+    "enableBioAuth": "生体認証を有効化",
+    "bioAuthUnsupported": "このデバイスでは生体認証がサポートされていません。ウォレットのロック解除にはパスワードを使用する必要があります。",
+    "fingerFaceAuth": "セキュリティ向上のため、指紋認証または顔認証でウォレットを解除できるように生体認証を有効にしてください。",
+    "enableBio": "生体認証を有効化",
+    "usePass": "代わりにパスワードを使用"
+  },
+  "connection": {
+    "missingCreds": "認証情報がありません",
+    "restoringSwaps": "スワップを復元中...",
+    "swapsInfo": "ネットワークから {{num}} 件のスワップを復元しました",
+    "connectionFailed": "接続に失敗しました",
+    "serverConnection": "サーバーに接続中"
+  },
+  "init": {
+    "createWallet": "新しいウォレットを作成",
+    "restoreWallet": "ウォレットを復元"
+  },
+  "restore": {
+    "invalidPhrase": "無効なリカバリーフレーズです",
+    "validationUnable": "秘密鍵の形式を検証できません",
+    "validationUnableSimple": "鍵の形式を検証できません",
+    "restoringWallet": "ウォレットを復元中...",
+    "pk": "秘密鍵",
+    "recoveryPhraseKey": "リカバリーフレーズまたは秘密鍵",
+    "phraseEntry": "12単語のリカバリーフレーズ、または「nsec」で始まる秘密鍵、もしくは生の16進形式の鍵を入力してください。誰にも共有しないでください。"
+  },
+  "success": {
+    "walletRestore": "ウォレットを復元しました！",
+    "liveWallet": "新しいウォレットが利用可能になりました！",
+    "walletRestoreSucc": "ウォレットは正常に復元され、使用できる状態になりました。",
+    "walletCreatedSucc": "ウォレットは正常に作成され、使用できる状態になりました。",
+    "takeControl": "お金の管理を自分の手に取り戻そう",
+    "goWallet": "ウォレットへ進む"
+  }
+}

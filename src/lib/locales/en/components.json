@@ -1,0 +1,202 @@
+{
+    "carousel":{
+        "error": "useCarousel must be used within a <Carousel />",
+        "previous": "Previous slide",
+        "next": "Next slide"
+    },
+    "chart": {
+        "error": "useChart must be used within a <ChartContainer />"
+    },
+    "command":{
+        "command": "Command Palette",
+        "search": "Search for a command to run..."
+    },
+    "pagination":{
+        "previous": "Previous",
+        "goPrev": "Go to previous page",
+        "next": "Next",
+        "goNext": "Go to next page",
+        "more": "More pages"
+    },
+    "sidebar": {
+        "sidebar": "Sidebar",
+        "error": "useSidebar must be used within a SidebarProvider.",
+        "mobile": "Displays the mobile sidebar",
+        "toggle": "Toggle sidebar"
+    },
+    "alert":{
+        "protectPass": "Protect your wallet with a password"
+    },
+    "announcements": {
+        "intro": "Introducing: ",
+        "whatDo": "What you can do:",
+        "try": "Try {{title}}",
+        "later": "Maybe later",
+        "lightWork": "Lightning that works",
+        "bridge": "Bridge",
+        "bridgeDescr": "Swap between different Bitcoin layers while staying in full control.",
+        "fast": "Fast",
+        "fastDescr": "Boltz utilizes Layer 2 scaling technologies like the Lightning Network.",
+        "safe": "Safe",
+        "safeDescr": "Swaps on Boltz are atomic, cryptography ensures that users are always in control of their money.",
+        "lendaMess": "Take loans with Bitcoin as collateral. Receive USDC or USDT in 2 minutes.",
+        "chooseLoan": "Choose a loan",
+        "chooseLoanDescr": "Pick your preferred loan terms from a list of offers or post your own loan request. We will find you the right match.",
+        "lock": "Lock your Bitcoin",
+        "lockDescr": "Lock Bitcoin worth more than your loan amount as collateral. Your Bitcoin stays safe while you get the cash you need.",
+        "rcv": "Receive the funds",
+        "rcvDescr": "Get your loan instantly via your preferred method: bank transfer, stablecoins (USDT/USDC), or VISA card.",
+        "satoraMessage": "Swap Bitcoin to USDC or USDT instantly.",
+        "swapStable": "Swap to stablecoins",
+        "swapDescr": "Swap native $BTC for $USDT or $USDC on Ethereum and Polygon.",
+        "atomic": "Trustless Atomic Swaps",
+        "atomicDescr": "When a swap is started, both parties lock their funds in smart contracts. The swap either completes fully or both parties get refunded.",
+        "selfCust": "Self-custodial",
+        "selfCustDescr": "Satora is fully self-custodial. Your keys, your coins.",
+        "nostrBack": "Nostr Backups",
+        "nostrMsg": "Backup to Nostr.",
+        "backSett": "Backup settings",
+        "backMsg": "Have your Chimera wallet settings safely backed up on Nostr.",
+        "boltzSw":"Boltz swaps",
+        "boltzMsg": "Easily restore your Boltz swap history if you switch devices.",
+        "secure": "Secure",
+        "secureMsg": "All backups are encrypted and stored securely on the Nostr network."
+    },
+    "assetCard": {
+        "name": "Asset name"
+    },
+    "assetNet":{
+        "rcvArk": "Receive directly on Arkade",
+        "sendArk": "Send directly on Arkade",
+        "depFrom": "Deposit from {{name}}",
+        "withdrawTo": "Withdraw to {{name}}",
+        "arkNet": "Arkade network",
+        "select": "Select network",
+        "net": "Network",
+        "selectAsset": "Select Asset",
+        "ass": "Asset"
+    },
+    "balance": {
+        "wallet": "Wallet Balance"
+    },
+    "bankDet":{
+        "req": "Required",
+        "iban": "IBAN",
+        "bicSwift": "BIC / SWIFT Code",
+        "benef": "Beneficiary",
+        "name": "Bank Name",
+        "accNum": "Account Number",
+        "routeNum": "Routing Number",
+        "benefAdd": "Beneficiary Address",
+        "bankAdd": "Bank Address",
+        "refCode": "Reference Code (Required)",
+        "mustIncl": "You MUST include this reference in your bank transfer description for it to be processed correctly.",
+        "change": "Change",
+        "selTrans": "Select Transfer Method", 
+        "selCurr": "Select Currency"
+    } ,
+    "bankVal": {
+        "kycReq": "KYC Required",
+        "val": "Validation",
+        "complVer": "Complete Verification" 
+    },
+    "bootErr":{
+        "retry": "Retry",
+        "continue": "Continue anyway"
+    },
+    "checkList":{
+        "pass": "Set a strong password with:"
+    },
+    "details": {
+        "addr": "Address",
+        "arkNote": "Arknote",
+        "inv": "Invoice",
+        "swapId": "Swap ID",
+        "dest": "Destination",
+        "transId": "Transaction ID",
+        "assId": "Asset ID",
+        "dir": "Direction",
+        "ty": "Type",
+        "stat": "Status",
+        "when": "When",
+        "date": "Date",
+        "exp": "Expiry",
+        "am": "Amount",
+        "netFee": "Network fees",
+        "total": "Total"
+    },
+    "empty":{
+        "noAss": "No assets yet",
+        "import":"Import or mint one to get started",
+        "noVirt": "No virtual coins available",
+        "genImp": "Generate or import coins to continue",
+        "noLogs":"No logs available",
+        "useApp": "Start using the app to generate logs.",
+        "noSwap": "No swaps yet",
+        "swapHist": "Your swap history will appear here once you start swapping.",
+        "noTrans": "No transactions yet",
+        "makeTrans":"Make a transaction to get started."
+    },
+    "errorBoundary":{
+        "somethingWrong": "Something went wrong",
+        "unexpError": "The app ran into an unexpected error",
+        "reloadPrompt": "Please reload to continue",
+        "reload": "Reload"
+    },
+    "expandAddr": {
+        "btc": "BTC address",
+        "ark": "Arkade address",
+        "light": "Lightning address"
+    },
+    "installBanner": {
+        "addChimera": "Add CHIMERA to your home screen"
+    },
+    "needsPass": {
+        "passkeyNF": "Your passkey could not be found on this device. Restore your wallet using your secret phrase.",
+        "tryAgain": "Try again",
+        "restorePhrase": "Restore from secret phrase",
+        "unlockBio":"Unlock using biometrics",
+        "insPass":"Insert password",
+        "pass": "password",
+        "unlock": "Unlock wallet",
+        "forgot": "Forgot password? Restore with private key",
+        "passkeyNFText": "Passkey not found",
+        "pkText": "Your passkey could not be found on this device. You will need to restore your wallet using your secret phrase.",
+        "welcome": "Welcome back",
+        "unlockPk": "Unlock with your passkey to continue"
+    },
+    "newPass": {
+        "passwordMatch": "Passwords must match",
+        "save": "Save password",
+        "charMin": "8 characters minimum",
+        "num": "contain at least 1 number",
+        "special": "contain at least 1 special characte",
+        "pass": "Password",
+        "confirm": "Confirm password"
+    },
+    "onboarding": {
+        "takeBack": "Take back control of your money"
+    },
+    "pillNav": {
+        "card": "Card",
+        "trade": "Trade",
+        "apps": "Apps",
+        "settings": "Settings"
+    },
+    "reminder": {
+        "googleCal": "Google Calendar",
+        "appleCal": "Apple Calendar",
+        "outlook": "Outlook"
+    },
+    "scanner": {
+        "camera": "Camera not available",
+        "cancel": "Cancel"
+    },
+    "stakingBanner": {
+        "title": "Be ready for the Chimera Token TGE",
+        "descr": "Lock your CEXT and watch your rewards grow over time, with annual returns of up to 15%, paid directly in CEXT to your wallet.",
+        "live": "Live now!",
+        "launch": "Launching in",
+        "joinComm": "Join The Community"
+    }
+}

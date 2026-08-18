@@ -1,0 +1,63 @@
+{
+  "key": {
+    "savePhrase": "保存您的恢复短语",
+    "saveKey": "保存您的私钥",
+    "mnemonicWarning": "这是您在其他浏览器或设备上恢复钱包的唯一方式。请将其存放在安全的地方——密码管理器、加密笔记中，或安全地记录下来。",
+    "keyWarning": "这是您的私钥。请将其存放在安全的地方——密码管理器、加密笔记中，或安全地记录下来。",
+    "mnemonicSafe": "妥善保管您的恢复短语",
+    "keySafe": "妥善保管您的私钥",
+    "privacyWarning": "不要与任何人分享",
+    "lossWarning": "如果丢失，您将无法恢复钱包",
+    "hideKey": "隐藏私钥",
+    "revealKey": "显示私钥",
+    "hidePhrase": "隐藏恢复短语",
+    "revealPhrase": "显示恢复短语",
+    "copyPhrase": "复制恢复短语",
+    "copykey": "复制私钥",
+    "saved": "我已保存 — 前往钱包"
+  },
+  "warning": {
+    "important": "重要警告",
+    "warning": "⚠ 警告",
+    "lossFunds": "如果您在<strong>未备份密钥</strong>的情况下向钱包存入资金，您的资金将始终面临<strong>全部且不可逆转地损失</strong>的风险。",
+    "nonCustodial": "Chimera Wallet 是一个<strong>完全非托管钱包</strong>。如果您没有自己的密钥，<strong>任何人</strong>都无法帮助您恢复资金。",
+    "understood": "我已了解，继续",
+    "goBack": "返回"
+  },
+  "biometrics": {
+    "secureWallet": "保护您的钱包",
+    "enableBioAuth": "启用生物识别身份验证",
+    "bioAuthUnsupported": "此设备不支持生物识别身份验证。您需要使用密码解锁钱包。",
+    "fingerFaceAuth": "为了您的安全，请启用生物识别身份验证，以便使用指纹或面部识别解锁钱包。",
+    "enableBio": "启用生物识别",
+    "usePass": "改用密码"
+  },
+  "connection": {
+    "missingCreds": "缺少凭据",
+    "restoringSwaps": "正在恢复兑换...",
+    "swapsInfo": "已从网络恢复 {{num}} 个兑换",
+    "connectionFailed": "连接失败",
+    "serverConnection": "正在连接服务器"
+  },
+  "init": {
+    "createWallet": "创建新钱包",
+    "restoreWallet": "恢复钱包"
+  },
+  "restore": {
+    "invalidPhrase": "恢复短语无效",
+    "validationUnable": "无法验证私钥格式",
+    "validationUnableSimple": "无法验证密钥格式",
+    "restoringWallet": "正在恢复钱包...",
+    "pk": "私钥",
+    "recoveryPhraseKey": "恢复短语或私钥",
+    "phraseEntry": "输入您的 12 个单词恢复短语，或以 'nsec' 开头的私钥或原始十六进制密钥。请勿与任何人分享。"
+  },
+  "success": {
+    "walletRestore": "钱包已恢复！",
+    "liveWallet": "您的新钱包已准备就绪！",
+    "walletRestoreSucc": "您的钱包已成功恢复，现在可以使用。",
+    "walletCreatedSucc": "您的钱包已成功创建，现在可以使用。",
+    "takeControl": "重新掌控您的资金",
+    "goWallet": "前往钱包"
+  }
+}

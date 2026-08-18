@@ -1,0 +1,46 @@
+{
+  "send": {
+    "bitcoin": {
+      "address": "Por favor, asegúrate de enviar únicamente Bitcoin a una dirección válida de Arkade o de la red principal. Cualquier otra dirección provocará la pérdida permanente de los activos y no habrá posibilidad de recuperarlos.",
+      "time": "El tiempo de transferencia de Bitcoin en cadena depende de la congestión de la red y es, de media, de 10 minutos para la primera confirmación. Si tu billetera admite Arkade VTXO, la transacción será instantánea.",
+      "fees": "Las comisiones son dinámicas en la red Bitcoin y dependen de la rapidez con la que quieras recibir la transacción y de cómo la billetera emisora gestione las transacciones. Las comisiones para billeteras compatibles con Arkade son prácticamente nulas."
+    },
+    "arkade": {
+      "address": "Por favor, asegúrate de enviar únicamente Bitcoin a una dirección válida de Arkade o de la red principal. Cualquier otra dirección provocará la pérdida permanente de los activos y no habrá posibilidad de recuperarlos.",
+      "time": "El tiempo de transferencia en cadena de Arkade depende de la congestión de la red y es, de media, de 10 minutos para la primera confirmación. Si tu billetera admite Arkade VTXO, la transacción será instantánea.",
+      "fees": "Las comisiones son dinámicas en la red Arkade y dependen de la rapidez con la que quieras recibir la transacción y de cómo la billetera emisora gestione las transacciones. Las comisiones para billeteras compatibles con Arkade son prácticamente nulas."
+    },
+    "lightning": {
+      "address": "Por favor, envía únicamente utilizando una factura de la red Lightning. Cualquier otra dirección provocará la pérdida permanente de los activos y no habrá posibilidad de recuperarlos.",
+      "time": "El tiempo de transferencia en la red Lightning depende de varios factores y, de media, es de unos pocos segundos.",
+      "fees": "Las comisiones en Lightning son dinámicas y normalmente inferiores a 0,01 USD."
+    },
+    "bank": {
+      "time": "El tiempo de transferencia puede variar según el banco, desde instantáneo hasta 48 horas.",
+      "fees": "Las comisiones por retiros bancarios son del 0,3 % del importe enviado si supera los 1000 CHF.\nLas comisiones por retiros bancarios son del 1 % del importe enviado si es inferior a 1000 CHF.\nTu banco podría cobrar comisiones adicionales de las que no tenemos conocimiento."
+    }
+  },
+
+  "receive": {
+    "bitcoin": {
+      "address": "Por favor, envía únicamente Bitcoin utilizando Arkade o la red principal. Cualquier otro activo enviado se perderá permanentemente y no habrá posibilidad de recuperarlo.",
+      "time": "El tiempo de transferencia de Bitcoin en cadena depende de la congestión de la red y es, de media, de 10 minutos para la primera confirmación.",
+      "fees": "Las comisiones son dinámicas en la red Bitcoin y dependen de la rapidez con la que quieras recibir la transacción y de cómo la billetera emisora gestione las transacciones."
+    },
+    "arkade": {
+      "address": "Por favor, envía únicamente Bitcoin utilizando una billetera compatible con Arkade. Cualquier otro activo enviado se perderá permanentemente y no habrá posibilidad de recuperarlo.",
+      "time": "Si el remitente admite Arkade VTXO, la transacción será instantánea.",
+      "fees": "Las comisiones para billeteras compatibles con Arkade son prácticamente nulas."
+    },
+    "lightning": {
+      "address": "Por favor, envía únicamente Bitcoin utilizando la red Lightning. Cualquier otro activo enviado se perderá permanentemente y no habrá posibilidad de recuperarlo.",
+      "info": "Para recibir los fondos debes permanecer en la aplicación hasta que la transacción se complete.",
+      "time": "El tiempo de transferencia en la red Lightning depende de varios factores y, de media, es de unos pocos segundos.",
+      "fees": "Las comisiones en Lightning son dinámicas y normalmente inferiores a 0,01 USD."
+    },
+    "bank": {
+      "time": "El tiempo de transferencia puede variar según el banco, desde instantáneo hasta 48 horas.",
+      "fees": "Las comisiones por depósitos bancarios son del 0,6 % del importe recibido si supera los 1000 CHF.\nLas comisiones por depósitos bancarios son del 1 % del importe recibido si es inferior a 1000 CHF.\nTu banco podría cobrar comisiones adicionales de las que no tenemos conocimiento."
+    }
+  }
+}

@@ -5,9 +5,11 @@ import { notificationApiSupport, requestPermission, sendTestNotification } from 
 import Header from './Header'
 import Content from '../../components/Content'
 import Toggle from '../../components/Toggle'
+import {useTranslation} from 'react-i18next'
 
 export default function Notifications() {
   const { backupConfig, config, updateConfig } = useContext(ConfigContext)
+  const {t} = useTranslation()
 
   const handleChange = async () => {
     if (!notificationApiSupport) return
@@ -26,18 +28,17 @@ export default function Notifications() {
   }
 
   const subText = notificationApiSupport
-    ? "Get notified when an update is available or a payment is received. You'll need to grant permission if asked."
-    : "Your browser does not support the Notifications API. If on iOS you'll need to 'Add to homescreen' and be running iOS 16.4 or higher."
-
+    ? t('settings.notifications.update')
+    : t('settings.notifications.unsupported')
   return (
     <>
-      <Header text='Notifications' back />
+      <Header text={t('settings.notifications.notifications')} back />
       <Content>
         <Padded>
           <Toggle
             subtext={subText}
             onClick={handleChange}
-            text='Allow notifications'
+            text={t('settings.notifications.allow')}
             testId='toggle-notifications'
             checked={config.notifications}
           />

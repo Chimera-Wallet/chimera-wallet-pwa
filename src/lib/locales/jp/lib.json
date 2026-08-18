@@ -1,0 +1,26 @@
+{
+  "wallet": {
+    "fetchCoins": "コインを取得中...",
+    "fetchTrans": "取引を取得中...",
+    "updBal": "残高を更新中...",
+    "loadingMeta": "アセットメタデータを読み込み中...",
+    "unableLoadWall": "ウォレットデータを読み込めません。接続を確認して再試行してください。",
+    "startWall": "ウォレットを起動中...",
+    "migrateData": "データを移行中",
+    "retryConn": "接続を再試行中..."
+  },
+  "config": {
+    "statement": "明細",
+    "stateDescr": "取引履歴と口座明細を表示",
+    "stateInfoTitle": "あなたの資産概要",
+    "stateInfoDescr": "すべての取引、残高、アカウント活動の詳細な明細を一か所で確認できます。",
+    "referral": "紹介プログラム",
+    "referralDescr": "友達を招待して報酬を獲得",
+    "referralInfoTitle": "紹介プログラムとは？",
+    "referralInfoDescr": "あなたが中心となり、報酬は無限に広がります！\n\nあなたのリンクから登録した友達が支払うすべての手数料の20%を永久に獲得できます。\n上限なし、制限なし、有効期限なし。継続的に報酬を受け取れます。共有すればするほど、より多く稼げます。準備はできましたか？\n\nリンクをコピーして広め、報酬を受け取りましょう！",
+    "giftCard": "ギフトカード",
+    "giftCardDescr": "Bitcoinでギフトカードを購入・利用",
+    "cardReserve": "カード予約",
+    "cardReserveDescr": "Chimeraデビットカードを予約"
+  }
+}

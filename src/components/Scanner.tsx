@@ -8,6 +8,7 @@ import { QRCanvas, frameLoop, frontalCamera } from 'qr/dom.js'
 import { useRef, useEffect, useState } from 'react'
 import { extractError } from '../lib/error'
 import QrScanner from 'qr-scanner'
+import { useTranslation } from 'react-i18next'
 
 const videoStyle: React.CSSProperties = {
   border: '1px solid var(--neutral-300)',
@@ -89,17 +90,19 @@ function ScannerMills({ close, label, onData, onError, onSwitch }: ScannerProps)
     if (onSwitch) onSwitch()
   }
 
+  const {t} = useTranslation()
+
   return (
     <>
       <Header auxFunc={handleSwitch} auxText='M' text={label} back={handleClose} />
       <Content>
         <Padded>
-          <ErrorMessage error={error} text='Camera not available' />
+          <ErrorMessage error={error} text={t('components.scanner.camera')} />
           <video style={videoStyle} ref={videoRef} />
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        <Button onClick={handleClose} label='Cancel' />
+        <Button onClick={handleClose} label={t('components.scanner.cancel')} />
       </ButtonsOnBottom>
     </>
   )
@@ -111,6 +114,7 @@ function ScannerQr({ calculateScanRegion, close, label, onData, onError, onSwitc
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const qrScanner = useRef<QrScanner | null>(null)
+  const {t} = useTranslation()
 
   useEffect(() => {
     QrScanner.hasCamera().then(setHasCamera)
@@ -162,14 +166,14 @@ function ScannerQr({ calculateScanRegion, close, label, onData, onError, onSwitc
       <Header auxFunc={handleSwitch} auxText={calculateScanRegion ? 'q' : 'Q'} text={label} back={handleClose} />
       <Content>
         <Padded>
-          <ErrorMessage error={error} text='Camera not available' />
+          <ErrorMessage error={error} text={t('components.scanner.camera')} />
           <div id='video-wrapper'>
             <video id='qr-scanner' ref={videoRef} style={videoStyle} />
           </div>
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        <Button onClick={handleClose} label='Cancel' />
+        <Button onClick={handleClose} label={t('components.scanner.cancel')} />
       </ButtonsOnBottom>
     </>
   )

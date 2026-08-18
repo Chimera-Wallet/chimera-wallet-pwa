@@ -1,0 +1,215 @@
+{
+  "funds": {
+    "insufficient": "残高不足です",
+    "insufficientExtra": "残高不足です。現在の残高は {{balance}} BTC です",
+    "insufficientFees": "手数料を支払うための残高が不足しています"
+  },
+  "LNURL": {
+    "below": "金額がLNURLの最小制限を下回っています",
+    "above": "金額がLNURLの最大制限を超えています",
+    "funds": "LNURLに必要な残高が不足しています",
+    "fetch": "LNURLの条件を取得できません",
+    "address": "無効なアドレスまたはLNURLです"
+  },
+  "satoshi": {
+    "minimum": "金額が1サトシ未満です",
+    "minLimit": "金額が最小制限を下回っています",
+    "maxLimit": "金額が最大制限を超えています",
+    "invoiceAmount": "請求書には金額が指定されている必要があります"
+  },
+  "network": {
+    "below": "金額がネットワーク手数料を下回っています",
+    "tooLow": "ネットワーク手数料をカバーするには金額が少なすぎます"
+  },
+  "general": {
+    "server": "サーバーに接続できません",
+    "swap": "スワップを作成できません",
+    "missingAddress": "アドレスがありません",
+    "missingAsset": "アセット数量がありません",
+    "missingAmount": "金額がありません",
+    "missingAssetList": "アセット一覧がありません",
+    "missingTotal": "合計金額がありません",
+    "missingSats": "サトシ数量がありません",
+    "swapAddUnavailable": "スワップアドレスを利用できません"
+  },
+  "send": {
+    "bitcoin": {
+      "address": "選択された方法にはBitcoinアドレスが必要です",
+      "type": "選択された方法には別のアドレスタイプが必要です",
+      "lnurl": "選択された方法はLNURLをサポートしていません"
+    },
+    "arkade": {
+      "address": "選択された方法にはArkadeアドレスが必要です",
+      "addressUnable": "Arkadeアドレスを取得できません",
+      "type": "選択された方法には別のアドレスタイプが必要です",
+      "server": "Arkサーバーに接続できません",
+      "lnurl": "LNURLはArk支払いをサポートしていません",
+      "addressReceiveLnurl": "LNURLから受信したArkadeアドレスが無効です",
+      "assets": "アセットはArkadeアドレスにのみ送信できます",
+      "serverKeyMiss": "Arkサーバーキーが一致しません"
+    },
+    "lightning": {
+      "address": "選択された方法にはLightning請求書アドレスが必要です",
+      "type": "選択された方法には別のアドレスタイプが必要です",
+      "swaps": "Lightningスワップが有効になっていません"
+    },
+    "bank": {
+      "transfer": "銀行振込は「送金」セクションで処理されます",
+      "ibanName": "IBANと口座名義人名を入力してください",
+      "bicSwift": "BIC/SWIFTコード、口座名義人名、口座番号を入力してください",
+      "accountRouting": "口座番号とルーティング番号を入力してください",
+      "invalidTransfer": "無効な送金方法です",
+      "insufficientBalance": "残高不足です。約 {{required}} BTC が必要ですが、現在の残高は {{balance}} BTC です",
+      "failedWithdrawal": "出金注文の作成に失敗しました"
+    },
+    "wallet": {
+      "notReady": "ウォレットの準備ができていません",
+      "notConfigured": "出金用ウォレットが設定されていません"
+    },
+    "parsing": {
+      "bip21": "BIP21を解析できません",
+      "recipientAddress": "受取人アドレスが無効です"
+    },
+    "chain": {
+      "on": "オンチェーン送金は許可されていません",
+      "off": "オフチェーン送金は許可されていません",
+      "self": "自分自身には送金できません",
+      "invalidAddress": "有効な {{chain}} アドレスを入力してください"
+    },
+    "general": {
+      "errorSend": "取引送信エラー"
+    }
+  },
+  "receive": {
+    "general": {
+      "offChain": "オフチェーンアドレスを取得できません",
+      "boarding": "ボーディングアドレスを取得できません",
+      "destination": "送金先アドレスを取得できません",
+      "kycReq": "KYC認証が必要です",
+      "amount": "無効な金額です",
+      "faucetFail": "フォーセットに失敗しました",
+      "pendingSwap": "リバーススワップの作成に失敗しました",
+      "chainSwap": "チェーンスワップの作成に失敗しました",
+      "reverseSwap": "リバーススワップの作成に失敗しました",
+      "getAddress": "アドレスの取得に失敗しました: {{address}}"
+    },
+    "bank": {
+      "failedOrderExtra": "注文の作成に失敗しました - 注文情報が返されませんでした",
+      "failedOrderSimple": "注文の作成に失敗しました",
+      "failedDeposit": "入金注文の作成に失敗しました",
+      "noOrderInfo": "利用可能な注文情報がありません",
+      "failedLoad": "注文の読み込みに失敗しました",
+      "failedRefresh": "注文の更新に失敗しました"
+    },
+    "lightning": {
+      "tempUnavailable": "Lightningは一時的に利用できません。このQRコードはArkadeおよびオンチェーン支払いのみをサポートしています。"
+    },
+    "wrapService": {
+      "validAddress": "有効な {{name}} アドレスを入力してください",
+      "arkadeRcvAddress": "Arkade受信アドレスを取得できません",
+      "failedWrapQuote": "ラップ見積もりの作成に失敗しました"
+    }
+  },
+  "initialisation": {
+    "arkadeUnreachable": "Arkadeサーバーに接続できません。設定 → Arkadeサーバーを確認してください。",
+    "invalidPass": "無効なパスワードです",
+    "unlockTimeout": "ロック解除がタイムアウトしました。もう一度お試しください。"
+  },
+  "backup": {
+    "nostrFail": "Nostrへのバックアップに失敗しました"
+  },
+  "biometric": {
+    "failedDisable": "生体認証を無効にできませんでした。もう一度お試しください。",
+    "failedEnable": "生体認証を有効にできませんでした。もう一度お試しください。"
+  },
+  "delegates": {
+    "invalidPubkey": "期待されるサーバー公開鍵が無効です",
+    "unableConnect": "接続できません",
+    "invalidResponse": "デリゲートからの応答が無効です",
+    "missingFee": "デリゲート手数料がありません",
+    "invalidFee": "デリゲート手数料が無効です",
+    "negativeFee": "デリゲート手数料は負の値にできません",
+    "missingPubkey": "デリゲート公開鍵がありません",
+    "invalidPubkeySize": "デリゲート公開鍵サイズが無効です",
+    "invalidPubkeyHex": "デリゲート公開鍵の16進形式が無効です",
+    "missingAddress": "デリゲートアドレスがありません",
+    "invalidAddress": "デリゲートアドレスが無効です",
+    "invalidServerKey": "デリゲートサーバーキーが無効です",
+    "invalidJSONResp": "デリゲート応答内のJSONが無効です"
+  },
+  "password": {
+    "failedUpdate": "パスワードの更新に失敗しました"
+  },
+  "server": {
+    "same": "同じサーバーです",
+    "unableConnect": "接続できません"
+  },
+  "support": {
+    "notConfigured": "サポートチャットが設定されていません",
+    "failedLoad": "サポートチャットの読み込みに失敗しました",
+    "unavailable": "利用できません"
+  },
+  "verification": {
+    "failedAuth": "認証の確認に失敗しました。もう一度お試しください。",
+    "failedVerif": "認証の初期化に失敗しました。もう一度お試しください。",
+    "email": "有効なメールアドレスを入力してください。",
+    "failedEmailSend": "認証メールの送信に失敗しました。もう一度お試しください。",
+    "failedEmailResend": "認証メールの再送信に失敗しました。もう一度お試しください。"
+  },
+  "vtxo": {
+    "failedFetch": "コインの取得に失敗しました"
+  },
+  "addressBook": {
+    "enterAdd": "アドレスを入力してください",
+    "invalidAdd": "{{name}} が無効です",
+    "contactName": "連絡先名を入力してください"
+  },
+  "assets": {
+    "positive": "数量は正の数である必要があります",
+    "idNF": "アセットIDが必要です",
+    "balance": "残高 {{amount}} {{tick}} を超えてバーンすることはできません",
+    "idHex": "アセットIDは68文字の16進文字列である必要があります",
+    "assNF": "アセットが見つかりません",
+    "range": "小数桁は0から{{max}}までの整数である必要があります"
+  },
+  "boltz": {
+    "swapsRestore": "スワップ復元エラー: {{error}}",
+    "integration": "Boltz連携はまだ準備中です。しばらくしてから再試行してください。",
+    "integrationSimple": "Boltz連携はまだ準備中です",
+    "scan": "スキャンできませんでした: {{err}}",
+    "recover": "{{swept}} VTXO{{out}} を回収しました",
+    "noSweep": "回収されたものはありません。後でもう一度お試しください。"
+  },
+  "lendasat": {
+    "walletNot": "ウォレットが初期化されていません",
+    "unableSending": "Bitcoinを送信できません",
+    "unsuppAddress": "サポートされていないアドレス {{addr}}",
+    "unableSendNonBtc": "BTC以外のアセットは送信できません",
+    "unableFiat": "法定通貨は送信できません",
+    "arkAddrLoad": "Arkadeアドレスがまだ読み込まれていません",
+    "boardAddrLoad": "ボーディングアドレスがまだ読み込まれていません",
+    "unsuppAddr": "サポートされていないアドレスタイプ: {{addr}}",
+    "unkownAddr": "不明なアドレスタイプ: {{addr}}",
+    "npubSupp": "NPubはサポートされていません"
+  },
+  "satora": {
+    "satora": "Satora",
+    "addressType": "このアドレスタイプはサポートされていません",
+    "arkAddr": "Arkadeアドレスがまだ読み込まれていません",
+    "walletNot": "ウォレットが初期化されていません",
+    "invalidAm": "無効な金額です",
+    "unableSending": "Bitcoinを送信できません",
+    "unsuppAddress": "サポートされていないアドレス {{addr}}",
+    "notSat": "Satoraでは未実装です"
+  },
+  "swap": {
+    "noInfo": "利用可能な注文情報がありません",
+    "failedLoad": "注文の読み込みに失敗しました",
+    "failedRefresh": "注文の更新に失敗しました",
+    "failedCreate": "注文の作成に失敗しました",
+    "failedAss": "アセットの読み込みに失敗しました",
+    "valAm": "有効な金額を入力してください",
+    "kycVer": "1,000 EURを超える金額にはKYC認証が必要です",
+    "destAddr": "送金先アドレスを取得できません"
+  }
+}

@@ -3,6 +3,7 @@ import InputPassword from './InputPassword'
 import FlexCol from './FlexCol'
 import CheckList from './CheckList'
 import { StrengthBars, calcStrength } from './Strength'
+import { useTranslation } from 'react-i18next'
 
 interface NewPasswordProps {
   setLabel: (label: string) => void
@@ -14,11 +15,12 @@ export default function NewPassword({ onNewPassword, setLabel }: NewPasswordProp
   const [focus, setFocus] = useState('password')
   const [password, setPassword] = useState('')
   const [strength, setStrength] = useState(0)
+  const {t} = useTranslation()
 
   useEffect(() => {
     onNewPassword(password === confirm ? password : null)
-    if (!password || password !== confirm) return setLabel('Passwords must match')
-    setLabel('Save password')
+    if (!password || password !== confirm) return setLabel(t('components.newPass.passwordMatch'))
+    setLabel(t('components.newPass.save'))
   }, [password, confirm])
 
   const handleChangePassword = (e: any) => {
@@ -36,15 +38,15 @@ export default function NewPassword({ onNewPassword, setLabel }: NewPasswordProp
 
   const passwordChecks = [
     {
-      text: '8 characters minimum',
+      text: t('components.newPass.charMin'),
       done: password.length > 7,
     },
     {
-      text: 'contain at least 1 number',
+      text: t('components.newPass.num'),
       done: /\d/.test(password),
     },
     {
-      text: 'contain at least 1 special character',
+      text: t('components.newPass.special'),
       done: /\W/.test(password),
     },
   ]
@@ -54,7 +56,7 @@ export default function NewPassword({ onNewPassword, setLabel }: NewPasswordProp
       <FlexCol testId='new-password'>
         <InputPassword
           focus={focus === 'password'}
-          label='Password'
+          label={t('components.newPass.pass')}
           onChange={handleChangePassword}
           onEnter={handleEnter}
         />
@@ -64,7 +66,7 @@ export default function NewPassword({ onNewPassword, setLabel }: NewPasswordProp
       <FlexCol testId='confirm-password'>
         <InputPassword
           focus={focus === 'confirm'}
-          label='Confirm password'
+          label={t('components.newPass.confirm')}
           onChange={handleChangeConfirm}
           onEnter={handleEnter}
         />

@@ -1,0 +1,36 @@
+{
+  "wallet": {
+    "fetchCoins": "Obteniendo monedas...",
+    "fetchTrans": "Obteniendo transacciones...",
+    "updBal": "Actualizando saldo...",
+    "loadingMeta": "Cargando metadatos de activos...",
+    "unableLoadWall": "No se pudieron cargar los datos de la billetera. Verifica tu conexión e inténtalo de nuevo.",
+    "startWall": "Iniciando billetera...",
+    "migrateData": "Migrando datos",
+    "retryConn": "Reintentando conexión..."
+  },
+  "config": {
+    "statement": "Estado de cuenta",
+    "stateDescr": "Ver tu historial de transacciones y estados de cuenta",
+    "stateInfoTitle": "Tu resumen financiero",
+    "stateInfoDescr": "Accede a estados detallados de todas tus transacciones, saldos y actividad de la cuenta en un solo lugar.",
+    "referral": "Referidos",
+    "referralDescr": "Invita a tus amigos y gana recompensas",
+    "referralInfoTitle": "¿Qué es el programa de referidos?",
+    "referralInfoDescr": "¡Tú estás en el centro y las recompensas son ilimitadas!\n\nGana el 20 % de todas las comisiones generadas por cada amigo que se registre con tu enlace, para siempre.\nSin límites, sin restricciones y sin fecha de vencimiento; solo recompensas continuas. Cuanto más compartas, más ganarás. ¿Listo?\n\nCopia tu enlace, compártelo y deja que las recompensas lleguen.",
+    "giftCard": "Tarjetas regalo",
+    "giftCardDescr": "Compra y canjea tarjetas regalo con Bitcoin",
+    "cardReserve": "Reserva de tarjeta",
+    "cardReserveDescr": "Reserva tu tarjeta de débito Chimera"
+  },
+  "transactions": {
+    "sentAss": "{{ass}} enviado",
+    "rcvAss": "{{ass}} recibido",
+    "recent": "Transacciones recientes",
+    "assets": "Activos",
+    "confirmed": "Confirmada",
+    "pending": "Pendiente",
+    "failed": "Fallida",
+    "copyAddr": "Copiar {{title}}"
+}
+}

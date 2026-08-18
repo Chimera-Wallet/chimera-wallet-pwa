@@ -20,6 +20,7 @@ import {
   getSupportedCircuits,
 } from '../lib/bankTransferConfig'
 import SelectSheet from './SelectSheet'
+import { useTranslation } from 'react-i18next'
 
 // ============================================
 // Copy Button (reusable)
@@ -65,7 +66,7 @@ export function BankFieldBox({
   multiline = false,
 }: BankFieldBoxProps) {
   if (!value) return null
-
+  const {t} = useTranslation()
   return (
     <Shadow fat>
       <FlexCol gap='0.25rem'>
@@ -73,7 +74,7 @@ export function BankFieldBox({
           <TextSecondary>{label}</TextSecondary>
           {required ? (
             <Text small color='orange' bold>
-              Required
+              {t('components.bankDet.req')}
             </Text>
           ) : null}
         </FlexRow>
@@ -106,12 +107,13 @@ interface SepaDataViewProps {
 }
 
 export function SepaDataView({ iban, bic, beneficiary, bankName }: SepaDataViewProps) {
+  const {t} = useTranslation()
   return (
     <FlexCol gap='0.75rem'>
-      <BankFieldBox label='IBAN' value={iban ?? ''} copyable />
-      <BankFieldBox label='BIC / SWIFT Code' value={bic ?? ''} copyable />
-      <BankFieldBox label='Beneficiary' value={beneficiary ?? ''} />
-      <BankFieldBox label='Bank Name' value={bankName ?? ''} />
+      <BankFieldBox label={t('components.bankDet.iban')} value={iban ?? ''} copyable />
+      <BankFieldBox label={t('components.bankDet.bicSwift')} value={bic ?? ''} copyable />
+      <BankFieldBox label={t('components.bankDet.benef')} value={beneficiary ?? ''} />
+      <BankFieldBox label={t('components.bankDet.name')} value={bankName ?? ''} />
     </FlexCol>
   )
 }
@@ -133,12 +135,13 @@ export function SwiftDataView({
   beneficiary,
   bankName,
 }: SwiftDataViewProps) {
+  const {t} = useTranslation()
   return (
     <FlexCol gap='0.75rem'>
-      <BankFieldBox label='IBAN' value={iban ?? ''} copyable />
-      <BankFieldBox label='BIC / SWIFT Code' value={bic ?? ''} copyable />
-      <BankFieldBox label='Beneficiary' value={beneficiary ?? ''} />
-      <BankFieldBox label='Bank Name' value={bankName ?? ''} />
+      <BankFieldBox label={t('components.bankDet.iban')} value={iban ?? ''} copyable />
+      <BankFieldBox label={t('components.bankDet.bicSwift')} value={bic ?? ''} copyable />
+      <BankFieldBox label={t('components.bankDet.benef')} value={beneficiary ?? ''} />
+      <BankFieldBox label={t('components.bankDet.name')} value={bankName ?? ''} />
     </FlexCol>
   )
 }
@@ -164,14 +167,15 @@ export function UsWireDataView({
   bankName,
   bankAddress,
 }: UsWireDataViewProps) {
+  const {t} = useTranslation()
   return (
     <FlexCol gap='0.75rem'>
-      <BankFieldBox label='Account Number' value={accountNumber ?? ''} copyable />
-      <BankFieldBox label='Routing Number' value={routingNumber ?? ''} copyable />
-      <BankFieldBox label='Beneficiary' value={beneficiary ?? ''} />
-      <BankFieldBox label='Beneficiary Address' value={beneficiaryAddress ?? ''} multiline />
-      <BankFieldBox label='Bank Name' value={bankName ?? ''} />
-      <BankFieldBox label='Bank Address' value={bankAddress ?? ''} multiline />
+      <BankFieldBox label={t('components.bankDet.accNum')} value={accountNumber ?? ''} copyable />
+      <BankFieldBox label={t('components.bankDet.routeNum')} value={routingNumber ?? ''} copyable />
+      <BankFieldBox label={t('components.bankDet.benef')} value={beneficiary ?? ''} />
+      <BankFieldBox label={t('components.bankDet.benefAdd')} value={beneficiaryAddress ?? ''} multiline />
+      <BankFieldBox label={t('components.bankDet.name')} value={bankName ?? ''} />
+      <BankFieldBox label={t('components.bankDet.bankAdd')} value={bankAddress ?? ''} multiline />
     </FlexCol>
   )
 }
@@ -186,19 +190,19 @@ interface TransferReferenceBoxProps {
 
 export function TransferReferenceBox({ reference }: TransferReferenceBoxProps) {
   if (!reference) return null
-
-  return (
+  const {t} = useTranslation()
+  return ( 
     <Shadow fat border>
       <FlexCol gap='0.5rem'>
         <FlexRow between>
           <Text bold color='orange'>
-            Reference Code (Required)
+            {t('components.bankDet.refCode')}
           </Text>
           <CopyButton value={reference} />
         </FlexRow>
         <div style={{ fontFamily: 'Titillium Web', fontSize: '1.1rem', color: 'var(--white)' }}>{reference}</div>
         <TextSecondary>
-          You MUST include this reference in your bank transfer description for it to be processed correctly.
+          {t('components.bankDet.mustIncl')}
         </TextSecondary>
       </FlexCol>
     </Shadow>
@@ -228,13 +232,14 @@ export function BankCircuitSelector({ currency, selectedCircuit, onSelect }: Ban
       </Shadow>
     )
   }
+  const {t} = useTranslation()
 
   return (
     <>
       <Shadow input onClick={() => setIsOpen(true)}>
         <FlexRow between>
           <Text>{config.circuitLabels[selectedCircuit]}</Text>
-          <TextSecondary>Change</TextSecondary>
+          <TextSecondary>{t('components.bankDet.change')}</TextSecondary>
         </FlexRow>
       </Shadow>
       <SelectSheet
@@ -246,7 +251,7 @@ export function BankCircuitSelector({ currency, selectedCircuit, onSelect }: Ban
           label: config.circuitLabels[circuit],
         }))}
         selected={selectedCircuit}
-        title='Select Transfer Method'
+        title={t('components.bankDet.selTrans')}
       />
     </>
   )
@@ -276,13 +281,14 @@ export function BankCurrencySelector({ selectedCurrency, onSelect, currencies }:
       </Shadow>
     )
   }
+  const {t} = useTranslation()
 
   return (
     <>
       <Shadow input onClick={() => setIsOpen(true)}>
         <FlexRow between>
           <Text>{config.currencyLabels[selectedCurrency]}</Text>
-          <TextSecondary>Change</TextSecondary>
+          <TextSecondary>{t('components.bankDet.change')}</TextSecondary>
         </FlexRow>
       </Shadow>
       <SelectSheet
@@ -294,7 +300,7 @@ export function BankCurrencySelector({ selectedCurrency, onSelect, currencies }:
           label: config.currencyLabels[currency],
         }))}
         selected={selectedCurrency}
-        title='Select Currency'
+        title={t('components.bankDet.selCurr')}
       />
     </>
   )

@@ -5,10 +5,12 @@ import Padded from '../../components/Padded'
 import Content from '../../components/Content'
 import { ConfigContext, resolveTheme } from '../../providers/config'
 import Header from './Header'
+import {useTranslation} from 'react-i18next'
 
 export default function Theme() {
   const { backupConfig, config, effectiveTheme, systemTheme, updateConfig } = useContext(ConfigContext)
   const clickCoords = useRef<{ x: number; y: number } | null>(null)
+  const {t} = useTranslation()
 
   const handleChange = async (theme: string) => {
     const newConfig = { ...config, theme: theme as Themes }
@@ -44,7 +46,7 @@ export default function Theme() {
 
   return (
     <>
-      <Header text='Theme' back />
+      <Header text= {t('common.general.theme')} back />
       <Content>
         <Padded>
           <div

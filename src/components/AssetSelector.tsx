@@ -4,6 +4,7 @@ import AssetIcon from '../icons/AssetIcon'
 import SelectSheet from './SelectSheet'
 import SelectorField from './SelectorField'
 import {fromSatoshis} from '../lib/format'
+import { useTranslation } from 'react-i18next'
 
 interface AssetSelectorProps {
   label?: string
@@ -34,6 +35,8 @@ export default function AssetSelector({
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen
   const setIsOpen = externalSetIsOpen || setInternalIsOpen
 
+  const {t} = useTranslation()
+
   const selectedConfig = getAssetConfig(selected)
   const options = ASSET_LIST.filter((asset) => !asset.comingSoon).map((asset) => ({
     id: asset.symbol,
@@ -50,7 +53,7 @@ export default function AssetSelector({
     <>
       <SelectorField
         icon={<AssetIcon symbol={selected} size={iconSize} />}
-        label={label !== undefined ? label : 'Asset'}        
+        label={label !== undefined ? label : t('components.assetNet.ass')}        
         onClick={() => setIsOpen(true)}
         value={selectedConfig?.name || selected}
         sublabel={selectedBalanceLabel}
@@ -63,7 +66,7 @@ export default function AssetSelector({
         onSelect={(id) => onSelect(id as AssetSymbol)}
         options={options}
         selected={selected}
-        title='Select Asset'
+        title={t('components.assetNet.selectAsset')}
       />
     </>
   )

@@ -25,6 +25,7 @@ import { validateMnemonic } from '@scure/bip39'
 import { wordlist } from '@scure/bip39/wordlists/english'
 import { deriveNostrKeyFromMnemonic } from '../../lib/mnemonic'
 import { AspContext } from '../../providers/asp'
+import {useTranslation} from 'react-i18next'
 
 // The ARK server is env-only (single source of truth). A backup made on another
 // network carries a different aspUrl; this detects that so we can refuse to
@@ -51,7 +52,9 @@ export default function InitRestore() {
   const { setInitInfo } = useContext(FlowContext)
   const { aspInfo } = useContext(AspContext)
 
-  const buttonLabel = 'Continue'
+  const {t} = useTranslation()
+
+  const buttonLabel = t('common.general.continue')
 
   const [error, setError] = useState('')
   const [label, setLabel] = useState(buttonLabel)
@@ -81,8 +84,8 @@ export default function InitRestore() {
       } else {
         setMnemonic(undefined)
         setPrivateKey(undefined)
-        setLabel('Invalid recovery phrase')
-        setError('Invalid recovery phrase')
+        setLabel(t('init.restore.invalidPhrase'))
+        setError(t('init.restore.invalidPhrase'))
       }
       return
     }
@@ -94,10 +97,10 @@ export default function InitRestore() {
       if (trimmed.match(/^nsec/)) pk = nsecToPrivateKey(trimmed)
       else pk = hex.decode(trimmed)
       const invalid = invalidPrivateKey(pk)
-      setLabel(invalid ? 'Unable to validate private key format' : buttonLabel)
+      setLabel(invalid ? t('init.restore.validationUnable') : buttonLabel)
       setError(invalid)
     } catch (err) {
-      setLabel('Unable to validate key format')
+      setLabel( t('init.restore.validationUnableSimple'))
       setError(extractError(err))
     }
     setPrivateKey(pk)
@@ -156,23 +159,22 @@ export default function InitRestore() {
   const disabled = Boolean((!privateKey && !mnemonic) || error)
 
   if (restoring)
-    return <Loading text='Restoring wallet...' />
+    return <Loading text={t('init.restore.restoringWallet')} />
 
   return (
     <>
-      <Header text='Restore wallet' back />
+      <Header text={t('init.init.restoreWallet')} back />
       <Content>
         <Padded>
           <OnboardStaggerContainer>
             <OnboardStaggerChild>
               <FlexCol between>
                 <FlexCol>
-                  <Input name='private-key' label='Recovery phrase or private key' onChange={setSomeKey} />
+                  <Input name={t('init.restore.pk')} label={t('init.restore.recoveryPhraseKey')} onChange={setSomeKey} />
                   <ErrorMessage error={Boolean(error)} text={error} />
                 </FlexCol>
                 <TextSecondary wrap>
-                  Enter your 12-word recovery phrase, or a private key starting with 'nsec' or a raw hex key. Do not
-                  share it with anyone.
+                  {t('init.restore.phraseEntry')}
                 </TextSecondary>
               </FlexCol>
             </OnboardStaggerChild>
@@ -181,7 +183,7 @@ export default function InitRestore() {
       </Content>
       <ButtonsOnBottom>
         <Button onClick={handleProceed} label={label} disabled={disabled} />
-        <Button onClick={handleCancel} label='Cancel' secondary />
+        <Button onClick={handleCancel} label={t('common.general.cancel')} secondary />
       </ButtonsOnBottom>
     </>
   )

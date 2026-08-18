@@ -52,6 +52,8 @@ import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
 import clockIcon from '../../../../public/images/icons/ Clock.svg'
 import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
 import rightIcon from '../../../../public/images/icons/ Right.png'
+import i18n from '../../../lib/i18n'
+import { useTranslation } from 'react-i18next'
 
 export default function BankReceive() {
   const { navigate, goBack } = useContext(NavigationContext)
@@ -60,6 +62,8 @@ export default function BankReceive() {
   const { notifyResult } = useContext(TxResultContext)
 
   const bankConfig = getBankTransferConfigSync()
+
+  const { t } = useTranslation()
 
   // Asset and network state (matching ReceiveAmount layout)
   const [selectedAsset, setSelectedAsset] = useState<AssetSymbol>('BTC')
@@ -111,7 +115,7 @@ export default function BankReceive() {
     }
 
     if (!arkAddress) {
-      setError('Unable to get destination address')
+      setError(t('errors.receive.general.destination'))
       return
     }
 
@@ -175,19 +179,18 @@ export default function BankReceive() {
     return (
       <>
         <Header
-          text='Bank Deposit'
+          text={t('common.notifications.receive.bank.bankDeposit')}
           back={goBack}
           auxIcon={<TransactionsIcon />}
           auxFunc={handleOrderHistory}
-          auxAriaLabel='View order history'
+          auxAriaLabel= {t('common.notifications.receive.bank.orderHistory')}
         />
         <Content>
           <Padded>
             <FlexCol gap='1.5rem'>
-              <Info color='blue' title='Send Bank Transfer'>
+              <Info color='blue' title={t('common.notifications.receive.bank.sendTransfer')}>
                 <TextSecondary>
-                  Transfer {prettyNumber(numAmount, 2)} {currency} to the bank details below. Your Bitcoin will be
-                  credited once the transfer is confirmed.
+                  {t('common.notifications.receive.bank.transferDetails', {amount: prettyNumber(numAmount, 2), currency })}
                 </TextSecondary>
               </Info>
 
@@ -207,8 +210,8 @@ export default function BankReceive() {
           </Padded>
         </Content>
         <ButtonsOnBottom>
-          <Button label="I've Made the Transfer" onClick={handleComplete} />
-          <Button label='View Order Status' onClick={handleViewStatus} secondary />
+          <Button label= {t('common.notifications.receive.bank.madeTransfer')} onClick={handleComplete} />
+          <Button label={t('common.notifications.receive.bank.orderStatus')} onClick={handleViewStatus} secondary />
         </ButtonsOnBottom>
       </>
     )
@@ -222,7 +225,7 @@ export default function BankReceive() {
         back={goBack}
         auxIcon={<TransactionsIcon />}
         auxFunc={handleOrderHistory}
-        auxAriaLabel='View order history'
+        auxAriaLabel={t('common.notifications.receive.bank.orderHistory')}
       />
       <Content>
         <Padded>
@@ -287,7 +290,7 @@ export default function BankReceive() {
                   }
                 }
                 return (
-                  <InfoLine key={item.text} compact color={item.color} icon={getIcon(item.icon)} text={item.text} />
+                  <InfoLine key={item.text} compact color={item.color} icon={getIcon(item.icon)} text={t(item.text)} />
                 )
               })}
             </InfoContainer>
@@ -301,7 +304,7 @@ export default function BankReceive() {
       </Content>
       <ButtonsOnBottom>
         <Button
-          label={loading ? 'Creating Order...' : 'Continue'}
+          label={loading ? t('common.notifications.bank.creatingOrder') : t('common.general.continue')}
           onClick={handleCreateDeposit}
           icon = {<img src = {rightIcon} alt = 'rightArrow' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)', marginLeft: '0.5rem'}} />}
           disabled={!validation.canProceed || loading}

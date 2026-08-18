@@ -16,9 +16,12 @@ import Text, { TextSecondary } from '../../components/Text'
 import CenterScreen from '../../components/CenterScreen'
 import LockIcon from '../../icons/Lock'
 import { hasMnemonic, getMnemonic, setMnemonic } from '../../lib/mnemonic'
+import {useTranslation} from 'react-i18next'
 
 export default function Password() {
   const { updateWallet, wallet } = useContext(WalletContext)
+
+  const {t} = useTranslation()
 
   const [authenticated, setAuthenticated] = useState(false)
   const [oldPassword, setOldPassword] = useState('')
@@ -37,7 +40,7 @@ export default function Password() {
   useEffect(() => {
     if (!oldPassword) return
     isValidPassword(oldPassword).then((isValid) => {
-      setError(isValid ? '' : 'Invalid password')
+      setError(isValid ? '' : t('errors.initialisation.invalidPass'))
       setAuthenticated(isValid)
     })
   }, [oldPassword])
@@ -46,17 +49,16 @@ export default function Password() {
   if (wallet.lockedByBiometrics) {
     return (
       <>
-        <Header text='Change password' back />
+        <Header text={t('settings.advanced.changePass')} back />
         <Content>
           <Padded>
             <CenterScreen>
               <LockIcon big />
               <Text centered heading>
-                Password unavailable
+                {t('settings.password.passUnavailable')}
               </Text>
               <TextSecondary centered wrap>
-                Biometric authentication is active. Disable it from Settings &gt; Biometric Authentication before
-                setting a password.
+               {t('settings.password.bioAuth')}
               </TextSecondary>
             </CenterScreen>
           </Padded>
@@ -77,11 +79,11 @@ export default function Password() {
         const privateKey = await getPrivateKey(oldPassword)
         await setPrivateKey(privateKey, finalPassword)
       }
-      setSuccessText(finalPassword === defaultPassword ? 'Password removed' : 'Password changed')
+      setSuccessText(finalPassword === defaultPassword ? t('settings.password.passRemoved') : t('settings.password.passChanged'))
       setError('')
       return true
     } catch {
-      setError('Failed to update password')
+      setError(t('errors.password.failedUpdate'))
       return false
     } finally {
       setSaving(false)
@@ -97,10 +99,10 @@ export default function Password() {
 
   return (
     <>
-      <Header text='Change password' back />
+      <Header text={t('settings.advanced.changePass')} back />
       <Content>
         {successText ? (
-          <Success headline='Success' text={successText} />
+          <Success headline={t('common.general.success')} text={successText} />
         ) : (
           <Padded>
             <ErrorMessage text={error} error={Boolean(error)} />

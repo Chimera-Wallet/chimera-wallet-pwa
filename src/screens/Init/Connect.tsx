@@ -11,6 +11,7 @@ import { SwapsContext } from '../../providers/swaps'
 import { useLoadingStatus } from '../../hooks/useLoadingStatus'
 import { setLoadingStatus } from '../../lib/loadingStatus'
 import { NavigationContext, Pages } from '../../providers/navigation'
+import {useTranslation} from 'react-i18next'
 
 export default function InitConnect() {
   const { initInfo, setInitInfo } = useContext(FlowContext)
@@ -25,9 +26,11 @@ export default function InitConnect() {
 
   const { password, privateKey, mnemonic } = initInfo
 
+  const {t} = useTranslation()
+
   useEffect(() => {
     if (!password || (!mnemonic && !privateKey)) {
-      abortConnectionWithError(new Error('Missing credentials'))
+      abortConnectionWithError(new Error(t('init.connection.missingCreds')))
       return
     }
     if (mnemonic) {
@@ -46,9 +49,9 @@ export default function InitConnect() {
   useEffect(() => {
     if (!initialized || !arkadeSwaps) return
     if (!initInfo.restoring) return setConnectDone(true)
-    setLoadingStatus('Restoring swaps...')
+    setLoadingStatus(t('init.connection.restoringSwaps'))
     restoreSwaps()
-      .then((count) => count && consoleLog(`Restored ${count} swaps from network`))
+      .then((count) => count && consoleLog(t('init.connection.swapsInfo', {num:count})))
       .catch((err) => consoleError(err, 'Error restoring swaps:'))
       .finally(() => setConnectDone(true))
   }, [arkadeSwaps, initialized, initInfo.restoring])
@@ -71,16 +74,16 @@ export default function InitConnect() {
 
   const abortConnectionWithError = (err: any) => {
     consoleError(err, 'Error during connection:')
-    setLoadingStatus('Connection failed')
-    setError('Connection failed')
+    setLoadingStatus(t('init.connection.connectionFailed'))
+    setError(t('init.connection.connectionFailed'))
     setConnectDone(true)
   }
 
   return (
     <>
-      <Header text='Connecting to server' />
+      <Header text={t('init.connection.serverConnection')} />
       <Content>
-        <Loading text={loadingStatus || 'Connecting to server'} />
+        <Loading text={loadingStatus || t('init.connection.serverConnection')} />
       </Content>
     </>
   )

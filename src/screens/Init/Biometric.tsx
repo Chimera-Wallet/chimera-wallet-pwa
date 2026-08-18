@@ -15,6 +15,7 @@ import { hapticSubtle } from '../../lib/haptics'
 import CenterScreen from '../../components/CenterScreen'
 import LockIcon from '../../icons/Lock'
 import { OnboardStaggerContainer, OnboardStaggerChild } from '../../components/OnboardLoadIn'
+import {useTranslation} from 'react-i18next'
 
 export default function InitBiometric() {
   const { updateWallet, wallet } = useContext(WalletContext)
@@ -23,6 +24,8 @@ export default function InitBiometric() {
 
   const biometricsSupported = isBiometricsSupported()
   const biometricsEnabled = wallet.lockedByBiometrics || false
+
+  const {t} = useTranslation()
 
   const handleEnableBiometrics = () => {
     hapticSubtle()
@@ -47,7 +50,7 @@ export default function InitBiometric() {
 
   return (
     <>
-      <Header text='Secure Your Wallet' />
+      <Header text={t('init.biometrics.secureWallet')} />
       <Content>
         <Padded>
           <CenterScreen>
@@ -60,7 +63,7 @@ export default function InitBiometric() {
               <OnboardStaggerChild>
                 <FlexCol gap='1rem' centered>
                   <Text big centered heading wrap>
-                    Enable Biometric Authentication
+                    {t('init.biometrics.enableBioAuth')}
                   </Text>
                 </FlexCol>
               </OnboardStaggerChild>
@@ -68,13 +71,11 @@ export default function InitBiometric() {
                 <FlexCol gap='1.5rem' centered>
                   {!biometricsSupported ? (
                     <TextSecondary centered wrap>
-                      Biometric authentication is not supported on this device. You'll need to use your password to
-                      unlock your wallet.
+                      {t('init.biometrics.bioAuthUnsupported')}
                     </TextSecondary>
                   ) : (
                     <TextSecondary centered wrap>
-                      For your security, enable biometric authentication to unlock your wallet using fingerprint or face
-                      recognition.
+                     {t('init.biometrics.fingerFaceAuth')}
                     </TextSecondary>
                   )}
                 </FlexCol>
@@ -86,11 +87,11 @@ export default function InitBiometric() {
       <ButtonsOnBottom>
         {biometricsSupported ? (
           <>
-            <Button onClick={handleEnableBiometrics} label='Enable Biometrics' />
-            <Button onClick={handleContinue} label='Use password instead' secondary />
+            <Button onClick={handleEnableBiometrics} label={t('init.biometrics.enableBio')} />
+            <Button onClick={handleContinue} label={t('init.biometrics.usePass')} secondary />
           </>
         ) : (
-          <Button onClick={handleContinue} label='Continue' />
+          <Button onClick={handleContinue} label={t('common.general.continue')} />
         )}
       </ButtonsOnBottom>
     </>

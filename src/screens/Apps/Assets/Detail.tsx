@@ -17,12 +17,15 @@ import { WalletContext } from '../../../providers/wallet'
 import { consoleError } from '../../../lib/logs'
 import type { AssetDetails } from '@arkade-os/sdk'
 import { prettyAssetAmount } from '../../../lib/assets'
+import {useTranslation} from 'react-i18next'
 
 export default function AppAssetDetail() {
   const { navigate } = useContext(NavigationContext)
   const { config, updateConfig } = useContext(ConfigContext)
   const { assetInfo, setAssetInfo, setRecvInfo, setSendInfo } = useContext(FlowContext)
   const { assetBalances, svcWallet, assetMetadataCache, setCacheEntry, iconApprovalManager } = useContext(WalletContext)
+
+  const {t} = useTranslation()
 
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -61,10 +64,10 @@ export default function AppAssetDetail() {
     setRefreshing(false)
   }
 
-  if (loading) return <LoadingLogo text='Loading asset...' />
+  if (loading) return <LoadingLogo text={t('apps.assets.loadingAss')} />
 
   const meta = assetInfo.metadata
-  const name = meta?.name ?? 'Unknown Asset'
+  const name = meta?.name ?? t('apps.assets.unkownAss')
   const ticker = meta?.ticker ?? ''
   const decimals = meta?.decimals ?? 8
   const supply = assetInfo.supply
@@ -123,7 +126,7 @@ export default function AppAssetDetail() {
                 {truncateId(assetInfo.assetId)}
               </Text>
               <FlexRow gap='0.25rem' centered>
-                <TextSecondary centered>Asset ID (tap to copy)</TextSecondary>
+                <TextSecondary centered>{t('apps.assets.assID')}</TextSecondary>
                 <span
                   onClick={handleRefresh}
                   style={{
@@ -143,27 +146,27 @@ export default function AppAssetDetail() {
               <FlexCol gap='0.5rem' padding='0.75rem'>
                 {name !== 'Unknown Asset' ? (
                   <FlexRow between>
-                    <TextSecondary>Name</TextSecondary>
+                    <TextSecondary>{t('common.general.name')}</TextSecondary>
                     <Text bold>{name}</Text>
                   </FlexRow>
                 ) : null}
                 {ticker ? (
                   <FlexRow between>
-                    <TextSecondary>Ticker</TextSecondary>
+                    <TextSecondary>{t('apps.assets.ticker')}</TextSecondary>
                     <Text bold>{ticker}</Text>
                   </FlexRow>
                 ) : null}
                 <FlexRow between>
-                  <TextSecondary>Supply</TextSecondary>
-                  <Text bold>{prettyAssetAmount(supply, decimals) ?? 'Unknown'}</Text>
+                  <TextSecondary>{t('apps.assets.supply')}</TextSecondary>
+                  <Text bold>{prettyAssetAmount(supply, decimals) ?? t('common.general.unkown')}</Text>
                 </FlexRow>
                 <FlexRow between>
-                  <TextSecondary>Decimals</TextSecondary>
+                  <TextSecondary>{t('apps.assets.decimals')}</TextSecondary>
                   <Text bold>{decimals}</Text>
                 </FlexRow>
                 {controlAssetId ? (
                   <FlexRow between>
-                    <TextSecondary>Control Asset</TextSecondary>
+                    <TextSecondary>{t('apps.assets.control')}</TextSecondary>
                     <FlexRow gap='0.25rem' end>
                       {(() => {
                         const ctrl = assetMetadataCache.get(controlAssetId)?.metadata
@@ -191,7 +194,7 @@ export default function AppAssetDetail() {
             </Shadow>
             {hasIcon && !iconApprovalManager.isVerified(assetInfo.assetId) ? (
               <Button
-                label={iconApprovalManager.isApproved(assetInfo.assetId) ? 'Hide icon' : 'Show icon'}
+                label={iconApprovalManager.isApproved(assetInfo.assetId) ? t('apps.assets.hideIc') : t('apps.assets.showIc')}
                 onClick={async () => {
                   if (iconApprovalManager.isApproved(assetInfo.assetId)) {
                     iconApprovalManager.revoke(assetInfo.assetId)
@@ -208,14 +211,14 @@ export default function AppAssetDetail() {
       </Content>
       <ButtonsOnBottom>
         <FlexRow gap='0.75rem'>
-          <Button label='Send' onClick={handleSend} disabled={balance === BigInt(0)} />
-          <Button label='Receive' onClick={handleReceive} />
+          <Button label={t('general.common.send')} onClick={handleSend} disabled={balance === BigInt(0)} />
+          <Button label={t('general.common.receive')} onClick={handleReceive} />
         </FlexRow>
         <FlexRow gap='0.75rem'>
-          <Button label='Reissue' onClick={handleReissue} secondary disabled={!holdsControlAsset} />
-          {balance > 0 ? <Button label='Burn' onClick={handleBurn} secondary /> : null}
+          <Button label={t('general.common.reissue')} onClick={handleReissue} secondary disabled={!holdsControlAsset} />
+          {balance > 0 ? <Button label={t('general.common.burn')} onClick={handleBurn} secondary /> : null}
         </FlexRow>
-        {canRemove ? <Button label='Remove' onClick={handleRemove} secondary /> : null}
+        {canRemove ? <Button label={t('general.common.remove')} onClick={handleRemove} secondary /> : null}
       </ButtonsOnBottom>
     </>
   )

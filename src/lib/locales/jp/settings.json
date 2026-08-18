@@ -1,0 +1,201 @@
+{
+  "about": {
+    "serverURL": "サーバーURL",
+    "serverPubkey": "サーバー公開鍵",
+    "forfeitAddress": "フォーフェイトアドレス",
+    "sessionDur": "セッション期間",
+    "boardingDelay": "ボーディング退出遅延",
+    "unilateralDelay": "単独退出遅延",
+    "gitHash": "Gitコミットハッシュ"
+  },
+  "advanced": {
+    "advancedSettings": "詳細設定",
+    "changePass": "パスワードを変更",
+    "lockWallet": "ウォレットをロック",
+    "deleteMnemonic": "ニーモニックを削除",
+    "highRisk": "高リスク"
+  },
+  "backup": {
+    "nostrUpdate": "Nostrバックアップを更新しました",
+    "mnemonicWarning": "リカバリーフレーズはウォレットのバックアップに使用されます。常に安全かつ秘密に保管してください。",
+    "pkWarning": "秘密鍵はウォレットのバックアップに使用されます。常に安全かつ秘密に保管してください。",
+    "unlockPasskey": "パスキーでロック解除",
+    "enterPass": "パスワードを入力",
+    "keepSafeSecret": "{{secret}} を安全に保管してください",
+    "noShare": "誰にも共有しないでください",
+    "loseNoRecover": "失うと復元できません",
+    "eyesOnly": "あなた専用の情報です。他人と共有しないでください。",
+    "viewSecret": "{{secret}} を表示",
+    "enoughToRestore": "これだけでウォレットを復元できます",
+    "phraseAccess": "リカバリーフレーズがあればウォレット内のすべてにアクセスできます。誰にも共有しないでください。",
+    "pkAccess": "秘密鍵があればウォレット内のすべてにアクセスできます。誰にも共有しないでください。",
+    "enableNostr": "Nostrバックアップを有効化",
+    "nostrToggle": "Nostrバックアップのオン／オフを切り替え"
+  },
+  "biometric": {
+    "bioAuth": "生体認証",
+    "bioAuthUnsupported": "このデバイスでは生体認証がサポートされていません",
+    "useBio": "生体認証を使用",
+    "disableWarn": "生体認証は現在有効です。無効化すると現在のロックが解除され、その後「詳細設定」からパスワードを設定できます。",
+    "enableFingerFace": "指紋認証または顔認証を有効にしてウォレットをロック解除します。現在のパスワードは置き換えられます。",
+    "noContractFound": "契約が見つかりません"
+  },
+  "delegates": {
+    "delegates": "デリゲート",
+    "whatIs": "デリゲートとは？",
+    "delegateDescr": "デリゲートは、VTXOを安全に保つために指定する信頼できる第三者です。",
+    "learnMore": "詳細を見る",
+    "renewal": "次回更新 {{time}}",
+    "noRenewal": "予定されている更新はありません",
+    "vtxoWarn": "デリゲートはVTXOの更新のみ可能で、資金を使用したりウォレットを管理したりすることはできません",
+    "defaultArk": "デフォルトのArkadeデリゲートを使用",
+    "defaultArkDescr": "Arkadeのデフォルトデリゲートを使用して更新を管理します",
+    "reloadWarn": "変更を適用するにはウォレットの再読み込みが必要です"
+  },
+  "display": {
+    "displayPref": "表示設定"
+  },
+  "fiat": {
+    "fiat": "法定通貨"
+  },
+  "general": {
+    "settingsOpt": "{{opt}} 設定",
+    "appSett": "アプリ設定"
+  },
+  "haptics": {
+    "haptics": "触覚フィードバック",
+    "feedback": "触覚フィードバック",
+    "vibration": "ボタン操作やインタラクション時に振動"
+  },
+  "language": {
+    "appLang": "アプリの言語"
+  },
+  "lock": {
+    "noPass": "パスワードまたは生体認証が設定されていません",
+    "lockWallet": "ウォレットをロック",
+    "lockReqs": "ロックするにはパスワードを設定するか、生体認証を有効にする必要があります。",
+    "lockBioWarn": "ロック後は生体認証による認証が必要になります。",
+    "lockPassWarn": "ロック後はパスワードの再入力が必要になります。",
+    "setPass": "パスワードを設定",
+    "lockWalletSimple": "ウォレットをロック"
+  },
+  "logs": {
+    "logs": "ログ",
+    "keyboardNav": "Enterキーを押すとログのキーボード操作が有効になります",
+    "logMessage": "{{time}} のログ: {{msg}}。キーボード操作を終了するにはEscapeキーを押してください。",
+    "exportCSV": "CSVファイルとしてエクスポート"
+  },
+  "menu": {
+    "verified": "認証済み",
+    "pending": "保留中",
+    "unverified": "未認証",
+    "kycVer": "KYC - 本人確認",
+    "knowdledgeBase": "ナレッジベース",
+    "manage": "アカウント管理",
+    "addressBook": "アドレス帳",
+    "showPhrase": "シークレットフレーズを表示",
+    "currency": "通貨",
+    "setNotifs": "通知設定",
+    "advancedSettings": "詳細設定"
+  },
+  "notifications": {
+    "notifications": "通知",
+    "update": "アップデートや支払い受信時に通知を受け取ります。必要に応じて権限を許可してください。",
+    "unsupported": "お使いのブラウザは通知APIをサポートしていません。iOSの場合は「ホーム画面に追加」し、iOS 16.4以降を使用する必要があります。",
+    "allow": "通知を許可"
+  },
+  "password": {
+    "passUnavailable": "パスワードは利用できません",
+    "bioAuth": "生体認証が有効です。パスワードを設定する前に、設定 > 生体認証 から無効にしてください。",
+    "passRemoved": "パスワードを削除しました",
+    "passChanged": "パスワードを変更しました"
+  },
+  "reset": {
+    "removeSeed": "このデバイスからシードを完全に削除します。十分注意してください。削除後はChimera Walletから鍵を取得することはできなくなります。",
+    "removeMnemonic": "「削除」をクリックすると、このデバイス上のニーモニックが削除されます。必ずバックアップを取ってください！",
+    "deleteAccount": "理解した上でアカウントを削除します",
+    "deleteMnemConf": "はい、ニーモニックを削除します",
+    "cancel": "キャンセル"
+  },
+  "server": {
+    "server": "サーバー",
+    "serverURL": "サーバーURL",
+    "found": "サーバーが見つかりました",
+    "walletReset": "ウォレットはリセットされます。事前に必ずバックアップを作成してください。",
+    "connect": "サーバーに接続"
+  },
+  "support": {
+    "support": "サポート",
+    "custSupp": "カスタマーサポート",
+    "helpText": "ウォレットに関するサポート、バグ報告、質問などを受け付けています。サポートチームがお手伝いします。",
+    "secure": "セキュアチャット",
+    "secureText": "会話は安全かつプライベートです。チャット履歴はセッション間で保持されます。",
+    "bugRep": "バグ報告",
+    "bugRepText": "発生した問題やバグを報告してください。再現手順を含めると解決が早くなります。",
+    "progress": "進捗を確認",
+    "progressText": "すべてのサポートチケットと会話は保存されます。過去の会話もいつでも確認できます。",
+    "openSupp": "サポートチャットを開く"
+  },
+  "verification": {
+    "enterEmail": "メールアドレスを入力",
+    "enterEmailVerif": "KYC認証を開始するためにメールアドレスを入力してください。",
+    "idVerif": "本人確認",
+    "emailRegs": "メールアドレスは登録済みです。認証ポータルを開いてKYCステータスの確認または完了を行ってください。",
+    "emailReSub": "メールアドレスを変更すると、KYC認証を再提出する必要があります。",
+    "resubKyc": "KYCを再提出",
+    "checkStat": "ステータスを確認",
+    "r&a": "確認して同意",
+    "reviewText": "認証メールを送信する前に、以下の内容を確認して同意してください。",
+    "acceptPP": "プライバシーポリシーに同意",
+    "agreed": "私は以下を読み、同意しました",
+    "PP": "プライバシーポリシー",
+    "accTS": "利用規約に同意",
+    "TS": "利用規約",
+    "sending": "送信中...",
+    "proceed": "続行",
+    "resendIn": "{{sec}} 秒後に再送信",
+    "resendLim": "再送信回数の上限に達しました",
+    "resend": "メールを再送信",
+    "verifTimeout": "認証がタイムアウトしました",
+    "noClick": "2分以内にリンクのクリックを確認できませんでした。もう一度お試しください。",
+    "tryAg": "再試行",
+    "checkInb": "受信トレイを確認してください",
+    "sentVerif": "認証リンクを <strong>{{email}}</strong> に送信しました。リンクをクリックして続行してください。",
+    "waiting": "認証を待機中…",
+    "idVerified": "本人確認が完了しました！",
+    "fullAccess": "すべての機能にアクセスできます。",
+    "verifProgress": "認証処理中",
+    "docReview": "提出書類を審査中です。通常1〜2営業日かかります。",
+    "idUnverified": "認証に失敗しました",
+    "unverifText": "残念ながら本人確認を完了できませんでした。有効な書類で再度お試しください。",
+    "troubleLoad": "認証画面の読み込みに問題がありますか？",
+    "iosIssue": "iOSでは埋め込みコンテンツに問題が発生する場合があります。最適な体験のためSafariで開いてください。",
+    "openBrowser": "ブラウザで開く"
+  },
+  "vtxo": {
+    "renewVC": "仮想コインを更新",
+    "belowDust": "ダスト制限未満",
+    "completeBoardRen": "ボーディング完了＆更新",
+    "renew": "更新",
+    "complBoard": "ボーディング完了",
+    "settled": "確定済み",
+    "subdust": "サブダスト",
+    "swept": "回収済み",
+    "unconfirmed": "未承認",
+    "expSoon": "まもなく期限切れ",
+    "vc": "仮想コイン",
+    "renewal": "次回更新",
+    "renewVCs": "仮想コインを更新中です。しばらくお待ちください。",
+    "renewing": "更新中",
+    "coinsRenewdSucc": "コインの更新が完了しました",
+    "VClist": "金額と有効期限付きの仮想コイン一覧",
+    "utxoList": "金額と有効期限付きのボーディングUTXO一覧",
+    "nextren": "次回更新",
+    "firstExpt": "最初の仮想コイン有効期限: {{exp}}",
+    "autoRen": "仮想コインは有効期限が近づくと自動更新されます",
+    "marketFees": "市場時間中に確定すると手数料が低くなります。",
+    "nextHour": "次の市場時間: {{st}} {{bool}} （{{duration}}）",
+    "addRem": "リマインダーを追加",
+    "vcRenewal": "仮想コイン更新"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "addressFallback": "粘贴地址",
+  "networkFallback": "选择网络以查看其描述",
+  "arkade": {
+    "address": "粘贴 Arkade 地址"
+  },
+  "lightning": {
+    "address": "粘贴 Lightning 发票地址",
+    "invoice": "粘贴 Lightning 发票以发送付款。付款金额已编码在发票中。"
+  },
+  "bitcoin": {
+    "address": "粘贴 BTC 地址"
+  },
+  "bank": {
+    "details": "输入银行信息"
+  },
+  "contacts": {
+    "name": "输入联系人姓名",
+    "accounts": "例如：主钱包、储蓄钱包...",
+    "enterAddr": "输入 {{name}}"
+  },
+  "assets": {
+    "token": "我的代币",
+    "assIdPaste": "粘贴资产 ID...",
+    "controlAm": "控制金额"
+  }
+}

@@ -43,6 +43,7 @@ import { TRANSFER_METHOD, type TransferMethod } from '../../lib/transferMethods'
 import StakingBanner from '../../components/StakingBanner'
 import InstallBanner from '../../components/InstallBanner'
 import BannerCarousel from '../../components/BannerCarousel'
+import {useTranslation} from 'react-i18next'
 
 export default function Wallet() {
   const { aspInfo } = useContext(AspContext)
@@ -56,25 +57,27 @@ export default function Wallet() {
   const pwaInstalled = usePwaInstalled()
   const dismissed = (config?.dismissedBanners ?? []).includes('pwa-install')
   const showPwaBanner = pwaCanInstall() && (isIOS() || isAndroid()) && !pwaInstalled && !dismissed
+  
+  const {t} = useTranslation()
 
   const iosInstallDescription = (): string => {
     switch (getIOSBrowser()) {
       case 'safari':
-        return "Tap the Share icon in Safari's toolbar, then 'Add to Home Screen'."
+        return t('networks.browser.safariShare')
       case 'chrome':
-        return "Tap the Share icon in Chrome's address bar, then 'Add to Home Screen'."
+        return t('networks.browser.chromeShare')
       case 'firefox':
-        return "Tap the menu icon in Firefox, then 'Add to Home Screen'. For full support, open this page in Safari."
+        return t('networks.browser.firefoxShare')
       case 'edge':
-        return "Tap the menu icon in Edge, then 'Add to Home Screen'. For full support, open this page in Safari."
+        return t('networks.browser.edgeShare')
       default:
-        return "Tap the Share icon, then 'Add to Home Screen'. For full support, open this page in Safari."
+        return t('networks.browser.defaultShare')
     }
   }
 
   const pwaDescription = isIOS()
     ? iosInstallDescription()
-    : "Tap 'Install' to add Chimera to your home screen."
+    : t('networks.browser.installDescr')
 
   const [showInstallBanner, setShowInstallBanner] = useState(Boolean(!dismissed && !pwaInstalled))
   const dismissPwaBanner = () => {
@@ -272,8 +275,8 @@ export default function Wallet() {
             <FlexCol>
               <AssetBalanceView symbol={selectedAsset} balance={getAssetBalance(selectedAsset)} />
               <FlexRow padding='0.5rem 0'>
-                <Button icon={<SendIcon />} label='Send' onClick={handleSend} />
-                <Button icon={<ReceiveIcon />} label='Receive' onClick={handleReceive} />
+                <Button icon={<SendIcon />} label={t('common.general.send')} onClick={handleSend} />
+                <Button icon={<ReceiveIcon />} label={t('common.general.receive')} onClick={handleReceive} />
               </FlexRow>
               <TransactionsList filterAsset={selectedAsset} maxItems={4} />
             </FlexCol>
@@ -315,10 +318,10 @@ export default function Wallet() {
   return (
     <>
       <Header
-        text='Wallet'
+        text={t('common.general.wallet')}
         auxIcon={<TransactionsIcon />}
         auxFunc={handleTransactions}
-        auxAriaLabel='View all transactions'
+        auxAriaLabel={t('networks.transactions.viewAll')}
       />
       {announcement}
       <Content>
@@ -330,12 +333,12 @@ export default function Wallet() {
                   <Balance amount={balance} centered usdOnly />
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
-                  <ErrorMessage error={error} text='Ark server unreachable' />
+                  <ErrorMessage error={error} text={t('errors.send.arkade.server')} />
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
                   <FlexRow padding='0 0 0.5rem 0'>
-                    <Button icon={<SendIcon />} label='Send' onClick={handleSend} />
-                    <Button icon={<ReceiveIcon />} label='Receive' onClick={handleReceive} />
+                    <Button icon={<SendIcon />} label={t('common.general.send')} onClick={handleSend} />
+                    <Button icon={<ReceiveIcon />} label={t('common.general.receive')} onClick={handleReceive} />
                   </FlexRow>
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
@@ -348,7 +351,7 @@ export default function Wallet() {
                         action={
                           canPromptInstall()
                             ? {
-                                label: 'Install',
+                                label: t('networks.browser.install'),
                                 onClick: async () => {
                                   const outcome = await promptPwaInstall().catch(() => null)
                                   if (outcome) dismissPwaBanner()
@@ -384,7 +387,7 @@ export default function Wallet() {
                       marginTop: '0.5rem',
                     }}
                   >
-                    See all transactions
+                    {t('networks.transactions.seeAll')}
                   </button>
                 </WalletStaggerChild>
               )}

@@ -10,6 +10,7 @@ import { consoleError } from '../../../lib/logs'
 import { prettyAmount, prettyFiatAmount } from '../../../lib/format'
 import type { AssetDetails } from '@arkade-os/sdk'
 import { prettyAssetAmount } from '../../../lib/assets'
+import { useTranslation } from 'react-i18next'
 
 export default function ReceiveSuccess() {
   const { config, useFiat } = useContext(ConfigContext)
@@ -31,6 +32,8 @@ export default function ReceiveSuccess() {
     }
     return new Map(entries)
   })
+  
+  const {t} = useTranslation()
 
   // Fetch and cache asset metadata if not already cached (used for the notification label)
   useEffect(() => {
@@ -81,8 +84,8 @@ export default function ReceiveSuccess() {
   useEffect(() => {
     if (handled.current) return
     handled.current = true
-    const detail = isAssetReceive ? undefined : `${displayAmount} received successfully`
-    notifyResult(true, 'Payment received!', detail).then(() => navigate(Pages.Wallet))
+    const detail = isAssetReceive ? undefined : t('common.notifications.receive.bank.successAmount', {amount: displayAmount})
+    notifyResult(true, t('common.notifications.receive.paymentReceived'), detail).then(() => navigate(Pages.Wallet))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

@@ -19,6 +19,7 @@ import Text, { TextSecondary } from '../../components/Text'
 import { decodeArkAddress, isArkAddress } from '../../lib/address'
 import { copyToClipboard } from '../../lib/clipboard'
 import { useToast } from '../../components/Toast'
+import{useTranslation} from 'react-i18next'
 
 // format the URL to ensure it has the correct protocol and no trailing slashes
 const formatUrl = (host: string, path: string): string => {
@@ -34,7 +35,7 @@ const formatUrl = (host: string, path: string): string => {
 }
 
 // test connection to delegate by fetching delegate info and validating the response
-const testConnection = (aspInfo: AspInfo): Promise<Delegate> => {
+const testConnection = (aspInfo: AspInfo, t: (k: string, o?: any) => string): Promise<Delegate> => {
   return new Promise((resolve, reject) => {
     // ensure expected pubkey is in xonly format
     const expectedPubKey = aspInfo.signerPubkey.length === 66 ? aspInfo.signerPubkey.slice(2) : aspInfo.signerPubkey
@@ -43,37 +44,38 @@ const testConnection = (aspInfo: AspInfo): Promise<Delegate> => {
     // fetch delegate info from the delegate server
     fetch(formatUrl(delegate.url, '/v1/delegator/info'))
       .then((res) => {
-        if (!res.ok) return reject(new Error('Unable to connect'))
+        if (!res.ok) return reject(new Error(t('errors.delegates.unableConnect')))
         res
           .json()
           .then((data: { delegatorAddress: string; pubkey: string; fee: string }) => {
-            if (!data) return reject(new Error('Invalid delegate response'))
-            if (!data.fee) return reject(new Error('Missing delegate fee'))
-            if (isNaN(parseInt(data.fee, 10))) return reject(new Error('Invalid delegate fee'))
-            if (parseInt(data.fee, 10) < 0) return reject(new Error("Delegate fee can't be negative"))
-            if (!data.pubkey) return reject(new Error('Missing delegate pubkey'))
-            if (data.pubkey.length !== 66) return reject(new Error('Invalid delegate pubkey size'))
-            if (!/^[0-9a-fA-F]{66}$/.test(data.pubkey)) return reject(new Error('Invalid delegate pubkey hex'))
-            if (!data.delegatorAddress) return reject(new Error('Missing delegate address'))
-            if (!isArkAddress(data.delegatorAddress)) return reject(new Error('Invalid delegate address'))
+            if (!data) return reject(new Error(t('errors.delegates.invalidResponse')))
+            if (!data.fee) return reject(new Error(t('errors.delegates.missingFee')))
+            if (isNaN(parseInt(data.fee, 10))) return reject(new Error(t('errors.delegates.invalidFee')))
+            if (parseInt(data.fee, 10) < 0) return reject(new Error(t('errors.delegates.negativeFee')))
+            if (!data.pubkey) return reject(new Error(t('errors.delegates.missingPubkey')))
+            if (data.pubkey.length !== 66) return reject(new Error(t('errors.delegates.invalidPubkeySize')))
+            if (!/^[0-9a-fA-F]{66}$/.test(data.pubkey)) return reject(new Error(t('errors.delegates.invalidPubkeyHex')))
+            if (!data.delegatorAddress) return reject(new Error(t('errors.delegates.missingAddress')))
+            if (!isArkAddress(data.delegatorAddress)) return reject(new Error(t('errors.delegates.invalidAddress')))
             const { serverPubKey } = decodeArkAddress(data.delegatorAddress)
-            if (serverPubKey !== expectedPubKey) return reject(new Error('Invalid delegate server key'))
+            if (serverPubKey !== expectedPubKey) return reject(new Error(t('errors.delegates.invalidServerKey')))
             resolve({ ...delegate, address: data.delegatorAddress, pubkey: data.pubkey, fee: parseInt(data.fee, 10) })
           })
-          .catch(() => reject(new Error('Invalid json in delegate response')))
+          .catch(() => reject(new Error(t('errors.delegates.invalidJSONResp'))))
       })
-      .catch(() => reject(new Error('Unable to connect')))
+      .catch(() => reject(new Error(t('errors.delegates.unableConnect'))))
   })
 }
 
 // hero component to explain what delegates are
 function Hero() {
+  const {t} = useTranslation()
   return (
     <FlexRow between>
       <FlexCol gap='0.5rem'>
-        <Text bold>What is a Delegate?</Text>
+        <Text bold>{t('settings.delegates.whatIs')}</Text>
         <Text small thin wrap>
-          A delegate is a trusted third party you appoint to help keep your VTXOs safe and secure.
+          {t('delegates.delegateDescr')}
         </Text>
         <a
           href='https://docs.arkadeos.com/learn/pillars/batch-expiry#delegation-solutions'
@@ -92,7 +94,7 @@ function Hero() {
           }}
         >
           <Text tiny thin>
-            Learn more
+            {t('settings.delegates.learnMore')}
           </Text>
         </a>
       </FlexCol>
@@ -118,6 +120,8 @@ function DelegateCard() {
   const { wallet } = useContext(WalletContext)
   const { setOption } = useContext(OptionsContext)
 
+  const {t} = useTranslation()
+
   const { toast } = useToast()
 
   const [active, setActive] = useState(false)
@@ -128,24 +132,24 @@ function DelegateCard() {
   // test connection to delegate when url changes
   useEffect(() => {
     if (!config.delegate || !isDelegationEnabled()) return
-    testConnection(aspInfo)
+    testConnection(aspInfo,t)
       .then((delegate) => {
         setDelegate(delegate)
         setActive(true)
       })
       .catch(() => setActive(false))
-  }, [config.delegate, aspInfo.signerPubkey])
+  }, [config.delegate, aspInfo.signerPubkey, t])
 
   if (!config.delegate || !isDelegationEnabled() || !delegate) return null
 
   const handleCopy = async (value: string) => {
     await copyToClipboard(value)
-    toast('Copied to clipboard')
+    toast(t('common.general.copyClipboard'))
   }
 
   const nextRolloverText = wallet.nextRollover
-    ? `next renewal ${prettyAgo(wallet.nextRollover)}`
-    : 'No upcoming renewal'
+    ? t('settings.delegates.renewal',{time: prettyAgo(wallet.nextRollover)})
+    : t('settings.delegates.noRenewal')
 
   return (
     <Shadow lighter fat testId='delegate-card'>
@@ -166,7 +170,7 @@ function DelegateCard() {
           </Shadow>
           <FlexRow end>
             <Middot ok={active} />
-            <Text tiny>{active ? 'Active' : 'Inactive'}</Text>
+            <Text tiny>{active ? t('common.general.active') : t('common.general.inactive')}</Text>
           </FlexRow>
         </FlexRow>
         <FlexCol gap='0.25rem'>
@@ -186,6 +190,7 @@ function DelegateCard() {
 }
 
 export default function Delegates() {
+  const {t} = useTranslation() 
   const { goBack } = useContext(OptionsContext)
   const { config, updateConfig } = useContext(ConfigContext)
 
@@ -198,11 +203,11 @@ export default function Delegates() {
   }
 
   // text to show on warning box
-  const warningText = 'Delegates can only renew your VTXOs, they cannot spend your funds or control your wallet'
+  const warningText = t('settings.delegates.vtxoWarn')
 
   return (
     <>
-      <Header backFunc={goBack} text='Delegates' />
+      <Header backFunc={goBack} text={t('settings.delegates.delegates')} />
       <Content>
         <Padded>
           <FlexCol gap='1rem' padding='0 0 24px 0'>
@@ -213,10 +218,10 @@ export default function Delegates() {
               checked={config.delegate}
               onClick={handleToggle}
               testId='toggle-delegates'
-              text='Use default Arkade delegate'
-              subtext="Use Arkade's default delegate to manage renewals"
+              text={t('settings.delegates.defaultArk')}
+              subtext={t('settings.delegates.defaultArkDescr')}
             />
-            <TextSecondary>The wallet will reload to apply the change.</TextSecondary>
+            <TextSecondary>{t('settings.delegates.reloadWarn')}</TextSecondary>
             <WarningBox text={warningText} />
             <DelegateCard />
           </FlexCol>

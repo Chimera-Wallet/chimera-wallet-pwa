@@ -15,6 +15,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { PanelLeftIcon } from 'lucide-react'
 
+import { useTranslation } from 'react-i18next'
+
 const SIDEBAR_COOKIE_NAME = 'sidebar_state'
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = '16rem'
@@ -34,10 +36,12 @@ type SidebarContextProps = {
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null)
 
+const {t} = useTranslation()
+
 function useSidebar() {
   const context = React.useContext(SidebarContext)
   if (!context) {
-    throw new Error('useSidebar must be used within a SidebarProvider.')
+    throw new Error(t('components.sidebar.error'))
   }
 
   return context
@@ -147,6 +151,7 @@ function Sidebar({
   collapsible?: 'offcanvas' | 'icon' | 'none'
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const {t} = useTranslation()
 
   if (collapsible === 'none') {
     return (
@@ -177,8 +182,8 @@ function Sidebar({
           side={side}
         >
           <SheetHeader className='sr-only'>
-            <SheetTitle>Sidebar</SheetTitle>
-            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+            <SheetTitle>{t('components.sidebar.sidebar')}</SheetTitle>
+            <SheetDescription>{t('components.sidebar.mobile')}.</SheetDescription>
           </SheetHeader>
           <div className='flex h-full w-full flex-col'>{children}</div>
         </SheetContent>
@@ -234,6 +239,7 @@ function Sidebar({
 
 function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<typeof Button>) {
   const { toggleSidebar } = useSidebar()
+  const {t} = useTranslation()
 
   return (
     <Button
@@ -249,7 +255,7 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
       {...props}
     >
       <PanelLeftIcon />
-      <span className='sr-only'>Toggle Sidebar</span>
+      <span className='sr-only'>{t('components.sidebar.toggle')}</span>
     </Button>
   )
 }
@@ -261,7 +267,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<'button'>) {
     <button
       data-sidebar='rail'
       data-slot='sidebar-rail'
-      aria-label='Toggle Sidebar'
+      aria-label={t('components.sidebar.toggle')}
       tabIndex={-1}
       onClick={toggleSidebar}
       title='Toggle Sidebar'

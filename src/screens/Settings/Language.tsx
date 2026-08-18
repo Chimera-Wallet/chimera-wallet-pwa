@@ -3,11 +3,13 @@ import Content from '../../components/Content'
 import Padded from '../../components/Padded'
 import Text from '../../components/Text'
 import FlexCol from '../../components/FlexCol'
+import {useTranslation} from 'react-i18next'
 
 export default function Language() {
+  const {t} = useTranslation()
   return (
     <>
-      <Header text='App Language' back />
+      <Header text={t('settings.language.appLang')} back />
       <Content>
         <Padded>
           <FlexCol centered gap='2rem'>

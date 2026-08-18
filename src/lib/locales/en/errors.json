@@ -1,0 +1,221 @@
+{
+    "funds":{
+        "insufficient": "Insufficient funds",
+        "insufficientExtra":"Insufficient funds, you just have {{balance}} BTC",
+        "insufficientFees": "Insufficient funds to cover fees"
+    },
+    "LNURL": {
+        "below": "Amount below LNURL min limit",
+        "above": "Amount above LNURL max limit",
+        "funds": "Insufficient funds for LNURL",
+        "fetch": "Unable to fetch LNURL conditions",
+        "address": "Invalid address or LNURL"
+    },
+    "satoshi": {
+        "minimum": "Amount below 1 satoshi",
+        "minLimit": "Amount below min limit",
+        "maxLimit": "Amount above max limit",
+        "invoiceAmount": "Invoice must have amount defined"
+    },
+    "network": {
+        "below": "Amount below network fee",
+        "tooLow": "Amount too low to cover network fees"
+    },
+    "general": {
+            "server": "Server unreachable",
+            "swap": "Unable to create swap",
+            "missingAddress": "Missing address",
+            "missingAsset": "Missing asset amount",
+            "missingAmount": "Missing amount",
+            "missingAssetList": "Missing assets list",
+            "missingTotal": "Missing total amount",
+            "missingSats": "Missing satoshis amount", 
+            "swapAddUnavailable": "Swap address not available"
+
+
+    },
+    "send": {
+        "bitcoin": {
+            "address": "Selected method requires a Bitcoin address",
+            "type": "Selected method requires a different address type",
+            "lnurl": "Selected method does not support LNURL"
+        },
+        "arkade": {
+            "address": "Selected method requires an Arkade address",
+            "addressUnable": "Unable to get your Arkade address",
+            "type": "Selected method requires a different address type",
+            "server": "Ark server unreachable",
+            "lnurl": "LNURL does not support Ark payments",
+            "addressReceiveLnurl": "Invalid Arkade address received from LNURL" ,
+            "assets": "Assets can only be sent to Arkade addresses",
+            "serverKeyMiss": "Ark server key mismatch"  
+        },
+        "lightning": {
+            "address": "Selected method requires a Lightning invoice address",
+            "type": "Selected method requires a different address type",
+            "swaps": "Lightning swaps not enabled"
+        },
+        "bank": {
+            "transfer": "Bank transfers are handled in Transfers",
+            "ibanName": "Please enter your IBAN and account holder name",
+            "bicSwift": "Please enter your BIC/SWIFT code, account holder name, and account number",
+            "accountRouting": "Please enter your account number and routing number",
+            "invalidTransfer": "Invalid transfer method",
+            "insufficientBalance": "Insufficient balance. You need ~{{required}} BTC but only have {{balance}} BTC",
+            "failedWithdrawal": "Failed to create withdrawal order"
+        },
+        "wallet": {
+            "notReady": "Wallet not ready",
+            "notConfigured": "Withdrawal wallet not configured"
+        },
+        "parsing": {
+            "bip21": "Unable to parse bip21",
+            "recipientAddress": "Invalid recipient address"   
+        },
+        "chain": {
+            "on": "Sending onchain not allowed",
+            "off": "Sending offchain not allowed",
+            "self": "Cannot send to yourself",
+            "invalidAddress": "Enter a valid {{chain}} address"
+        },
+        "general":{
+            "errorSend": "Error sending transaction"
+        }
+        
+    },
+    "receive": {
+        "general": {
+            "offChain": "Unable to get offchain address",
+            "boarding": "Unable to get boarding address",
+            "destination": "Unable to get destination address",
+            "kycReq": "KYC verification required",
+            "amount": "Invalid amount",
+            "faucetFail": "Faucet failed",
+            "pendingSwap": "Failed to create reverse swap",
+            "chainSwap": "Failed to create chain swap",
+            "reverseSwap": "Failed to create reverse swap",
+            "getAddress": "Failed to get address: {{address}}"
+            
+        },
+        "bank": {
+            "failedOrderExtra": "Failed to create order - no order returned",
+            "failedOrderSimple": "Failed to create order",
+            "failedDeposit": "Failed to create deposit order",
+            "noOrderInfo": "No order information available",
+            "failedLoad": "Failed to load order",
+            "failedRefresh": "Failed to refresh order"
+        },
+        "lightning": {
+            "tempUnavailable": "Lightning is temporarily unavailable. This QR code only supports Arkade and on-chain payments."
+        },
+        "wrapService": {
+            "validAddress": "Enter a valid {{name}} address",
+            "arkadeRcvAddress": "Unable to get your Arkade receiving address",
+            "failedWrapQuote": "Failed to create wrap quote"
+        }
+    },
+    "initialisation": {
+        "arkadeUnreachable": "Arkade server unreachable. Check Settings → Arkade Server.",
+        "invalidPass": "Invalid password", 
+        "unlockTimeout": "Unlock timed out. Please try again."
+    },
+    "backup": {
+        "nostrFail": "Backup to Nostr failed"
+    },
+    "biometric": {
+        "failedDisable": "Failed to disable biometrics. Please try again.",
+        "failedEnable": "Failed to enable biometrics. Please try again."
+    },
+    "delegates": {
+        "invalidPubkey": "Invalid expected server pubkey",
+        "unableConnect": "Unable to connect",
+        "invalidResponse": "Invalid delegate response",
+        "missingFee": "Missing delegate fee",
+        "invalidFee": "Invalid delegate fee",
+        "negativeFee": "Delegate fee can't be negative",
+        "missingPubkey": "Missing delegate pubkey",
+        "invalidPubkeySize": "Invalid delegate pubkey size",
+        "invalidPubkeyHex": "Invalid delegate pubkey hex",
+        "missingAddress": "Missing delegate address",
+        "invalidAddress": "Invalid delegate address",
+        "invalidServerKey": "Invalid delegate server key",
+        "invalidJSONResp": "Invalid json in delegate response"
+    },
+    "password": {
+        "failedUpdate": "Failed to update password"
+    },
+    "server": {
+        "same": "Same server",
+        "unableConnect": "Unable to connect"
+    },
+    "support": {
+        "notConfigured": "Support chat is not configured",
+        "failedLoad": "Failed to load support chat",
+        "unavailable": "not available"
+    },
+    "verification": {
+        "failedAuth": "Failed to confirm authentication. Please try again." ,
+        "failedVerif": "Failed to initialize verification. Please try again.",
+        "email": "Please enter a valid email address.",
+        "failedEmailSend": "Failed to send verification email. Please try again.",
+        "failedEmailResend": "Failed to resend verification email. Please try again."
+
+    },
+    "vtxo": {
+        "failedFetch": "Failed to fetch coins"
+    },
+    "addressBook": {
+        "enterAdd": "Please enter an address",
+        "invalidAdd": "Invalid {{name}}}",
+        "contactName": "Please enter a contact name"
+    },
+    "assets":{
+        "positive": "Amount must be a positive number" ,
+        "idNF": "Asset ID is required",
+        "balance": "Cannot burn more than your balance {{amount}} {{tick}})",
+        "idHex": "Asset ID must be a 68-character hex string",
+        "assNF": "Asset not found",
+        "range": "Decimals must be an integer between 0 and {{max}}"
+    },
+    "boltz":{
+        "swapsRestore": "Error restoring swaps: {{error}}",
+        "integration": "Boltz integration is not ready yet. Try again in a moment.",
+        "integrationSimple": "Boltz integration is not ready yet",
+        "scan": "Could not scan: {{err}}",
+        "recover": "Recovered {{swept}} VTXO{{out}}}",
+        "noSweep": "Nothing was swept; try again later."
+    },
+    "lendasat": {
+        "walletNot": "Wallet not initialized",
+        "unableSending": "Unable to send bitcoin",
+        "unsuppAddress": "Unsupported address {{addr}}",
+        "unableSendNonBtc": "Unable to send non btc assets",
+        "unableFiat": "Unable to send fiat",
+        "arkAddrLoad": "Arkade address not yet loaded",
+        "boardAddrLoad": "Boarding address not yet loaded",
+        "unsuppAddr": "Unsupported address type: {{addr}}",
+        "unkownAddr": "Unknown address type: {{addr}}",
+        "npubSupp": "NPubs are not supported"
+    },
+    "satora": {
+        "satora": "Satora",
+        "addressType": "Address type not supported",
+        "arkAddr": "Arkade address not yet loaded",
+        "walletNot": "Wallet not initialized",
+        "invalidAm": "Invalid amount",
+        "unableSending": "Unable to send bitcoin",
+        "unsuppAddress": "Unsupported address {{addr}}",
+        "notSat": "Not implemented for Satora"
+    },
+    "swap": {
+        "noInfo": "No order information available",
+        "failedLoad": "Failed to load order",
+        "failedRefresh": "Failed to refresh order",
+        "failedCreate": "Failed to create order",
+        "failedAss": "Failed to load assets",
+        "valAm": "Please enter a valid amount",
+        "kycVer":"KYC verification is required for amounts over 1,000 EUR",
+        "destAddr": "Unable to get destination address"
+    }
+      
+    }

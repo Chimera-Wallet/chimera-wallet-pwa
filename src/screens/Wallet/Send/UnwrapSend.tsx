@@ -37,6 +37,8 @@ import {
   isTerminalWrapStatus,
   type WrapQuote,
 } from '../../../lib/arkadeWrap'
+import { useTranslation } from 'react-i18next'
+
 
 const POLL_INTERVAL = 8000
 
@@ -46,23 +48,24 @@ const formatBaseUnits = (value: string | null, precision: number): string => {
 }
 
 const statusLabel = (status: WrapQuote['status']): string => {
-  switch (status) {
-    case 'pending':
-      return 'Waiting for your Arkade deposit…'
-    case 'deposited':
-      return 'Deposit detected, confirming…'
-    case 'processing':
-      return 'Sending your payout…'
-    case 'completed':
-      return 'Completed'
-    case 'expired':
-      return 'This quote has expired'
-    case 'failed':
-      return 'The unwrap failed'
+    switch (status) {
+      case 'pending':
+        return ('common.notifications.unwrapService.pending')
+      case 'deposited':
+        return ('common.notifications.unwrapService.deposited')
+      case 'processing':
+        return ('common.notifications.unwrapService.processing')
+      case 'completed':
+        return ('common.notifications.unwrapService.completed')
+      case 'expired':
+        return ('common.notifications.unwrapService.expired')
+      case 'failed':
+        return ('common.notifications.unwrapService.failed')
+    }
   }
-}
 
 export default function UnwrapSend() {
+  const { t } = useTranslation()
   const { navigate, goBack } = useContext(NavigationContext)
   const { unwrapSendInfo, setUnwrapSendInfo } = useContext(FlowContext)
   const { svcWallet } = useContext(WalletContext)
@@ -78,6 +81,9 @@ export default function UnwrapSend() {
   const chain = unwrapSendInfo ? requireSourceChain(unwrapSendInfo.chainId) : undefined
   const assetConfig = unwrapSendInfo ? requireAssetConfig(unwrapSendInfo.assetSymbol) : undefined
 
+
+
+  
   useEffect(() => {
     if (!unwrapSendInfo) navigate(Pages.SendForm)
   }, [unwrapSendInfo])
@@ -107,7 +113,7 @@ export default function UnwrapSend() {
           if (unwrapSendInfo) setUnwrapSendInfo({ ...unwrapSendInfo, sender, receiver, quote: updated })
           if (updated.status === 'completed') {
             setCompleted(true)
-            notifyResult(true, 'Payout sent')
+            notifyResult(true, t('common.notifications.unwrapService.sent'))
           }
           if (isTerminalWrapStatus(updated.status) && pollRef.current) clearInterval(pollRef.current)
         })
@@ -120,11 +126,11 @@ export default function UnwrapSend() {
 
   const handleCreateQuote = async () => {
     if (!chain.isValidAddress(receiver)) {
-      setError(`Enter a valid ${chain.name} address`)
+      setError(t('errors.send.chain.invalidAddress' ,{chain: chain.name}))
       return
     }
     if (!sender) {
-      setError('Unable to get your Arkade address')
+      setError(t('errors.send.arkade.addressUnable'))
       return
     }
     try {
@@ -140,7 +146,7 @@ export default function UnwrapSend() {
       setUnwrapSendInfo({ ...unwrapSendInfo, sender, receiver: receiver.trim(), quote: created })
     } catch (err) {
       setError(extractError(err))
-      notifyResult(false, 'Failed to create unwrap quote')
+      notifyResult(false, t('common.notifications.unwrapService.failedQuote'))
     } finally {
       setLoading(false)
     }
@@ -150,11 +156,11 @@ export default function UnwrapSend() {
     const amount = formatBaseUnits(quote?.payout_amount ?? null, precision)
     return (
       <>
-        <Header text='Success' />
+        <Header text= {t('common.general.success')} />
         <Content>
           <Success
-            headline='Unwrap completed!'
-            text={amount ? `${amount} ${unwrapSendInfo.ticker} sent on ${chain.name}` : 'Your payout was sent'}
+            headline={t('common.notifications.unwrapService.completeHeadline')} 
+            text={amount ? t('common.notifications.unwrapService.sendInfo', {value:amount, ticker: unwrapSendInfo.ticker, name: chain.name}) : t('common.notifications.unwrapService.sent')}
           />
         </Content>
         <ButtonsOnBottom>
@@ -166,7 +172,7 @@ export default function UnwrapSend() {
 
   return (
     <>
-      <Header text={`Send ${unwrapSendInfo.ticker} to ${chain.name}`} back={goBack} />
+      <Header text={t('common.notifications.unwrapService.sendHeader', {ticker: unwrapSendInfo.ticker, name: chain.name})} back={goBack} />
       <Content>
         <Padded>
           <FlexCol gap='1rem'>
@@ -178,11 +184,11 @@ export default function UnwrapSend() {
                   <InfoLine
                     compact
                     color='orange'
-                    text={`Enter the ${chain.name} address that will receive the payout. We reserve an Arkade deposit address; sending your wrapped ${unwrapSendInfo.ticker} to it releases the funds on ${chain.name}.`}
+                    text={t('common.notifications.unwrapService.sendInfoExtended', {name:chain.name, ticker: unwrapSendInfo.ticker})}
                   />
                 </InfoContainer>
                 <Input
-                  label={`Destination ${chain.name} address`}
+                  label={t('common.notifications.unwrapService.destination', {name: chain.name})}
                   value={receiver}
                   onChange={setReceiver}
                   placeholder={chain.addressPlaceholder}
@@ -191,14 +197,14 @@ export default function UnwrapSend() {
             ) : (
               <>
                 <InfoContainer>
-                  <InfoLine compact text={statusLabel(quote.status)} />
+                  <InfoLine compact text={t(statusLabel(quote.status))} />
                   <InfoLine
                     compact
                     color='orange'
-                    text={`Send your wrapped ${unwrapSendInfo.ticker} on Arkade to the treasury address below before the quote expires.`}
+                    text={t('common.notifications.unwrapService.timeSensitive', {ticker: unwrapSendInfo.ticker})}
                   />
                   {quote.payout_amount ? (
-                    <InfoLine compact text={`Payout: ${formatBaseUnits(quote.payout_amount, precision)} ${unwrapSendInfo.ticker}`} />
+                    <InfoLine compact text={t('common.notifications.unwrapService.payout', {amount: formatBaseUnits(quote.payout_amount, precision),  ticker: unwrapSendInfo.ticker})} />
                   ) : null}
                 </InfoContainer>
                 <FlexCol centered gap='0.75rem'>
@@ -206,7 +212,7 @@ export default function UnwrapSend() {
                   <div
                     style={{ wordBreak: 'break-all', textAlign: 'center', fontSize: '13px', cursor: 'pointer' }}
                     onClick={() => navigator.clipboard?.writeText(quote.treasury)}
-                    title='Tap to copy'
+                    title={t('common.general.tapCopy')}
                   >
                     {quote.treasury}
                   </div>
@@ -218,7 +224,7 @@ export default function UnwrapSend() {
       </Content>
       <ButtonsOnBottom>
         {!quote ? (
-          <Button label={loading ? 'Reserving…' : 'Continue'} onClick={handleCreateQuote} disabled={loading || !receiver} />
+          <Button label={loading ? t('common.general.reserving') : t('common.general.continue')} onClick={handleCreateQuote} disabled={loading || !receiver} />
         ) : (
           <Button label='Done' onClick={() => navigate(Pages.Wallet)} secondary />
         )}

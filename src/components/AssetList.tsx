@@ -4,6 +4,7 @@ import { ASSET_LIST, getDisplayTicker, type AssetSymbol } from '../lib/assets'
 import { CoinGeckoConversionService, type ConversionRateResult } from '../lib/coingecko/service'
 import { consoleError } from '../lib/logs'
 import { ConfigContext } from '../providers/config'
+import { useTranslation } from 'react-i18next'
 
 // Filter icon component
 const FilterIcon = () => (
@@ -25,6 +26,7 @@ interface AssetListProps {
 export default function AssetList({ balances = [], onAssetClick }: AssetListProps) {
   const { config } = useContext(ConfigContext)
   const currency = config.fiat.toLowerCase()
+  const {t} = useTranslation()
 
   const [prices, setPrices] = useState<ConversionRateResult>({})
   const [loading, setLoading] = useState(true)
@@ -90,7 +92,7 @@ export default function AssetList({ balances = [], onAssetClick }: AssetListProp
             fontWeight: 600,
           }}
         >
-          Assets
+          {t('lib.transactions.assets')}
         </span>
         <button
           style={{

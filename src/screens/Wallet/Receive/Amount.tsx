@@ -46,6 +46,7 @@ import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
 import clockIcon from '../../../../public/images/icons/ Clock.svg'
 import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
 import checkMarkIcon from '../../../../public/images/icons/ CheckCheckMark.png'
+import {useTranslation} from 'react-i18next'
 
 export default function ReceiveAmount() {
   const { aspInfo } = useContext(AspContext)
@@ -66,13 +67,15 @@ export default function ReceiveAmount() {
   const [qrValue, setQrValue] = useState('')
   const [bip21uri, setBip21uri] = useState('')
   const [showQrCode, setShowQrCode] = useState(false)
+  const { t } = useTranslation()
+
 
   // Asset and network can be changed, initialized from wallet flow or defaults
   const [selectedAsset, setSelectedAsset] = useState<AssetSymbol>('BTC')
   const selectedMethod = recvInfo.method ?? TRANSFER_METHOD.bitcoin
 
   useEffect(() => {
-    setError(aspInfo.unreachable ? 'Ark server unreachable' : '')
+    setError(aspInfo.unreachable ? t('errors.send.arkade.server') : '')
   }, [aspInfo.unreachable])
 
   useEffect(() => {
@@ -85,8 +88,8 @@ export default function ReceiveAmount() {
     if (!svcWallet) return
     getReceivingAddresses(svcWallet)
       .then(({ offchainAddr, boardingAddr }) => {
-        if (!offchainAddr) throw 'Unable to get offchain address'
-        if (!boardingAddr) throw 'Unable to get boarding address'
+        if (!offchainAddr) throw t('errors.receive.general.offChain')
+        if (!boardingAddr) throw t('errors.receive.general.boarding')
         setRecvInfo({
           ...recvInfo,
           boardingAddr,
@@ -101,14 +104,14 @@ export default function ReceiveAmount() {
       })
   }, [svcWallet])
 
-  if (!svcWallet) return <Loading text='Loading...' />
+  if (!svcWallet) return <Loading text= {t('common.general.loading')} />
 
   const handleFaucet = async () => {
     try {
-      if (!satoshis) throw 'Invalid amount'
+      if (!satoshis) throw t('errors.receive.general.amount')
       setFauceting(true)
       const ok = await callFaucet(recvInfo.offchainAddr, satoshis, aspInfo)
-      if (!ok) throw 'Faucet failed'
+      if (!ok) throw t('errors.receive.general.faucetFail')
       setFauceting(false)
       setFaucetSuccess(true)
     } catch (err) {
@@ -162,7 +165,7 @@ export default function ReceiveAmount() {
   }
 
   const shareText = invoice || arkAddress || address
-  const disabled = !canBrowserShareData({ title: 'Receive', text: shareText }) || sharing
+  const disabled = !canBrowserShareData({ title: t('common.general.receive'), text: shareText }) || sharing
 
   // set the QR code value to the plain address the first time
   useEffect(() => {
@@ -207,7 +210,7 @@ export default function ReceiveAmount() {
       createReverseSwap(satoshis)
         .then((pendingSwap) => {
           if (cancelled) return
-          if (!pendingSwap) throw new Error('Failed to create reverse swap')
+          if (!pendingSwap) throw new Error(t('errors.receive.general.pendingSwap'))
           const invoice = pendingSwap.response.invoice
           setRecvInfo({ ...recvInfo, invoice })
           setInvoice(invoice)
@@ -271,7 +274,7 @@ export default function ReceiveAmount() {
   const handleShare = () => {
     const shareText = invoice || arkAddress || address
     setSharing(true)
-    shareData({ title: 'Receive', text: shareText })
+    shareData({ title: t('common.general.receive'), text: shareText })
       .catch(consoleError)
       .finally(() => setSharing(false))
   }
@@ -279,9 +282,9 @@ export default function ReceiveAmount() {
   if (fauceting) {
     return (
       <>
-        <Header text='Fauceting' />
+        <Header text={t('common.general.fauceting')} />
         <Content>
-          <Loading text='Getting sats from a faucet. This may take a few moments.' />
+          <Loading text={t('common.notifications.receive.fauceting')} />
         </Content>
       </>
     )
@@ -291,9 +294,9 @@ export default function ReceiveAmount() {
     const displayAmount = prettyAmount(satoshis ?? 0)
     return (
       <>
-        <Header text='Success' />
+        <Header text={t('common.general.success')} />
         <Content>
-          <Success headline='Faucet completed!' text={`${displayAmount} received successfully`} />
+          <Success headline={t('common.notifications.receive.faucetComplete')} text={t('common.notifications.receive.faucetReceived', { amount: displayAmount })} />
         </Content>
       </>
     )
@@ -379,7 +382,7 @@ export default function ReceiveAmount() {
                 <InfoLine
                   compact
                   icon={getIconComponent('info')}
-                  text='For Lightning Network receives, please enter an amount above to generate your invoice and QR code.'
+                  text= {t('common.notifications.receive.lightning.lightningNetworkRcv')}
                 />
               ) : null}
               {termsAndConditions.map((item) => (
@@ -388,7 +391,7 @@ export default function ReceiveAmount() {
                   compact
                   color={item.color}
                   icon={getIconComponent(item.icon)}
-                  text={item.text}
+                  text={t(item.text)}
                 />
               ))}
               {showLightningFees ? (
@@ -396,16 +399,16 @@ export default function ReceiveAmount() {
                   compact
                   color='orange'
                   icon={<FeesIcon />}
-                  text={`Lightning fees: ${prettyAmount(reverseSwapFee)}`}
+                  text={t('common.notifications.receive.lightning.lightningFees', { amount: prettyAmount(reverseSwapFee) })}
                 />
               ) : null}
             </InfoContainer>
             </div>
             {noPaymentMethods ? (
-              <div>No valid payment methods available for this amount</div>
+              <div>{t('common.notifications.receive.invalidAmount')}</div>
             ) : showQrCode ? (
               <FlexCol centered>
-                {invoice ? <InfoLine centered color='orange' text='Keep tab open to receive Lightning' /> : null}
+                {invoice ? <InfoLine centered color='orange' text={t('common.notifications.receive.lightning.tabOpen')} /> : null}
                 <QrCode value={qrValue} />
                 <ExpandAddresses
                   bip21uri={bip21uri}
@@ -416,14 +419,14 @@ export default function ReceiveAmount() {
                 />
               </FlexCol>
             ) : (
-              <Loading text='Generating QR code...' />
+              <Loading text={t('common.notifications.receive.lightning.generateQR')} />
             )}
           </FlexCol>
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        <Button label='Share' onClick={handleShare} icon={<img src = {checkMarkIcon} alt = 'checkMark' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)', marginLeft: '0.5rem'}} />} disabled={disabled} style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '100%', height: '48px', borderRadius: '16px',}} />
-        {showFaucetButton ? <Button disabled={!satoshis} label='Faucet' onClick={handleFaucet} secondary /> : null}
+        <Button label={t('common.general.share')} onClick={handleShare} icon={<img src = {checkMarkIcon} alt = 'checkMark' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)', marginLeft: '0.5rem'}} />} disabled={disabled} style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '100%', height: '48px', borderRadius: '16px',}} />
+        {showFaucetButton ? <Button disabled={!satoshis} label={t('common.general.faucet')} onClick={handleFaucet} secondary /> : null}
       </ButtonsOnBottom>
     </>
   )

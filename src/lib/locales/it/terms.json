@@ -1,0 +1,54 @@
+{
+    "send":{
+        "bitcoin":
+        {
+        "address": "Per favore assicurati di inviare solo Bitcoin a un indirizzo valido di Arkade o mainnet. Qualsiasi altro indirizzo farà sì che i beni vadano persi per sempre, senza possibilità di recupero.",
+        "time": "Il tempo di transferimento per Bitcoin on-chain dipende dalla congestione della rete ed è, in media, di 10 minuti per la prima conferma. Se il tuo portafoglio supporta Arkade VTXO, la transazione sarà istantanea.",
+        "fees": "Le tariffe sono dinamiche sulla rete Bitcoin e sono correlate alla velocità con cui desideri ricever la tua transazione e a come il portafoglio di invio gestisce le transazioni. Le tariffe per i portafogli compatibili con Arkade sono vicine a 0."
+        }, 
+        "arkade": 
+        {
+        "address": "Per favore assicurati di inviare solo Bitcoin a un indirizzo valido di Arkade o mainnet. Qualsiasi altro indirizzo farà sì che i beni vadano persi per sempre, senza possibilità di recupero.",
+        "time": "Il tempo di transferimento per Arkade on-chain dipende dalla congestione della rete ed è, in media, di 10 minuti per la prima conferma. Se il tuo portafoglio supporta Arkade VTXO, la transazione sarà istantanea.",
+        "fees": "Le tariffe sono dinamiche sulla rete Arkade e sono correlate alla velocità con cui desideri ricever la tua transazione e a come il portafoglio di invio gestisce le transazioni. Le tariffe per i portafogli compatibili con Arkade sono vicine a 0."
+        },
+        "lightning": 
+        {
+        "address": "Per favore invia solo utilizzando una fattura della rete Lightning. Qualsiasi altro indirizzo farà sì che i beni vadano persi per sempre, senza possibilità di recupero.",
+        "time": "Il tempo di transferimento per la rete Lightning dipende da diversi fattori ed è, in media, di pochi secondi.",
+        "fees": "Le tariffe sono dinamiche sulla rete Lightning, generalmente inferiori a 0.01$."
+        },
+        "bank": 
+        {
+        "time": "Il tempo di transferimento può variare a seconda della banca, da istantaneo a 48 ore.",
+        "fees": "Le tariffe per i prelievi bancari sono del 0.3% del importo inviato se superiore a 1000CHF\nLe tariffe per i prelievi bancari sono del 1% del importo inviato se inferiore a 1000CHF\nLa tua banca potrebbe addebitare alcune tariffe aggiuntive di cui non siamo a conoscenza."
+        }    
+    },
+
+    "receive":{
+        "bitcoin": 
+        {
+        "address": "Per favore invia solo Bitcoin utilizzando Arkade o mainnet. Qualsiasi altro bene inviato andrà perso per sempre e non esiste possibilità di recuperarlo.",
+        "time": "Il tempo di transferimento per Bitcoin on-chain dipende dalla congestione della rete ed è, in media, di 10 minuti per la prima conferma.",
+        "fees": "Le tariffe sono dinamiche sulla rete Bitcoin e sono correlate alla velocità con cui desideri ricevere la tua transazione e a come il portafoglio di invio gestisce le transazioni. Le tariffe per i portafogli compatibili con Arkade sono vicine a 0."
+        },
+        "arkade": 
+        {
+        "address": "Per favore invia solo Bitcoin usando un portafoglio compatibile con Arkade. Qualsiasi altro bene inviato andrà perso per sempre e non esiste possibilità di recuperarlo.",
+        "time": "Se il mittente supporta Arkade VTXO, la transazione sarà istantanea.",
+        "fees": "Tariffe per i portafogli compatibili con Arkade sono vicine a 0."
+        },
+        "lightning": 
+        {
+        "address": "Per favore invia solo Bitcoin utilizzando la rete Lightning. Qualsiasi altro bene inviato andrà perso per sempre e non esiste possibilità di recuperarlo.",
+        "info": "Per ricevere fondi devi rimanere nell'app fino al completamento della transazione.",
+        "time": "Il tempo di transferimento per la rete Lightning dipende da diversi fattori ed è, in media, di pochi secondi.",
+        "fees": "Le tariffe sono dinamiche sulla rete Lightning, generalmente inferiori a 0.01$."
+        },
+        "bank": 
+        {
+        "time": "Il tempo di transferimento può variare a seconda della banca, da istantaneo a 48 ore.",
+        "fees": "Le tariffe per i prelievi bancari sono del 0.3% del importo inviato se superiore a 1000CHF\nLe tariffe per i prelievi bancari sono del 1% del importo inviato se inferiore a 1000CHF\nLa tua banca potrebbe addebitare alcune tariffe aggiuntive di cui non siamo a conoscenza."
+        }
+    }
+}

@@ -13,6 +13,7 @@ import { SettingsOptions, Themes } from '../lib/types'
 import LendasatIcon from '../screens/Apps/Lendasat/LendasatIcon'
 import SatoraIcon from '../screens/Apps/Satora/SatoraIcon'
 import { NavigationContext, Pages } from '../providers/navigation'
+import { useTranslation } from 'react-i18next'
 
 // icon with pretty gradient background
 const PrettyIcon = ({ color, icon }: { color?: string; icon: React.ReactNode }) => {
@@ -104,6 +105,9 @@ export default function Announcement({
   const { setOption } = useContext(OptionsContext)
   const [open, setOpen] = useState(true)
 
+  const {t} = useTranslation()
+
+
   const handleTryIt = () => {
     if (page) navigate(page)
     else if (option) {
@@ -131,14 +135,14 @@ export default function Announcement({
               </Text>
             </FlexCol>
             <FlexCol gap='0.75rem'>
-              <TextSecondary>What you can do:</TextSecondary>
+              <TextSecondary>{t('components.announcements.whatDo')}</TextSecondary>
               <BulletList points={bulletPoints} />
             </FlexCol>
           </FlexCol>
         </div>
         <FlexCol gap='0.25rem'>
-          <Button onClick={handleTryIt} label={`Try ${title}`} />
-          <Button onClick={() => setOpen(false)} label='Maybe later' secondary />
+          <Button onClick={handleTryIt} label={t('components.announcements.try', {title:title})} />
+          <Button onClick={() => setOpen(false)} label={t('components.announcements.later')} secondary />
         </FlexCol>
       </div>
     </Modal>
@@ -146,6 +150,8 @@ export default function Announcement({
 }
 
 export function BoltzAnnouncement({ close }: { close: () => void }) {
+  const {t} = useTranslation()
+
   return (
     <Announcement
       close={close}
@@ -153,36 +159,38 @@ export function BoltzAnnouncement({ close }: { close: () => void }) {
       color='#ffe96d'
       page={Pages.AppBoltz}
       icon={<BoltzIcon big />}
-      message='Lightning that works.'
+      message={t('components.announcements.lightWork')}
       bulletPoints={[
-        ['Bridge', 'Swap between different Bitcoin layers while staying in full control.'],
-        ['Fast', 'Boltz utilizes Layer 2 scaling technologies like the Lightning Network.'],
-        ['Safe', 'Swaps on Boltz are atomic, cryptography ensures that users are always in control of their money.'],
+        [t('components.announcements.bridge'), t('components.announcements.bridgeDescr')],
+        [t('components.announcements.fast'), t('components.announcements.fastDescr')],
+        [t('components.announcements.safe'), t('components.announcements.safeDescr')],
       ]}
     />
   )
 }
 
 export function LendaSatAnnouncement({ close }: { close: () => void }) {
+  const {t} = useTranslation()
+
   return (
     <Announcement
       close={close}
       title='LendaSat'
       page={Pages.AppLendasat}
       icon={<LendasatIcon big />}
-      message='Take loans with Bitcoin as collateral. Receive USDC or USDT in 2 minutes.'
+      message={t('components.announcements.lendaMess')}
       bulletPoints={[
         [
-          'Choose a loan',
-          'Pick your preferred loan terms from a list of offers or post your own loan request. We will find you the right match.',
+          t('components.announcements.chooseLoan'),
+          t('components.announcements.chooseLoanDescr'),
         ],
         [
-          'Lock your Bitcoin',
-          'Lock Bitcoin worth more than your loan amount as collateral. Your Bitcoin stays safe while you get the cash you need.',
+          t('components.announcements.lock'),
+          t('components.announcements.lockDescr'),
         ],
         [
-          'Receive the funds',
-          'Get your loan instantly via your preferred method: bank transfer, stablecoins (USDT/USDC), or VISA card.',
+          t('components.announcements.rcv'),
+          t('components.announcements.rcvDescr'),
         ],
       ]}
     />
@@ -190,37 +198,41 @@ export function LendaSatAnnouncement({ close }: { close: () => void }) {
 }
 
 export function SatoraAnnouncement({ close }: { close: () => void }) {
+  const {t} = useTranslation()
+
   return (
     <Announcement
       close={close}
       title='Satora'
       page={Pages.AppSatora}
       icon={<SatoraIcon big />}
-      message='Swap Bitcoin to USDC or USDT instantly.'
+      message={t('components.announcements.satoraMessage')}
       bulletPoints={[
-        ['Swap to stablecoins', 'Swap native $BTC for $USDT or $USDC on Ethereum and Polygon.'],
+        [t('components.announcements.swapStable'), t('components.announcements.swapDescr')],
         [
-          'Trustless Atomic Swaps',
-          'When a swap is started, both parties lock their funds in smart contracts. The swap either completes fully or both parties get refunded.',
+          t('components.announcements.atomic'),
+          t('components.announcements.atomicDescr'),
         ],
-        ['Self-custodial', 'Satora is fully self-custodial. Your keys, your coins.'],
+        [t('components.announcements.selfCust'), t('components.announcements.selfCustDescr')],
       ]}
     />
   )
 }
 
 export function NostrBackupsAnnouncement({ close }: { close: () => void }) {
+  const {t} = useTranslation()
+
   return (
     <Announcement
       close={close}
-      title='Nostr Backups'
+      title={t('components.announcements.nostrBack')}
       option={SettingsOptions.Backup}
       icon={<NostrIcon big />}
-      message='Backup to Nostr.'
+      message={t('components.announcements.nostrMsg')}
       bulletPoints={[
-        ['Backup settings', 'Have your Chimera wallet settings safely backed up on Nostr.'],
-        ['Boltz swaps', 'Easily restore your Boltz swap history if you switch devices.'],
-        ['Secure', 'All backups are encrypted and stored securely on the Nostr network.'],
+        [t('components.announcements.backSett'), t('components.announcements.backMsg')],
+        [t('components.announcements.boltzSw'), t('components.announcements.boltzMsg')],
+        [t('components.announcements.secure'), t('components.announcements.secureMsg')],
       ]}
     />
   )

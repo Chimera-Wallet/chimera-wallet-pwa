@@ -1,0 +1,27 @@
+{
+  "addressFallback": "Coller une adresse",
+  "networkFallback": "Sélectionnez un réseau pour afficher sa description",
+  "arkade": {
+    "address": "Coller une adresse Arkade"
+  },
+  "lightning": {
+    "address": "Coller une facture Lightning",
+    "invoice": "Collez une facture Lightning pour envoyer un paiement. Le montant du paiement est encodé dans la facture."
+  },
+  "bitcoin": {
+    "address": "Coller une adresse BTC"
+  },
+  "bank": {
+    "details": "Saisir les coordonnées bancaires"
+  },
+  "contacts": {
+    "name": "Saisir le nom du contact",
+    "accounts": "ex. : Portefeuille principal, Épargne...",
+    "enterAddr": "Saisissez {{name}}"
+  },
+  "assets": {
+    "token": "Mon jeton",
+    "assIdPaste": "Coller l’identifiant de l’actif...",
+    "controlAm": "Montant de contrôle"
+  }
+}

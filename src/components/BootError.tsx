@@ -3,10 +3,12 @@ import { createPortal } from 'react-dom'
 import { WalletContext } from '../providers/wallet'
 import Button from './Button'
 import Text from './Text'
+import { useTranslation } from 'react-i18next'
 
 export default function BootError() {
   const { loadError, reloadWallet, dismissLoadError } = useContext(WalletContext)
   const [retrying, setRetrying] = useState(false)
+  const {t} = useTranslation()
 
   const handleRetry = async () => {
     setRetrying(true)
@@ -44,10 +46,10 @@ export default function BootError() {
           {loadError}
         </Text>
         <Button onClick={handleRetry} loading={retrying}>
-          Retry
+          {t('components.bootErr.retry')}
         </Button>
         <Button clear onClick={dismissLoadError}>
-          Continue anyway
+          {t('components.bootErr.continue')}
         </Button>
       </div>
     </div>,

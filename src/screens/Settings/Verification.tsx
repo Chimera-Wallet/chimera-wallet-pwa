@@ -34,6 +34,7 @@ import {
   clearKycLastView,
 } from '../../lib/kyc'
 import { isIOS } from '../../lib/browser'
+import {useTranslation, Trans} from 'react-i18next'
 
 type ViewState = 'loading' | 'email' | 'consent' | 'magic-link-sent' | 'registered' | 'webview' | 'status' | 'error'
 
@@ -47,6 +48,8 @@ export default function Verification() {
   const { kycAuthParams, setKycAuthParams } = useContext(FlowContext)
   const { screen, goBack: navGoBack } = useContext(NavigationContext)
   const { goBack: optionsGoBack } = useContext(OptionsContext)
+
+  const {t} = useTranslation()
 
   const isStandalonePage = screen === Pages.SettingsKYC
   const handleBack = isStandalonePage ? navGoBack : optionsGoBack
@@ -184,7 +187,7 @@ export default function Verification() {
             return
           } catch (err) {
             console.error('KYC auth error:', err)
-            setError('Failed to confirm authentication. Please try again.')
+            setError(t('errors.verification.failedAuth'))
             setViewState('error')
             return
           }
@@ -208,7 +211,7 @@ export default function Verification() {
           setViewState('email')
         }
       } catch {
-        setError('Failed to initialize verification. Please try again.')
+        setError(t('errors.verification.failedVerif'))
         setViewState('error')
       }
     }
@@ -270,7 +273,7 @@ export default function Verification() {
 
   const handleEmailContinue = () => {
     if (!validateEmail(email)) {
-      setEmailError('Please enter a valid email address.')
+      setEmailError(t('errors.verification.email'))
       return
     }
     setEmailError('')
@@ -297,7 +300,7 @@ export default function Verification() {
       startPolling(email, newSessionId)
       setViewState('magic-link-sent')
     } catch {
-      setSendError('Failed to send verification email. Please try again.')
+      setSendError(t('errors.verification.failedEmailSend'))
     } finally {
       setIsSendingLink(false)
     }
@@ -316,7 +319,7 @@ export default function Verification() {
       setPollingTimedOut(false)
       startPolling(email, newSessionId)
     } catch {
-      setSendError('Failed to resend email. Please try again.')
+      setSendError(t('errors.verification.failedEmailResend'))
     } finally {
       setIsSendingLink(false)
     }
@@ -389,7 +392,7 @@ export default function Verification() {
   if (viewState === 'loading') {
     return (
       <>
-        <Header text='KYC - Verification' backFunc={handleBack} />
+        <Header text={t('settings.menu.kycVer')} backFunc={handleBack} />
         <Content>
           <Loading simple />
         </Content>
@@ -400,7 +403,7 @@ export default function Verification() {
   if (viewState === 'error') {
     return (
       <>
-        <Header text='KYC - Verification' backFunc={handleBack} />
+        <Header text={t('settings.menu.kycVer')} backFunc={handleBack} />
         <Content>
           <Padded>
             <FlexCol>
@@ -415,13 +418,13 @@ export default function Verification() {
   if (viewState === 'email') {
     return (
       <>
-        <Header text='KYC - Verification' backFunc={handleBack} />
+        <Header text={t('settings.menu.kycVer')} backFunc={handleBack} />
         <Content>
           <Padded>
             <FlexCol gap='1.5rem'>
               <div>
-                <Text>Enter your email address</Text>
-                <TextSecondary>Enter your email address to begin your KYC verification.</TextSecondary>
+                <Text>{t('settings.verification.enterEmail')}</Text>
+                <TextSecondary>{t('settings.verification.enterEmailVerif')}</TextSecondary>
               </div>
               <input
                 className='input'
@@ -440,7 +443,7 @@ export default function Verification() {
                 }}
               />
               {emailError ? <ErrorMessage error text={emailError} /> : null}
-              <Button onClick={handleEmailContinue} label='Continue' />
+              <Button onClick={handleEmailContinue} label={t('common.general.continue')} />
             </FlexCol>
           </Padded>
         </Content>
@@ -453,14 +456,14 @@ export default function Verification() {
     const emailChanged = isEditingEmail && email !== savedEmail
     return (
       <>
-        <Header text='KYC - Verification' backFunc={handleBack} />
+        <Header text={t('settings.menu.kycVer')} backFunc={handleBack} />
         <Content>
           <Padded>
             <FlexCol gap='1.5rem'>
               <div>
-                <Text>Identity Verification</Text>
+                <Text>{t('settings.verification.idVerif')}</Text>
                 <TextSecondary>
-                  Your email is registered. Open the verification portal to complete or check your KYC status.
+                  {t('settings.verification.emailRegs')}
                 </TextSecondary>
               </div>
               <input
@@ -484,14 +487,14 @@ export default function Verification() {
               {emailChanged ? (
                 <Info color='orange' title='Email change'>
                   <Text small thin wrap color='orange'>
-                    Changing your email address will require you to re-submit your KYC verification.
+                   {t('settings.verification.emailReSub')}
                   </Text>
                 </Info>
               ) : null}
               {emailError ? <ErrorMessage error text={emailError} /> : null}
               <Button
                 onClick={emailChanged ? handleEmailContinue : handleCheckStatus}
-                label={emailChanged ? 'Re-submit KYC' : 'Check Status'}
+                label={emailChanged ? t('settings.verification.resubKyc'): t('settings.verification.checkStat')}
               />
             </FlexCol>
           </Padded>
@@ -510,14 +513,14 @@ export default function Verification() {
     }
     return (
       <>
-        <Header text='KYC - Verification' backFunc={handleBack} />
+        <Header text={t('settings.menu.kycVer')} backFunc={handleBack} />
         <Content>
           <Padded>
             <FlexCol gap='1.5rem'>
               <div>
-                <Text>Review &amp; Accept</Text>
+                <Text>{t('settings.verification.r&a')}</Text>
                 <TextSecondary>
-                  Before we send your verification email, please review and accept the following.
+                  {t('settings.verification.reviewText')}
                 </TextSecondary>
               </div>
               <div style={checkboxStyle}>
@@ -525,10 +528,10 @@ export default function Verification() {
                   <Checkbox
                     checked={privacyAccepted}
                     onCheckedChange={(checked) => setPrivacyAccepted(checked === true)}
-                    aria-label='Accept privacy policy'
+                    aria-label={t('settings.verification.acceptPP')}
                   />
                   <Text small>
-                    I have read and agree to the{' '}
+                    {t('settings.verification.agreed')}{' '}
                     <a
                       href='https://outlogic.net/privacy-policy/'
                       target='_blank'
@@ -536,7 +539,7 @@ export default function Verification() {
                       style={{ color: 'var(--purple-700)' }}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      Privacy Policy
+                      {t('settings.verification.PP')}
                     </a>
                   </Text>
                 </FlexRow>
@@ -546,10 +549,10 @@ export default function Verification() {
                   <Checkbox
                     checked={termsAccepted}
                     onCheckedChange={(checked) => setTermsAccepted(checked === true)}
-                    aria-label='Accept terms of service'
+                    aria-label={t('settings.verification.accTS')}
                   />
                   <Text small>
-                    I have read and agree to the{' '}
+                    {t('settings.verification.agreed')}{' '}
                     <a
                       href='https://outlogic.net/terms-conditions/'
                       target='_blank'
@@ -557,7 +560,7 @@ export default function Verification() {
                       style={{ color: 'var(--purple-700)' }}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      Terms of Service
+                      {t('settings.verification.TS')}
                     </a>
                   </Text>
                 </FlexRow>
@@ -565,7 +568,7 @@ export default function Verification() {
               {sendError ? <ErrorMessage error text={sendError} /> : null}
               <Button
                 onClick={handleProceed}
-                label={isSendingLink ? 'Sending...' : 'Proceed'}
+                label={isSendingLink ? t('settings.verification.sending') : t('settings.verification.proceed')}
                 disabled={!canProceed || isSendingLink}
                 loading={isSendingLink}
               />
@@ -580,25 +583,25 @@ export default function Verification() {
     const canResend = resendCount < RESEND_MAX && resendCooldown === 0 && !isSendingLink
     const resendLabel =
       resendCooldown > 0
-        ? `Resend in ${resendCooldown}s`
+        ? t('settings.verification.resendIn',{sec: resendCooldown})
         : resendCount >= RESEND_MAX
-          ? 'Resend limit reached'
+          ? t('settings.verification.resendLim')
           : isSendingLink
-            ? 'Sending...'
-            : 'Resend email'
+            ? t('settings.verification.sending')
+            : t('settings.verification.resend')
 
     if (pollingTimedOut) {
       return (
         <>
-          <Header text='KYC - Verification' backFunc={handleBack} />
+          <Header text={t('settings.menu.kycVer')} backFunc={handleBack} />
           <Content>
             <Padded>
               <FlexCol gap='1.5rem' centered>
                 <div style={{ fontSize: '3rem' }}>⏱️</div>
-                <Text>Verification timed out</Text>
-                <TextSecondary>We didn't detect a link click within 2 minutes. Please try again.</TextSecondary>
+                <Text>{t('settings.verification.veriTimeout')}</Text>
+                <TextSecondary>{t('settings.verification.noClick')}</TextSecondary>
                 {sendError ? <ErrorMessage error text={sendError} /> : null}
-                <Button onClick={handleTryAgain} label='Try Again' />
+                <Button onClick={handleTryAgain} label={t('settings.verification.tryAg')} />
               </FlexCol>
             </Padded>
           </Content>
@@ -608,17 +611,20 @@ export default function Verification() {
 
     return (
       <>
-        <Header text='KYC - Verification' backFunc={handleBack} />
+        <Header text={t('settings.menu.kycVer')} backFunc={handleBack} />
         <Content>
           <Padded>
             <FlexCol gap='1.5rem' centered>
               <div style={{ fontSize: '3rem' }}>📧</div>
               <Text>Check your inbox</Text>
               <TextSecondary>
-                We've sent a verification link to <strong>{email}</strong>. Click the link to continue.
+               <Trans
+                  i18nKey="settings.verification.sentVerif"
+                  values={{ email }}
+                />
               </TextSecondary>
               <Loading simple />
-              <TextSecondary>Waiting for verification…</TextSecondary>
+              <TextSecondary>{t('settings.verification.waiting')}</TextSecondary>
               {sendError ? <ErrorMessage error text={sendError} /> : null}
               <Button onClick={handleResend} label={resendLabel} disabled={!canResend} secondary />
             </FlexCol>
@@ -632,7 +638,7 @@ export default function Verification() {
   if (viewState === 'status') {
     return (
       <>
-        <Header text='KYC - Verification' backFunc={handleBack} />
+        <Header text={t('settings.menu.kycVer')} backFunc={handleBack} />
         <Content>
           <Padded>
             <FlexCol gap='1.5rem' centered>
@@ -640,17 +646,17 @@ export default function Verification() {
                 <>
                   <SuccessMessage />
                   <div style={{ textAlign: 'center' }}>
-                    <Text>Your identity has been verified!</Text>
-                    <TextSecondary>You have full access to all features.</TextSecondary>
+                    <Text>{t('settings.verification.idVerified')}</Text>
+                    <TextSecondary>{t('settings.verification.fullAccess')}</TextSecondary>
                   </div>
                 </>
               )}
               {kycStatus === 'pending' && (
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⏳</div>
-                  <Text>Verification in Progress</Text>
+                  <Text>{t('settings.verification.verifProgress')}</Text>
                   <TextSecondary>
-                    Your documents are being reviewed. This usually takes 1-2 business days.
+                    {t('settings.verification.docReview')}
                   </TextSecondary>
                   {statusMessage ? (
                     <div style={{ marginTop: '0.5rem' }}>
@@ -662,9 +668,9 @@ export default function Verification() {
               {kycStatus === 'rejected' && (
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>❌</div>
-                  <Text>Verification Unsuccessful</Text>
+                  <Text>{t('settings.verification.idUnverified')}</Text>
                   <TextSecondary>
-                    Unfortunately, we could not verify your identity. Please try again with valid documents.
+                    {t('settings.verification.unverifText')}
                   </TextSecondary>
                   {statusMessage ? (
                     <div style={{ marginTop: '0.5rem' }}>
@@ -684,7 +690,7 @@ export default function Verification() {
                         fontSize: '1rem',
                       }}
                     >
-                      Try Again
+                     {t('settings.verification.tryAg')}
                     </button>
                   </div>
                 </div>
@@ -699,7 +705,7 @@ export default function Verification() {
   // Webview state
   return (
     <>
-      <Header text='KYC - Verification' backFunc={handleBack} />
+      <Header text={t('settings.menu.kycVer')} backFunc={handleBack} />
       <Content>
         <div style={{ height: '100%', position: 'relative' }}>
           {/* Close button — collapses webview back to registered view without unmounting iframe */}
@@ -743,11 +749,11 @@ export default function Verification() {
                 }}
               >
                 <div style={{ marginBottom: '0.5rem' }}>
-                  <Text>Having trouble loading verification?</Text>
+                  <Text>{t('settings.verification.troubleLoad')}</Text>
                 </div>
                 <div style={{ marginBottom: '1rem' }}>
                   <TextSecondary>
-                    iOS may have issues with embedded content. Open in Safari for the best experience.
+                    {t('settings.verification.iosIssue')}
                   </TextSecondary>
                 </div>
                 <button
@@ -762,7 +768,7 @@ export default function Verification() {
                     fontSize: '1rem',
                   }}
                 >
-                  Open in Browser
+                {t('settings.verification.openBrowser')}
                 </button>
               </div>
             ) : null}

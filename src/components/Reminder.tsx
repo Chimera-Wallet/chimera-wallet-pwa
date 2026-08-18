@@ -7,6 +7,7 @@ import {
 } from '../lib/calendar'
 import SheetModal from './SheetModal'
 import FlexCol from './FlexCol'
+import { useTranslation } from 'react-i18next'
 interface ReminderProps {
   callback: () => void
   duration: number
@@ -52,6 +53,8 @@ export default function Reminder({ callback, duration, name, isOpen, startTime }
     color: 'var(--neutral-500)',
   }
 
+  const {t} = useTranslation()
+
   return (
     <SheetModal isOpen={isOpen} onClose={callback}>
       <FlexCol gap='2rem'>
@@ -61,13 +64,13 @@ export default function Reminder({ callback, duration, name, isOpen, startTime }
         </FlexCol>
         <FlexCol>
           <button className='reminder-button' onClick={handleGoogle}>
-            Google Calendar
+            {t('components.reminder.googleCal')}
           </button>
           <button className='reminder-button' onClick={handleApple}>
-            Apple Calendar
+            {t('components.reminder.appleCal')}
           </button>
           <button className='reminder-button' onClick={handleOutlook}>
-            Outlook
+           {t('components.reminder.outlook')}
           </button>
         </FlexCol>
       </FlexCol>
