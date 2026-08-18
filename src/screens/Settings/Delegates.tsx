@@ -75,7 +75,7 @@ function Hero() {
       <FlexCol gap='0.5rem'>
         <Text bold>{t('settings.delegates.whatIs')}</Text>
         <Text small thin wrap>
-          {t('delegates.delegateDescr')}
+          {t('settings.delegates.delegateDescr')}
         </Text>
         <a
           href='https://docs.arkadeos.com/learn/pillars/batch-expiry#delegation-solutions'
