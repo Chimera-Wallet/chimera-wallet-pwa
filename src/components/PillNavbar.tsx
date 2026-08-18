@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import WalletIcon from '../icons/Wallet'
 import AppsIcon from '../icons/Apps'
-import SettingsIcon from '../icons/Settings'
+import SettingsIconLight from '../icons/Settings'
 import CardReservationIcon from '../icons/CardReservation'
 import SwapIcon from '../icons/Swap'
 import { useTranslation } from 'react-i18next'
@@ -64,7 +64,7 @@ export default function PillNavbar({
         data-testid='tab-card'
       >
         <div ref={cardRef} className='pill-nav-icon'>
-          <CardReservationIcon />
+          <CardReservationIcon/>
         </div>
         <span className='pill-nav-label'>{t('components.pillNav.card')}</span>
       </button>
@@ -89,7 +89,7 @@ export default function PillNavbar({
         aria-label='Wallet'
         data-testid='tab-wallet'
       >
-        <div ref={walletRef} className='pill-nav-icon pill-nav-logo-btn'>
+        <div ref={walletRef} className='pill-nav-icon pill-nav-logo-btn' >
           <img src='/arkade-icon.svg' alt='Wallet' style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
         </div>
       </button>
@@ -115,7 +115,7 @@ export default function PillNavbar({
         data-testid='tab-settings'
       >
         <div ref={settingsRef} className='pill-nav-icon'>
-          <SettingsIcon />
+          <SettingsIconLight />
         </div>
         <span className='pill-nav-label'>{t('components.pillNav.settings')}</span>
       </button>

@@ -80,7 +80,7 @@ import rsLib from './locales/rs/lib.json'
 
 i18n.use(initReactI18next).init({
   debug: import.meta.env.DEV,
-  fallbackLng: 'es',
+  fallbackLng: 'en',
   interpolation: {
     escapeValue: false,
   },
