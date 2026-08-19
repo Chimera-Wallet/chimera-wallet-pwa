@@ -87,16 +87,18 @@ export default function AssetRow({
           {badge ? (
             <span
               style={{
-                background: 'var(--white10)',
+                backgroundColor: 'var(--neutral-200)',
                 borderRadius: 4,
                 fontSize: 9,
                 fontWeight: 700,
-                color: 'var(--bg)',
                 padding: '2px 5px',
+                color: 'var(--fg)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.8px',
                 marginTop: 2,
                 width: 'fit-content',
+
+
               }}
             >
               {badge}
