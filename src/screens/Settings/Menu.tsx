@@ -19,7 +19,6 @@ import CogIcon from '../../icons/Cog'
 import NotificationIcon from '../../icons/Notification'
 import PuzzleIcon from '../../icons/Puzzle'
 import {useTranslation} from 'react-i18next'
-import { T } from 'vitest/dist/chunks/reporters.d.BuRON0I0.js'
 
 // map the stored KYC status to a status pill
 function kycBadge(status: KycStatus): { text: string; tone: BadgeTone } {
