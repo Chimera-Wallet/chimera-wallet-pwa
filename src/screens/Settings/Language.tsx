@@ -19,16 +19,6 @@ export default function Language() {
 
   const [selectedLang, setSelectedLang] = useState<string>(i18n.language || 'en')
 
-  const languages = [
-    { code: 'en', label: 'English' },
-    { code: 'es', label: 'Español' },
-    { code: 'it', label: 'Italiano' },
-    { code: 'fr', label: 'Français' },
-    { code: 'jp', label: '日本語' },
-    { code: 'ch', label: '中文' },
-    { code: 'rs', label: 'Srpski' },
-  ]
-
   const langRows : SelectionRow[] = [
     {
       icon: uk,
@@ -63,50 +53,50 @@ export default function Language() {
         i18n.changeLanguage('it')
       },
     },
-    {
-      icon: france,
-      key: 'fr',
-      label: 'Français',
-      right: 'toggle',
-      checked: selectedLang === 'fr',
-      onClick: () => {
-        setSelectedLang('fr')
-        i18n.changeLanguage('fr')
-      },
-    },
-    {
-      icon: <GlobeOutlineIcon />,
-      key: 'jp',
-      label: '日本語',
-      right: 'toggle',
-      checked: selectedLang === 'jp',
-      onClick: () => {
-        setSelectedLang('jp')
-        i18n.changeLanguage('jp')
-      },
-    },
-    {
-      icon: <GlobeOutlineIcon />,
-      key: 'ch',
-      label: '中文',
-      right: 'toggle',
-      checked: selectedLang === 'ch',
-      onClick: () => {
-        setSelectedLang('ch')
-        i18n.changeLanguage('ch')
-      },
-    },
-    {
-      icon: <GlobeOutlineIcon />,
-      key: 'rs',
-      label: 'Srpski',
-      right: 'toggle',
-      checked: selectedLang === 'rs',
-      onClick: () => {
-        setSelectedLang('rs')
-        i18n.changeLanguage('rs')
-      },
-    },
+  //  {
+  //    icon: france,
+  //    key: 'fr',
+  //    label: 'Français',
+  //    right: 'toggle',
+  //    checked: selectedLang === 'fr',
+  //    onClick: () => {
+  //      setSelectedLang('fr')
+  //      i18n.changeLanguage('fr')
+  //    },
+  //  },
+  //  {
+  //    icon: <GlobeOutlineIcon />,
+  //    key: 'jp',
+  //    label: '日本語',
+  //    right: 'toggle',
+  //    checked: selectedLang === 'jp',
+  //    onClick: () => {
+  //      setSelectedLang('jp')
+  //      i18n.changeLanguage('jp')
+  //    },
+  //  },
+  //  {
+  //    icon: <GlobeOutlineIcon />,
+  //    key: 'ch',
+  //    label: '中文',
+  //    right: 'toggle',
+  //    checked: selectedLang === 'ch',
+  //    onClick: () => {
+  //      setSelectedLang('ch')
+  //      i18n.changeLanguage('ch')
+  //    },
+  //  },
+  //  {
+  //    icon: <GlobeOutlineIcon />,
+  //    key: 'rs',
+  //    label: 'Srpski',
+  //    right: 'toggle',
+  //    checked: selectedLang === 'rs',
+  //    onClick: () => {
+  //      setSelectedLang('rs')
+  //      i18n.changeLanguage('rs')
+  //    },
+  //  },
   ]
 
   return (

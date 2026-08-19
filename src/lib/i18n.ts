@@ -31,6 +31,11 @@ import itNetworks from './locales/it/networks.json'
 import itPlaceholders from './locales/it/placeholders.json'
 import itErrors from './locales/it/errors.json'
 import itCommon from './locales/it/common.json'
+import itInit from './locales/it/init.json'
+import itSettings from './locales/it/settings.json'
+import itApps from './locales/it/apps.json'
+import itComponents from './locales/it/components.json'
+import itLib from './locales/it/lib.json'
 
 import chTerms from './locales/ch/terms.json'
 import chNetworks from './locales/ch/networks.json'
@@ -122,7 +127,12 @@ i18n.use(initReactI18next).init({
         placeholders: itPlaceholders,
         networks: itNetworks,
         errors: itErrors,
-        common: itCommon
+        common: itCommon,
+        init:itInit,
+        settings: itSettings,
+        apps:itApps,
+        components:itComponents,
+        lib: itLib,
         },
     },
     rs: {
