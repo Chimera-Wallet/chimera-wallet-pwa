@@ -1,0 +1,63 @@
+{
+  "key": {
+    "savePhrase": "Salva la tua frase di recupero",
+    "saveKey": "Salva la tua chiave privata",
+    "mnemonicWarning": "Questo è l'unico modo per ripristinare il tuo wallet su un altro browser o dispositivo. Conservala in un luogo sicuro: un gestore di password, note crittografate o scritta e custodita in modo sicuro.",
+    "keyWarning": "Questa è la tua chiave privata. Conservala in un luogo sicuro: un gestore di password, note crittografate o scritta e custodita in modo sicuro.",
+    "mnemonicSafe": "Conserva al sicuro la tua frase di recupero",
+    "keySafe": "Conserva al sicuro la tua chiave privata",
+    "privacyWarning": "Non condividerla con nessuno",
+    "lossWarning": "Se la perdi, non potrai recuperarla",
+    "hideKey": "Nascondi chiave privata",
+    "revealKey": "Mostra chiave privata",
+    "hidePhrase": "Nascondi frase",
+    "revealPhrase": "Mostra frase",
+    "copyPhrase": "Copia frase di recupero",
+    "copykey": "Copia chiave privata",
+    "saved": "L'ho salvata — Vai al wallet"
+  },
+  "warning": {
+    "important": "Avviso importante",
+    "warning": "⚠ ATTENZIONE",
+    "lossFunds": "Se depositi fondi nel tuo wallet <bold>senza aver eseguito il backup delle tue chiavi</bold>, sei costantemente a rischio di <danger>PERDITA TOTALE E IRREVERSIBILE DEI FONDI</danger>.",
+    "nonCustodial": "Chimera Wallet è un <bold>wallet completamente non-custodial</bold>. <strongWarning>NESSUNO</strongWarning> può aiutarti a recuperare i tuoi fondi se non possiedi la tua chiave.",
+    "understood": "Ho capito, procedi",
+    "goBack": "Torna indietro"
+  },
+  "biometrics": {
+    "secureWallet": "Proteggi il tuo wallet",
+    "enableBioAuth": "Abilita l'autenticazione biometrica",
+    "bioAuthUnsupported": "L'autenticazione biometrica non è supportata su questo dispositivo. Dovrai utilizzare la password per sbloccare il wallet.",
+    "fingerFaceAuth": "Per la tua sicurezza, abilita l'autenticazione biometrica per sbloccare il wallet tramite impronta digitale o riconoscimento facciale.",
+    "enableBio": "Abilita biometria",
+    "usePass": "Usa invece la password"
+  },
+  "connection": {
+    "missingCreds": "Credenziali mancanti",
+    "restoringSwaps": "Ripristino degli swap...",
+    "swapsInfo": "Ripristinati {{num}} swap dalla rete",
+    "connectionFailed": "Connessione non riuscita",
+    "serverConnection": "Connessione al server in corso"
+  },
+  "init": {
+    "createWallet": "Crea nuovo wallet",
+    "restoreWallet": "Ripristina wallet"
+  },
+  "restore": {
+    "invalidPhrase": "Frase di recupero non valida",
+    "validationUnable": "Impossibile convalidare il formato della chiave privata",
+    "validationUnableSimple": "Impossibile convalidare il formato della chiave",
+    "restoringWallet": "Ripristino wallet...",
+    "pk": "chiave-privata",
+    "recoveryPhraseKey": "Frase di recupero o chiave privata",
+    "phraseEntry": "Inserisci la tua frase di recupero di 12 parole oppure una chiave privata che inizi con 'nsec' o una chiave esadecimale grezza. Non condividerla con nessuno."
+  },
+  "success": {
+    "walletRestore": "Wallet ripristinato!",
+    "liveWallet": "Il tuo nuovo wallet è attivo!",
+    "walletRestoreSucc": "Il tuo wallet è stato ripristinato con successo ed è ora pronto all'uso.",
+    "walletCreatedSucc": "Il tuo wallet è stato creato con successo ed è ora pronto all'uso.",
+    "takeControl": "Riprendi il controllo del tuo denaro",
+    "goWallet": "VAI AL WALLET"
+  }
+}
