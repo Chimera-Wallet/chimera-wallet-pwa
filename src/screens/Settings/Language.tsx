@@ -11,6 +11,9 @@ import uk from '../../../public/images/icons/ UK.svg'
 import france from '../../../public/images/icons/ FRANCE.svg'
 import italy from '../../../public/images/icons/ ITALY.svg'
 import spain from '../../../public/images/icons/ SPAIN.svg'
+import china from '../../../public/images/icons/CH.svg'
+import japan from '../../../public/images/icons/JP.svg'
+import russia from '../../../public/images/icons/RS.svg'
 
 
 
@@ -53,50 +56,50 @@ export default function Language() {
         i18n.changeLanguage('it')
       },
     },
-  //  {
-  //    icon: france,
-  //    key: 'fr',
-  //    label: 'Français',
-  //    right: 'toggle',
-  //    checked: selectedLang === 'fr',
-  //    onClick: () => {
-  //      setSelectedLang('fr')
-  //      i18n.changeLanguage('fr')
-  //    },
-  //  },
-  //  {
-  //    icon: <GlobeOutlineIcon />,
-  //    key: 'jp',
-  //    label: '日本語',
-  //    right: 'toggle',
-  //    checked: selectedLang === 'jp',
-  //    onClick: () => {
-  //      setSelectedLang('jp')
-  //      i18n.changeLanguage('jp')
-  //    },
-  //  },
-  //  {
-  //    icon: <GlobeOutlineIcon />,
-  //    key: 'ch',
-  //    label: '中文',
-  //    right: 'toggle',
-  //    checked: selectedLang === 'ch',
-  //    onClick: () => {
-  //      setSelectedLang('ch')
-  //      i18n.changeLanguage('ch')
-  //    },
-  //  },
-  //  {
-  //    icon: <GlobeOutlineIcon />,
-  //    key: 'rs',
-  //    label: 'Srpski',
-  //    right: 'toggle',
-  //    checked: selectedLang === 'rs',
-  //    onClick: () => {
-  //      setSelectedLang('rs')
-  //      i18n.changeLanguage('rs')
-  //    },
-  //  },
+//    {
+//      icon: france,
+//      key: 'fr',
+//      label: 'Français',
+//      right: 'toggle',
+//      checked: selectedLang === 'fr',
+//      onClick: () => {
+//        setSelectedLang('fr')
+//        i18n.changeLanguage('fr')
+//      },
+//    },
+//    {
+//      icon: japan,
+//      key: 'jp',
+//      label: '日本語',
+//      right: 'toggle',
+//      checked: selectedLang === 'jp',
+//      onClick: () => {
+//        setSelectedLang('jp')
+//        i18n.changeLanguage('jp')
+//      },
+//    },
+//    {
+//      icon: china,
+//      key: 'ch',
+//      label: '中文',
+//      right: 'toggle',
+//      checked: selectedLang === 'ch',
+//      onClick: () => {
+//        setSelectedLang('ch')
+//        i18n.changeLanguage('ch')
+//      },
+//    },
+//    {
+//      icon: russia,
+//      key: 'rs',
+//      label: 'Srpski',
+//      right: 'toggle',
+//      checked: selectedLang === 'rs',
+//      onClick: () => {
+//        setSelectedLang('rs')
+//        i18n.changeLanguage('rs')
+//      },
+//    },
   ]
 
   return (
