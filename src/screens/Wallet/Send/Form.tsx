@@ -31,7 +31,7 @@ import { getReceivingAddresses } from '../../../lib/asp'
 import { OptionsContext } from '../../../providers/options'
 import { ConfigContext } from '../../../providers/config'
 import { FiatContext } from '../../../providers/fiat'
-import { ArkNote } from '@arkade-os/sdk'
+import { ArkNote, AssetDetails, isValidArkAddress, type NetworkName } from '@arkade-os/sdk'
 import { LimitsContext } from '../../../providers/limits'
 import { checkLnUrlConditions, fetchInvoice, fetchArkAddress, isValidLnUrl } from '../../../lib/lnurl'
 import { extractError } from '../../../lib/error'
@@ -41,7 +41,7 @@ import { decodeBip21, isBip21 } from '../../../lib/bip21'
 import { FeesContext } from '../../../providers/fees'
 import { InfoLine } from '../../../components/Info'
 import { getNetworkConfig } from '../../../lib/networks'
-import { getAssetConfig, requireAssetConfig, type AssetSymbol } from '../../../lib/assets'
+import { getAssetConfig, requireAssetConfig, type AssetSymbol, unitsToCents } from '../../../lib/assets'
 import { assetSupportsWrap, requireAssetChainOption, type SourceChainId } from '../../../lib/sourceChains'
 import AssetSelector from '../../../components/AssetSelector'
 import NetworkSelector from '../../../components/NetworkSelector'
@@ -56,6 +56,11 @@ import clockIcon from '../../../../public/images/icons/ Clock.svg'
 import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
 import checkMarkIcon from '../../../../public/images/icons/ CheckCheckMark.png'
 import {useTranslation, Trans} from 'react-i18next'
+import { decodeInvoice } from '../../../lib/bolt11'
+import { lnSendRendezvous, requestLnSend } from '../../../lib/lnSwap'
+import { withRfqTransport } from '../../../lib/nostrRfq'
+import { getEmulatorPubkeyForNetwork, testDomains } from '../../../lib/constants'
+import { discoverMarkets } from '../../../lib/swapMarkets'
 
 
 
@@ -103,9 +108,9 @@ export default function SendForm() {
     setError(str === '' ? (aspInfo.unreachable ? t('errors.send.arkade.server') : '') : str)
   }
 
-  const setState = (info: SendInfo) => {
+  const setState = (info: SendInfo | ((prev: SendInfo) => SendInfo)) => {
     setScan(false)
-    setSendInfo(info)
+    setSendInfo(info as any)
   }
 
   // get receiving addresses
@@ -150,7 +155,7 @@ export default function SendForm() {
         return setRecipient(url.searchParams.get('lightning')!)
       }
       if (isBip21(lowerCaseData)) {
-        const { address, arkAddress, invoice, lnUrl, satoshis } = decodeBip21(lowerCaseData)
+        const { address, arkAddress, invoice, lnUrl, satoshis, assetId, assetAmount } = decodeBip21(lowerCaseData)
         if (!address && !arkAddress && !invoice) return setError(t('errors.send.parsing.bip21'))
         if (selectedMethod === TRANSFER_METHOD.bitcoin) {
           if (!address) return setError(t('errors.send.bitcoin.address'))
@@ -162,14 +167,20 @@ export default function SendForm() {
         }
         if (selectedMethod === TRANSFER_METHOD.lightning) {
           if (!invoice && !lnUrl) return setError(t('errors.send.lightning.address'))
-          return setState({
-            ...sendInfo,
-            address: '',
-            arkAddress: '',
-            invoice: invoice ?? '',
-            lnUrl,
-            recipient,
-            satoshis,
+          return setState((prev) => {
+            const assets = assetId
+              ? [{ assetId, amount: unitsToCents(assetAmount ?? '0') }]
+              : undefined
+            return {
+              ...prev,
+              address,
+              arkAddress,
+              invoice,
+              recipient,
+              satoshis: 0,
+              assets,
+              pendingLnSend: invoice === prev.invoice ? prev.pendingLnSend : undefined,
+            }
           })
         }
         return setState({ address, arkAddress, invoice, recipient, satoshis })
@@ -324,15 +335,42 @@ export default function SendForm() {
   useEffect(() => {
     if (!proceed) return
     if (!sendInfo.address && !sendInfo.arkAddress && !sendInfo.invoice) return
-    if (!sendInfo.arkAddress && sendInfo.invoice && !sendInfo.pendingSwap) {
-      createSubmarineSwap(sendInfo.invoice)
-        .then((pendingSwap) => {
-          if (!pendingSwap) return setError(t('errors.general.swap'))
-          setState({ ...sendInfo, pendingSwap })
+    if (!sendInfo.invoice || sendInfo.pendingLnSend || sendInfo.arkAddress) return navigate(Pages.SendDetails)
+    {
+      // RFQ Lightning send: negotiate a quote over Nostr, derive the covenant
+      // locally, verify, and carry the address+amount to the pay screen. The
+      // negotiation is the only interactive step — funding IS acceptance.
+      const negotiate = async () => {
+        if (!svcWallet) return handleError('Wallet not ready')
+        const network = aspInfo.network as NetworkName
+        // No emulator URL is looked up here: this corridor needs the co-signer's
+        // x-only KEY, never an endpoint. It rides the solver's own card; the
+        // per-network pin is passed as the fallback for cards that predate the
+        // field (see lnSendRendezvous). Neither available yields no rendezvous,
+        // which the line below already reports.
+        const rendezvous = lnSendRendezvous(await discoverMarkets(network), getEmulatorPubkeyForNetwork(network))
+        if (!rendezvous) return handleError('No Lightning solver available')
+        const sats = sendInfo.satoshis ?? 0
+        if (sats < rendezvous.minSats || sats > rendezvous.maxSats) {
+          return handleError(
+            `Amount outside solver bounds (${prettyNumber(rendezvous.minSats)}-${prettyNumber(rendezvous.maxSats)} sats)`,
+          )
+        }
+        await withRfqTransport(rendezvous, async (transport) => {
+          const pendingLnSend = await requestLnSend({
+            wallet: svcWallet,
+            arkServerUrl: aspInfo.url,
+            transport,
+            invoice: sendInfo.invoice!,
+            network,
+            rendezvous,
+          })
+          setSendInfo((prev) => ({ ...prev, pendingLnSend }))
         })
-        .catch(handleError)
-    } else navigate(Pages.SendDetails)
-  }, [proceed, sendInfo.address, sendInfo.arkAddress, sendInfo.invoice, sendInfo.pendingSwap])
+      }
+      negotiate().catch(handleError)
+    }
+  }, [proceed, sendInfo.address, sendInfo.arkAddress, sendInfo.invoice, sendInfo.pendingLnSend])
 
   // deal with fees deduction from amount
   useEffect(() => {

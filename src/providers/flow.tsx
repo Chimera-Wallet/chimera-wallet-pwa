@@ -1,5 +1,5 @@
 import { BoltzSwap } from '@arkade-os/boltz-swap'
-import { ReactNode, createContext, useState } from 'react'
+import { ReactNode, createContext, useState, Dispatch, SetStateAction } from 'react'
 import type { Asset, AssetDetails } from '@arkade-os/sdk'
 import { Tx } from '../lib/types'
 import type { TransferMethod } from '../lib/transferMethods'
@@ -9,6 +9,8 @@ import { DEFAULT_BANK_CURRENCY, DEFAULT_BANK_CIRCUIT, type BankCircuit, type Ban
 import type { WrapQuote } from '../lib/arkadeWrap'
 import type { SourceChainId } from '../lib/sourceChains'
 export type { TransferMethod } from '../lib/transferMethods'
+import type { LnSendRequest } from '../lib/lnSwap'
+import type { LnReceiveRequest } from '../lib/lnReceive'
 
 export interface InitInfo {
   password?: string
@@ -101,6 +103,7 @@ export type SendInfo = {
   invoice?: string
   lnUrl?: string
   pendingSwap?: BoltzSwap
+  pendingLnSend?: LnSendRequest
   method?: TransferMethod
   recipient?: string
   satoshis?: number
@@ -139,7 +142,7 @@ interface FlowContextProps {
   setNoteInfo: (arg0: NoteInfo) => void
   setDeepLinkInfo: (arg0: DeepLinkInfo) => void
   setRecvInfo: (arg0: RecvInfo) => void
-  setSendInfo: (arg0: SendInfo) => void
+  setSendInfo: Dispatch<SetStateAction<SendInfo>>
   setSwapInfo: (arg0: SwapInfo) => void
   setSwapOrderInfo: (arg0: SwapOrderInfo) => void
   setTxInfo: (arg0: TxInfo) => void
