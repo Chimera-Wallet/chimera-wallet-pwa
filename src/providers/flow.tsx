@@ -10,7 +10,7 @@ import type { WrapQuote } from '../lib/arkadeWrap'
 import type { SourceChainId } from '../lib/sourceChains'
 export type { TransferMethod } from '../lib/transferMethods'
 import type { LnSendRequest } from '../lib/lnSwap'
-import type { LnReceiveRequest } from '../lib/lnReceive'
+import type { LnReceiveInvoice } from './lnReceive'
 
 export interface InitInfo {
   password?: string
@@ -41,6 +41,7 @@ export interface RecvInfo {
   offchainAddr: string
   onchainAddr?: string
   invoice?: string
+  pendingLnReceive?: LnReceiveInvoice
   method?: TransferMethod
   satoshis: number
   txid?: string
@@ -141,8 +142,8 @@ interface FlowContextProps {
   setKycAuthParams: (arg0: KycAuthParams | undefined) => void
   setNoteInfo: (arg0: NoteInfo) => void
   setDeepLinkInfo: (arg0: DeepLinkInfo) => void
-  setRecvInfo: (arg0: RecvInfo) => void
-  setSendInfo: Dispatch<SetStateAction<SendInfo>>
+  setRecvInfo: (arg0: SetStateAction<RecvInfo>) => void
+  setSendInfo: (arg0: SetStateAction<SendInfo>) => void
   setSwapInfo: (arg0: SwapInfo) => void
   setSwapOrderInfo: (arg0: SwapOrderInfo) => void
   setTxInfo: (arg0: TxInfo) => void

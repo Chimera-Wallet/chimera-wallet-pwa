@@ -74,15 +74,15 @@ export class NostrStorage {
    * Load last message from Nostr
    * @returns the decrypted message
    */
-  async load(): Promise<Event[]> {
+  async load(): Promise<BackupEvent[]> {
     const self = this
-    const events: Event[] = []
+    const events: BackupEvent[] = []
     let timeoutHandler: ReturnType<typeof setTimeout>
 
     if (!this.seckey) throw new Error('Secret key is required for loading data')
 
     return Promise.race([
-      new Promise<Event[]>((resolve) => {
+      new Promise<BackupEvent[]>((resolve) => {
         const sub = this.pool.subscribeMany(
           this.relays,
           { kinds: [4], '#p': [this.pubkey], '#t': [nostrAppName] },
@@ -90,7 +90,7 @@ export class NostrStorage {
             onevent(event: Event) {
               try {
                 const content = self.decryptEvent(event)
-                events.push({ ...event, content })
+                events.push({ ...event, content, receivedAt: Math.floor(Date.now() / 1000) })
               } catch (error) {
                 consoleError(error, 'Failed to decrypt event')
               }
@@ -103,7 +103,7 @@ export class NostrStorage {
           },
         )
       }),
-      new Promise<Event[]>((resolve) => {
+      new Promise<BackupEvent[]>((resolve) => {
         timeoutHandler = setTimeout(() => {
           consoleError(new Error('Load timeout'), 'Failed to load backup data')
           resolve([])
@@ -135,3 +135,5 @@ export class NostrStorage {
     return nip44.decrypt(content, key)
   }
 }
+/** A loaded event, with the local time it arrived at (seconds). */
+export type BackupEvent = Event & { receivedAt: number }

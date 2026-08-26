@@ -43,6 +43,8 @@ import * as secp from '@noble/secp256k1'
 import { ConfigContext } from './config'
 import { defaultPassword, getDelegateUrl, isDelegationEnabled, maxPercentage } from '../lib/constants'
 import { setLoadingStatus } from '../lib/loadingStatus'
+import { assetSwapRepository, type WalletAssetSwap } from '../lib/swapRepository'
+
 
 // Thrown by initWallet when we refuse to boot the service worker because the
 // Arkade server is unreachable. Unlock.tsx inspects this to show a useful
@@ -96,6 +98,10 @@ interface WalletContextProps {
   walletLoaded: boolean
   svcWallet: ServiceWorkerWallet | undefined
   vtxoManager: IVtxoManager | undefined
+    /** Set by the asset-swaps provider, which owns the records. This provider
+   * merges them into `txs`; the dependency runs one way, so they travel up
+   * rather than being read back down. */
+  setAssetSwaps: (swaps: WalletAssetSwap[]) => void
   txs: Tx[]
   vtxos: { spendable: Vtxo[]; spent: Vtxo[] }
   balance: WalletBalance['total']
@@ -134,6 +140,7 @@ export const WalletContext = createContext<WalletContextProps>({
   loadError: null,
   dismissLoadError: () => {},
   authState: 'unknown',
+  setAssetSwaps: () => {},
   txs: [],
   vtxos: { spendable: [], spent: [] },
   synced: false,
@@ -158,6 +165,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [synced, setSynced] = useState(false)
   const [vtxos, setVtxos] = useState<{ spendable: Vtxo[]; spent: Vtxo[] }>({ spendable: [], spent: [] })
   const [assetBalances, setAssetBalances] = useState<WalletBalance['assets']>([])
+  const [assetSwaps, setAssetSwaps] = useState<WalletAssetSwap[]>([])
+
 
   const [vtxoManager, setVtxoManager] = useState<IVtxoManager>()
 
@@ -790,6 +799,12 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     removeServiceWorkerMessageHandler()
     if (!svcWallet) throw new Error('Service worker not initialized')
     await clearStorage()
+    // swap records outlive localStorage now: without this a reset leaves the
+    // previous wallet's swaps in the activity list. Never fatal — a reset that
+    // aborted here would leave the wallet itself half-cleared, which is worse
+    // than stale swap rows.
+    await assetSwapRepository.clear().catch((err) => consoleError(err, 'failed to clear swap records'))
+    setAssetSwaps([])
     await svcWallet.clear()
     await svcWallet.walletRepository.clear()
     await svcWallet.contractRepository.clear()
@@ -843,6 +858,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         lockWallet,
         restartWallet,
         txs,
+        setAssetSwaps,
         balance,
         assetBalances,
         assetMetadataCache: assetMetadataCache.current,

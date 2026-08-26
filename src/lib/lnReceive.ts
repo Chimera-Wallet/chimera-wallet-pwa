@@ -8,11 +8,12 @@
  * funds an address, while a receive is only finished when the wallet CLAIMS,
  * which means signing after the payer has already paid.
  *
- * That claim is the wallet's own job here. `RfqSwapManager` covers the send
- * corridors only (`RfqSwap = LightningSendSwap | OnchainSendSwap`), so an
- * unclaimed lockup is reclaimed by the solver at `refund_locktime` and the
- * payer refunded. Staying online until `claimLnReceive` resolves is therefore
- * part of the flow, not an optimisation.
+ * That claim is the wallet's own job here. `RfqSwapManager` drives it —
+ * `buildLightningReceiveSwap`/`buildLightningReceiveOrigin` hand it a
+ * monitored `LightningReceiveSwap`, and `claimLightningReceive` is its
+ * `claimLockup` callback — but staying online still matters: an unclaimed
+ * lockup is reclaimed by the solver at `refund_locktime` and the payer
+ * refunded, and the manager can only act while this wallet is running.
  *
  * Which is exactly why covclaimd plays no part in it — see `sealingKey`.
  */
@@ -25,7 +26,22 @@ import {
   type RestIndexerProvider,
   type ProvisionedClaimSecret,
 } from '@arkade-os/sdk'
-import { awaitLockupFunding, pushClaim, requestLightningReceive, type RfqTransport } from '@arkade-os/swap'
+import {
+  awaitLockupFunding,
+  pushClaim,
+  requestLightningReceive,
+  rfqSecretsProfile,
+  rfqClaimSecretOf,
+  preimageForSwapRecord,
+  paymentHashOf,
+  type RfqTransport,
+  type RfqSwapOrigin,
+  type LightningReceiveSwap,
+  type LightningReceiveProfile,
+  type AssetSwapRepository,
+  type LockupVtxo,
+  type ClaimArkProvider,
+} from '@arkade-os/swap'
 import { secp256k1 } from '@noble/curves/secp256k1.js'
 import { toInvoiceFacts, type LnSendRendezvous } from './lnSwap'
 
@@ -35,8 +51,9 @@ import { toInvoiceFacts, type LnSendRendezvous } from './lnSwap'
  * The RFQ profile carries `P` sealed to covclaimd so that a wallet which goes
  * offline after paying can still be claimed for. This wallet does not go
  * offline: it holds the covenant's `receiver` role through its own
- * `payoutPubkey` and claims the lockup itself in `claimLnReceive`. So there is
- * nothing for covclaimd to do, and reaching a covclaimd deployment to ask for
+ * `payoutPubkey` and claims the lockup itself, via `RfqSwapManager` and
+ * `claimLightningReceive`. So there is nothing for covclaimd to do, and
+ * reaching a covclaimd deployment to ask for
  * its key would be a network dependency — and a failure mode — bought for
  * nothing.
  *
@@ -77,6 +94,10 @@ export interface LnReceiveRequest {
   script: Parameters<typeof pushClaim>[1]['script']
   payoutAddress: string
   secrets: ProvisionedClaimSecret
+  /** `refund_locktime` from the quote, unix seconds — the SOLVER's deadline to
+   * reclaim an unclaimed lockup. What `RfqSwapManager` needs to monitor this
+   * swap; see `RfqSwapCommon.refundLocktime`. */
+  refundLocktime: number
 }
 
 /**
@@ -122,6 +143,10 @@ export const requestLnReceive = async (args: {
     address: result.address,
     swapPkScript: result.swapPkScript,
     script: result.script,
+    // Present whenever `requestLightningReceive` resolves: it derives the
+    // covenant from the same quote via `deriveLightningReceive`, which
+    // refuses a quote missing it before this call can return.
+    refundLocktime: result.quote.refund_locktime!,
     payoutAddress: result.payoutAddress,
     secrets: result.secrets,
   }
@@ -173,3 +198,85 @@ export const claimLnReceive = async (
     expectedAmount: request.expectedAmount,
   })
 }
+
+/**
+ * The request-time half `RfqSwapManager.addSwap` needs to write this swap's
+ * FIRST record — the counterpart of `buildLightningReceiveSwap` below.
+ *
+ * `fundingArkTxid` is deliberately left unset: that field names the trader's
+ * OWN funding push, and on this leg the SOLVER funds the lockup instead.
+ */
+export const buildLightningReceiveOrigin = (request: LnReceiveRequest): RfqSwapOrigin => {
+  const secretsProfile = rfqSecretsProfile(request.secrets, paymentHashOf(request.secrets.preimage))
+  const profile: LightningReceiveProfile = {
+    signer: secretsProfile.signer,
+    // A `paymentHash` was passed above, so `rfqSecretsProfile` always returns
+    // a `hashlock` alongside it — see its implementation.
+    hashlock: secretsProfile.hashlock!,
+    expectedAmount: request.expectedAmount,
+    payoutAddress: request.payoutAddress,
+  }
+  return {
+    kind: 'lightning_receive',
+    lockupAddress: request.address,
+    profile,
+    amount: request.expectedAmount,
+  }
+}
+
+/**
+ * The live swap `RfqSwapManager.addSwap` takes over monitoring — everything
+ * it needs to watch the solver-funded lockup and know when it is claimable.
+ */
+export const buildLightningReceiveSwap = (request: LnReceiveRequest, nowSeconds: number): LightningReceiveSwap => ({
+  kind: 'lightning_receive',
+  rfqId: request.rfqId,
+  state: 'pending',
+  lockupPkScript: request.swapPkScript,
+  lockup: { script: request.script, address: request.address },
+  paymentHash: paymentHashOf(request.secrets.preimage),
+  refundLocktime: request.refundLocktime,
+  createdAt: nowSeconds,
+  updatedAt: nowSeconds,
+  expectedAmount: request.expectedAmount,
+})
+
+/**
+ * Build the `claimLockup` callback for `RfqSwapManager.setCallbacks`.
+ *
+ * The manager hands the callback only the live swap and the lockup's funded
+ * outputs; this swap's secrets (`signingDescriptor`) and `payoutAddress` live
+ * in the record instead, which is why a repository is needed here and
+ * `claimLnReceive` above — called with a request still held in memory —
+ * does not need one.
+ */
+export const claimLightningReceive =
+  (wallet: Parameters<typeof requestLightningReceive>[0], ark: ClaimArkProvider, repository: Pick<AssetSwapRepository, 'getRfqSwap'>) =>
+  async (
+    swap: LightningReceiveSwap,
+    vtxos: readonly LockupVtxo[],
+    options: { partiallyClaimed: boolean },
+  ): Promise<{ arkTxid: string; amount: number }> => {
+    const record = await repository.getRfqSwap(swap.rfqId)
+    if (!record) throw new Error(`no stored record for lightning receive ${swap.rfqId}`)
+    const claimSecret = rfqClaimSecretOf(record)
+    if (!claimSecret) throw new Error(`lightning receive ${swap.rfqId} record carries no claim secret`)
+    if (!claimSecret.signingDescriptor) {
+      throw new Error(`lightning receive ${swap.rfqId} record carries no signing descriptor`)
+    }
+    if (!swap.lockup) throw new Error(`lightning receive ${swap.rfqId} has no lockup script to claim`)
+    const { payoutAddress } = record.profile as LightningReceiveProfile
+    const [preimage, receiver] = await Promise.all([
+      preimageForSwapRecord(wallet, claimSecret),
+      contractSigner(wallet, claimSecret.signingDescriptor),
+    ])
+    return pushClaim(ark, {
+      script: swap.lockup.script,
+      receiver,
+      preimage,
+      vtxos,
+      destinationPkScript: ArkAddress.decode(payoutAddress).pkScript,
+      expectedAmount: swap.expectedAmount,
+      partiallyClaimed: options.partiallyClaimed,
+    })
+  }

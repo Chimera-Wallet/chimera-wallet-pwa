@@ -24,6 +24,10 @@ import { FeesContext } from '../../../providers/fees'
 import { prettyAssetAmount } from '../../../lib/assets'
 import { TxResultContext } from '../../../providers/txResult'
 import {useTranslation} from 'react-i18next'
+import { type LnSendRequest } from '../../../lib/lnSwap'
+import { saveTransactionActivityMetadata } from '../../../lib/storage'
+import type { LnSendActivity } from '../../../lib/types'
+
 
 export default function SendDetails() {
   const { navigate } = useContext(NavigationContext)
@@ -47,7 +51,7 @@ export default function SendDetails() {
   const [sending, setSending] = useState(false)
   const [sendDone, setSendDone] = useState(false)
 
-  const { address, arkAddress, invoice, pendingSwap, satoshis } = sendInfo
+  const { address, arkAddress, invoice, pendingSwap,pendingLnSend, satoshis } = sendInfo
   const { t } = useTranslation()
   
 
@@ -119,8 +123,14 @@ export default function SendDetails() {
     handleTxid(txid)
   }
 
-  const handleTxid = (txid: string) => {
+  const handleTxid = (txid: string, lnSend? : LnSendActivity) => {
     if (!txid) return handleError(t('errors.send.general.errorSend'))
+
+    saveTransactionActivityMetadata(txid, {
+      destination: details?.destination,
+      lnSend,
+      networkFee: details?.fees,
+    })
     setSendInfo({ ...sendInfo, total: details?.total, txid })
     setSendDone(true)
   }
@@ -143,6 +153,29 @@ export default function SendDetails() {
     consoleError(err, 'error sending payment')
     setError(extractError(err))
     setSendDone(true)
+  }
+    /**
+   * Fund the covenant. That is the whole of the wallet's job.
+   *
+   * Funding IS acceptance — the protocol has no accept message — so once the
+   * covenant is funded the payment is committed and under way: the solver pays
+   * the invoice and claims, and if it cannot, the covenant refunds without
+   * needing anything further from us. Waiting here for the solver to finish
+   * meant the user watched a spinner through the solver's whole pipeline
+   * (notice the funding, route the payment, claim) for an outcome they cannot
+   * influence and that resolves in their favour either way.
+   *
+   * The success screen says "on the way" rather than "sent" for exactly this
+   * reason: at this instant the invoice is not paid yet, and the wording has to
+   * match what is actually true.
+   */
+  const payLightning = async (request: LnSendRequest) => {
+    const txid = await sendOffChain(svcWallet!, request.fundAmount, request.address)
+    if (!txid) return handleError('Error sending transaction')
+    // Record the covenant against the funding txid: it is the only handle on
+    // the spend that ends this swap, and it stops being derivable the moment
+    // this screen unmounts — the quote is gone and nothing else stores it.
+    handleTxid(txid, { swapPkScript: request.swapPkScript })
   }
 
   const handleContinue = async () => {
@@ -182,7 +215,18 @@ export default function SendDetails() {
         payBtc(pendingSwap)
           .then(({ txid }) => handleTxid(txid))
           .catch(handleError)
-      } else {
+      } else if (invoice && pendingLnSend) {
+      // RFQ Lightning send. The address below is the wallet's OWN derivation
+      // of the lockup covenant (the client refuses a mismatched quote), so
+      // funding it IS the acceptance — no further message exists. The solver
+      // observes the funding, pays the invoice, and claims with the preimage;
+      // a failed swap refunds by covenant.
+      if (Math.floor(Date.now() / 1000) >= pendingLnSend.validUntil) {
+        return handleError('Quote expired — go back and try again')
+      }
+      payLightning(pendingLnSend).catch(handleError)
+    } 
+      else {
         if (!details.total) return handleError(t('errors.general.missingTotal'))
         if (!details.satoshis) return handleError(t('errors.general.missingSats'))
         collaborativeExitWithFees(svcWallet, details.total, details.satoshis, address)

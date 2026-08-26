@@ -145,3 +145,8 @@ const isLocalCardInput = (obj: unknown): obj is LocalCardInput => {
   )
 }
 
+export const saveSolverCardsToStorage = (cards: LocalCardInput[]): void => {
+  const data = Array.isArray(cards) ? cards.filter(isLocalCardInput) : []
+  setStorageItem('solverCards', JSON.stringify(data))
+}
+

@@ -16,6 +16,7 @@ import { NudgeProvider } from './providers/nudge'
 import * as Sentry from '@sentry/react'
 import { SwapsProvider } from './providers/swaps'
 import { LnurlProvider } from './providers/lnurl'
+import { LnReceiveProvider } from './providers/lnReceive'
 import { init as initPlausible } from '@plausible-analytics/tracker'
 import { shouldInitializeSentry } from './lib/sentry'
 import { FeesProvider } from './providers/fees'
@@ -103,23 +104,25 @@ root.render(
                   <WalletProvider>
                     <SwapsProvider>
                       <LnurlProvider>
-                        <LimitsProvider>
-                          <FeesProvider>
-                            <OptionsProvider>
-                              <NudgeProvider>
-                                <AnnouncementProvider>
-                                  <ToastProvider>
-                                    <TxResultProvider>
-                                      <ErrorBoundary>
-                                        <App />
-                                      </ErrorBoundary>
-                                    </TxResultProvider>
-                                  </ToastProvider>
-                                </AnnouncementProvider>
-                              </NudgeProvider>
-                            </OptionsProvider>
-                          </FeesProvider>
-                        </LimitsProvider>
+                        <LnReceiveProvider>
+                          <LimitsProvider>
+                            <FeesProvider>
+                              <OptionsProvider>
+                                <NudgeProvider>
+                                  <AnnouncementProvider>
+                                    <ToastProvider>
+                                      <TxResultProvider>
+                                        <ErrorBoundary>
+                                          <App />
+                                        </ErrorBoundary>
+                                      </TxResultProvider>
+                                    </ToastProvider>
+                                  </AnnouncementProvider>
+                                </NudgeProvider>
+                              </OptionsProvider>
+                            </FeesProvider>
+                          </LimitsProvider>
+                        </LnReceiveProvider>
                       </LnurlProvider>
                     </SwapsProvider>
                   </WalletProvider>

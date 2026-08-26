@@ -199,11 +199,23 @@ export default function SendForm() {
           setError(t('errors.send.lightning.swaps'))
           return setNudgeBoltz(true)
         }
-        const satoshis = getInvoiceSatoshis(lowerCaseData)
-        if (!satoshis) return setError(t('errors.satoshi.invoiceAmount'))
-        setState({ ...sendInfo, address: '', arkAddress: '', invoice: lowerCaseData, lnUrl: undefined, satoshis })
-        setAmountIsReadOnly(true)
+        // Amount from the wallet's own decoder; expiry and chain are re-checked
+        // by the RFQ client before any solver sees the invoice.
+        let satoshis = 0
+        try {
+          satoshis = decodeInvoice(lowerCaseData).amountSats
+        } catch {
+          return setError('Unable to decode invoice')
+        }
+        if (!satoshis) return setError('Invoice must have amount defined')
+        setState((prev) => ({
+          ...prev,
+          invoice: lowerCaseData,
+          satoshis,
+          pendingLnSend: lowerCaseData === prev.invoice ? prev.pendingLnSend : undefined,
+        }))
         setAmount(satoshis)
+        setAmountIsReadOnly(true)
         return
       }
       if (isBTCAddress(recipient)) {
@@ -331,12 +343,22 @@ export default function SendForm() {
     setLabel(t('errors.general.server'))
   }, [aspInfo.unreachable])
 
-  // proceed to next step
+    // proceed to next step
   useEffect(() => {
+    const lowerCaseData = recipient.toLowerCase().replace(/^lightning:/, '')
+
     if (!proceed) return
     if (!sendInfo.address && !sendInfo.arkAddress && !sendInfo.invoice) return
-    if (!sendInfo.invoice || sendInfo.pendingLnSend || sendInfo.arkAddress) return navigate(Pages.SendDetails)
-    {
+    if (!sendInfo.arkAddress && sendInfo.invoice && !sendInfo.pendingSwap) {
+      createSubmarineSwap(sendInfo.invoice)
+        .then((pendingSwap) => {
+          if (!pendingSwap) return setError(t('errors.general.swap'))
+          setState({ ...sendInfo, pendingSwap })
+        })
+        .catch(handleError)
+    } 
+    else if (((sendInfo.invoice) || !sendInfo.pendingLnSend || !sendInfo.arkAddress) && isLightningInvoice(lowerCaseData)) {
+       
       // RFQ Lightning send: negotiate a quote over Nostr, derive the covenant
       // locally, verify, and carry the address+amount to the pay screen. The
       // negotiation is the only interactive step — funding IS acceptance.
@@ -369,8 +391,8 @@ export default function SendForm() {
         })
       }
       negotiate().catch(handleError)
-    }
-  }, [proceed, sendInfo.address, sendInfo.arkAddress, sendInfo.invoice, sendInfo.pendingLnSend])
+    } else navigate(Pages.SendDetails)
+  }, [proceed, sendInfo.address, sendInfo.arkAddress, sendInfo.invoice, sendInfo.pendingSwap])
 
   // deal with fees deduction from amount
   useEffect(() => {
@@ -443,7 +465,12 @@ export default function SendForm() {
           setState({ ...sendInfo, arkAddress: arkResponse.address, invoice: undefined })
         } else if (selectedMethod === TRANSFER_METHOD.lightning) {
           const invoice = await fetchInvoice(sendInfo.lnUrl, sendInfo.satoshis ?? 0, '')
-          setState({ ...sendInfo, invoice, arkAddress: undefined })
+          setState((prev) => ({
+            ...prev,
+            arkAddress: undefined,
+            invoice,
+            pendingLnSend: invoice === prev.invoice ? prev.pendingLnSend : undefined,
+          }))
         }
       } else if (deductFromAmount) {
         const fee = calcOnchainOutputFee()
@@ -474,7 +501,7 @@ export default function SendForm() {
 
   const methodFee = (() => {
     if (!satoshis) return undefined
-    if (resolvedMethod === TRANSFER_METHOD.lightning) return calcSubmarineSwapFee(satoshis)
+    if (resolvedMethod === TRANSFER_METHOD.lightning) return calcSubmarineSwapFee(satoshis) 
     if (resolvedMethod === TRANSFER_METHOD.bitcoin) return calcOnchainOutputFee()
     if (resolvedMethod === TRANSFER_METHOD.ark) return 0
     return undefined
