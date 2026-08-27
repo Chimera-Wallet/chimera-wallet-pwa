@@ -9,6 +9,7 @@ import CogIcon from '../../icons/Cog'
 import KeyIcon from '../../icons/Key'
 import LockIcon from '../../icons/Lock'
 import HashIcon from '../../icons/Hash'
+import CurrencySwapIcon from '../../icons/CurrencySwap'
 import {useTranslation} from 'react-i18next'
 
 // warning triangle shown on the destructive "Delete Mnemonic" row
@@ -30,6 +31,7 @@ export default function Advanced() {
     { icon: <VtxosIcon />, option: SettingsOptions.Vtxos, label: t('common.general.coinControl') },
     { icon: <CogIcon />, option: SettingsOptions.Delegates, label: t('common.general.delegates') },
     { icon: <HashIcon />, option: SettingsOptions.Contracts, label: t('common.general.contracts') },
+    { icon: <CurrencySwapIcon />, option: SettingsOptions.Solvers, label: t('common.general.solvers') },
     { icon: <KeyIcon size={20} />, option: SettingsOptions.Password, label: t('settings.advanced.changePass') },
     { icon: <LockIcon />, option: SettingsOptions.Lock, label: t('settings.advanced.lockWallet') },
     {

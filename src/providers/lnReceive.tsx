@@ -114,9 +114,6 @@ export const LnReceiveProvider = ({ children }: { children: ReactNode }) => {
     const manager = managerRef.current
     if (!svcWallet || !manager) throw new Error('lightning receive service unavailable')
     const network = aspInfo.network as NetworkName
-    console.log(network)
-    console.log(getEmulatorPubkeyForNetwork(network))
-    console.log(await discoverMarkets(network))
     const rendezvous = lnReceiveRendezvous(await discoverMarkets(network), getEmulatorPubkeyForNetwork(network))
     if (!rendezvous) throw new Error('No Lightning solver available')
     if (amountSats < rendezvous.minSats || amountSats > rendezvous.maxSats) {

@@ -75,7 +75,7 @@ export default function SendDetails() {
     const destination =
       arkAddress && vtxoTxsAllowed()
         ? arkAddress
-        : invoice && pendingSwap && lnSwapsAllowed()
+        : invoice && (pendingSwap || pendingLnSend) && lnSwapsAllowed()
           ? invoice
           : address && utxoTxsAllowed()
             ? address
@@ -96,10 +96,12 @@ export default function SendDetails() {
         : pendingSwap.type === 'submarine'
           ? pendingSwap.response.expectedAmount
           : satoshis
-      : satoshis
+      : pendingLnSend
+        ? pendingLnSend.fundAmount
+        : satoshis
     const amount = direction === t('common.general.directions.mainnetPay') ? satoshis - calcOnchainOutputFee() : satoshis
     const fees = total - amount > 0 ? total - amount : 0
-    const swapId = pendingSwap?.id
+    const swapId = pendingSwap?.id ?? pendingLnSend?.rfqId
     setDetails({
       destination,
       direction,
@@ -210,12 +212,7 @@ export default function SendDetails() {
       payInvoice(pendingSwap)
         .then(({ preimage, txid }) => handlePreimage({ preimage, txid }))
         .catch(handleError)
-    } else if (address) {
-      if (pendingSwap && isPendingChainSwap(pendingSwap)) {
-        payBtc(pendingSwap)
-          .then(({ txid }) => handleTxid(txid))
-          .catch(handleError)
-      } else if (invoice && pendingLnSend) {
+    } else if (invoice && pendingLnSend) {
       // RFQ Lightning send. The address below is the wallet's OWN derivation
       // of the lockup covenant (the client refuses a mismatched quote), so
       // funding it IS the acceptance — no further message exists. The solver
@@ -225,8 +222,12 @@ export default function SendDetails() {
         return handleError('Quote expired — go back and try again')
       }
       payLightning(pendingLnSend).catch(handleError)
-    } 
-      else {
+    } else if (address) {
+      if (pendingSwap && isPendingChainSwap(pendingSwap)) {
+        payBtc(pendingSwap)
+          .then(({ txid }) => handleTxid(txid))
+          .catch(handleError)
+      } else {
         if (!details.total) return handleError(t('errors.general.missingTotal'))
         if (!details.satoshis) return handleError(t('errors.general.missingSats'))
         collaborativeExitWithFees(svcWallet, details.total, details.satoshis, address)

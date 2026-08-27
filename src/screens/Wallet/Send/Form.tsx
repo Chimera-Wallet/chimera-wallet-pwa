@@ -349,19 +349,13 @@ export default function SendForm() {
 
     if (!proceed) return
     if (!sendInfo.address && !sendInfo.arkAddress && !sendInfo.invoice) return
-    if (!sendInfo.arkAddress && sendInfo.invoice && !sendInfo.pendingSwap) {
-      createSubmarineSwap(sendInfo.invoice)
-        .then((pendingSwap) => {
-          if (!pendingSwap) return setError(t('errors.general.swap'))
-          setState({ ...sendInfo, pendingSwap })
-        })
-        .catch(handleError)
-    } 
-    else if (((sendInfo.invoice) || !sendInfo.pendingLnSend || !sendInfo.arkAddress) && isLightningInvoice(lowerCaseData)) {
-       
+    if (!sendInfo.arkAddress && sendInfo.invoice && !sendInfo.pendingLnSend && isLightningInvoice(lowerCaseData)) {
       // RFQ Lightning send: negotiate a quote over Nostr, derive the covenant
       // locally, verify, and carry the address+amount to the pay screen. The
       // negotiation is the only interactive step — funding IS acceptance.
+      // This is the primary Lightning-send path; the legacy Boltz submarine
+      // swap below only runs for invoices this branch's guard excludes, and
+      // is otherwise superseded now that RFQ is in place.
       const negotiate = async () => {
         if (!svcWallet) return handleError('Wallet not ready')
         const network = aspInfo.network as NetworkName
@@ -391,8 +385,15 @@ export default function SendForm() {
         })
       }
       negotiate().catch(handleError)
+    } else if (!sendInfo.arkAddress && sendInfo.invoice && !sendInfo.pendingLnSend && !sendInfo.pendingSwap) {
+      createSubmarineSwap(sendInfo.invoice)
+        .then((pendingSwap) => {
+          if (!pendingSwap) return setError(t('errors.general.swap'))
+          setState({ ...sendInfo, pendingSwap })
+        })
+        .catch(handleError)
     } else navigate(Pages.SendDetails)
-  }, [proceed, sendInfo.address, sendInfo.arkAddress, sendInfo.invoice, sendInfo.pendingSwap])
+  }, [proceed, sendInfo.address, sendInfo.arkAddress, sendInfo.invoice, sendInfo.pendingSwap, sendInfo.pendingLnSend])
 
   // deal with fees deduction from amount
   useEffect(() => {

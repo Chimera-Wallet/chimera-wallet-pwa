@@ -97,6 +97,7 @@ export enum SettingsOptions {
   Fiat = 'fiat currency',
   Display = 'display preferences',
   Delegates = 'delegates',
+  Solvers = 'solvers'
 }
 
 export enum Themes {
