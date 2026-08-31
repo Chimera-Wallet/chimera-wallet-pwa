@@ -1,12 +1,5 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next'
-import {
-  withTolgee,
-  Tolgee,
-  I18nextPlugin,
-  FormatSimple,
-} from '@tolgee/i18next';
-
 
 import enTerms from './locales/en/terms.json'
 import enNetworks from './locales/en/networks.json'
@@ -89,242 +82,127 @@ import rsSettings from './locales/rs/settings.json'
 import rsApps from './locales/rs/apps.json'
 import rsComponents from './locales/rs/components.json'
 import rsLib from './locales/rs/lib.json'
-//
-//  i18n.use(initReactI18next).init({
-//  debug: import.meta.env.DEV,
-//  fallbackLng: 'es',
-//  interpolation: {
-//    escapeValue: false,
-//  },
-//
-//  resources: {
-//    en: {
-//      translation: 
-//      {terms: enTerms,
-//      placeholders: enPlaceholders,
-//      networks: enNetworks,
-//      errors: enErrors,
-//      common: enCommon,
-//      init:enInit,
-//      settings: enSettings,
-//      apps:enApps,
-//      components:enComponents,
-//      lib: enLib,
-//    }
-//    },
-//    es:{
-//      translation: 
-//      {
-//        terms: esTerms,
-//        placeholders: esPlaceholders,
-//        networks: esNetworks,
-//        errors: esErrors,
-//        common: esCommon,
-//        init:esInit,
-//        settings: esSettings,
-//        apps:esApps,
-//        components:esComponents,
-//        lib: esLib,
-//      },
-//    },
-//    it: {
-//      translation: 
-//      {
-//        terms: itTerms,
-//        placeholders: itPlaceholders,
-//        networks: itNetworks,
-//        errors: itErrors,
-//        common: itCommon
-//        },
-//    },
-//    rs: {
-//      translation: 
-//      {
-//        terms: rsTerms,
-//        networks: rsNetworks,
-//        errors: rsErrors,
-//        common: rsCommon,
-//        init:rsInit,
-//        settings: rsSettings,
-//        apps:rsApps,
-//        components:rsComponents,
-//        lib: rsLib,
-//        },
-//
-//    },
-//    fr : {
-//      translation: 
-//      {
-//        terms: frTerms,
-//        placeholders: frPlaceholders,
-//        networks: frNetworks,
-//        errors: frErrors,
-//        common: frCommon,
-//        init:frInit,
-//        settings: frSettings,
-//        apps:frApps,
-//        components:frComponents,
-//        lib: frLib,
-//        },
-//
-//    },
-//    jp:{
-//      translation: 
-//      {
-//        terms: jpTerms,
-//        placeholders: jpPlaceholders,
-//        networks: jpNetworks,
-//        errors: jpErrors,
-//        common: jpCommon,
-//        init:jpInit,
-//        settings: jpSettings,
-//        apps:jpApps,
-//        components:jpComponents,
-//        lib: jpLib,
-//        },
-//
-//  },
-//    ch:{
-//      translation: 
-//      {
-//        terms: chTerms,
-//        placeholders: chPlaceholders,
-//        networks: chNetworks,
-//        errors: chErrors,
-//        common: chCommon,
-//        init:chInit,
-//        settings: chSettings,
-//        apps:chApps,
-//        components:chComponents,
-//        lib: chLib,
-//        },
-//
-//    },
-//
-//  },
-//  })
-//
-//  console.log(i18n.t('key')); 
-//  
-//  export default i18n
 
-const tolgee = Tolgee()
-  .use(I18nextPlugin())
-  .use(FormatSimple())
-  .init({
-    apiUrl: import.meta.env.VITE_TOLGEE_API_URL || 'to be determined',
-    apiKey: import.meta.env.VITE_TOLGEE_API_KEY,
-  });
+i18n.use(initReactI18next).init({
+  debug: import.meta.env.DEV,
+  fallbackLng: 'en',
+  interpolation: {
+    escapeValue: false,
+  },
 
-// wrap i18next with Tolgee then init as before 
-withTolgee(i18n, tolgee)
-  .use(initReactI18next)
-  .init({
-    debug: import.meta.env.DEV,
-    fallbackLng: 'en',
-    interpolation: { escapeValue: false },
-    resources: { 
-        en: {
-          translation: 
-          {terms: enTerms,
-          placeholders: enPlaceholders,
-          networks: enNetworks,
-          errors: enErrors,
-          common: enCommon,
-          init:enInit,
-          settings: enSettings,
-          apps:enApps,
-          components:enComponents,
-          lib: enLib,
-        }
-        },
-        es:{
-          translation: 
-          {
-            terms: esTerms,
-            placeholders: esPlaceholders,
-            networks: esNetworks,
-            errors: esErrors,
-            common: esCommon,
-            init:esInit,
-            settings: esSettings,
-            apps:esApps,
-            components:esComponents,
-            lib: esLib,
-          },
-        },
-        it: {
-          translation: 
-          {
-            terms: itTerms,
-            placeholders: itPlaceholders,
-            networks: itNetworks,
-            errors: itErrors,
-            common: itCommon
-            },
-        },
-        rs: {
-          translation: 
-          {
-            terms: rsTerms,
-            networks: rsNetworks,
-            errors: rsErrors,
-            common: rsCommon,
-            init:rsInit,
-            settings: rsSettings,
-            apps:rsApps,
-            components:rsComponents,
-            lib: rsLib,
-            },
-          
-        },
-        fr : {
-          translation: 
-          {
-            terms: frTerms,
-            placeholders: frPlaceholders,
-            networks: frNetworks,
-            errors: frErrors,
-            common: frCommon,
-            init:frInit,
-            settings: frSettings,
-            apps:frApps,
-            components:frComponents,
-            lib: frLib,
-            },
-          
-        },
-        jp:{
-          translation: 
-          {
-            terms: jpTerms,
-            placeholders: jpPlaceholders,
-            networks: jpNetworks,
-            errors: jpErrors,
-            common: jpCommon,
-            init:jpInit,
-            settings: jpSettings,
-            apps:jpApps,
-            components:jpComponents,
-            lib: jpLib,
-            },
-          
+  resources: {
+    en: {
+      translation: 
+      {terms: enTerms,
+      placeholders: enPlaceholders,
+      networks: enNetworks,
+      errors: enErrors,
+      common: enCommon,
+      init:enInit,
+      settings: enSettings,
+      apps:enApps,
+      components:enComponents,
+      lib: enLib,
+    }
+    },
+    es:{
+      translation: 
+      {
+        terms: esTerms,
+        placeholders: esPlaceholders,
+        networks: esNetworks,
+        errors: esErrors,
+        common: esCommon,
+        init:esInit,
+        settings: esSettings,
+        apps:esApps,
+        components:esComponents,
+        lib: esLib,
       },
-        ch:{
-          translation: 
-          {
-            terms: chTerms,
-            placeholders: chPlaceholders,
-            networks: chNetworks,
-            errors: chErrors,
-            common: chCommon,
-            init:chInit,
-            settings: chSettings,
-            apps:chApps,
-            components:chComponents,
-            lib: chLib,
-            },
-     },
-  }});
+    },
+    it: {
+      translation: 
+      {
+        terms: itTerms,
+        placeholders: itPlaceholders,
+        networks: itNetworks,
+        errors: itErrors,
+        common: itCommon,
+        init:itInit,
+        settings: itSettings,
+        apps:itApps,
+        components:itComponents,
+        lib: itLib,
+        },
+    },
+    rs: {
+      translation: 
+      {
+        terms: rsTerms,
+        placeholders: rsPlaceholder,
+        networks: rsNetworks,
+        errors: rsErrors,
+        common: rsCommon,
+        init:rsInit,
+        settings: rsSettings,
+        apps:rsApps,
+        components:rsComponents,
+        lib: rsLib,
+        },
 
-export default i18n;
+    },
+    fr : {
+      translation: 
+      {
+        terms: frTerms,
+        placeholders: frPlaceholders,
+        networks: frNetworks,
+        errors: frErrors,
+        common: frCommon,
+        init:frInit,
+        settings: frSettings,
+        apps:frApps,
+        components:frComponents,
+        lib: frLib,
+        },
+
+    },
+    jp:{
+      translation: 
+      {
+        terms: jpTerms,
+        placeholders: jpPlaceholders,
+        networks: jpNetworks,
+        errors: jpErrors,
+        common: jpCommon,
+        init:jpInit,
+        settings: jpSettings,
+        apps:jpApps,
+        components:jpComponents,
+        lib: jpLib,
+        },
+
+  },
+    ch:{
+      translation: 
+      {
+        terms: chTerms,
+        placeholders: chPlaceholders,
+        networks: chNetworks,
+        errors: chErrors,
+        common: chCommon,
+        init:chInit,
+        settings: chSettings,
+        apps:chApps,
+        components:chComponents,
+        lib: chLib,
+        },
+
+    },
+
+  },
+})
+
+console.log(i18n.t('key')); 
+
+export default i18n
