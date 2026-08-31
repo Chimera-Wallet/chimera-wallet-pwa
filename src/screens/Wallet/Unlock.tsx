@@ -17,6 +17,15 @@ export default function Unlock() {
 
   const [error, setError] = useState('')
   const [password, setPassword] = useState('')
+  // Bumped on every submission so retrying with an unchanged value still fires
+  // the unlock effect. Without it, setPassword(sameValue) is a no-op re-render
+  // and "Try again" — which always yields the same passkey password — does
+  // nothing at all.
+  const [attempt, setAttempt] = useState(0)
+  const submitPassword = (pass: string) => {
+    setPassword(pass)
+    setAttempt((n) => n + 1)
+  }
   const [tried, setTried] = useState(false)
   const [unlocked, setUnlocked] = useState(false)
   const [shouldAutoUnlock, setShouldAutoUnlock] = useState(false)
@@ -96,7 +105,7 @@ export default function Unlock() {
     // turns this effect into a render-rate loop that posts one
     // INITIALIZE_MESSAGE_BUS per frame to the service worker.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [password, shouldAutoUnlock])
+  }, [password, attempt, shouldAutoUnlock])
 
   useEffect(() => {
     if (unlocked && dataReady) {
@@ -141,7 +150,7 @@ export default function Unlock() {
   }
 
   return tried ? (
-    <NeedsPassword error={error} onPassword={setPassword} loading={unlocking} onRestore={handleRestore} onboarding />
+    <NeedsPassword error={error} onPassword={submitPassword} loading={unlocking} onRestore={handleRestore} onboarding />
   ) : (
     <Loading />
   )

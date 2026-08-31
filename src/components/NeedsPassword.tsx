@@ -37,14 +37,28 @@ export default function NeedsPassword({
   const { wallet } = useContext(WalletContext)
   const [password, setPassword] = useState('')
   const [biometricFailed, setBiometricFailed] = useState(false)
+  const [biometricError, setBiometricError] = useState('')
   const {t} = useTranslation()
+
+  // The biometric branches below used to render no error at all, so a failed
+  // unlock looked identical to not having tried yet: the OS prompt succeeded
+  // and the screen simply sat there. Whatever went wrong has to be visible.
+  const shownError = error || biometricError
 
   const handleBiometrics = () => {
     setBiometricFailed(false)
+    setBiometricError('')
     authenticateUser(wallet.passkeyId)
-      .then(onPassword)
+      .then((biometricPassword) => {
+        // Guard the caller as well as the library: an empty password would be
+        // dropped by the unlock effect, leaving the user staring at a screen
+        // that just told them authentication succeeded.
+        if (!biometricPassword) throw new Error('Passkey returned no user handle')
+        onPassword(biometricPassword)
+      })
       .catch((err) => {
         consoleError(err, 'Biometric authentication failed')
+        setBiometricError(err instanceof Error ? err.message : String(err))
         setBiometricFailed(true)
       })
   }
@@ -92,6 +106,7 @@ export default function NeedsPassword({
         <OnboardingLayout>
           {secondaryText(t('components.needsPass.passkeyNF'))}
           <FlexCol gap='0'>
+            <ErrorMessage text={shownError} error={Boolean(shownError)} />
             <Button onClick={handleBiometrics} label={t('components.needsPass.tryAgain')} secondary disabled={loading} />
             {onRestore ? <Button onClick={onRestore} label={t('components.needsPass.restorePhrase')} disabled={loading} /> : null}
           </FlexCol>
@@ -104,7 +119,9 @@ export default function NeedsPassword({
       return (
         <OnboardingLayout>
           <FlexCol gap='0'>
+            <ErrorMessage text={shownError} error={Boolean(shownError)} />
             <Button onClick={handleBiometrics} label={t('components.needsPass.unlockBio')} loading={loading} disabled={loading} />
+            {onRestore ? restoreLink(t('components.needsPass.restorePhrase')) : null}
           </FlexCol>
         </OnboardingLayout>
       )
@@ -144,6 +161,7 @@ export default function NeedsPassword({
                 <TextSecondary centered wrap>
                   {t('components.needsPass.pkText')}
                 </TextSecondary>
+                <ErrorMessage text={shownError} error={Boolean(shownError)} />
               </FlexCol>
             </CenterScreen>
           </Padded>
@@ -170,6 +188,7 @@ export default function NeedsPassword({
               <TextSecondary centered wrap>
                 {t('components.needsPass.unlockPk')}
               </TextSecondary>
+              <ErrorMessage text={shownError} error={Boolean(shownError)} />
             </FlexCol>
           </CenterScreen>
         </Content>

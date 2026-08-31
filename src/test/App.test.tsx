@@ -1,6 +1,6 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import App, { appReloader } from '../App'
+import App from '../App'
 import { AspContext } from '../providers/asp'
 import { ConfigContext } from '../providers/config'
 import { FlowContext } from '../providers/flow'
@@ -18,8 +18,6 @@ import {
 import { defaultPassword } from '../lib/constants'
 import { detectJSCapabilities } from '../lib/jsCapabilities'
 import { SettingsOptions } from '../lib/types'
-
-const PASSWORDLESS_AUTO_RELOAD_KEY = 'passwordless-auto-reload-attempted'
 
 vi.mock('../lib/jsCapabilities', () => ({
   detectJSCapabilities: vi.fn().mockResolvedValue({ isSupported: true }),
@@ -101,11 +99,38 @@ describe('App startup routing', () => {
     vi.unstubAllEnvs()
   })
 
-  it('keeps passwordless wallets on loading and boots them in the background', async () => {
+  it('sends passwordless wallets to the lock setup instead of booting them', async () => {
     const { navigate, unlockWallet } = renderApp({ authState: 'passwordless', initialized: false })
 
-    await waitFor(() => expect(unlockWallet).toHaveBeenCalledWith(defaultPassword))
+    // Every wallet must have a lock: a secret that still decrypts with
+    // `defaultPassword` means none was ever chosen, so the wallet is held in
+    // the setup rather than silently unlocked.
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(Pages.InitBiometric))
+    expect(unlockWallet).not.toHaveBeenCalledWith(defaultPassword)
     expect(navigate).not.toHaveBeenCalledWith(Pages.Unlock)
+  })
+
+  it('leaves the lock setup alone once the user is on it', async () => {
+    const { navigate } = renderApp({
+      authState: 'passwordless',
+      initialized: false,
+      screen: Pages.InitPassword,
+    })
+
+    // The setup spans two screens; the gate must not yank the user back to the
+    // biometric step when they pick "use password instead".
+    await waitFor(() => expect(screen.getByTestId('app')).toBeInTheDocument())
+    expect(navigate).not.toHaveBeenCalledWith(Pages.InitBiometric)
+  })
+
+  it('does not hold a passwordless wallet on the loading screen', async () => {
+    renderApp({ authState: 'passwordless', initialized: false, screen: Pages.InitBiometric })
+
+    // The wallet is deliberately not booted while the lock is missing, so the
+    // usual "wait for dataReady" hold must not swallow the setup screens. The
+    // loading page renders no page component at all, so any button means the
+    // setup is on screen. (Asserting on text would depend on i18n resources.)
+    await waitFor(() => expect(screen.getAllByRole('button').length).toBeGreaterThan(0))
   })
 
   it('shows unlock when authentication is required', async () => {
@@ -130,35 +155,6 @@ describe('App startup routing', () => {
     expect(navigate).not.toHaveBeenCalledWith(Pages.Unlock)
   })
 
-  it('schedules a single reload after passwordless auto-init failure', async () => {
-    vi.useFakeTimers()
-    const reloadSpy = vi.spyOn(appReloader, 'reload').mockImplementation(() => {})
-    const unlockWallet = vi.fn().mockRejectedValue(new Error('backend init failed'))
-
-    renderApp({ authState: 'passwordless', initialized: false, unlockWallet })
-
-    await act(async () => {})
-    await Promise.resolve()
-    expect(unlockWallet).toHaveBeenCalledWith(defaultPassword)
-    expect(sessionStorage.getItem(PASSWORDLESS_AUTO_RELOAD_KEY)).toBe('true')
-    await vi.advanceTimersByTimeAsync(1000)
-    expect(reloadSpy).toHaveBeenCalledTimes(1)
-  })
-
-  it('does not schedule a second reload if one was already attempted in this session', async () => {
-    vi.useFakeTimers()
-    sessionStorage.setItem(PASSWORDLESS_AUTO_RELOAD_KEY, 'true')
-    const reloadSpy = vi.spyOn(appReloader, 'reload').mockImplementation(() => {})
-    const unlockWallet = vi.fn().mockRejectedValue(new Error('backend init failed'))
-
-    renderApp({ authState: 'passwordless', initialized: false, unlockWallet })
-
-    await act(async () => {})
-    await Promise.resolve()
-    expect(unlockWallet).toHaveBeenCalledWith(defaultPassword)
-    await vi.advanceTimersByTimeAsync(1000)
-    expect(reloadSpy).not.toHaveBeenCalled()
-  })
 })
 
 describe('Navbar visibility', () => {

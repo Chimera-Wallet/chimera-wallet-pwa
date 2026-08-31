@@ -50,7 +50,8 @@
     "vtxoWarn": "デリゲートはVTXOの更新のみ可能で、資金を使用したりウォレットを管理したりすることはできません",
     "defaultArk": "デフォルトのArkadeデリゲートを使用",
     "defaultArkDescr": "Arkadeのデフォルトデリゲートを使用して更新を管理します",
-    "reloadWarn": "変更を適用するにはウォレットの再読み込みが必要です"
+    "reloadWarn": "変更を適用するにはウォレットの再読み込みが必要です",
+    "unavailable": "このネットワークでは委任を利用できません"
   },
   "display": {
     "displayPref": "表示設定"

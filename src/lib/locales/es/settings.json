@@ -50,7 +50,8 @@
     "vtxoWarn": "Los delegados solo pueden renovar tus VTXO; no pueden gastar tus fondos ni controlar tu billetera",
     "defaultArk": "Usar el delegado predeterminado de Arkade",
     "defaultArkDescr": "Usar el delegado predeterminado de Arkade para gestionar renovaciones",
-    "reloadWarn": "La billetera se recargará para aplicar el cambio"
+    "reloadWarn": "La billetera se recargará para aplicar el cambio",
+    "unavailable": "La delegación no está disponible en esta red"
   },
   "display": {
     "displayPref": "Preferencias de visualización"

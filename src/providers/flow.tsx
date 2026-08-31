@@ -16,6 +16,10 @@ export interface InitInfo {
   mnemonic?: string
   restoring?: boolean
   backupDone?: boolean
+  // Set once the user has chosen biometrics or a password. Until then the
+  // secret is still encrypted with `defaultPassword`, which the app treats as
+  // "no lock configured" — see detectPasswordState in providers/wallet.tsx.
+  lockDone?: boolean
 }
 
 export interface NoteInfo {

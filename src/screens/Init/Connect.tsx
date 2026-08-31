@@ -61,12 +61,28 @@ export default function InitConnect() {
     if (error) {
       setInitInfo({ restoring: initInfo.restoring })
       navigate(Pages.Init)
-    } else if (!initInfo.backupDone && !initInfo.restoring) {
+      return
+    }
+    // The secret is still encrypted with `defaultPassword` at this point. Carry
+    // it forward so the lock step can re-encrypt it with the real password;
+    // drop the password itself so the next run of this screen uses the new one.
+    const carried = {
+      ...initInfo,
+      password: undefined,
+      mnemonic: mnemonic ?? undefined,
+      privateKey: mnemonic ? undefined : privateKey,
+    }
+    if (!initInfo.backupDone && !initInfo.restoring) {
       // First run for a new wallet — show success/backup screens
-      setInitInfo({ restoring: false, mnemonic: mnemonic ?? undefined, privateKey: mnemonic ? undefined : privateKey })
+      setInitInfo({ ...carried, restoring: false })
       navigate(Pages.InitSuccess)
+    } else if (!initInfo.lockDone) {
+      // Wallet exists but has no lock yet — this is the restore path, which
+      // skips the backup screens. Every wallet must be locked before use.
+      setInitInfo(carried)
+      navigate(Pages.InitBiometric)
     } else {
-      // Second run (after password/biometrics) or restore — go straight to wallet
+      // Second run, after biometrics or a password was set — go to the wallet
       setInitInfo({})
       navigate(Pages.Wallet)
     }

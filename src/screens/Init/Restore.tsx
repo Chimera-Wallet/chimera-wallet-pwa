@@ -12,7 +12,7 @@ import Content from '../../components/Content'
 import FlexCol from '../../components/FlexCol'
 import { extractError } from '../../lib/error'
 import Loading from '../../components/Loading'
-import { consoleError } from '../../lib/logs'
+import { consoleError, consoleLog } from '../../lib/logs'
 import Button from '../../components/Button'
 import Header from '../../components/Header'
 import Padded from '../../components/Padded'
@@ -28,8 +28,8 @@ import { AspContext } from '../../providers/asp'
 import {useTranslation} from 'react-i18next'
 
 // The ARK server is env-only (single source of truth). A backup made on another
-// network carries a different aspUrl; this detects that so we can refuse to
-// cross networks instead of silently connecting to the backup's server.
+// network carries a different aspUrl; this detects that so we can ignore that
+// backup's settings instead of importing them into the wrong network.
 const serverHost = (url?: string): string | undefined => {
   if (!url) return undefined
   const withProto = /^https?:\/\//.test(url) ? url : `https://${url}`
@@ -125,9 +125,17 @@ export default function InitRestore() {
     }
     new BackupProvider({ seckey }, new IndexedDbSwapRepository())
       .restore((conf) => {
-        // Refuse to restore a wallet from a different network: the ARK server is
-        // fixed by the environment and must never be taken from the backup.
-        if (isForeignArkServer(conf.aspUrl)) throw new Error('NETWORK_MISMATCH')
+        // A recovery phrase is network-agnostic and the same one is legitimately
+        // used on more than one network. The Nostr backup is keyed by the phrase,
+        // so restoring on staging can turn up the mainnet backup. That must not
+        // block the restore — the wallet is rebuilt from the phrase itself, and
+        // this callback only imports preferences. Skip a foreign network's
+        // settings (its importedAssets are asset IDs that mean nothing here) and
+        // let the restore continue with local defaults.
+        if (isForeignArkServer(conf.aspUrl)) {
+          consoleLog('Backup belongs to another network; keeping local settings')
+          return
+        }
         // Never adopt network-critical fields (aspUrl, delegate) from a backup;
         // only the user's preferences are safe to restore.
         const preferences: Partial<Config> = { ...conf }
@@ -135,13 +143,7 @@ export default function InitRestore() {
         delete preferences.delegate
         updateConfig({ ...config, ...preferences })
       })
-      .catch((err) => {
-        if (err instanceof Error && err.message === 'NETWORK_MISMATCH') {
-          setError('This recovery phrase belongs to a wallet on a different network and cannot be restored here.')
-        } else {
-          consoleError(err, 'Error restoring from nostr')
-        }
-      })
+      .catch((err) => consoleError(err, 'Error restoring from nostr'))
       .finally(() => setRestoreDone(true))
   }
 

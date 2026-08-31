@@ -50,7 +50,8 @@
     "vtxoWarn": "Les délégués peuvent uniquement renouveler vos VTXO ; ils ne peuvent ni dépenser vos fonds ni contrôler votre portefeuille",
     "defaultArk": "Utiliser le délégué Arkade par défaut",
     "defaultArkDescr": "Utiliser le délégué par défaut d'Arkade pour gérer les renouvellements",
-    "reloadWarn": "Le portefeuille sera rechargé pour appliquer la modification"
+    "reloadWarn": "Le portefeuille sera rechargé pour appliquer la modification",
+    "unavailable": "La délégation n'est pas disponible sur ce réseau"
   },
   "display": {
     "displayPref": "Préférences d'affichage"

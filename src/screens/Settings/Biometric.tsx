@@ -9,8 +9,8 @@ import { WalletContext } from '../../providers/wallet'
 import { isBiometricsSupported, registerUser } from '../../lib/biometrics'
 import { consoleError } from '../../lib/logs'
 import { hapticSubtle } from '../../lib/haptics'
-import { getPrivateKey, setPrivateKey, noUserDefinedPassword, isValidPassword } from '../../lib/privateKey'
-import { hasMnemonic, getMnemonic, setMnemonic } from '../../lib/mnemonic'
+import { noUserDefinedPassword, isValidPassword } from '../../lib/privateKey'
+import { reencryptSecret } from '../../lib/lock'
 import { defaultPassword } from '../../lib/constants'
 import NeedsPassword from '../../components/NeedsPassword'
 import { OptionsContext } from '../../providers/options'
@@ -43,19 +43,6 @@ export default function Biometric() {
       setAuthenticated(isValid)
     })
   }, [currentPassword])
-
-  // Re-encrypt the wallet secret from one password to another. The secret is
-  // the mnemonic when present (the primary store that lock detection and
-  // unlockWallet read), otherwise the raw private key. Mirrors Password.tsx.
-  const reencryptSecret = async (fromPassword: string, toPassword: string) => {
-    if (hasMnemonic()) {
-      const mnemonic = await getMnemonic(fromPassword)
-      await setMnemonic(mnemonic, toPassword)
-    } else {
-      const privateKey = await getPrivateKey(fromPassword)
-      await setPrivateKey(privateKey, toPassword)
-    }
-  }
 
   const handleToggle = async () => {
     hapticSubtle()

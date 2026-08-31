@@ -1,7 +1,7 @@
 import { AnimatePresence } from 'framer-motion'
 import { ConfigContext } from './providers/config'
 import { NavigationContext, pageComponent, Pages, Tabs, type NavigationDirection } from './providers/navigation'
-import { useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { isInAppBrowser } from './lib/browser'
 import { detectJSCapabilities } from './lib/jsCapabilities'
 import { OptionsContext } from './providers/options'
@@ -18,17 +18,14 @@ import Loading from './components/Loading'
 import PillNavbarOverlay from './components/PillNavbarOverlay'
 import { useReducedMotion } from './hooks/useReducedMotion'
 import { useLoadingStatus } from './hooks/useLoadingStatus'
-import { defaultPassword } from './lib/constants'
-import { consoleError } from './lib/logs'
 import { getMissingRequiredConfig, logMissingRequiredConfig } from './lib/requiredConfig'
 import IntercomMessenger from './components/IntercomMessenger'
 import Verification from './screens/Settings/Verification'
 import { setupPeriodicUpdateCheck } from './lib/serviceWorkerUpdate'
 
-const PASSWORDLESS_AUTO_RELOAD_KEY = 'passwordless-auto-reload-attempted'
-export const appReloader = {
-  reload: () => window.location.reload(),
-}
+// Screens that make up the mandatory lock setup. While a stored wallet has no
+// lock the user is held here and cannot reach the rest of the app.
+const LOCK_SETUP_PAGES = new Set([Pages.InitBiometric, Pages.InitPassword])
 
 function PageAnimWrapper({
   children,
@@ -53,7 +50,7 @@ export default function App() {
   const { direction, navigate, navigationData, screen, tab } = useContext(NavigationContext)
   const { initInfo } = useContext(FlowContext)
   const { option, setOption } = useContext(OptionsContext)
-  const { authState, unlockWallet, walletLoaded, initialized, wallet, dataReady, loadError } = useContext(WalletContext)
+  const { authState, walletLoaded, initialized, wallet, dataReady, loadError } = useContext(WalletContext)
 
   const loadingStatus = useLoadingStatus()
   const isIAB = useMemo(() => isInAppBrowser(), [])
@@ -77,8 +74,11 @@ export default function App() {
   const [bootAnimDone, setBootAnimDone] = useState(false)
   const [bootExitMode, setBootExitMode] = useState<'fly-to-target' | 'fly-up'>('fly-up')
 
-  const passwordlessBootAttempted = useRef(false)
-  const passwordlessReloadTimer = useRef<ReturnType<typeof setTimeout>>()
+  // The init/restore flow carries the secret in `initInfo` from the moment the
+  // wallet is created or restored until the lock is set. While that is set the
+  // user is mid-onboarding, so neither the loading hold nor the lock gate below
+  // may redirect them — they still have to see the backup screens.
+  const isInInitFlow = !!(initInfo.password || initInfo.privateKey || initInfo.mnemonic)
 
   // lock screen orientation to portrait
   const orientation = window.screen.orientation as any
@@ -116,7 +116,7 @@ export default function App() {
     if (aspInfo.unreachable) return navigate(Pages.Unavailable)
     if (jsCapabilitiesChecked && !isCapable) return navigate(Pages.Unavailable)
     // avoid redirect if the user is still setting up the wallet
-    if (initInfo.password || initInfo.privateKey) return
+    if (isInInitFlow) return
     if (!walletLoaded) return navigate(Pages.Loading)
     // dev auto-init: stay on loading screen while VITE_DEV_NSEC initializes the wallet
     if (import.meta.env.DEV && import.meta.env.VITE_DEV_NSEC && !initialized) return
@@ -161,40 +161,27 @@ export default function App() {
   const allChecksReady = jsCapabilitiesChecked && configLoaded && aspReady
   const hasStoredWallet = walletLoaded && !!wallet.pubkey
   const shouldShowUnlock = hasStoredWallet && authState === 'locked' && !aspInfo.unreachable
+  // A stored wallet whose secret still decrypts with `defaultPassword` has no
+  // lock: it would boot straight into the wallet on every launch. That happens
+  // to wallets created before the lock step was mandatory, and to onboarding
+  // interrupted between InitConnect and the lock screens. Every wallet must
+  // have a lock, so hold the user in the lock setup until one is configured.
+  const needsLockSetup = hasStoredWallet && authState === 'passwordless' && !isInInitFlow
   // Hold the loading screen during boot until wallet data is ready.
   // Skip during the init/connect flow (creating or restoring a wallet) so the
-  // Connect component stays mounted and can run swap recovery before navigating.
-  const isInInitFlow = !!(initInfo.password || initInfo.privateKey)
-  const shouldHoldOnLoading = hasStoredWallet && (!initialized || !dataReady) && authState !== 'locked' && !isInInitFlow
+  // Connect component stays mounted and can run swap recovery before navigating,
+  // and while the lock setup is up — that wallet is deliberately not booted yet.
+  const shouldHoldOnLoading =
+    hasStoredWallet && (!initialized || !dataReady) && authState !== 'locked' && !isInInitFlow && !needsLockSetup
 
+  // Pull the user back whenever they leave the lock setup without finishing it
+  // (back button, deep link, a redirect from another effect). The setup itself
+  // spans two screens, so navigating between them is allowed.
   useEffect(() => {
-    passwordlessBootAttempted.current = false
-  }, [wallet.pubkey, authState])
-
-  useEffect(() => {
-    return () => {
-      if (passwordlessReloadTimer.current) clearTimeout(passwordlessReloadTimer.current)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!allChecksReady) return
-    if (!wallet.pubkey || initialized) return
-    if (authState !== 'passwordless') return
-    if (passwordlessBootAttempted.current) return
-
-    passwordlessBootAttempted.current = true
-    unlockWallet(defaultPassword).catch((err) => {
-      consoleError(err, 'error auto-initializing passwordless wallet')
-      try {
-        if (sessionStorage.getItem(PASSWORDLESS_AUTO_RELOAD_KEY)) return
-        sessionStorage.setItem(PASSWORDLESS_AUTO_RELOAD_KEY, 'true')
-        passwordlessReloadTimer.current = setTimeout(() => appReloader.reload(), 1_000)
-      } catch {
-        // ignore session storage errors; keep the app on loading instead of retry-looping
-      }
-    })
-  }, [allChecksReady, wallet.pubkey, initialized, authState, unlockWallet])
+    if (!allChecksReady || !needsLockSetup) return
+    if (LOCK_SETUP_PAGES.has(screen)) return
+    navigate(Pages.InitBiometric)
+  }, [allChecksReady, needsLockSetup, screen, navigate])
 
   // After a successful unlock + data load, the Unlock screen is replaced by the
   // Loading page (shouldHoldOnLoading=true) until dataReady flips — at which
@@ -214,7 +201,11 @@ export default function App() {
         ? Pages.Loading
         : shouldShowUnlock
           ? Pages.Unlock
-          : screen
+          : // Resolve to the setup itself rather than pinning a single page, so
+            // the user can still move between the biometric and password steps.
+            needsLockSetup && !LOCK_SETUP_PAGES.has(screen)
+            ? Pages.InitBiometric
+            : screen
 
   // Boot animation: persists on Loading, then flies to the LogoIcon position when
   // Wallet is reached. For any other destination (Unlock, Init, etc.), exits with fly-up.
