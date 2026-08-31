@@ -366,6 +366,7 @@ export default function ReceiveAmount() {
               />
             ) : (
             <NetworkSelector
+              assetSymbol={requireAssetConfig(selectedAsset).symbol}
               label=''
               selected={selectedMethod}
               onSelect={(network) => {

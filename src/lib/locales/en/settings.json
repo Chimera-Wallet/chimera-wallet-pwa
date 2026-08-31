@@ -50,7 +50,8 @@
         "vtxoWarn": "Delegates can only renew your VTXOs, they cannot spend your funds or control your wallet",
         "defaultArk": "Use default Arkade delegate",
         "defaultArkDescr": "Use Arkade's default delegate to manage renewals",
-        "reloadWarn": "The wallet will reload to apply the change"
+        "reloadWarn": "The wallet will reload to apply the change",
+        "unavailable": "Delegation is not available on this network"
     },
     "display": {
         "displayPref" : "Display preferences"

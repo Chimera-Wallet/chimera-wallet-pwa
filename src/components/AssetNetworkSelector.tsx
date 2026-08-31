@@ -5,6 +5,7 @@ import NetworkIcon from '../icons/NetworkIcon'
 import { TRANSFER_METHOD } from '../lib/transferMethods'
 import { requireNetworkConfig } from '../lib/networks'
 import { getSourceChains, requireSourceChain, type SourceChainId } from '../lib/sourceChains'
+import { assetSupportsBankTransfer } from '../lib/assets'
 import { useTranslation } from 'react-i18next'
 
 // A network choice is either one of the base transfer methods (Arkade / bank)
@@ -41,12 +42,14 @@ const buildOptions = (assetSymbol: string, mode: 'receive' | 'send'): Option[] =
       icon: <ChainIcon src={chain.icon} />,
     })
   }
-  options.push({
-    id: TRANSFER_METHOD.bank,
-    label: t(bank.name),
-    description: t(bank.description),
-    icon: <NetworkIcon network={TRANSFER_METHOD.bank} size={24} />,
-  })
+  if (assetSupportsBankTransfer(assetSymbol)) {
+    options.push({
+      id: TRANSFER_METHOD.bank,
+      label: t(bank.name),
+      description: t(bank.description),
+      icon: <NetworkIcon network={TRANSFER_METHOD.bank} size={24} />,
+    })
+  }
   return options
 }
 

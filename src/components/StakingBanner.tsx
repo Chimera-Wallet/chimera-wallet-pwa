@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import Button from './Button'
 import { useTranslation } from 'react-i18next'
-
-const LAUNCH_DATE = new Date('2026-09-08T12:00:00+00:00')
 
 const TITLE = 'components.stakingBanner.title'
 const DESCRIPTION =
@@ -11,70 +9,6 @@ const DESCRIPTION =
 const TELEGRAM_URL = 'https://t.me/Chimera_Community'
 
 const FONT = "'Titillium Web', sans-serif"
-
-interface CountdownParts {
-  days: number
-  hours: number
-  minutes: number
-  seconds: number
-  expired: boolean
-}
-
-function useCountdown(): CountdownParts {
-  const [parts, setParts] = useState<CountdownParts>(() => getCountdownParts())
-
-  useEffect(() => {
-    const id = setInterval(() => setParts(getCountdownParts()), 1000)
-    return () => clearInterval(id)
-  }, [])
-
-  return parts
-}
-
-function getCountdownParts(): CountdownParts {
-  const diff = LAUNCH_DATE.getTime() - Date.now()
-  if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true }
-  const totalSeconds = Math.floor(diff / 1000)
-  return {
-    days: Math.floor(totalSeconds / 86400),
-    hours: Math.floor((totalSeconds % 86400) / 3600),
-    minutes: Math.floor((totalSeconds % 3600) / 60),
-    seconds: totalSeconds % 60,
-    expired: false,
-  }
-}
-
-const pad = (n: number) => String(n).padStart(2, '0')
-
-function CountdownDisplay({ parts }: { parts: CountdownParts }) {
-  if (parts.expired) {
-    return (
-      <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: 16, fontFamily: FONT }}>Live now!</span>
-    )
-  }
-  const segments = [
-    { value: pad(parts.days), label: 'D' },
-    { value: pad(parts.hours), label: 'H' },
-    { value: pad(parts.minutes), label: 'M' },
-    { value: pad(parts.seconds), label: 'S' },
-  ]
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-      {segments.map((seg, i) => (
-        <React.Fragment key={seg.label}>
-          <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: 16, fontFamily: FONT, letterSpacing: 0.5 }}>
-            {seg.value} {seg.label}
-          </span>
-          {i < segments.length - 1 && (
-            <span style={{ color: 'var(--white40)', fontSize: 14, fontWeight: 400 }}>|</span>
-          )}
-        </React.Fragment>
-      ))}
-      <span style={{ color: 'var(--white40)', fontSize: 14, fontWeight: 400 }}>|</span>
-      <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: 16, fontFamily: FONT, letterSpacing: 1 }}>TO TGE</span>
-    </div>
-  )
-}
 
 // 3D coin stack that protrudes above the top-right of the card
 function CoinStack() {
@@ -156,16 +90,27 @@ const topContentStyle: React.CSSProperties = {
   gap: 12,
 }
 
+const titleStyle: React.CSSProperties = {
+  color: 'white',
+  fontWeight: 600,
+  fontSize: 15,
+  lineHeight: 1.3,
+  fontFamily: FONT,
+}
+
+const descriptionStyle: React.CSSProperties = {
+  color: 'rgba(255,255,255,0.75)',
+  fontSize: 13,
+  lineHeight: 1.5,
+  fontFamily: FONT,
+}
+
 interface StakingBannerProps {
   variant: 'asset' | 'home'
 }
 
 export default function StakingBanner({ variant }: StakingBannerProps) {
-  const parts = useCountdown()
-  const {t} = useTranslation()
-  const launchingIn = parts.expired
-    ? t('components.stakingBanner.live')
-    : t('components.stakingBanner.launch')+` ${pad(parts.days)}d ${pad(parts.hours)}:${pad(parts.minutes)}:${pad(parts.seconds)}`
+  const { t } = useTranslation()
 
   if (variant === 'asset') {
     return (
@@ -173,28 +118,8 @@ export default function StakingBanner({ variant }: StakingBannerProps) {
         <div style={cardStyle}>
           <CoinStack />
           <div style={topContentStyle}>
-            <span style={{ color: 'white', fontWeight: 600, fontSize: 15, lineHeight: 1.3, fontFamily: FONT }}>
-              {t(TITLE)}
-            </span>
-            <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, lineHeight: 1.5, fontFamily: FONT }}>
-              {t(DESCRIPTION)}
-            </span>
-            <div
-              style={{
-                background: 'rgba(255,255,255,0.12)',
-                borderRadius: 10,
-                padding: '10px 16px',
-                textAlign: 'center',
-                color: 'white',
-                fontSize: 14,
-                fontWeight: 600,
-                letterSpacing: '0.5px',
-                fontFamily: FONT,
-                userSelect: 'none',
-              }}
-            >
-              {launchingIn}
-            </div>
+            <span style={titleStyle}>{t(TITLE)}</span>
+            <span style={descriptionStyle}>{t(DESCRIPTION)}</span>
           </div>
         </div>
       </div>
@@ -206,10 +131,8 @@ export default function StakingBanner({ variant }: StakingBannerProps) {
       <div style={cardStyle}>
         <CoinStack />
         <div style={topContentStyle}>
-          <span style={{ color: 'white', fontWeight: 600, fontSize: 15, lineHeight: 1.3, fontFamily: FONT }}>
-            {t(TITLE)}
-          </span>
-          <CountdownDisplay parts={parts} />
+          <span style={titleStyle}>{t(TITLE)}</span>
+          <span style={descriptionStyle}>{t(DESCRIPTION)}</span>
         </div>
         <Button
           label={t('components.stakingBanner.joinComm')}

@@ -50,7 +50,8 @@
     "vtxoWarn": "委托只能为您的 VTXO 续期，无法花费您的资金或控制您的钱包",
     "defaultArk": "使用默认 Arkade 委托",
     "defaultArkDescr": "使用 Arkade 的默认委托来管理续期",
-    "reloadWarn": "钱包将重新加载以应用更改"
+    "reloadWarn": "钱包将重新加载以应用更改",
+    "unavailable": "此网络不支持委托"
   },
   "display": {
     "displayPref": "显示偏好"

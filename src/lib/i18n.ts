@@ -139,6 +139,7 @@ i18n.use(initReactI18next).init({
       translation: 
       {
         terms: rsTerms,
+        placeholders: rsPlaceholder,
         networks: rsNetworks,
         errors: rsErrors,
         common: rsCommon,

@@ -51,16 +51,29 @@ export const ASSETS = {
 
 export type AssetSymbol = keyof typeof ASSETS
 
-// Assets enabled in the wallet. BTC uses the Ark/Lightning/Bitcoin flows; the
-// remaining assets are bridged to/from their native chains via the Arkade Wrap API.
-export const ASSET_LIST: AssetConfig[] = [
-  ASSETS.BTC,
-  ASSETS.USDT,
-  ASSETS.ETH,
-  ASSETS.TRX,
-  ASSETS.POL,
-  ASSETS.CEXT,
-]
+// The single list of assets the wallet offers. Everything user-facing reads
+// from here — the home list, the send/receive asset pickers and the balances
+// computed for them — so an asset is shown everywhere or nowhere.
+//
+// BTC uses the Ark/Lightning/Bitcoin flows; the others are bridged to/from
+// their native chains via the Arkade Wrap API. ETH, TRX and POL stay defined in
+// ASSETS above (so existing balances, transactions and price lookups still
+// resolve by symbol) but are deliberately absent here and therefore hidden.
+export const ASSET_LIST: AssetConfig[] = [ASSETS.BTC, ASSETS.USDT, ASSETS.CEXT]
+
+// Assets the fiat bank transfer (on/off-ramp) flow is offered for. Every other
+// asset can only be moved over Arkade or its native chain.
+const BANK_TRANSFER_SYMBOLS: AssetSymbol[] = ['BTC', 'USDT']
+
+/** Whether the bank transfer flow should be offered for an asset symbol. */
+export const assetSupportsBankTransfer = (symbol: string): boolean => {
+  return BANK_TRANSFER_SYMBOLS.includes(symbol.toUpperCase() as AssetSymbol)
+}
+
+/** Assets selectable inside the bank transfer (on/off-ramp) screens. */
+export const BANK_TRANSFER_ASSET_LIST: AssetConfig[] = ASSET_LIST.filter((asset) =>
+  assetSupportsBankTransfer(asset.symbol),
+)
 
 export const getAssetConfig = (symbol: string): AssetConfig | undefined => {
   return ASSETS[symbol.toUpperCase() as AssetSymbol]

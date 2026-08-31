@@ -21,7 +21,7 @@ import AssetSelector from '../../../components/AssetSelector'
 import NetworkSelector from '../../../components/NetworkSelector'
 import InlineAmountInput from '../../../components/InlineAmountInput'
 import BankTransferValidationMessages from '../../../components/BankTransferValidation'
-import { requireAssetConfig, type AssetSymbol } from '../../../lib/assets'
+import { BANK_TRANSFER_ASSET_LIST, requireAssetConfig, type AssetSymbol } from '../../../lib/assets'
 import {
   TRANSFER_METHOD,
   TERMS_AND_CONDITIONS,
@@ -237,7 +237,7 @@ export default function BankReceive() {
 
             <div style={{ display: 'flex', justifyContent: 'center' , width: '100%'}}>
               <div style={{ width: '200px' }}>
-                <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset} showValue
+                <AssetSelector label = '' assets={BANK_TRANSFER_ASSET_LIST} selected={selectedAsset} onSelect={setSelectedAsset} showValue
                 style = {{
                          justifyContent: 'center',
                          width: '235px',
@@ -251,6 +251,7 @@ export default function BankReceive() {
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100', gap:'1rem'}}>
 
             <NetworkSelector
+              assetSymbol={selectedAsset}
               label=''
               selected={selectedMethod}
               onSelect={(network) => {

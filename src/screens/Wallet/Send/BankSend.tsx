@@ -21,7 +21,7 @@ import NetworkSelector from '../../../components/NetworkSelector'
 import InlineAmountInput from '../../../components/InlineAmountInput'
 import BankTransferValidationMessages from '../../../components/BankTransferValidation'
 import WaitingForRound from '../../../components/WaitingForRound'
-import { type AssetSymbol } from '../../../lib/assets'
+import { BANK_TRANSFER_ASSET_LIST, type AssetSymbol } from '../../../lib/assets'
 import { TRANSFER_METHOD, type TransferMethod } from '../../../lib/transferMethods'
 import TransactionsIcon from '../../../icons/Transactions'
 import { BankCircuitSelector, BankCurrencySelector } from '../../../components/BankDetails'
@@ -538,6 +538,7 @@ export default function BankSend() {
               <div style={{ display: 'flex', justifyContent: 'center', }}>
                 <AssetSelector
                   label=''
+                  assets={BANK_TRANSFER_ASSET_LIST}
                   selected={selectedAsset}
                   onSelect={setSelectedAsset}
                   selectedBalance={availableBalance}
@@ -553,6 +554,7 @@ export default function BankSend() {
                 />
               </div>
             <NetworkSelector
+              assetSymbol={selectedAsset}
               label=''
               selected={selectedMethod}
               onSelect={(network) => {

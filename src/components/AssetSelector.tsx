@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ASSET_LIST, type AssetSymbol, getAssetConfig, getDisplayTicker } from '../lib/assets'
+import { ASSET_LIST, type AssetConfig, type AssetSymbol, getAssetConfig, getDisplayTicker } from '../lib/assets'
 import AssetIcon from '../icons/AssetIcon'
 import SelectSheet from './SelectSheet'
 import SelectorField from './SelectorField'
@@ -7,6 +7,8 @@ import {fromSatoshis} from '../lib/format'
 import { useTranslation } from 'react-i18next'
 
 interface AssetSelectorProps {
+  /** Assets to offer; defaults to every asset in the wallet. */
+  assets?: AssetConfig[]
   label?: string
   onSelect: (symbol: AssetSymbol) => void
   selected: AssetSymbol
@@ -19,6 +21,7 @@ interface AssetSelectorProps {
 }
 
 export default function AssetSelector({
+  assets = ASSET_LIST,
   label,
   onSelect,
   selected,
@@ -38,7 +41,7 @@ export default function AssetSelector({
   const {t} = useTranslation()
 
   const selectedConfig = getAssetConfig(selected)
-  const options = ASSET_LIST.filter((asset) => !asset.comingSoon).map((asset) => ({
+  const options = assets.filter((asset) => !asset.comingSoon).map((asset) => ({
     id: asset.symbol,
     label: asset.name,
     description: getDisplayTicker(asset.symbol),

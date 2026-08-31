@@ -50,7 +50,8 @@
     "vtxoWarn": "I delegati possono solo rinnovare i tuoi VTXO, non possono spendere i tuoi fondi né controllare il tuo wallet",
     "defaultArk": "Usa il delegato predefinito di Arkade",
     "defaultArkDescr": "Usa il delegato predefinito di Arkade per gestire i rinnovi",
-    "reloadWarn": "Il wallet verrà ricaricato per applicare la modifica"
+    "reloadWarn": "Il wallet verrà ricaricato per applicare la modifica",
+    "unavailable": "La delega non è disponibile su questa rete"
   },
   "display": {
     "displayPref": "Preferenze di visualizzazione"

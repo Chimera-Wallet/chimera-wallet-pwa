@@ -422,6 +422,7 @@ export default function Wallet() {
           />
         ) : (
           <NetworkSelector
+            assetSymbol={requireAssetConfig(selectedFlowAsset).symbol}
             selected={selectedNetwork}
             onSelect={handleNetworkSelected}
             isOpen={showNetworkSelector}

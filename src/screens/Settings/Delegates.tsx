@@ -1,14 +1,15 @@
 import Header from './Header'
 import ArrowIcon from '../../icons/Arrow'
 import { prettyAgo, prettyAmount, prettyLongText } from '../../lib/format'
-import Toggle from '../../components/Toggle'
-import Shadow from '../../components/Shadow'
+import Button from '../../components/Button'
 import Padded from '../../components/Padded'
 import Content from '../../components/Content'
 import FlexCol from '../../components/FlexCol'
 import FlexRow from '../../components/FlexRow'
+import { Switch } from '@/components/ui/switch'
 import { AspContext, AspInfo } from '../../providers/asp'
-import WarningBox from '../../components/Warning'
+import InfoIcon from '../../icons/Info'
+import ResetIcon from '../../icons/Reset'
 import { Delegate, SettingsOptions } from '../../lib/types'
 import { ConfigContext } from '../../providers/config'
 import { WalletContext } from '../../providers/wallet'
@@ -18,8 +19,35 @@ import { OptionsContext } from '../../providers/options'
 import Text, { TextSecondary } from '../../components/Text'
 import { decodeArkAddress, isArkAddress } from '../../lib/address'
 import { copyToClipboard } from '../../lib/clipboard'
+import { hapticLight } from '../../lib/haptics'
 import { useToast } from '../../components/Toast'
 import{useTranslation} from 'react-i18next'
+
+const DOCS_URL = 'https://docs.arkadeos.com/learn/pillars/batch-expiry#delegation-solutions'
+
+// Shared card shell for the four stacked panels on this screen.
+const cardStyle: React.CSSProperties = {
+  backgroundColor: 'var(--surface)',
+  borderRadius: '1.25rem',
+  padding: '1.25rem 1rem',
+  width: '100%',
+  boxSizing: 'border-box',
+}
+
+// Small uppercase metadata styling used for the renewal label, the status and
+// the address/pubkey/fee lines.
+const metaStyle: React.CSSProperties = {
+  color: 'var(--neutral-500)',
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: '0.06em',
+  lineHeight: 1.6,
+  textTransform: 'uppercase',
+  margin: 0,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+}
 
 // format the URL to ensure it has the correct protocol and no trailing slashes
 const formatUrl = (host: string, path: string): string => {
@@ -67,44 +95,99 @@ const testConnection = (aspInfo: AspInfo, t: (k: string, o?: any) => string): Pr
   })
 }
 
-// hero component to explain what delegates are
+// person-with-a-check glyph heading the explainer card
+function DelegateIcon() {
+  return (
+    <svg width='34' height='34' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
+      <circle cx='9' cy='7' r='3.25' stroke='currentColor' strokeWidth='1.6' />
+      <path
+        d='M2.75 19.25c0-3.31 2.8-5.5 6.25-5.5 1.2 0 2.32.27 3.28.74'
+        stroke='currentColor'
+        strokeWidth='1.6'
+        strokeLinecap='round'
+      />
+      <path
+        d='M15 16.9l1.9 1.9 3.6-3.9'
+        stroke='currentColor'
+        strokeWidth='1.6'
+        strokeLinecap='round'
+        strokeLinejoin='round'
+      />
+    </svg>
+  )
+}
+
+// explainer card: icon, heading, blurb and a full-width call to action
 function Hero() {
   const {t} = useTranslation()
   return (
-    <FlexRow between>
-      <FlexCol gap='0.5rem'>
-        <Text bold>{t('settings.delegates.whatIs')}</Text>
+    <div style={cardStyle}>
+      <FlexCol gap='0.75rem'>
+        <div style={{ width: '100%', display: 'flex', justifyContent: 'center', color: 'var(--fg)' }}>
+          <DelegateIcon />
+        </div>
+        <Text bold centered large>
+          {t('settings.delegates.whatIs')}
+        </Text>
         <Text small thin wrap>
           {t('settings.delegates.delegateDescr')}
         </Text>
-        <a
-          href='https://docs.arkadeos.com/learn/pillars/batch-expiry#delegation-solutions'
-          target='_blank'
-          rel='noopener noreferrer'
-          style={{
-            marginTop: '1rem',
-            padding: '0.75rem',
-            borderRadius: '6px',
-            color: 'var(--fg)',
-            background: 'var(--bg)',
-            textTransform: 'uppercase',
-            width: 'fit-content',
-            cursor: 'pointer',
-            textDecoration: 'none',
-          }}
-        >
-          <Text tiny thin>
-            {t('settings.delegates.learnMore')}
-          </Text>
-        </a>
+        <div style={{ width: '100%', paddingTop: '0.5rem' }}>
+          <Button
+            onClick={() => window.open(DOCS_URL, '_blank', 'noopener,noreferrer')}
+            label={t('settings.delegates.learnMore')}
+            style={{
+              borderRadius: 999,
+              boxShadow: 'none',
+              minHeight: 56,
+              fontFamily: 'Titillium Web',
+              fontSize: 17,
+              fontWeight: 600,
+              letterSpacing: '0.06em',
+            }}
+          />
+        </div>
       </FlexCol>
-    </FlexRow>
+    </div>
+  )
+}
+
+// the two cautions shown under the toggle, in one amber panel
+function NoteBox() {
+  const {t} = useTranslation()
+  const color = 'var(--yellow)'
+  const rows = [
+    { icon: <ResetIcon />, text: t('settings.delegates.reloadWarn') },
+    { icon: <InfoIcon />, text: t('settings.delegates.vtxoWarn') },
+  ]
+  return (
+    <div
+      style={{
+        backgroundColor: 'color-mix(in srgb, var(--yellow-500) 22%, var(--bg))',
+        borderRadius: '1.25rem',
+        padding: '1.25rem 1rem',
+        width: '100%',
+        boxSizing: 'border-box',
+        color,
+      }}
+    >
+      <FlexCol gap='1.25rem'>
+        {rows.map((row) => (
+          <FlexRow key={row.text} alignItems='flex-start' gap='0.75rem'>
+            <div style={{ color, flexShrink: 0, display: 'flex', paddingTop: 2 }}>{row.icon}</div>
+            <Text small wrap>
+              {row.text}
+            </Text>
+          </FlexRow>
+        ))}
+      </FlexCol>
+    </div>
   )
 }
 
 // middle dot component to indicate status of delegate connection
 function Middot({ ok = true }: { ok?: boolean }) {
-  const color = ok ? '#60B18A' : '#E27D60'
+  const color = ok ? 'var(--toggle-on)' : '#E27D60'
   return (
     <svg width='14' height='14' viewBox='0 0 14 14' fill='none' xmlns='http://www.w3.org/2000/svg'>
       <rect width='14' height='14' rx='7' fill={color} fillOpacity='0.1' />
@@ -152,58 +235,68 @@ function DelegateCard() {
     : t('settings.delegates.noRenewal')
 
   return (
-    <Shadow lighter fat testId='delegate-card'>
-      <FlexCol gap='0.5rem'>
+    <div style={cardStyle} data-testid='delegate-card'>
+      <FlexCol gap='0.75rem'>
         <FlexRow between>
           <Text>{delegate.name}</Text>
-          <FlexRow end onClick={() => setOption(SettingsOptions.Vtxos)}>
-            <Text color='neutral-500' tiny>
-              {nextRolloverText}
-            </Text>
+          <FlexRow end gap='0.35rem' onClick={() => setOption(SettingsOptions.Vtxos)}>
+            <p style={metaStyle}>{nextRolloverText}</p>
             <ArrowIcon small />
           </FlexRow>
         </FlexRow>
-        <hr className='dashed' />
+        <hr />
         <FlexRow between>
-          <Shadow flex>
-            <Text tiny>{delegate.url}</Text>
-          </Shadow>
-          <FlexRow end>
+          <div
+            style={{
+              backgroundColor: 'var(--neutral-100)',
+              borderRadius: 999,
+              padding: '0.5rem 0.9rem',
+              minWidth: 0,
+            }}
+          >
+            <p style={{ ...metaStyle, color: 'var(--fg)' }}>{delegate.url}</p>
+          </div>
+          <FlexRow end gap='0.4rem'>
+            <p style={metaStyle}>{active ? t('common.general.active') : t('common.general.inactive')}</p>
             <Middot ok={active} />
-            <Text tiny>{active ? t('common.general.active') : t('common.general.inactive')}</Text>
           </FlexRow>
         </FlexRow>
-        <FlexCol gap='0.25rem'>
-          <FlexRow onClick={() => handleCopy(delegate.address)}>
-            <TextSecondary>address: {prettyLongText(delegate.address, 14)}</TextSecondary>
-          </FlexRow>
-          <FlexRow onClick={() => handleCopy(delegate.pubkey)}>
-            <TextSecondary>pubkey: {prettyLongText(delegate.pubkey, 14)}</TextSecondary>
-          </FlexRow>
-          <FlexRow onClick={() => handleCopy(delegate.fee.toString())}>
-            <TextSecondary>fee: {prettyAmount(delegate.fee)}</TextSecondary>
-          </FlexRow>
+        <FlexCol gap='0'>
+          <p style={metaStyle} onClick={() => handleCopy(delegate.address)}>
+            address: {prettyLongText(delegate.address, 14)}
+          </p>
+          <p style={metaStyle} onClick={() => handleCopy(delegate.pubkey)}>
+            pubkey: {prettyLongText(delegate.pubkey, 14)}
+          </p>
+          <p style={metaStyle} onClick={() => handleCopy(delegate.fee.toString())}>
+            fee: {prettyAmount(delegate.fee)}
+          </p>
         </FlexCol>
       </FlexCol>
-    </Shadow>
+    </div>
   )
 }
 
 export default function Delegates() {
-  const {t} = useTranslation() 
+  const {t} = useTranslation()
   const { goBack } = useContext(OptionsContext)
   const { config, updateConfig } = useContext(ConfigContext)
 
+  // Delegation needs both VITE_DELEGATE_ENABLED and a VITE_DELEGATOR_URL for
+  // this network. Without them the stored flag is forced back off on the next
+  // boot (see the VITE_DELEGATE_ENABLED precedence rule in providers/config),
+  // so an interactive switch would reload the app and silently revert.
+  const delegationAvailable = isDelegationEnabled()
+
   // toggle delegate
   const handleToggle = () => {
+    if (!delegationAvailable) return
+    hapticLight()
     const nextDelegate = !config.delegate
     updateConfig({ ...config, delegate: nextDelegate })
     // Full page reload ensures service worker and wallet are re-instantiated with the new delegator setting.
     window.location.reload()
   }
-
-  // text to show on warning box
-  const warningText = t('settings.delegates.vtxoWarn')
 
   return (
     <>
@@ -211,18 +304,27 @@ export default function Delegates() {
       <Content>
         <Padded>
           <FlexCol gap='1rem' padding='0 0 24px 0'>
-            <Shadow fat purple>
-              <Hero />
-            </Shadow>
-            <Toggle
-              checked={config.delegate}
-              onClick={handleToggle}
-              testId='toggle-delegates'
-              text={t('settings.delegates.defaultArk')}
-              subtext={t('settings.delegates.defaultArkDescr')}
-            />
-            <TextSecondary>{t('settings.delegates.reloadWarn')}</TextSecondary>
-            <WarningBox text={warningText} />
+            <Hero />
+            <div style={{ ...cardStyle, borderRadius: '2rem', padding: '1.25rem 1.5rem' }}>
+              <FlexCol gap='0.5rem'>
+                <FlexRow between>
+                  <Text large>{t('settings.delegates.defaultArk')}</Text>
+                  <Switch
+                    checked={Boolean(delegationAvailable && config.delegate)}
+                    onCheckedChange={handleToggle}
+                    disabled={!delegationAvailable}
+                    data-testid='toggle-delegates'
+                    data-checked={delegationAvailable && config.delegate ? 'true' : 'false'}
+                    size='lg'
+                    className='data-checked:bg-[var(--toggle-on)]'
+                  />
+                </FlexRow>
+                {delegationAvailable ? null : (
+                  <TextSecondary>{t('settings.delegates.unavailable')}</TextSecondary>
+                )}
+              </FlexCol>
+            </div>
+            <NoteBox />
             <DelegateCard />
           </FlexCol>
         </Padded>

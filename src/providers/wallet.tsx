@@ -84,12 +84,30 @@ const defaultWallet: Wallet = {
 
 export type WalletAuthState = 'unknown' | 'passwordless' | 'locked' | 'authenticated'
 
+/**
+ * True when the wallet secret still decrypts with `defaultPassword`, i.e. the
+ * user never chose a lock. Shared by the boot check and `refreshAuthState` so
+ * both answer the question the same way.
+ */
+const detectPasswordState = async (): Promise<boolean> => {
+  if (hasMnemonic()) {
+    try {
+      await getMnemonic(defaultPassword)
+      return true // passwordless
+    } catch {
+      return false // has custom password
+    }
+  }
+  return noUserDefinedPassword()
+}
+
 interface WalletContextProps {
   initWallet: (credentials: { mnemonic?: string; privateKey?: Uint8Array }) => Promise<void>
   lockWallet: () => Promise<void>
   resetWallet: () => Promise<void>
   settlePreconfirmed: () => Promise<void>
   unlockWallet: (password: string) => Promise<void>
+  refreshAuthState: () => Promise<void>
   updateWallet: (w: Wallet | ((prev: Wallet) => Wallet)) => void
   isLocked: () => Promise<boolean>
   reloadWallet: (svcWallet?: ServiceWorkerWallet) => Promise<void>
@@ -123,6 +141,7 @@ export const WalletContext = createContext<WalletContextProps>({
   resetWallet: () => Promise.resolve(),
   settlePreconfirmed: () => Promise.resolve(),
   unlockWallet: () => Promise.resolve(),
+  refreshAuthState: () => Promise.resolve(),
   updateWallet: () => {},
   reloadWallet: () => Promise.resolve(),
   restartWallet: () => Promise.resolve(),
@@ -270,25 +289,18 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     let cancelled = false
     setAuthState('unknown')
 
-    const detectPasswordState = async () => {
-      if (hasMnemonic()) {
-        try {
-          await getMnemonic(defaultPassword)
-          return true // passwordless
-        } catch {
-          return false // has custom password
-        }
-      }
-      return noUserDefinedPassword()
+    // This check is async (PBKDF2), so it can still be in flight when the wallet
+    // is booted with the real secret — during a restore, where the lock setup
+    // follows immediately. Never let a stale result downgrade an already
+    // authenticated session, or App would bounce the user back into the setup.
+    const applyDetected = (next: WalletAuthState) => {
+      if (cancelled) return
+      setAuthState((prev) => (prev === 'authenticated' ? prev : next))
     }
 
     detectPasswordState()
-      .then((noPassword) => {
-        if (!cancelled) setAuthState(noPassword ? 'passwordless' : 'locked')
-      })
-      .catch(() => {
-        if (!cancelled) setAuthState('locked')
-      })
+      .then((noPassword) => applyDetected(noPassword ? 'passwordless' : 'locked'))
+      .catch(() => applyDetected('locked'))
 
     return () => {
       cancelled = true
@@ -699,6 +711,27 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     if (!didInit) return
     updateWallet({ ...wallet, network, pubkey })
     setInitialized(true)
+    // Booting the wallet means the caller held the real secret, so the session
+    // is authenticated. InitConnect calls this directly rather than going
+    // through unlockWallet; without this the state stayed at whatever the boot
+    // check found. After onboarding re-encrypts with the chosen password that
+    // stale 'passwordless' made App bounce the user straight back into the lock
+    // setup, which then tried to decrypt with defaultPassword and threw.
+    setAuthState('authenticated')
+  }
+
+  /**
+   * Re-derive the auth state from what is actually in storage. Needed because
+   * the boot check keys off `wallet.pubkey`, which does not change when the
+   * secret is re-encrypted under a new password.
+   */
+  const refreshAuthState = async () => {
+    if (!wallet.pubkey) return setAuthState('authenticated')
+    try {
+      setAuthState((await detectPasswordState()) ? 'passwordless' : 'locked')
+    } catch {
+      setAuthState('locked')
+    }
   }
 
   const unlockWallet = async (password: string) => {
@@ -850,6 +883,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         resetWallet,
         settlePreconfirmed,
         unlockWallet,
+        refreshAuthState,
         updateWallet,
         wallet,
         walletLoaded,
