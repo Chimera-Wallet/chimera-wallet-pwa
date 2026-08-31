@@ -33,8 +33,8 @@ export default function AssetRow({
 
   const isPositive = percentChange >= 0
   const changeColor = isPositive ? 'var(--green-positive)' : 'var(--red-negative)'
-  const changeArrow = isPositive ? '↑' : '↓'
-  const formattedChange = `${changeArrow} ${Math.abs(percentChange).toFixed(2)}%`
+  const formattedChange = `${Math.abs(percentChange).toFixed(2)}%`
+  const changeIcon = isPositive ? '/images/icons/ upGreen.png' : '/images/icons/ downRed.png'
 
   // Format balance with asset's configured precision
   const formatBalance = (value: number): string => {
@@ -87,16 +87,18 @@ export default function AssetRow({
           {badge ? (
             <span
               style={{
-                background: 'var(--white10)',
+                backgroundColor: 'var(--neutral-200)',
                 borderRadius: 4,
                 fontSize: 9,
                 fontWeight: 700,
-                color: 'var(--white50)',
                 padding: '2px 5px',
+                color: 'var(--fg)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.8px',
                 marginTop: 2,
                 width: 'fit-content',
+
+
               }}
             >
               {badge}
@@ -119,7 +121,14 @@ export default function AssetRow({
           flexShrink: 0,
         }}
       >
-        {formattedChange}
+        <img
+          src={changeIcon}
+          alt={isPositive ? 'Up' : 'Down'}
+          width={16}
+          height={16}
+          style={{ display: 'block', objectFit: 'contain', color: 'rgba(29,255,120,1)' }}
+        />
+        <span>{formattedChange}</span>
       </div>
 
       {/* Right Section - Balance */}

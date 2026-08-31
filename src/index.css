@@ -574,8 +574,7 @@ hr {
 }
 
 .pill-nav-btn--active {
-  color: #040404;
-  background-color: var(--neutral-50);
+  color: rgba(29, 255, 120, 1);
 }
 
 .palette-dark .pill-nav-btn--active {
@@ -586,11 +585,18 @@ hr {
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--fg);
+  transition: color 150ms ease-out;
+}
+
+.pill-nav-btn--active .pill-nav-icon {
+  color: var(--green-active);
 }
 
 .pill-nav-icon svg {
   display: block;
   shape-rendering: geometricPrecision;
+  color: currentColor;
 }
 
 .pill-icon-pop {

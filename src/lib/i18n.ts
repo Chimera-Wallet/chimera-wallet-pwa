@@ -38,6 +38,11 @@ import itNetworks from './locales/it/networks.json'
 import itPlaceholders from './locales/it/placeholders.json'
 import itErrors from './locales/it/errors.json'
 import itCommon from './locales/it/common.json'
+import itInit from './locales/it/init.json'
+import itSettings from './locales/it/settings.json'
+import itApps from './locales/it/apps.json'
+import itComponents from './locales/it/components.json'
+import itLib from './locales/it/lib.json'
 
 import chTerms from './locales/ch/terms.json'
 import chNetworks from './locales/ch/networks.json'
@@ -207,11 +212,11 @@ const tolgee = Tolgee()
   .use(I18nextPlugin())
   .use(FormatSimple())
   .init({
-    apiUrl: import.meta.env.VITE_TOLGEE_API_URL || 'https://app.tolgee.io',
+    apiUrl: import.meta.env.VITE_TOLGEE_API_URL || 'to be determined',
     apiKey: import.meta.env.VITE_TOLGEE_API_KEY,
   });
 
-// wrap i18next with Tolgee then init as before (keeps your current resources as fallback)
+// wrap i18next with Tolgee then init as before 
 withTolgee(i18n, tolgee)
   .use(initReactI18next)
   .init({

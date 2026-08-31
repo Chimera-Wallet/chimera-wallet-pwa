@@ -1,0 +1,201 @@
+{
+  "about": {
+    "serverURL": "URL del server",
+    "serverPubkey": "Chiave pubblica del server",
+    "forfeitAddress": "Indirizzo di forfeiture",
+    "sessionDur": "Durata della sessione",
+    "boardingDelay": "Ritardo di uscita del boarding",
+    "unilateralDelay": "Ritardo di uscita unilaterale",
+    "gitHash": "Hash del commit Git"
+  },
+  "advanced": {
+    "advancedSettings": "Impostazioni avanzate",
+    "changePass": "Cambia password",
+    "lockWallet": "Blocca wallet",
+    "deleteMnemonic": "Elimina frase mnemonica",
+    "highRisk": "Alto rischio"
+  },
+  "backup": {
+    "nostrUpdate": "Backup Nostr aggiornato",
+    "mnemonicWarning": "La tua frase di recupero viene utilizzata per eseguire il backup del wallet. Mantienila sempre segreta e al sicuro.",
+    "pkWarning": "La tua chiave privata viene utilizzata per eseguire il backup del wallet. Mantienila sempre segreta e al sicuro.",
+    "unlockPasskey": "Sblocca con la tua passkey",
+    "enterPass": "Inserisci la tua password",
+    "keepSafeSecret": "Conserva al sicuro il tuo {{secret}}",
+    "noShare": "Non condividerlo con nessuno",
+    "loseNoRecover": "Se lo perdi non potrai recuperarlo",
+    "eyesOnly": "Solo per i tuoi occhi, non condividerlo.",
+    "viewSecret": "Visualizza {{secret}}",
+    "enoughToRestore": "Questo è sufficiente per ripristinare il tuo wallet",
+    "phraseAccess": "La tua frase di recupero può essere utilizzata per accedere a tutto ciò che è presente nel wallet. Non condividerla con nessuno.",
+    "pkAccess": "La tua chiave privata può essere utilizzata per accedere a tutto ciò che è presente nel wallet. Non condividerla con nessuno.",
+    "enableNostr": "Abilita i backup Nostr",
+    "nostrToggle": "Attiva o disattiva i backup Nostr"
+  },
+  "biometric": {
+    "bioAuth": "Autenticazione biometrica",
+    "bioAuthUnsupported": "L'autenticazione biometrica non è supportata su questo dispositivo",
+    "useBio": "Usa biometria",
+    "disableWarn": "L'autenticazione biometrica è attiva. Disattivandola verrà rimosso il blocco attuale: potrai quindi impostare una password dalle Impostazioni avanzate",
+    "enableFingerFace": "Abilita il riconoscimento tramite impronta digitale o volto per sbloccare il wallet. Questo sostituirà la password attuale.",
+    "noContractFound": "Nessun contratto trovato"
+  },
+  "delegates": {
+    "delegates": "Delegati",
+    "whatIs": "Cos'è un delegato?",
+    "delegateDescr": "Un delegato è una terza parte fidata che nomini per aiutarti a mantenere i tuoi VTXO al sicuro.",
+    "learnMore": "Scopri di più",
+    "renewal": "prossimo rinnovo {{time}}",
+    "noRenewal": "Nessun rinnovo imminente",
+    "vtxoWarn": "I delegati possono solo rinnovare i tuoi VTXO, non possono spendere i tuoi fondi né controllare il tuo wallet",
+    "defaultArk": "Usa il delegato predefinito di Arkade",
+    "defaultArkDescr": "Usa il delegato predefinito di Arkade per gestire i rinnovi",
+    "reloadWarn": "Il wallet verrà ricaricato per applicare la modifica"
+  },
+  "display": {
+    "displayPref": "Preferenze di visualizzazione"
+  },
+  "fiat": {
+    "fiat": "Valuta fiat"
+  },
+  "general": {
+    "settingsOpt": "Impostazioni {{opt}}",
+    "appSett": "Impostazioni dell'app"
+  },
+  "haptics": {
+    "haptics": "Feedback aptico",
+    "feedback": "Feedback aptico",
+    "vibration": "Vibrazione alla pressione dei pulsanti e durante le interazioni"
+  },
+  "language": {
+    "appLang": "Lingua dell'app"
+  },
+  "lock": {
+    "noPass": "Nessuna password o biometria configurata",
+    "lockWallet": "Blocca il wallet",
+    "lockReqs": "Devi impostare una password o abilitare la biometria per poter bloccare il wallet.",
+    "lockBioWarn": "Dopo il blocco dovrai autenticarti tramite biometria per sbloccarlo.",
+    "lockPassWarn": "Dopo il blocco dovrai reinserire la password per sbloccarlo.",
+    "setPass": "Imposta password",
+    "lockWalletSimple": "Blocca wallet"
+  },
+  "logs": {
+    "logs": "Log",
+    "keyboardNav": "Premendo Invio si abilita la navigazione da tastiera nei log",
+    "logMessage": "Log alle {{time}} con messaggio {{msg}}. Premi Esc per uscire dalla navigazione da tastiera.",
+    "exportCSV": "Esporta in file CSV"
+  },
+  "menu": {
+    "verified": "Verificato",
+    "pending": "In attesa",
+    "unverified": "Non verificato",
+    "kycVer": "KYC - Verifica",
+    "knowledgeBase": "Base di conoscenza",
+    "manage": "Gestisci account",
+    "addressBook": "Rubrica indirizzi",
+    "showPhrase": "Mostra frase segreta",
+    "currency": "Valuta",
+    "setNotifs": "Imposta notifiche",
+    "advancedSettings": "Impostazioni avanzate"
+  },
+  "notifications": {
+    "notifications": "Notifiche",
+    "update": "Ricevi una notifica quando è disponibile un aggiornamento o viene ricevuto un pagamento. Se richiesto, dovrai concedere l'autorizzazione.",
+    "unsupported": "Il tuo browser non supporta l'API Notifications. Se utilizzi iOS, dovrai aggiungere l'app alla schermata Home e utilizzare iOS 16.4 o versioni successive.",
+    "allow": "Consenti notifiche"
+  },
+  "password": {
+    "passUnavailable": "Password non disponibile",
+    "bioAuth": "L'autenticazione biometrica è attiva. Disattivala da Impostazioni > Autenticazione biometrica prima di impostare una password.",
+    "passRemoved": "Password rimossa",
+    "passChanged": "Password modificata"
+  },
+  "reset": {
+    "removeSeed": "Rimuove definitivamente il seed da questo dispositivo. Fai estrema attenzione: dopo l'eliminazione sarà impossibile recuperare la chiave da Chimera Wallet.",
+    "removeMnemonic": "Facendo clic su \"Elimina\" verrà eliminata la frase mnemonica da questo dispositivo. Assicurati di averne eseguito il backup!",
+    "deleteAccount": "Ho capito ed elimino il mio account",
+    "deleteMnemConf": "SÌ ELIMINA LA FRASE MNEMONICA",
+    "cancel": "ANNULLA"
+  },
+  "server": {
+    "server": "Server",
+    "serverURL": "URL del server",
+    "found": "Server trovato",
+    "walletReset": "Il tuo wallet verrà reimpostato. Assicurati di averne eseguito il backup prima.",
+    "connect": "Connetti al server"
+  },
+  "support": {
+    "support": "Supporto",
+    "custSupp": "Assistenza clienti",
+    "helpText": "Ottieni aiuto con il tuo wallet, segnala bug o fai domande. Il nostro team di supporto è qui per aiutarti.",
+    "secure": "Chat sicura",
+    "secureText": "Le tue conversazioni sono sicure e private. La cronologia delle chat viene mantenuta tra le sessioni.",
+    "bugRep": "Segnalazioni di bug",
+    "bugRepText": "Segnala eventuali problemi o bug riscontrati. Includi i passaggi per riprodurre il problema per una risoluzione più rapida.",
+    "progress": "Monitora i progressi",
+    "progressText": "Tutti i tuoi ticket di supporto e le conversazioni vengono salvati. Puoi visualizzare le conversazioni passate in qualsiasi momento.",
+    "openSupp": "Apri la chat di supporto"
+  },
+  "verification": {
+    "enterEmail": "Inserisci il tuo indirizzo email",
+    "enterEmailVerif": "Inserisci il tuo indirizzo email per iniziare la verifica KYC.",
+    "idVerif": "Verifica dell'identità",
+    "emailRegs": "La tua email è registrata. Apri il portale di verifica per completare o controllare lo stato del KYC.",
+    "emailReSub": "La modifica dell'indirizzo email richiederà una nuova presentazione della verifica KYC.",
+    "resubKyc": "Invia nuovamente il KYC",
+    "checkStat": "Controlla stato",
+    "r&a": "Rivedi e accetta",
+    "reviewText": "Prima di inviare l'email di verifica, leggi e accetta quanto segue.",
+    "acceptPP": "Accetta l'informativa sulla privacy",
+    "agreed": "Ho letto e accettato la",
+    "PP": "Informativa sulla privacy",
+    "accTS": "Accetta i termini di servizio",
+    "TS": "Termini di servizio",
+    "sending": "Invio in corso...",
+    "proceed": "Procedi",
+    "resendIn": "Reinvia tra {{sec}}",
+    "resendLim": "Limite di reinvio raggiunto",
+    "resend": "Reinvia email",
+    "verifTimeout": "Verifica scaduta",
+    "noClick": "Non abbiamo rilevato alcun clic sul link entro 2 minuti. Riprova.",
+    "tryAg": "Riprova",
+    "checkInb": "Controlla la tua casella di posta",
+    "sentVerif": "Abbiamo inviato un link di verifica a <strong>{{email}}</strong>. Clicca sul link per continuare.",
+    "waiting": "In attesa della verifica…",
+    "idVerified": "La tua identità è stata verificata!",
+    "fullAccess": "Hai accesso completo a tutte le funzionalità.",
+    "verifProgress": "Verifica in corso",
+    "docReview": "I tuoi documenti sono in fase di revisione. Di solito richiede 1-2 giorni lavorativi.",
+    "idUnverified": "Verifica non riuscita",
+    "unverifText": "Purtroppo non siamo riusciti a verificare la tua identità. Riprova con documenti validi.",
+    "troubleLoad": "Problemi nel caricamento della verifica?",
+    "iosIssue": "iOS potrebbe avere problemi con i contenuti incorporati. Apri in Safari per un'esperienza ottimale.",
+    "openBrowser": "Apri nel browser"
+  },
+  "vtxo": {
+    "renewVC": "Rinnova monete virtuali",
+    "belowDust": "Sotto il limite dust",
+    "completeBoardRen": "Completa il boarding e rinnova",
+    "renew": "Rinnova",
+    "complBoard": "Completa il boarding",
+    "settled": "regolato",
+    "subdust": "subdust",
+    "swept": "recuperato",
+    "unconfirmed": "non confermato",
+    "expSoon": "in scadenza a breve",
+    "vc": "Monete virtuali",
+    "renewal": "Prossimo rinnovo",
+    "renewVCs": "Rinnovo delle tue monete virtuali in corso. Potrebbero essere necessari alcuni istanti.",
+    "renewing": "Rinnovo in corso",
+    "coinsRenewdSucc": "Monete rinnovate con successo",
+    "VClist": "Le tue monete virtuali con importo e scadenza",
+    "utxoList": "I tuoi UTXO di boarding con importo e scadenza",
+    "nextren": "Prossimo rinnovo",
+    "firstExpt": "Prima scadenza della moneta virtuale: {{exp}}",
+    "autoRen": "Il rinnovo automatico avviene per le monete virtuali in scadenza entro",
+    "marketFees": "La regolazione durante gli orari di mercato offre commissioni inferiori.",
+    "nextHour": "Prossima ora di mercato: {{st}} {{bool}} per {{duration}}.",
+    "addRem": "Aggiungi promemoria",
+    "vcRenewal": "Rinnovo delle monete virtuali"
+  }
+}

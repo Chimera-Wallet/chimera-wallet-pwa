@@ -43,8 +43,8 @@ const buildOptions = (assetSymbol: string, mode: 'receive' | 'send'): Option[] =
   }
   options.push({
     id: TRANSFER_METHOD.bank,
-    label: bank.name,
-    description: bank.description,
+    label: t(bank.name),
+    description: t(bank.description),
     icon: <NetworkIcon network={TRANSFER_METHOD.bank} size={24} />,
   })
   return options

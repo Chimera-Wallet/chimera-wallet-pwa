@@ -17,6 +17,7 @@ interface ImportMetaEnv {
   readonly VITE_ARKADE_TRX?: string
   readonly VITE_ARKADE_POL?: string
   readonly VITE_ARKADE_CEXT?: string
+  readonly VITE_ARKADEWRAP_API?: string
   // ramp-system API (fiat<->crypto on/off-ramp, gift cards)
   readonly VITE_RAMP_API?: string
   // Off-ramp — company Ark wallet where user funds are sent before payout
@@ -37,6 +38,9 @@ interface ImportMetaEnv {
   // Third-party integrations
   readonly VITE_LENDASAT_IFRAME_URL?: string
   readonly VITE_LENDASWAP_IFRAME_URL?: string
+  // tolgee integrations
+  readonly VITE_TOLGEE_API_URL?: string
+  readonly VITE_TOLGEE_API_KEY?: string
 }
 
 interface ImportMeta {

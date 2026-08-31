@@ -1,0 +1,36 @@
+{
+  "wallet": {
+    "fetchCoins": "Recupero monete...",
+    "fetchTrans": "Recupero transazioni...",
+    "updBal": "Aggiornamento saldo...",
+    "loadingMeta": "Caricamento metadati degli asset...",
+    "unableLoadWall": "Impossibile caricare i dati del wallet. Controlla la connessione e riprova.",
+    "startWall": "Avvio del wallet...",
+    "migrateData": "Migrazione dei dati",
+    "retryConn": "Nuovo tentativo di connessione..."
+  },
+  "config": {
+    "statement": "Estratto conto",
+    "stateDescr": "Visualizza la cronologia delle transazioni e gli estratti conto",
+    "stateInfoTitle": "La tua panoramica finanziaria",
+    "stateInfoDescr": "Accedi in un unico posto agli estratti dettagliati di tutte le tue transazioni, saldi e attività del conto.",
+    "referral": "Programma Referral",
+    "referralDescr": "Invita amici e guadagna ricompense",
+    "referralInfoTitle": "Cos'è il Programma Referral?",
+    "referralInfoDescr": "Sei al centro e le ricompense sono infinite!\n\nGuadagna il 20% di tutte le commissioni generate da ogni amico che si iscrive tramite il tuo link, per sempre.\nNessun limite, nessuna scadenza: solo ricompense continue. Più condividi, più guadagni. Sei pronto?\n\nCopia il tuo link, spargi la voce e lascia che le ricompense arrivino!",
+    "giftCard": "Carte regalo",
+    "giftCardDescr": "Acquista e riscatta carte regalo con Bitcoin",
+    "cardReserve": "Prenotazione carta",
+    "cardReserveDescr": "Prenota la tua carta di debito Chimera"
+  },
+  "transactions": {
+    "sentAss": "{{ass}} inviato",
+    "rcvAss": "{{ass}} ricevuto",
+    "recent": "Transazioni recenti",
+    "assets": "Asset",
+    "confirmed": "Confermato",
+    "pending": "In sospeso",
+    "failed": "Non riuscito",
+    "copyAddr": "Copia {{title}}"
+  }
+}
