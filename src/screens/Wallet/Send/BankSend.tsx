@@ -32,7 +32,7 @@ import { FiatContext } from '../../../providers/fiat'
 import { TxResultContext } from '../../../providers/txResult'
 import { sendOffChain } from '../../../lib/asp'
 import { prettyNumber, fromSatoshis } from '../../../lib/format'
-import { createOffRampOrder, type CreateOffRampOrderPayload } from '../../../providers/ramp'
+import { createBankWithdraw } from '../../../providers/bankTransfer'
 import { addOrderToHistory } from '../../../lib/bankOrderHistory'
 import { useBankTransferValidation } from '../../../hooks/useBankTransferValidation'
 import {
@@ -180,62 +180,6 @@ export default function BankSend() {
     }
   }
 
-  const buildOffRampPayload = (
-    bankData: BankData | undefined,
-    asset: string,
-    fiatCurrency: string,
-    cryptoAmount: string,
-    email: string,
-  ): CreateOffRampOrderPayload | null => {
-    if (circuit === 'sepa') {
-      const d = bankData as (typeof bankData & { circuit: 'sepa' }) | undefined
-      return {
-        asset,
-        fiat_currency: fiatCurrency,
-        email,
-        crypto_amount: cryptoAmount,
-        destination_type: 'sepa',
-        destination_bank_address: d?.destinationBankAddress,
-        destination_bank_name: d?.accountHolderName,
-        origin: 'app',
-      }
-    }
-    if (circuit === 'swift') {
-      if (!bankData || bankData.circuit !== 'swift') return null
-      return {
-        asset,
-        fiat_currency: fiatCurrency,
-        email,
-        crypto_amount: cryptoAmount,
-        destination_type: 'swift',
-        destination_bank_address: bankData.destinationBankAddress,
-        destination_bic: bankData.bic,
-        destination_bank_name: bankData.accountHolderName,
-        destination_country: bankData.country,
-        destination_street_name: bankData.streetName,
-        destination_building_number: bankData.buildingNumber,
-        destination_town_name: bankData.townName,
-        destination_post_code: bankData.postCode,
-        origin: 'app',
-      }
-    }
-    if (circuit === 'us') {
-      if (!bankData || bankData.circuit !== 'us') return null
-      return {
-        asset,
-        fiat_currency: fiatCurrency,
-        email,
-        crypto_amount: cryptoAmount,
-        destination_type: 'us',
-        destination_bank_account_number: bankData.accountNumber,
-        destination_bank_routing_number: bankData.routingNumber,
-        destination_bank_name: bankData.accountHolderName,
-        origin: 'app',
-      }
-    }
-    return null
-  }
-
   const handleCreateWithdraw = async () => {
     if (!validation.canProceed) {
       if (!validation.kycVerified && validation.kycRequired) {
@@ -279,14 +223,16 @@ export default function BankSend() {
       }
 
       const email = getUserEmailForBankTransfer()
-      const payload = buildOffRampPayload(bankData, 'BTC', currency, String(fromSatoshis(requiredSats)), email)
-      if (!payload) {
-        setError('Please complete the bank details form')
-        return
-      }
 
       // Register the withdrawal order with the backend
-      const { order } = await createOffRampOrder(payload)
+      const { order } = await createBankWithdraw({
+        asset: 'BTC',
+        fiatCurrency: currency,
+        email,
+        cryptoAmountSats: requiredSats,
+        circuit,
+        bankData,
+      })
 
       setBankSendInfo({
         currency,

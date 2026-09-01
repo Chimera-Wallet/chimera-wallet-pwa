@@ -22,7 +22,7 @@ import CheckMarkIcon from '../../icons/CheckMark'
 import { SepaDataView, SwiftDataView, TransferReferenceBox } from '../../components/BankDetails'
 import { NavigationContext, Pages } from '../../providers/navigation'
 import { FlowContext } from '../../providers/flow'
-import { getRampOrderStatus, type RampOrder } from '../../providers/ramp'
+import { getBankOrderStatus, type BankOrder } from '../../providers/bankTransfer'
 import { prettyDate } from '../../lib/format'
 import { useTranslation } from 'react-i18next'
 
@@ -44,7 +44,7 @@ export default function BankOrderStatus() {
 
   const [loading, setLoading] = useState(!initialOrder)
   const [error, setError] = useState('')
-  const [order, setOrder] = useState<RampOrder | null>(initialOrder ?? null)
+  const [order, setOrder] = useState<BankOrder | null>(initialOrder ?? null)
   const [refreshing, setRefreshing] = useState(false)
   const {t} = useTranslation()
 
@@ -58,7 +58,7 @@ export default function BankOrderStatus() {
 
     const fetchStatus = async () => {
       try {
-        const orderData = await getRampOrderStatus(order.id)
+        const orderData = await getBankOrderStatus(order.id, order.direction)
         setOrder(orderData)
         setError('')
       } catch (err) {
@@ -81,7 +81,7 @@ export default function BankOrderStatus() {
     if (!order?.id) return
     setRefreshing(true)
     try {
-      const orderData = await getRampOrderStatus(order.id)
+      const orderData = await getBankOrderStatus(order.id, order.direction)
       setOrder(orderData)
       setError('')
     } catch (err) {

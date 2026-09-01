@@ -2,7 +2,7 @@
  * Bank Order History types and storage utilities
  */
 
-import type { RampOrder } from '../providers/ramp'
+import type { BankOrder } from '../providers/bankTransfer'
 import { type BankCircuit } from './bankTransferConfig'
 
 // Bank Order Type
@@ -10,7 +10,7 @@ export type BankOrderType = 'receive' | 'send'
 
 // Bank Order History Entry
 export interface BankOrderHistoryEntry {
-  order: RampOrder
+  order: BankOrder
   type: BankOrderType
   timestamp: number
   circuit?: BankCircuit
@@ -41,7 +41,7 @@ export function saveBankOrderHistory(entries: BankOrderHistoryEntry[]): void {
 /**
  * Add a new order to history
  */
-export function addOrderToHistory(order: RampOrder, type: BankOrderType, circuit?: BankCircuit): BankOrderHistoryEntry {
+export function addOrderToHistory(order: BankOrder, type: BankOrderType, circuit?: BankCircuit): BankOrderHistoryEntry {
   const entries = getBankOrderHistory()
   const newEntry: BankOrderHistoryEntry = {
     order,

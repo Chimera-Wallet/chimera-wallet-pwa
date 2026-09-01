@@ -101,6 +101,25 @@ export interface RampFee {
 
 export type RampOrigin = 'api' | 'web' | 'app'
 
+// This wallet's crypto legs are always Arkade addresses (ark1/tark1 — see
+// lib/asp.ts::getReceivingAddresses), never a native on-chain address.
+// ramp-system splits each asset into two distinct tickers by payout network
+// (see ramp-system/apps/api/src/config/assets.ts): "BTC"/"USDT" settle to a
+// native on-chain address, "ARK-BTC"/"USDT-CX" to an Arkade address. Every
+// asset ticker this client sends to or reads from ramp-system must be the
+// Arkade one — translate at this boundary so the rest of the app keeps using
+// its own plain symbols (BTC, USDT), matching lib/assets.ts.
+const ARKADE_TICKER: Record<string, string> = { BTC: 'ARK-BTC', USDT: 'USDT-CX' }
+const PLAIN_TICKER: Record<string, string> = Object.fromEntries(
+  Object.entries(ARKADE_TICKER).map(([plain, arkade]) => [arkade, plain]),
+)
+
+const toArkadeTicker = (asset: string): string => ARKADE_TICKER[asset.toUpperCase()] ?? asset
+const fromArkadeTicker = (ticker: string): string => PLAIN_TICKER[ticker] ?? ticker
+
+const normalizeOrderAsset = <T extends { asset: string | null }>(order: T): T =>
+  order.asset ? { ...order, asset: fromArkadeTicker(order.asset) } : order
+
 // ─── Assets ─────────────────────────────────────────────────────────────────
 
 export interface RampAsset {
@@ -135,8 +154,13 @@ export interface CreateOnRampOrderResponse {
   fee: RampFee
 }
 
-export const createOnRampOrder = (payload: CreateOnRampOrderPayload): Promise<CreateOnRampOrderResponse> =>
-  request('/onramp', { method: 'POST', body: JSON.stringify(payload) })
+export const createOnRampOrder = async (payload: CreateOnRampOrderPayload): Promise<CreateOnRampOrderResponse> => {
+  const result = await request<CreateOnRampOrderResponse>('/onramp', {
+    method: 'POST',
+    body: JSON.stringify({ ...payload, asset: toArkadeTicker(payload.asset) }),
+  })
+  return { ...result, order: normalizeOrderAsset(result.order) }
+}
 
 // ─── Off-ramp (crypto -> fiat) ──────────────────────────────────────────────
 
@@ -182,13 +206,18 @@ export interface CreateOffRampOrderResponse {
   fee: RampFee
 }
 
-export const createOffRampOrder = (payload: CreateOffRampOrderPayload): Promise<CreateOffRampOrderResponse> =>
-  request('/offramp', { method: 'POST', body: JSON.stringify(payload) })
+export const createOffRampOrder = async (payload: CreateOffRampOrderPayload): Promise<CreateOffRampOrderResponse> => {
+  const result = await request<CreateOffRampOrderResponse>('/offramp', {
+    method: 'POST',
+    body: JSON.stringify({ ...payload, asset: toArkadeTicker(payload.asset) }),
+  })
+  return { ...result, order: normalizeOrderAsset(result.order) }
+}
 
 // ─── Order status ───────────────────────────────────────────────────────────
 
 export const getRampOrderStatus = (token: string): Promise<RampOrder> =>
-  request<{ order: RampOrder }>(`/order/${encodeURIComponent(token)}`).then((r) => r.order)
+  request<{ order: RampOrder }>(`/order/${encodeURIComponent(token)}`).then((r) => normalizeOrderAsset(r.order))
 
 // ─── Gift cards ─────────────────────────────────────────────────────────────
 
@@ -266,5 +295,10 @@ export interface RedeemGiftCardResponse {
   }
 }
 
-export const redeemGiftCard = (payload: RedeemGiftCardPayload): Promise<RedeemGiftCardResponse> =>
-  request('/gift-card/redeem', { method: 'POST', body: JSON.stringify(payload) })
+export const redeemGiftCard = async (payload: RedeemGiftCardPayload): Promise<RedeemGiftCardResponse> => {
+  const result = await request<RedeemGiftCardResponse>('/gift-card/redeem', {
+    method: 'POST',
+    body: JSON.stringify({ ...payload, asset: toArkadeTicker(payload.asset) }),
+  })
+  return { order: normalizeOrderAsset(result.order) }
+}

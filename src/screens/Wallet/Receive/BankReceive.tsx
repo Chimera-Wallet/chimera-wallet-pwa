@@ -38,7 +38,7 @@ import { NavigationContext, Pages } from '../../../providers/navigation'
 import { FlowContext } from '../../../providers/flow'
 import { WalletContext } from '../../../providers/wallet'
 import { TxResultContext } from '../../../providers/txResult'
-import { createOnRampOrder, type RampOrder, type RampBankDetails } from '../../../providers/ramp'
+import { createBankDeposit, type BankOrder, type BankDetails } from '../../../providers/bankTransfer'
 import { getReceivingAddresses } from '../../../lib/asp'
 import { addOrderToHistory } from '../../../lib/bankOrderHistory'
 import { useBankTransferValidation } from '../../../hooks/useBankTransferValidation'
@@ -76,8 +76,8 @@ export default function BankReceive() {
   // API state
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [order, setOrder] = useState<RampOrder | null>(bankRecvInfo.order ?? null)
-  const [bankDetails, setBankDetails] = useState<RampBankDetails | null>(bankRecvInfo.bankDetails ?? null)
+  const [order, setOrder] = useState<BankOrder | null>(bankRecvInfo.order ?? null)
+  const [bankDetails, setBankDetails] = useState<BankDetails | null>(bankRecvInfo.bankDetails ?? null)
   const [arkAddress, setArkAddress] = useState<string>('')
 
   // Validation — ramp-system doesn't offer a sepa/swift choice for deposits
@@ -123,23 +123,22 @@ export default function BankReceive() {
       setLoading(true)
       setError('')
 
-      const response = await createOnRampOrder({
+      const response = await createBankDeposit({
         email: getUserEmailForBankTransfer(),
         asset: requireAssetConfig(selectedAsset).symbol,
-        fiat_currency: currency,
-        fiat_amount: String(numAmount),
-        destination_crypto_address: arkAddress,
-        origin: 'app',
+        fiatCurrency: currency,
+        fiatAmount: numAmount,
+        destinationCryptoAddress: arkAddress,
       })
 
       setOrder(response.order)
-      setBankDetails(response.bank_details)
+      setBankDetails(response.bankDetails)
       setBankRecvInfo({
         currency,
         circuit: 'sepa',
         amount: numAmount,
         order: response.order,
-        bankDetails: response.bank_details,
+        bankDetails: response.bankDetails,
       })
       // Track this as the current order and add to history
       setCurrentBankOrderType('receive')
