@@ -177,7 +177,7 @@ export default function ReceiveQRCode() {
   // own address, so the VTXO listener below is what reports success.
   useEffect(() => {
     if (!svcWallet || isAssetReceive || satoshis <= 0) return
-    if (recvInfo.pendingLnReceive?.payAmount && recvInfo.invoice) return
+    if (recvInfo.pendingLnReceive?.expectedAmount === satoshis && recvInfo.invoice) return
 
     let abandoned = false
     setLnReceiveError('')
@@ -330,9 +330,10 @@ export default function ReceiveQRCode() {
       // if amount was changed, we need to reset invoice and swap address, since they are amount-specific
       // this will also trigger the useEffect to create new ones if needed
       if (sats !== recvInfo.satoshis) {
-        setInvoice('')
         setSwapAddress('')
         setShowQrCode(false)
+        setRecvInfo({ ...recvInfo, satoshis: sats, invoice: undefined, pendingLnReceive: undefined })
+        return
       }
       setRecvInfo({ ...recvInfo, satoshis: sats })
     }

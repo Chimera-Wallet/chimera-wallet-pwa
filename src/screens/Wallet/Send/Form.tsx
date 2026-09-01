@@ -173,13 +173,13 @@ export default function SendForm() {
               : undefined
             return {
               ...prev,
-              address,
-              arkAddress,
               invoice,
               recipient,
-              satoshis: 0,
+              satoshis: satoshis,
               assets,
+              lnUrl,
               pendingLnSend: invoice === prev.invoice ? prev.pendingLnSend : undefined,
+
             }
           })
         }

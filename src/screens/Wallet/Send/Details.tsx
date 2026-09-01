@@ -27,6 +27,7 @@ import {useTranslation} from 'react-i18next'
 import { type LnSendRequest } from '../../../lib/lnSwap'
 import { saveTransactionActivityMetadata } from '../../../lib/storage'
 import type { LnSendActivity } from '../../../lib/types'
+import { TRANSFER_METHOD } from '../../../lib/transferMethods'
 
 
 export default function SendDetails() {
@@ -51,7 +52,7 @@ export default function SendDetails() {
   const [sending, setSending] = useState(false)
   const [sendDone, setSendDone] = useState(false)
 
-  const { address, arkAddress, invoice, pendingSwap,pendingLnSend, satoshis } = sendInfo
+  const { address, arkAddress, invoice, method, pendingSwap, pendingLnSend, satoshis } = sendInfo
   const { t } = useTranslation()
   
 
@@ -73,13 +74,19 @@ export default function SendDetails() {
     }
     if (!satoshis) return setError(t('errors.general.missingAmount'))
     const destination =
-      arkAddress && vtxoTxsAllowed()
-        ? arkAddress
-        : invoice && (pendingSwap || pendingLnSend) && lnSwapsAllowed()
-          ? invoice
-          : address && utxoTxsAllowed()
-            ? address
-            : ''
+      method === TRANSFER_METHOD.ark
+        ? arkAddress && vtxoTxsAllowed() ? arkAddress : ''
+        : method === TRANSFER_METHOD.lightning
+          ? invoice && (pendingSwap || pendingLnSend) && lnSwapsAllowed() ? invoice : ''
+          : method === TRANSFER_METHOD.bitcoin
+            ? address && utxoTxsAllowed() ? address : ''
+            : arkAddress && vtxoTxsAllowed()
+              ? arkAddress
+              : invoice && (pendingSwap || pendingLnSend) && lnSwapsAllowed()
+                ? invoice
+                : address && utxoTxsAllowed()
+                  ? address
+                  : ''
     const direction =
       destination === arkAddress
         ? t('common.directions.arkade')

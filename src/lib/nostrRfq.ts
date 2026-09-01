@@ -10,6 +10,7 @@
  */
 import type { RfqTransport } from '@arkade-os/swap'
 import { nostrRfqTransport } from '@arkade-os/swap/nostr'
+import { consoleError } from './logs'
 
 /** The package's own default; mirrored so the timeout message can name it. */
 const DEFAULT_TIMEOUT_MS = 30_000
@@ -71,5 +72,7 @@ export const withRfqTransport = async <T>(
     return await fn(transport)
   } catch (error) {
     throw friendlier(error, timeoutMs)
+  } finally {
+    await transport.close().catch((error) => consoleError(error, 'failed to close RFQ transport'))
   }
 }
