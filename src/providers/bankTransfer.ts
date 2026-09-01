@@ -32,6 +32,28 @@ export const getBankTransferProvider = (): BankTransferProviderName =>
 
 const stripArkSuffix = (asset: string): string => asset.replace(/-ARK$/, '')
 
+// ─── Wallet ticker → ramp-system ticker ─────────────────────────────────────
+
+// ramp-system splits each asset into two distinct tickers by settlement
+// network: the plain ticker (BTC, USDT) settles to a native on-chain address
+// (Bitcoin / Tron), while the Arkade variant (ARK-BTC, USDT-CX) settles to an
+// ark1/tark1 address. This wallet only ever holds and pays out over Arkade, so
+// it must always name the Arkade variant — sending the plain ticker alongside
+// an Arkade address makes ramp reject the order with
+// `destination_crypto_address is not a valid Bitcoin address`.
+//
+// The legacy Chimera path below encodes the same fact with its own convention
+// (a `-ARK` suffix), which is why the two branches map the ticker differently.
+const RAMP_ARKADE_TICKER: Record<string, string> = {
+  BTC: 'ARK-BTC',
+  USDT: 'USDT-CX',
+}
+
+const toRampTicker = (asset: string): string => {
+  const upper = asset.toUpperCase()
+  return RAMP_ARKADE_TICKER[upper] ?? upper
+}
+
 const CHIMERA_STATUS_MAP: Record<ChimeraOrder['status'], RampOrder['status']> = {
   WAITING_FOR_DEPOSIT: 'WAITING_FOR_DEPOSIT',
   DEPOSIT_RECEIVED: 'DEPOSIT_RECEIVED',
@@ -103,7 +125,7 @@ export const createBankDeposit = async ({
 }: CreateDepositInput): Promise<CreateDepositResult> => {
   if (getBankTransferProvider() === 'ramp') {
     const { order, bank_details } = await ramp.createOnRampOrder({
-      asset,
+      asset: toRampTicker(asset),
       fiat_currency: fiatCurrency,
       email,
       fiat_amount: String(fiatAmount),
@@ -169,7 +191,7 @@ export const createBankWithdraw = async ({
 }: CreateWithdrawInput): Promise<CreateWithdrawResult> => {
   if (getBankTransferProvider() === 'ramp') {
     const cryptoAmount = cryptoAmountToDecimalString(cryptoAmountSats)
-    const base = { asset, fiat_currency: fiatCurrency, email, crypto_amount: cryptoAmount, origin: 'app' as const }
+    const base = { asset: toRampTicker(asset), fiat_currency: fiatCurrency, email, crypto_amount: cryptoAmount, origin: 'app' as const }
 
     if (circuit === 'sepa') {
       const d = bankData?.circuit === 'sepa' ? bankData : undefined

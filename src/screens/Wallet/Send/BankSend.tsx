@@ -205,10 +205,14 @@ export default function BankSend() {
 
       // Check balance before doing anything
       if (balance < requiredSats) {
-        t('errors.insufficientBalance', {
-          required: prettyNumber(fromSatoshis(requiredSats), 8),
-          balance: prettyNumber(fromSatoshis(balance), 8),
-        });
+        // The message has to be assigned to state — building the string alone
+        // left the screen silent, so the button just appeared to do nothing.
+        setError(
+          t('errors.insufficientBalance', {
+            required: prettyNumber(fromSatoshis(requiredSats), 8),
+            balance: prettyNumber(fromSatoshis(balance), 8),
+          }),
+        )
         return
       }
 

@@ -20,15 +20,36 @@ const getRampApiBaseUrl = (): string => {
   return url
 }
 
+// A request that never settles is worse here than one that fails: these calls
+// sit behind buttons on the bank transfer screens, and on a flaky mobile
+// connection an un-timed fetch leaves the user staring at a spinner with no way
+// forward. Bounded wait, surfaced as a normal error the screens already render.
+// AbortController rather than AbortSignal.timeout() for older mobile Safari.
+const REQUEST_TIMEOUT_MS = 30_000
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${getRampApiBaseUrl()}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      accept: 'application/json',
-      ...init?.headers,
-    },
-  })
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+
+  let res: Response
+  try {
+    res = await fetch(`${getRampApiBaseUrl()}${path}`, {
+      ...init,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        accept: 'application/json',
+        ...init?.headers,
+      },
+    })
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error('The request timed out. Please check your connection and try again.')
+    }
+    throw err
+  } finally {
+    clearTimeout(timer)
+  }
 
   const body = await res.json().catch(() => ({}))
 

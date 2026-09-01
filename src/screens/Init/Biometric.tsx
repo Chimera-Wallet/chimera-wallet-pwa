@@ -55,8 +55,15 @@ export default function InitBiometric() {
         navigate(Pages.InitConnect)
         return
       }
-      await reencryptSecret(defaultPassword, password)
+      // Persist the passkey id BEFORE re-encrypting. The passkey's user handle
+      // IS the new password, and authenticateUser() needs a stored passkeyId to
+      // ask for it — so if we re-encrypted first and the write never landed
+      // (crash, closed tab, failed unlock), the secret would be locked under a
+      // password nothing can retrieve. Writing first is the recoverable order:
+      // a stale passkeyId over a still-defaultPassword secret just means this
+      // screen re-registers on the next attempt.
       updateWallet({ ...wallet, lockedByBiometrics: true, passkeyId })
+      await reencryptSecret(defaultPassword, password)
       await unlockWallet(password)
       navigate(Pages.Wallet)
     } catch (err) {
