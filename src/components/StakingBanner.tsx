@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import Button from './Button'
 import { useTranslation } from 'react-i18next'
 
@@ -9,6 +9,83 @@ const DESCRIPTION =
 const TELEGRAM_URL = 'https://t.me/Chimera_Community'
 
 const FONT = "'Titillium Web', sans-serif"
+
+// TGE launch date, set per environment via VITE_TGE_DATE (.env files) — see
+// CLAUDE.md "Configuration rule". Unlike a required API URL, a missing or
+// unparsable value here isn't an error: the countdown is just omitted.
+const LAUNCH_DATE = (() => {
+  const raw = import.meta.env.VITE_TGE_DATE
+  if (!raw) return null
+  const date = new Date(raw)
+  return Number.isNaN(date.getTime()) ? null : date
+})()
+
+interface CountdownParts {
+  days: number
+  hours: number
+  minutes: number
+  seconds: number
+  expired: boolean
+}
+
+function getCountdownParts(launchDate: Date): CountdownParts {
+  const diff = launchDate.getTime() - Date.now()
+  if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true }
+  const totalSeconds = Math.floor(diff / 1000)
+  return {
+    days: Math.floor(totalSeconds / 86400),
+    hours: Math.floor((totalSeconds % 86400) / 3600),
+    minutes: Math.floor((totalSeconds % 3600) / 60),
+    seconds: totalSeconds % 60,
+    expired: false,
+  }
+}
+
+// Returns null when VITE_TGE_DATE isn't set or isn't a valid date — callers
+// render the banner without a countdown in that case.
+function useCountdown(): CountdownParts | null {
+  const [parts, setParts] = useState<CountdownParts | null>(() => (LAUNCH_DATE ? getCountdownParts(LAUNCH_DATE) : null))
+
+  useEffect(() => {
+    if (!LAUNCH_DATE) return
+    const id = setInterval(() => setParts(getCountdownParts(LAUNCH_DATE)), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  return parts
+}
+
+const pad = (n: number) => String(n).padStart(2, '0')
+
+function CountdownDisplay({ parts }: { parts: CountdownParts }) {
+  if (parts.expired) {
+    return (
+      <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: 16, fontFamily: FONT }}>Live now!</span>
+    )
+  }
+  const segments = [
+    { value: pad(parts.days), label: 'D' },
+    { value: pad(parts.hours), label: 'H' },
+    { value: pad(parts.minutes), label: 'M' },
+    { value: pad(parts.seconds), label: 'S' },
+  ]
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+      {segments.map((seg, i) => (
+        <React.Fragment key={seg.label}>
+          <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: 16, fontFamily: FONT, letterSpacing: 0.5 }}>
+            {seg.value} {seg.label}
+          </span>
+          {i < segments.length - 1 && (
+            <span style={{ color: 'var(--white40)', fontSize: 14, fontWeight: 400 }}>|</span>
+          )}
+        </React.Fragment>
+      ))}
+      <span style={{ color: 'var(--white40)', fontSize: 14, fontWeight: 400 }}>|</span>
+      <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: 16, fontFamily: FONT, letterSpacing: 1 }}>TO TGE</span>
+    </div>
+  )
+}
 
 // 3D coin stack that protrudes above the top-right of the card
 function CoinStack() {
@@ -110,7 +187,13 @@ interface StakingBannerProps {
 }
 
 export default function StakingBanner({ variant }: StakingBannerProps) {
+  const parts = useCountdown()
   const { t } = useTranslation()
+  const launchingIn = !parts
+    ? null
+    : parts.expired
+      ? t('components.stakingBanner.live')
+      : t('components.stakingBanner.launch') + ` ${pad(parts.days)}d ${pad(parts.hours)}:${pad(parts.minutes)}:${pad(parts.seconds)}`
 
   if (variant === 'asset') {
     return (
@@ -120,6 +203,24 @@ export default function StakingBanner({ variant }: StakingBannerProps) {
           <div style={topContentStyle}>
             <span style={titleStyle}>{t(TITLE)}</span>
             <span style={descriptionStyle}>{t(DESCRIPTION)}</span>
+            {launchingIn ? (
+              <div
+                style={{
+                  background: 'rgba(255,255,255,0.12)',
+                  borderRadius: 10,
+                  padding: '10px 16px',
+                  textAlign: 'center',
+                  color: 'white',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  letterSpacing: '0.5px',
+                  fontFamily: FONT,
+                  userSelect: 'none',
+                }}
+              >
+                {launchingIn}
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
@@ -132,7 +233,7 @@ export default function StakingBanner({ variant }: StakingBannerProps) {
         <CoinStack />
         <div style={topContentStyle}>
           <span style={titleStyle}>{t(TITLE)}</span>
-          <span style={descriptionStyle}>{t(DESCRIPTION)}</span>
+          {parts ? <CountdownDisplay parts={parts} /> : <span style={descriptionStyle}>{t(DESCRIPTION)}</span>}
         </div>
         <Button
           label={t('components.stakingBanner.joinComm')}

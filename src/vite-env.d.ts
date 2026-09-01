@@ -37,6 +37,8 @@ interface ImportMetaEnv {
   // Third-party integrations
   readonly VITE_LENDASAT_IFRAME_URL?: string
   readonly VITE_LENDASWAP_IFRAME_URL?: string
+  // TGE countdown (StakingBanner) — ISO date string; countdown is hidden if unset/invalid
+  readonly VITE_TGE_DATE?: string
 }
 
 interface ImportMeta {
