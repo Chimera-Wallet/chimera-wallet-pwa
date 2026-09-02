@@ -24,6 +24,7 @@ import {
   AddressType,
 } from '../../../lib/addressBook'
 import TrashIcon from '../../../icons/X'
+import {useTranslation} from 'react-i18next'
 
 type TabType = 'myaccounts' | 'contacts'
 
@@ -39,6 +40,8 @@ function AddressEntry({ entry, onDelete, onSelect, selectionMode }: AddressEntry
     if (addr.length <= 20) return addr
     return `${addr.slice(0, 10)}...${addr.slice(-10)}`
   }
+
+  const {t} = useTranslation()
 
   return (
     <Shadow>
@@ -65,7 +68,7 @@ function AddressEntry({ entry, onDelete, onSelect, selectionMode }: AddressEntry
             <div
               onClick={() => onDelete(entry.id)}
               style={{ cursor: 'pointer', padding: '0.5rem' }}
-              aria-label='Delete address'
+              aria-label={t('apps.addressBook.delAdd')}
             >
               <TrashIcon />
             </div>
@@ -84,6 +87,7 @@ interface ContactEntryProps {
 }
 
 function ContactEntry({ name, addressCount, onClick, onDelete }: ContactEntryProps) {
+  const {t} = useTranslation()
   return (
     <Shadow>
       <FlexRow between>
@@ -92,7 +96,7 @@ function ContactEntry({ name, addressCount, onClick, onDelete }: ContactEntryPro
             <FlexCol gap='0.25rem'>
               <Text bold>{name}</Text>
               <Text tiny>
-                {addressCount} {addressCount === 1 ? 'address' : 'addresses'}
+                {addressCount} {addressCount === 1 ? t('apps.addressBook.lowAddress') : t('apps.addressBook.lowAddresses')}
               </Text>
             </FlexCol>
           </div>
@@ -104,7 +108,7 @@ function ContactEntry({ name, addressCount, onClick, onDelete }: ContactEntryPro
               onDelete()
             }}
             style={{ cursor: 'pointer', padding: '0.5rem' }}
-            aria-label='Delete contact'
+            aria-label={t('apps.addressBook.delCont')}
           >
             <TrashIcon />
           </div>
@@ -129,6 +133,8 @@ export default function AppAddressBook() {
   const { sendInfo, setSendInfo } = useContext(FlowContext)
   const [currentTab, setCurrentTab] = useState<TabType>('myaccounts')
   const [refreshKey, setRefreshKey] = useState(0)
+
+  const {t} = useTranslation()
 
   const selectionMode = navigationData?.selectionMode === true
   const returnTo = navigationData?.returnTo as Pages | undefined
@@ -163,14 +169,14 @@ export default function AppAddressBook() {
   }
 
   const handleDeleteAddress = (id: string) => {
-    if (confirm('Are you sure you want to delete this address?')) {
+    if (confirm(t('apps.addressBook.delAddConf'))) {
       removeAddress(id)
       setRefreshKey((k) => k + 1)
     }
   }
 
   const handleDeleteContact = (name: string) => {
-    if (confirm(`Are you sure you want to delete ${name} and all their addresses?`)) {
+    if (confirm(t('apps.addressBook.delContact', {name: name}))) {
       removeContact(name)
       setRefreshKey((k) => k + 1)
     }
@@ -191,11 +197,11 @@ export default function AppAddressBook() {
   return (
     <>
       <Header
-        text={selectionMode ? 'Select Address' : 'Address Book'}
+        text={selectionMode ? t('apps.addressBook.selAddr') : t('apps.addressBook.addressBook')}
         back={handleBack}
         auxFunc={selectionMode ? undefined : handleAddNew}
         auxIcon={selectionMode ? undefined : <AddIcon />}
-        auxAriaLabel={selectionMode ? undefined : 'Add new address'}
+        auxAriaLabel={selectionMode ? undefined : t('apps.addressBook.addNewAddr')}
       />
       <Content>
         <Padded>
@@ -203,8 +209,8 @@ export default function AppAddressBook() {
             {/* Tab selector */}
             <TabSelector
               options={[
-                { value: 'myaccounts', label: 'My Accounts' },
-                { value: 'contacts', label: 'Contacts' },
+                { value: 'myaccounts', label: t('apps.addressBook.myAcc') },
+                { value: 'contacts', label: t('apps.addressBook.contact') },
               ]}
               selected={currentTab}
               onChange={(value) => setCurrentTab(value as TabType)}
@@ -214,7 +220,7 @@ export default function AppAddressBook() {
             {currentTab === 'myaccounts' && (
               <FlexCol gap='0.5rem'>
                 {myAccounts.length === 0 ? (
-                  <EmptyState message='No saved accounts yet. Add your addresses to easily access them later.' />
+                  <EmptyState message={t('apps.addressBook.emptyMess')} />
                 ) : (
                   myAccounts.map((entry) => (
                     <AddressEntry
@@ -232,7 +238,7 @@ export default function AppAddressBook() {
             {currentTab === 'contacts' && (
               <FlexCol gap='0.5rem'>
                 {contacts.length === 0 ? (
-                  <EmptyState message='No contacts yet. Add contact addresses to send funds quickly.' />
+                  <EmptyState message={t('apps.addressBook.emptyContMess')} />
                 ) : (
                   contacts.map((name) => (
                     <ContactEntry
@@ -253,7 +259,7 @@ export default function AppAddressBook() {
         <ButtonsOnBottom>
           <Button
             onClick={handleAddNew}
-            label={currentTab === 'myaccounts' ? 'Add New Account' : 'Add New Contact'}
+            label={currentTab === 'myaccounts' ? t('apps.addressBook.addNewAcc') : t('apps.addressBook.addNewCont')}
           />
         </ButtonsOnBottom>
       )}

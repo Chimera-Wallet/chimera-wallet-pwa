@@ -7,6 +7,12 @@ export interface AssetConfig {
   color: string // CSS variable name (without var())
   precision: number
   comingSoon?: boolean
+  /**
+   * Proprietary token with no public market, so there is no 24h price movement
+   * to report. Suppresses the up/down indicator rather than letting a missing
+   * feed render as a flat "0.00%" rise.
+   */
+  noMarketData?: boolean
 }
 
 export const ASSETS = {
@@ -34,7 +40,7 @@ export const ASSETS = {
     color: 'asset-trx',
     precision: 6,
   },
-  MATIC: {
+  POL: {
     symbol: 'POL',
     name: 'Polygon',
     color: 'asset-matic',
@@ -46,24 +52,118 @@ export const ASSETS = {
     color: 'asset-cext',
     precision: 18,
     comingSoon: true,
+    noMarketData: true,
   },
 } as const
 
 export type AssetSymbol = keyof typeof ASSETS
 
-// TEMPORARY: Only show BTC
+// The single list of assets the wallet offers. Everything user-facing reads
+// from here — the home list, the send/receive asset pickers and the balances
+// computed for them — so an asset is shown everywhere or nowhere.
+//
+// BTC uses the Ark/Lightning/Bitcoin flows; the others are bridged to/from
+// their native chains via the Arkade Wrap API. USDT, ETH, TRX and POL stay
+// defined in ASSETS above (so existing balances, transactions and price
+// lookups still resolve by symbol) but are deliberately absent here and
+// therefore hidden — only BTC is live for now, with CEXT shown "Coming Soon"
+// on the home list (see AssetList.tsx). Add an asset back to this list to
+// launch it; getHomeAssetList()'s balance filter (below) then takes over for
+// deciding whether it shows up on the home list specifically.
 export const ASSET_LIST: AssetConfig[] = [ASSETS.BTC, ASSETS.CEXT]
-// export const ASSET_LIST: AssetConfig[] = Object.values(ASSETS)
+
+// Assets the fiat bank transfer (on/off-ramp) flow is offered for. Every other
+// asset can only be moved over Arkade or its native chain.
+const BANK_TRANSFER_SYMBOLS: AssetSymbol[] = ['BTC']
+
+/** Whether the bank transfer flow should be offered for an asset symbol. */
+export const assetSupportsBankTransfer = (symbol: string): boolean => {
+  return BANK_TRANSFER_SYMBOLS.includes(symbol.toUpperCase() as AssetSymbol)
+}
+
+/** Assets selectable inside the bank transfer (on/off-ramp) screens. */
+export const BANK_TRANSFER_ASSET_LIST: AssetConfig[] = ASSET_LIST.filter((asset) =>
+  assetSupportsBankTransfer(asset.symbol),
+)
+
+// Assets that stay on the home list even with a zero balance: BTC (always
+// held/usable) and CEXT (shown "Coming Soon" regardless of balance). Every
+// other listed asset only appears on the home list once the wallet holds a
+// nonzero balance of it — send/receive asset pickers are unaffected and
+// always show the full ASSET_LIST (see AssetSelector).
+const ALWAYS_VISIBLE_HOME_SYMBOLS: AssetSymbol[] = ['BTC', 'CEXT']
+
+/**
+ * Home-list asset filter: always-visible symbols, plus anything else the
+ * wallet holds a nonzero balance of. `balances` maps symbol -> balance.
+ */
+export const getHomeAssetList = (balances: Partial<Record<AssetSymbol, number>>): AssetConfig[] =>
+  ASSET_LIST.filter((asset) => {
+    const symbol = asset.symbol as AssetSymbol
+    return ALWAYS_VISIBLE_HOME_SYMBOLS.includes(symbol) || (balances[symbol] ?? 0) > 0
+  })
 
 export const getAssetConfig = (symbol: string): AssetConfig | undefined => {
   return ASSETS[symbol.toUpperCase() as AssetSymbol]
+}
+
+/** Like `getAssetConfig` but throws a descriptive error if the symbol is not found. */
+export const requireAssetConfig = (symbol: string): AssetConfig => {
+  const config = getAssetConfig(symbol)
+  if (!config) throw new Error(`Unknown asset symbol: "${symbol}"`)
+  return config
 }
 
 export const getAssetColor = (symbol: string): string => {
   return getAssetConfig(symbol)?.color || 'grey'
 }
 
+// Arkade wrapped asset IDs per symbol. These are environment-specific (staging
+// vs production) and are provided via VITE_ARKADE_* env vars. BTC is native and
+// has no wrapped asset.
+const WRAPPED_ASSET_IDS: Partial<Record<AssetSymbol, string | undefined>> = {
+  ETH: import.meta.env.VITE_ARKADE_ETH,
+  USDT: import.meta.env.VITE_ARKADE_USDT,
+  TRX: import.meta.env.VITE_ARKADE_TRX,
+  POL: import.meta.env.VITE_ARKADE_POL,
+  CEXT: import.meta.env.VITE_ARKADE_CEXT,
+}
+
+/** The Arkade wrapped asset ID for a symbol, or undefined if not wrapped/unset. */
+export const getWrappedAssetId = (symbol: string): string | undefined => {
+  return WRAPPED_ASSET_IDS[symbol.toUpperCase() as AssetSymbol]
+}
+
+/** Reverse lookup: the app symbol for a given Arkade wrapped asset ID. */
+export const getAssetSymbolByAssetId = (assetId: string): AssetSymbol | undefined => {
+  for (const [symbol, id] of Object.entries(WRAPPED_ASSET_IDS)) {
+    if (id && id === assetId) return symbol as AssetSymbol
+  }
+  return undefined
+}
+
+/**
+ * Display ticker for a symbol — the plain symbol, for every asset.
+ *
+ * Wrapped Arkade assets used to be shown with a `-CX` suffix (ETH -> ETH-CX,
+ * CEXT -> CEXT-CX). That suffix is an internal settlement detail and is no
+ * longer surfaced anywhere in the UI, so this is now identity-plus-uppercase.
+ * Kept as the single seam every screen already calls, rather than inlining
+ * `.toUpperCase()` at each call site, so display naming stays changeable in
+ * one place.
+ *
+ * Note this is display only — the wire tickers sent to ramp-system
+ * (`USDT` -> `USDT-CX`, see providers/bankTransfer.ts) are a separate mapping
+ * and must keep their suffix.
+ */
+export const getDisplayTicker = (symbol: string): string => symbol.toUpperCase()
+
 import Decimal from 'decimal.js'
+
+/** Convert a base-unit asset amount to a human-readable number using its decimals. */
+export const wrappedAmountToNumber = (amount: bigint, decimals: number): number => {
+  return new Decimal(amount.toString()).div(Decimal.pow(10, decimals)).toNumber()
+}
 
 export const MAX_DECIMALS = 8 // Arbitrary value to allow at least 1 sat/asset
 

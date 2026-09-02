@@ -4,9 +4,12 @@ import Padded from '../../components/Padded'
 import Toggle from '../../components/Toggle'
 import Content from '../../components/Content'
 import { ConfigContext } from '../../providers/config'
+import {useTranslation} from 'react-i18next'
 
 export default function Haptics() {
   const { backupConfig, config, updateConfig } = useContext(ConfigContext)
+
+  const {t} = useTranslation()
 
   const handleChange = async () => {
     const newConfig = { ...config, haptics: !config.haptics }
@@ -16,14 +19,14 @@ export default function Haptics() {
 
   return (
     <>
-      <Header text='Haptics' back />
+      <Header text={t('settings.haptics.haptics')} back />
       <Content>
         <Padded>
           <Toggle
             checked={config.haptics}
             onClick={handleChange}
-            text='Haptic feedback'
-            subtext='Vibration on button taps and interactions'
+            text={t('settings.haptics.feedback')}
+            subtext={t('settings.haptics.vibration')}
           />
         </Padded>
       </Content>

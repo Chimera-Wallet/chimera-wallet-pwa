@@ -1,0 +1,202 @@
+{
+  "about": {
+    "serverURL": "服务器 URL",
+    "serverPubkey": "服务器公钥",
+    "forfeitAddress": "没收地址",
+    "sessionDur": "会话时长",
+    "boardingDelay": "登船退出延迟",
+    "unilateralDelay": "单方面退出延迟",
+    "gitHash": "Git 提交哈希"
+  },
+  "advanced": {
+    "advancedSettings": "高级设置",
+    "changePass": "修改密码",
+    "lockWallet": "锁定钱包",
+    "deleteMnemonic": "删除助记词",
+    "highRisk": "高风险"
+  },
+  "backup": {
+    "nostrUpdate": "Nostr 备份已更新",
+    "mnemonicWarning": "您的恢复短语用于备份钱包。请始终将其保密并妥善保存。",
+    "pkWarning": "您的私钥用于备份钱包。请始终将其保密并妥善保存。",
+    "unlockPasskey": "使用 Passkey 解锁",
+    "enterPass": "输入您的密码",
+    "keepSafeSecret": "妥善保管您的 {{secret}}",
+    "noShare": "不要与任何人分享",
+    "loseNoRecover": "如果丢失，您将无法恢复",
+    "eyesOnly": "仅供您本人查看，请勿分享。",
+    "viewSecret": "查看 {{secret}}",
+    "enoughToRestore": "这些信息足以恢复您的钱包",
+    "phraseAccess": "您的恢复短语可以用于访问钱包中的所有内容。请勿与任何人分享。",
+    "pkAccess": "您的私钥可以用于访问钱包中的所有内容。请勿与任何人分享。",
+    "enableNostr": "启用 Nostr 备份",
+    "nostrToggle": "开启或关闭 Nostr 备份"
+  },
+  "biometric": {
+    "bioAuth": "生物识别身份验证",
+    "bioAuthUnsupported": "此设备不支持生物识别身份验证",
+    "useBio": "使用生物识别",
+    "disableWarn": "生物识别身份验证已启用。禁用后将移除当前的锁定方式——之后您可以在“高级设置”中设置密码",
+    "enableFingerFace": "启用指纹或面部识别来解锁您的钱包。这将替换您当前的密码。",
+    "noContractFound": "未找到合约"
+  },
+  "delegates": {
+    "delegates": "委托",
+    "whatIs": "什么是委托？",
+    "delegateDescr": "委托是您指定的可信第三方，用于帮助保护您的 VTXO 安全。",
+    "learnMore": "了解更多",
+    "renewal": "下次续期 {{time}}",
+    "noRenewal": "没有即将进行的续期",
+    "vtxoWarn": "委托只能为您的 VTXO 续期，无法花费您的资金或控制您的钱包",
+    "defaultArk": "使用默认 Arkade 委托",
+    "defaultArkDescr": "使用 Arkade 的默认委托来管理续期",
+    "reloadWarn": "钱包将重新加载以应用更改",
+    "unavailable": "此网络不支持委托"
+  },
+  "display": {
+    "displayPref": "显示偏好"
+  },
+  "fiat": {
+    "fiat": "法定货币"
+  },
+  "general": {
+    "settingsOpt": "{{opt}} 设置",
+    "appSett": "应用设置"
+  },
+  "haptics": {
+    "haptics": "触觉反馈",
+    "feedback": "触觉反馈",
+    "vibration": "按钮点击和交互时的振动"
+  },
+  "language": {
+    "appLang": "应用语言"
+  },
+  "lock": {
+    "noPass": "未设置密码或生物识别",
+    "lockWallet": "锁定您的钱包",
+    "lockReqs": "您需要设置密码或启用生物识别才能锁定钱包。",
+    "lockBioWarn": "锁定后，您需要通过生物识别身份验证才能解锁。",
+    "lockPassWarn": "锁定后，您需要重新输入密码才能解锁。",
+    "setPass": "设置密码",
+    "lockWalletSimple": "锁定钱包"
+  },
+  "logs": {
+    "logs": "日志",
+    "keyboardNav": "按 Enter 键启用日志的键盘导航",
+    "logMessage": "在 {{time}} 的日志消息为 {{msg}}。按 Escape 键退出键盘导航。",
+    "exportCSV": "导出为 CSV 文件"
+  },
+  "menu": {
+    "verified": "已验证",
+    "pending": "待处理",
+    "unverified": "未验证",
+    "kycVer": "KYC - 身份验证",
+    "knowdledgeBase": "知识库",
+    "manage": "管理账户",
+    "addressBook": "地址簿",
+    "showPhrase": "显示秘密短语",
+    "currency": "货币",
+    "setNotifs": "设置通知",
+    "advancedSettings": "高级设置"
+  },
+  "notifications": {
+    "notifications": "通知",
+    "update": "当有可用更新或收到付款时获取通知。如果系统询问，请授予通知权限。",
+    "unsupported": "您的浏览器不支持 Notifications API。如果您使用 iOS，则需要“添加到主屏幕”，并且系统版本必须为 iOS 16.4 或更高版本。",
+    "allow": "允许通知"
+  },
+  "password": {
+    "passUnavailable": "密码不可用",
+    "bioAuth": "生物识别身份验证已启用。请前往“设置 > 生物识别身份验证”将其禁用，然后再设置密码。",
+    "passRemoved": "密码已移除",
+    "passChanged": "密码已修改"
+  },
+  "reset": {
+    "removeSeed": "这将从此设备中永久删除您的种子。请务必谨慎操作，删除后将无法再从 Chimera Wallet 中找回您的密钥。",
+    "removeMnemonic": "点击“删除”将删除此设备上的助记词。请务必先完成备份！",
+    "deleteAccount": "我已了解并删除我的账户",
+    "deleteMnemConf": "确定删除助记词",
+    "cancel": "取消"
+  },
+  "server": {
+    "server": "服务器",
+    "serverURL": "服务器 URL",
+    "found": "已找到服务器",
+    "walletReset": "您的钱包将被重置。请务必先备份您的钱包。",
+    "connect": "连接到服务器"
+  },
+  "support": {
+    "support": "支持",
+    "custSupp": "客户支持",
+    "helpText": "获取钱包帮助、报告错误或提出问题。我们的支持团队随时为您提供帮助。",
+    "secure": "安全聊天",
+    "secureText": "您的对话安全且私密。聊天记录会在不同会话之间保留。",
+    "bugRep": "错误报告",
+    "bugRepText": "报告您遇到的任何问题或错误。请提供重现问题的步骤，以便更快解决。",
+    "progress": "跟踪进度",
+    "progressText": "您的所有支持工单和对话都会被保存。您可以随时查看过去的对话。",
+    "openSupp": "打开支持聊天"
+  },
+  "verification": {
+    "enterEmail": "输入您的电子邮件地址",
+    "enterEmailVerif": "输入您的电子邮件地址以开始 KYC 身份验证。",
+    "idVerif": "身份验证",
+    "emailRegs": "您的电子邮件已注册。打开验证门户以完成或查看您的 KYC 状态。",
+    "emailReSub": "更改电子邮件地址后，您需要重新提交 KYC 验证。",
+    "resubKyc": "重新提交 KYC",
+    "checkStat": "查看状态",
+    "r&a": "审核并接受",
+    "reviewText": "在我们发送验证邮件之前，请查看并接受以下内容。",
+    "acceptPP": "接受隐私政策",
+    "agreed": "我已阅读并同意",
+    "PP": "隐私政策",
+    "accTS": "接受服务条款",
+    "TS": "服务条款",
+    "sending": "发送中...",
+    "proceed": "继续",
+    "resendIn": "{{sec}} 秒后重新发送",
+    "resendLim": "已达到重新发送限制",
+    "resend": "重新发送邮件",
+    "verifTimeout": "验证超时",
+    "noClick": "我们在 2 分钟内未检测到链接点击。请重试。",
+    "tryAg": "重试",
+    "checkInb": "检查您的收件箱",
+    "sentVerif": "我们已向 <strong>{{email}}</strong> 发送验证链接。点击链接以继续。",
+    "waiting": "等待验证…",
+    "idVerified": "您的身份已验证！",
+    "fullAccess": "您现在可以使用所有功能。",
+    "verifProgress": "验证进行中",
+    "docReview": "您的文件正在审核中。通常需要 1-2 个工作日。",
+    "idUnverified": "验证失败",
+    "unverifText": "很遗憾，我们无法验证您的身份。请使用有效的文件重试。",
+    "troubleLoad": "验证页面加载遇到问题？",
+    "iosIssue": "iOS 可能会对嵌入式内容产生问题。建议在 Safari 中打开以获得最佳体验。",
+    "openBrowser": "在浏览器中打开"
+  },
+  "vtxo": {
+    "renewVC": "续期虚拟币",
+    "belowDust": "低于 Dust 限额",
+    "completeBoardRen": "完成登船并续期",
+    "renew": "续期",
+    "complBoard": "完成登船",
+    "settled": "已结算",
+    "subdust": "低于 Dust",
+    "swept": "已清扫",
+    "unconfirmed": "未确认",
+    "expSoon": "即将过期",
+    "vc": "虚拟币",
+    "renewal": "下次续期",
+    "renewVCs": "正在续期您的虚拟币。这可能需要一些时间。",
+    "renewing": "续期中",
+    "coinsRenewdSucc": "虚拟币续期成功",
+    "VClist": "您的虚拟币及其金额和到期时间",
+    "utxoList": "您的登船 UTXO 及其金额和到期时间",
+    "nextren": "下次续期",
+    "firstExpt": "第一个虚拟币到期时间：{{exp}}",
+    "autoRen": "对于将在以下时间内到期的虚拟币，将自动进行续期：",
+    "marketFees": "在市场开放时间进行结算可享受更低的费用。",
+    "nextHour": "下一个市场开放时间：{{st}} {{bool}}，持续 {{duration}}。",
+    "addRem": "添加提醒",
+    "vcRenewal": "虚拟币续期"
+  }
+}

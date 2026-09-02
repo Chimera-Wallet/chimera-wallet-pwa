@@ -15,6 +15,7 @@ import { consoleError } from '../../../lib/logs'
 import { WalletContext } from '../../../providers/wallet'
 import Details, { DetailsProps } from '../../../components/Details'
 import { AspContext } from '../../../providers/asp'
+import { useTranslation } from 'react-i18next'
 
 export default function NotesRedeem() {
   const { aspInfo } = useContext(AspContext)
@@ -28,19 +29,21 @@ export default function NotesRedeem() {
   const [error, setError] = useState('')
   const [redeeming, setRedeeming] = useState(false)
 
+  const {t} = useTranslation()
+
   useEffect(() => {
-    setError(aspInfo.unreachable ? 'Ark server unreachable' : '')
+    setError(aspInfo.unreachable ? t('errors.send.arkade.server') : '')
   }, [aspInfo.unreachable])
 
   useEffect(() => {
-    setButtonLabel(redeeming ? 'Redeeming...' : defaultButtonLabel)
+    setButtonLabel(redeeming ? t('common.general.notes.redeeming') : defaultButtonLabel)
   }, [redeeming])
 
   const handleBack = () => {
     navigate(Pages.NotesForm)
   }
 
-  if (!svcWallet) return <LoadingLogo text='Loading...' />
+  if (!svcWallet) return <LoadingLogo text= {t('common.general.loading')} />
 
   const handleRedeem = async () => {
     setError('')
@@ -62,10 +65,10 @@ export default function NotesRedeem() {
 
   return (
     <>
-      <Header text='Redeem Note' back={handleBack} />
+      <Header text={t('common.general.notes.redeemNote')} back={handleBack} />
       <Content>
         {redeeming ? (
-          <LoadingLogo text='Processing. This may take a few moments.' />
+          <LoadingLogo text={t('common.general.notes.processing')} />
         ) : (
           <Padded>
             <FlexCol gap='2rem'>

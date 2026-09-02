@@ -186,7 +186,7 @@ export interface BankDepositResponse {
 // Bank Withdraw Request (Crypto → Fiat)
 interface BankWithdrawBasePayload {
   email: string
-  from_amount: number // Amount in crypto 
+  from_amount: number // Amount in crypto
   from_asset: string // Crypto asset (BTC)
   to_asset: string // Fiat currency (EUR, CHF, USD)
   destination_type: BankCircuit
@@ -200,9 +200,9 @@ type BankWithdrawSepaPayload = BankWithdrawBasePayload & {
 
 type BankWithdrawSwiftPayload = BankWithdrawBasePayload & {
   destination_type: 'swift'
-  destination_bank_address: string // BIC/SWIFT code
+  destination_bank_address: string // BIC/SWIFT code — see market/serializers.py::SwiftWithdrawalSerializer
   destination_bank_name: string // Account holder name
-  destination_bank_account_number: string
+  destination_bank_account_number: string // IBAN doubles as the account number here — Chimera has no separate IBAN field
 }
 
 type BankWithdrawUsPayload = BankWithdrawBasePayload & {
@@ -285,13 +285,6 @@ export const createBankWithdraw = async (params: {
         destination_bank_account_number: kycBankData.accountNumber,
         destination_bank_routing_number: kycBankData.routingNumber,
       }
-    } else if (circuit === 'swift' && kycBankData?.iban && kycBankData?.accountHolderName) {
-      kycPayload = {
-        ...basePayload,
-        destination_bank_address: kycBankData.iban,
-        destination_bank_name: kycBankData.accountHolderName,
-        ...(kycBankData.accountNumber ? { destination_bank_account_number: kycBankData.accountNumber } : {}),
-      }
     } else if (kycBankData?.iban && kycBankData?.accountHolderName) {
       kycPayload = {
         ...basePayload,
@@ -335,8 +328,8 @@ export const createBankWithdraw = async (params: {
       break
 
     case 'swift':
-      if (!bankData.bic || !bankData.accountHolderName || !bankData.accountNumber) {
-        throw new Error('SWIFT transfer requires BIC/SWIFT code, account holder name, and account number')
+      if (!bankData.bic || !bankData.accountHolderName || !bankData.destinationBankAddress) {
+        throw new Error('SWIFT transfer requires BIC/SWIFT code, account holder name, and IBAN')
       }
       payload = {
         email,
@@ -346,7 +339,7 @@ export const createBankWithdraw = async (params: {
         destination_type: 'swift',
         destination_bank_address: bankData.bic,
         destination_bank_name: bankData.accountHolderName,
-        destination_bank_account_number: bankData.accountNumber,
+        destination_bank_account_number: bankData.destinationBankAddress,
       }
       break
 

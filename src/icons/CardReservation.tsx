@@ -1,6 +1,6 @@
 export default function CardReservationIcon() {
   return (
-    <svg width='24' height='24' viewBox='0 0 24 25' fill='none' xmlns='http://www.w3.org/2000/svg'>
+    <svg width='24' height='24' viewBox='0 0 24 25' fill='none' style = {{color: 'currentColor'}} xmlns='http://www.w3.org/2000/svg'>
       <path
         fill='currentColor'
         transform='translate(2 5)'
@@ -21,6 +21,7 @@ export function CardReservationIconBig() {
       fill='none'
       role='img'
       aria-label='Card Reservation icon'
+      style = {{color: 'rgba(29,255,32,1)'}}
     >
       <circle cx='39' cy='39' r='37.5' fill='#8B5CF6' stroke='#A78BFA' strokeWidth='3' />
       {/* Credit card */}

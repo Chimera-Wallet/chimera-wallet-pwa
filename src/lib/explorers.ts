@@ -17,8 +17,8 @@ const explorers: Explorers = {
     web: 'http://localhost:5000',
   },
   signet: {
-    api: 'https://mutinynet.com/api',
-    web: 'https://mutinynet.com',
+    api: 'https://mempool.signet.arkade.sh/api',
+    web: 'https://mempool.space/signet',
   },
   testnet: {
     api: 'https://mempool.space/testnet/api',

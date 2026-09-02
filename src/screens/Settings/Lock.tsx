@@ -15,6 +15,7 @@ import LockIcon from '../../icons/Lock'
 import { noUserDefinedPassword } from '../../lib/privateKey'
 import { OptionsContext } from '../../providers/options'
 import { SettingsOptions } from '../../lib/types'
+import {useTranslation} from 'react-i18next'
 
 export default function Lock() {
   const { setOption } = useContext(OptionsContext)
@@ -23,6 +24,8 @@ export default function Lock() {
 
   const [error, setError] = useState('')
   const [noPassword, setNoPassword] = useState(true)
+
+  const {t} = useTranslation()
 
   const biometricsEnabled = wallet.lockedByBiometrics || false
   const canLock = biometricsEnabled || !noPassword
@@ -47,28 +50,28 @@ export default function Lock() {
 
   return (
     <>
-      <Header text='Lock' back />
+      <Header text={t('common.general.lock')} back />
       <Content>
         <Padded>
           <ErrorMessage error={Boolean(error)} text={error} />
           <CenterScreen>
             <LockIcon big />
-            <Text centered>{!canLock ? 'No password or biometrics defined' : 'Lock your wallet'}</Text>
+            <Text centered>{!canLock ? t('settings.lock.noPass') : t('settings.lock.lockWallet')}</Text>
             <TextSecondary centered>
               {!canLock
-                ? 'You need to set a password or enable biometrics to lock.'
+                ? t('settings.lock.lockReqs')
                 : biometricsEnabled
-                  ? "After locking you'll need to authenticate with biometrics to unlock."
-                  : "After locking you'll need to re-enter your password to unlock."}
+                  ? t('settings.lock.lockBioWarn')
+                  : t('settings.lock.lockPassWarn')}
             </TextSecondary>
           </CenterScreen>
         </Padded>
       </Content>
       <ButtonsOnBottom>
         {!canLock ? (
-          <Button onClick={handleSetPassword} label='Set Password' />
+          <Button onClick={handleSetPassword} label={t('settings.lock.setPass')} />
         ) : (
-          <Button onClick={handleLock} label='Lock Wallet' />
+          <Button onClick={handleLock} label={t('settings.lock.lockWalletSimple')} />
         )}
       </ButtonsOnBottom>
     </>

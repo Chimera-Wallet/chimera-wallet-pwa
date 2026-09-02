@@ -1,0 +1,29 @@
+{
+    "addressFallback": "Paste address",
+    "networkFallback": "Select a network to view its description",
+    "arkade":{
+        "address": "Paste Arkade address"
+    },
+    "lightning": {
+        "address": "Paste Lightning invoice address",
+        "invoice": "Paste a Lightning invoice to send payment. The payment amount is encoded in the invoice."
+    },
+    "bitcoin": {
+        "address": "Paste BTC address"
+    },
+    "bank": {
+        "details": "Enter bank details"
+    },
+    "contacts": {
+        "name": "Enter contact name",
+        "accounts": "e.g., Main wallet, Savings...",
+        "enterAddr": "Enter {{name}}"
+    },
+    "assets": {
+        "token": "My Token",
+        "assIdPaste": "Paste asset ID...",
+        "controlAm": "Control Amount"
+    }
+
+}
+

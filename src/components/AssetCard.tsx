@@ -4,6 +4,7 @@ import FlexCol from './FlexCol'
 import FlexRow from './FlexRow'
 import AssetAvatar from './AssetAvatar'
 import { prettyAssetAmount, truncatedAssetId } from '../lib/assets'
+import { useTranslation } from 'react-i18next'
 
 interface AssetCardProps {
   assetId: string
@@ -25,7 +26,8 @@ export default function AssetCard({
   ticker,
   onClick,
 }: AssetCardProps) {
-  const assetName = name || truncatedAssetId(assetId) || 'Asset name'
+  const {t} = useTranslation()
+  const assetName = name || truncatedAssetId(assetId) || t('components.assetCard.name')
   const tokenTick = ticker ? ticker : 'TKN'
   return (
     <Shadow key={assetId} border onClick={onClick} darkPurple={darkPurple}>

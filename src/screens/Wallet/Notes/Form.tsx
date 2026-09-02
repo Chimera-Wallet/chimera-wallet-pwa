@@ -16,6 +16,7 @@ import FlexCol from '../../../components/FlexCol'
 import { consoleError } from '../../../lib/logs'
 import { SettingsOptions } from '../../../lib/types'
 import { AspContext } from '../../../providers/asp'
+import {useTranslation} from 'react-i18next'
 
 export default function NotesForm() {
   const { aspInfo } = useContext(AspContext)
@@ -27,9 +28,11 @@ export default function NotesForm() {
   const [error, setError] = useState('')
   const [note, setNote] = useState('')
   const [scan, setScan] = useState(false)
+  
+  const {t} = useTranslation()
 
   useEffect(() => {
-    setError(aspInfo.unreachable ? 'Ark server unreachable' : '')
+    setError(aspInfo.unreachable ? t('errors.send.arkade.server') : '')
   }, [aspInfo.unreachable])
 
   useEffect(() => {
@@ -53,16 +56,16 @@ export default function NotesForm() {
     navigate(Pages.Settings)
   }
 
-  if (scan) return <Scanner close={() => setScan(false)} label='Arkade note' onData={setNote} onError={setError} />
+  if (scan) return <Scanner close={() => setScan(false)} label={t('common.general.notes.arkNote')} onData={setNote} onError={setError} />
 
   return (
     <>
-      <Header text='Note' back={handleBack} />
+      <Header text={t('common.general.notes.note')} back={handleBack} />
       <Content>
         <Padded>
           <FlexCol gap='2rem'>
             <ErrorMessage error={Boolean(error)} text={error} />
-            <InputNote label='Arkade note' onChange={setNote} openScan={() => setScan(true)} value={note} />
+            <InputNote label={t('common.general.notes.arkNote')} onChange={setNote} openScan={() => setScan(true)} value={note} />
           </FlexCol>
         </Padded>
       </Content>

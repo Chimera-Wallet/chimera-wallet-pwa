@@ -4,6 +4,7 @@ import { Fiats } from '../lib/types'
 
 interface AssetRowProps {
   symbol: AssetSymbol | string
+  ticker?: string
   name: string
   balance?: number
   balanceFiat?: number
@@ -16,22 +17,31 @@ interface AssetRowProps {
 
 export default function AssetRow({
   symbol,
+  ticker,
   name,
   balance = 0,
-  balanceFiat = 0,
+  balanceFiat,
   currency = Fiats.USD,
-  percentChange = 0,
+  percentChange,
   badge,
   onClick,
   isLast = false,
 }: AssetRowProps) {
   const config = getAssetConfig(symbol)
   const precision = config?.precision || 8
+  const displayTicker = ticker ?? symbol
 
-  const isPositive = percentChange >= 0
+  // Undefined means "no market data for this asset" (see AssetConfig.noMarketData),
+  // which is different from "no movement" — a proprietary token with no public
+  // feed must not be reported as flat at 0.00%.
+  const hasChange = typeof percentChange === 'number' && Number.isFinite(percentChange)
+  // Same rule for the fiat line: undefined means the asset has no defined price
+  // yet, which must render as nothing rather than as a confident "0.00".
+  const hasFiat = typeof balanceFiat === 'number' && Number.isFinite(balanceFiat)
+  const isPositive = (percentChange ?? 0) >= 0
   const changeColor = isPositive ? 'var(--green-positive)' : 'var(--red-negative)'
-  const changeArrow = isPositive ? '↑' : '↓'
-  const formattedChange = `${changeArrow} ${Math.abs(percentChange).toFixed(2)}%`
+  const formattedChange = `${Math.abs(percentChange ?? 0).toFixed(2)}%`
+  const changeIcon = isPositive ? '/images/icons/ upGreen.png' : '/images/icons/ downRed.png'
 
   // Format balance with asset's configured precision
   const formatBalance = (value: number): string => {
@@ -84,16 +94,18 @@ export default function AssetRow({
           {badge ? (
             <span
               style={{
-                background: 'var(--white10)',
+                backgroundColor: 'var(--neutral-200)',
                 borderRadius: 4,
                 fontSize: 9,
                 fontWeight: 700,
-                color: 'var(--white50)',
                 padding: '2px 5px',
+                color: 'var(--fg)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.8px',
                 marginTop: 2,
                 width: 'fit-content',
+
+
               }}
             >
               {badge}
@@ -116,7 +128,20 @@ export default function AssetRow({
           flexShrink: 0,
         }}
       >
-        {formattedChange}
+        {/* The 80px column stays even with nothing in it, so rows without market
+            data keep the balance column aligned with the rest of the list. */}
+        {hasChange ? (
+          <>
+            <img
+              src={changeIcon}
+              alt={isPositive ? 'Up' : 'Down'}
+              width={16}
+              height={16}
+              style={{ display: 'block', objectFit: 'contain', color: 'rgba(29,255,120,1)' }}
+            />
+            <span>{formattedChange}</span>
+          </>
+        ) : null}
       </div>
 
       {/* Right Section - Balance */}
@@ -137,17 +162,19 @@ export default function AssetRow({
             fontFamily: 'Titillium Web',
           }}
         >
-          {formatBalance(balance)} {symbol}
+          {formatBalance(balance)} {displayTicker}
         </span>
-        <span
-          style={{
-            color: 'var(--white40)',
-            fontSize: 11,
-            fontWeight: 400,
-          }}
-        >
-          {formatUsd(balanceFiat)} {currency}
-        </span>
+        {hasFiat ? (
+          <span
+            style={{
+              color: 'var(--white40)',
+              fontSize: 11,
+              fontWeight: 400,
+            }}
+          >
+            {formatUsd(balanceFiat)} {currency}
+          </span>
+        ) : null}
       </div>
     </div>
   )

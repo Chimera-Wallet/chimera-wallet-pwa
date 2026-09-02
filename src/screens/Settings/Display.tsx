@@ -5,6 +5,7 @@ import Padded from '../../components/Padded'
 import Content from '../../components/Content'
 import { ConfigContext } from '../../providers/config'
 import Header from './Header'
+import {useTranslation} from 'react-i18next'
 
 export default function Display() {
   const { backupConfig, config, updateConfig } = useContext(ConfigContext)
@@ -14,10 +15,10 @@ export default function Display() {
     if (config.nostrBackup) await backupConfig(newConfig)
     updateConfig(newConfig)
   }
-
+  const {t} = useTranslation()
   return (
     <>
-      <Header text='Display preferences' back />
+      <Header text={t('settings.display.displayPref')} back />
       <Content>
         <Padded>
           <Select

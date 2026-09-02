@@ -1,11 +1,16 @@
 import { BoltzSwap } from '@arkade-os/boltz-swap'
-import { ReactNode, createContext, useState } from 'react'
+import { ReactNode, createContext, useState, Dispatch, SetStateAction } from 'react'
 import type { Asset, AssetDetails } from '@arkade-os/sdk'
 import { Tx } from '../lib/types'
 import type { TransferMethod } from '../lib/transferMethods'
 import { ChimeraOrder } from './chimera'
+import type { BankOrder, BankDetails } from './bankTransfer'
 import { DEFAULT_BANK_CURRENCY, DEFAULT_BANK_CIRCUIT, type BankCircuit, type BankCurrency, type BankData } from '../lib/bankTransferConfig'
+import type { WrapQuote } from '../lib/arkadeWrap'
+import type { SourceChainId } from '../lib/sourceChains'
 export type { TransferMethod } from '../lib/transferMethods'
+import type { LnSendRequest } from '../lib/lnSwap'
+import type { LnReceiveInvoice } from './lnReceive'
 
 export interface InitInfo {
   password?: string
@@ -13,6 +18,10 @@ export interface InitInfo {
   mnemonic?: string
   restoring?: boolean
   backupDone?: boolean
+  // Set once the user has chosen biometrics or a password. Until then the
+  // secret is still encrypted with `defaultPassword`, which the app treats as
+  // "no lock configured" — see detectPasswordState in providers/wallet.tsx.
+  lockDone?: boolean
 }
 
 export interface NoteInfo {
@@ -36,6 +45,7 @@ export interface RecvInfo {
   offchainAddr: string
   onchainAddr?: string
   invoice?: string
+  pendingLnReceive?: LnReceiveInvoice
   method?: TransferMethod
   satoshis: number
   txid?: string
@@ -51,7 +61,8 @@ export interface BankRecvInfo {
   currency: BankCurrency
   circuit: BankCircuit
   amount: number
-  order?: ChimeraOrder
+  order?: BankOrder
+  bankDetails?: BankDetails
 }
 
 // Bank Send (Withdraw) Info - for crypto → fiat
@@ -60,11 +71,35 @@ export interface BankSendInfo {
   circuit: BankCircuit
   amount: number
   bankData?: BankData
-  order?: ChimeraOrder
+  order?: BankOrder
 }
 
 // Bank Order Type - track which order is currently active
 export type BankOrderType = 'receive' | 'send'
+
+// Wrap Receive Info - native chain deposit -> minted Arkade wrapped asset
+export interface WrapRecvInfo {
+  assetSymbol: string
+  chainId: SourceChainId
+  ticker: string
+  // Arkade address that receives the minted wrapped asset.
+  receiver: string
+  // Source-chain address the user will deposit from.
+  sender: string
+  quote?: WrapQuote
+}
+
+// Unwrap Send Info - burn Arkade wrapped asset -> native chain payout
+export interface UnwrapSendInfo {
+  assetSymbol: string
+  chainId: SourceChainId
+  ticker: string
+  // Arkade address that deposits the wrapped asset.
+  sender: string
+  // Destination-chain address that receives the payout.
+  receiver: string
+  quote?: WrapQuote
+}
 
 export type SendInfo = {
   address?: string
@@ -73,6 +108,7 @@ export type SendInfo = {
   invoice?: string
   lnUrl?: string
   pendingSwap?: BoltzSwap
+  pendingLnSend?: LnSendRequest
   method?: TransferMethod
   recipient?: string
   satoshis?: number
@@ -102,14 +138,16 @@ interface FlowContextProps {
   txInfo: TxInfo
   bankRecvInfo: BankRecvInfo
   bankSendInfo: BankSendInfo
-  bankStatusOrder: ChimeraOrder | undefined
+  bankStatusOrder: BankOrder | undefined
   currentBankOrderType?: BankOrderType
+  wrapRecvInfo: WrapRecvInfo | undefined
+  unwrapSendInfo: UnwrapSendInfo | undefined
   setInitInfo: (arg0: InitInfo) => void
   setKycAuthParams: (arg0: KycAuthParams | undefined) => void
   setNoteInfo: (arg0: NoteInfo) => void
   setDeepLinkInfo: (arg0: DeepLinkInfo) => void
-  setRecvInfo: (arg0: RecvInfo) => void
-  setSendInfo: (arg0: SendInfo) => void
+  setRecvInfo: (arg0: SetStateAction<RecvInfo>) => void
+  setSendInfo: (arg0: SetStateAction<SendInfo>) => void
   setSwapInfo: (arg0: SwapInfo) => void
   setSwapOrderInfo: (arg0: SwapOrderInfo) => void
   setTxInfo: (arg0: TxInfo) => void
@@ -119,8 +157,10 @@ interface FlowContextProps {
   setLnurlInfo: (arg0: LnUrlInfo) => void
   setBankRecvInfo: (arg0: BankRecvInfo) => void
   setBankSendInfo: (arg0: BankSendInfo) => void
-  setBankStatusOrder: (order: ChimeraOrder | undefined) => void
+  setBankStatusOrder: (order: BankOrder | undefined) => void
   setCurrentBankOrderType: (type: BankOrderType | undefined) => void
+  setWrapRecvInfo: (arg0: WrapRecvInfo | undefined) => void
+  setUnwrapSendInfo: (arg0: UnwrapSendInfo | undefined) => void
 }
 
 export const emptyInitInfo: InitInfo = {
@@ -179,6 +219,8 @@ export const FlowContext = createContext<FlowContextProps>({
   bankSendInfo: emptyBankSendInfo,
   bankStatusOrder: undefined,
   currentBankOrderType: undefined,
+  wrapRecvInfo: undefined,
+  unwrapSendInfo: undefined,
   setInitInfo: () => {},
   setKycAuthParams: () => {},
   setNoteInfo: () => {},
@@ -196,6 +238,8 @@ export const FlowContext = createContext<FlowContextProps>({
   setBankSendInfo: () => {},
   setBankStatusOrder: () => {},
   setCurrentBankOrderType: () => {},
+  setWrapRecvInfo: () => {},
+  setUnwrapSendInfo: () => {},
 })
 
 export const FlowProvider = ({ children }: { children: ReactNode }) => {
@@ -212,8 +256,10 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
   const [lnurlInfo, setLnurlInfo] = useState<LnUrlInfo>()
   const [bankRecvInfo, setBankRecvInfo] = useState<BankRecvInfo>(emptyBankRecvInfo)
   const [bankSendInfo, setBankSendInfo] = useState<BankSendInfo>(emptyBankSendInfo)
-  const [bankStatusOrder, setBankStatusOrder] = useState<ChimeraOrder | undefined>()
+  const [bankStatusOrder, setBankStatusOrder] = useState<BankOrder | undefined>()
   const [currentBankOrderType, setCurrentBankOrderType] = useState<BankOrderType | undefined>()
+  const [wrapRecvInfo, setWrapRecvInfo] = useState<WrapRecvInfo | undefined>()
+  const [unwrapSendInfo, setUnwrapSendInfo] = useState<UnwrapSendInfo | undefined>()
 
   return (
     <FlowContext.Provider
@@ -232,6 +278,8 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
         bankSendInfo,
         bankStatusOrder,
         currentBankOrderType,
+        wrapRecvInfo,
+        unwrapSendInfo,
         setInitInfo,
         setKycAuthParams,
         setNoteInfo,
@@ -248,6 +296,8 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
         setBankSendInfo,
         setBankStatusOrder,
         setCurrentBankOrderType,
+        setWrapRecvInfo,
+        setUnwrapSendInfo,
       }}
     >
       {children}

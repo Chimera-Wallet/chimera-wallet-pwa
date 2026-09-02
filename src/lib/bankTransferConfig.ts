@@ -26,15 +26,23 @@ export interface BankDataSepa {
 
 export interface BankDataSwift {
   circuit: 'swift'
+  destinationBankAddress: string // IBAN
   bic: string // BIC/SWIFT code
   accountHolderName: string
-  accountNumber: string
+  // Structured beneficiary address — IBSettle's international payment rail
+  // requires these as discrete fields, not one free-text address.
+  country: string // ISO 3166-1 alpha-2
+  streetName: string
+  buildingNumber: string
+  townName: string
+  postCode: string
 }
 
 export interface BankDataUs {
   circuit: 'us'
   accountNumber: string
   routingNumber: string
+  accountHolderName: string
 }
 
 export type BankData = BankDataSepa | BankDataSwift | BankDataUs

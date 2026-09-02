@@ -67,20 +67,19 @@ export async function registerUser(): Promise<{ password: string; passkeyId: str
   return { password: hex.encode(password), passkeyId: hex.encode(new Uint8Array(credentials.rawId)) }
 }
 
-// Function to authenticate a user
-export async function authenticateUser(passkeyId: string | undefined): Promise<string> {
-  if (!passkeyId) throw new Error('Missing passkey id')
+interface Assertion {
+  /** The passkey's user handle, or '' when the authenticator omitted it. */
+  userHandle: string
+  /** Which credential actually answered, hex-encoded like `passkeyId`. */
+  credentialId: string
+}
 
+async function getAssertion(allowCredentials: PublicKeyCredentialDescriptor[]): Promise<Assertion> {
   const decoder = new TextDecoder()
   const challenge = generateRandomArray(32)
 
   const options: PublicKeyCredentialRequestOptions = {
-    allowCredentials: [
-      {
-        id: hex.decode(passkeyId) as BufferSource,
-        type: 'public-key',
-      },
-    ],
+    allowCredentials,
     challenge: challenge as BufferSource,
     rpId: window.location.hostname,
     timeout: 60000,
@@ -89,11 +88,70 @@ export async function authenticateUser(passkeyId: string | undefined): Promise<s
   const credentials = (await navigator.credentials.get({ publicKey: options })) as PublicKeyCredential
   const authResponse = credentials.response as AuthenticatorAssertionResponse
   const clientDataJSON = JSON.parse(decoder.decode(authResponse.clientDataJSON))
-  const userHandle = new Uint8Array(authResponse.userHandle ?? new ArrayBuffer(0))
 
   if (clientDataJSON.type !== 'webauthn.get') throw new Error('Invalid clientDataJSON type')
   if (clientDataJSON.challenge !== arrayToBase64(challenge)) throw new Error('Invalid challenge')
   if (clientDataJSON.origin !== window.location.origin) throw new Error('Invalid origin')
 
-  return hex.encode(userHandle)
+  const userHandle = authResponse.userHandle
+  return {
+    userHandle: userHandle && userHandle.byteLength > 0 ? hex.encode(new Uint8Array(userHandle)) : '',
+    credentialId: hex.encode(new Uint8Array(credentials.rawId)),
+  }
+}
+
+export interface BiometricAuth {
+  /** The wallet password — the passkey's user handle. */
+  password: string
+  /** Which credential answered, hex-encoded. Lets a caller repair a lost `passkeyId`. */
+  passkeyId: string
+}
+
+// Recovers the wallet password from a passkey when no `passkeyId` is stored.
+//
+// Needed because a wallet could end up encrypted under a passkey password while
+// `lockedByBiometrics`/`passkeyId` were lost from the wallet record (a stale
+// state write used to clobber them — see providers/wallet.tsx::initWallet).
+// Those wallets are otherwise unopenable: the password exists only inside the
+// passkey, and without an id there was no way to ask for it.
+//
+// registerUser sets residentKey 'required', so the credential is discoverable
+// and the empty-allowCredentials flow can find it. There is no stored id to
+// check the answer against, so we cannot tell a wrong passkey from the right
+// one here — the caller finds out when the returned handle fails to decrypt,
+// which is the same signal a wrong password gives.
+export async function recoverPasskeyAuth(): Promise<BiometricAuth> {
+  const assertion = await getAssertion([])
+  if (!assertion.userHandle) throw new Error('Passkey did not return a user handle')
+  return { password: assertion.userHandle, passkeyId: assertion.credentialId }
+}
+
+// Function to authenticate a user
+export async function authenticateUser(passkeyId: string | undefined): Promise<string> {
+  if (!passkeyId) return (await recoverPasskeyAuth()).password
+
+  // The wallet password IS the passkey's user handle (see registerUser), so an
+  // assertion that doesn't carry one is useless to us. WebAuthn allows the
+  // authenticator to omit userHandle when allowCredentials names a specific
+  // credential, and platform authenticators do — Windows Hello returns null
+  // here. Fall back to the discoverable-credential flow, which must return it:
+  // registerUser sets residentKey 'required', so the passkey is discoverable.
+  // Naming the credential first keeps the common case to a single prompt and
+  // avoids an account picker when several passkeys exist for this origin.
+  const named = await getAssertion([{ id: hex.decode(passkeyId) as BufferSource, type: 'public-key' }])
+  if (named.userHandle) return named.userHandle
+
+  const discoverable = await getAssertion([])
+  // The discoverable flow offers every passkey registered for this origin, and
+  // each wallet ever created here registered one. Another wallet's handle is a
+  // perfectly valid-looking password that simply decrypts nothing, so reject it
+  // here instead of letting it surface as "invalid password".
+  if (discoverable.credentialId !== passkeyId) {
+    throw new Error('A different passkey was chosen. Select the passkey belonging to this wallet.')
+  }
+  // Never return '': callers treat the result as the decryption password, and
+  // an empty one silently no-ops at best and re-encrypts the wallet under an
+  // empty password at worst.
+  if (!discoverable.userHandle) throw new Error('Passkey did not return a user handle')
+  return discoverable.userHandle
 }

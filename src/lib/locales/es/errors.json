@@ -1,0 +1,215 @@
+{
+  "funds": {
+    "insufficient": "Fondos insuficientes",
+    "insufficientExtra": "Fondos insuficientes, solo tienes {{balance}} BTC",
+    "insufficientFees": "Fondos insuficientes para cubrir las comisiones"
+  },
+  "LNURL": {
+    "below": "La cantidad está por debajo del límite mínimo de LNURL",
+    "above": "La cantidad supera el límite máximo de LNURL",
+    "funds": "Fondos insuficientes para LNURL",
+    "fetch": "No se pudieron obtener las condiciones de LNURL",
+    "address": "Dirección o LNURL no válidos"
+  },
+  "satoshi": {
+    "minimum": "La cantidad es inferior a 1 satoshi",
+    "minLimit": "La cantidad está por debajo del límite mínimo",
+    "maxLimit": "La cantidad supera el límite máximo",
+    "invoiceAmount": "La factura debe tener una cantidad definida"
+  },
+  "network": {
+    "below": "La cantidad es inferior a la comisión de red",
+    "tooLow": "La cantidad es demasiado baja para cubrir las comisiones de red"
+  },
+  "general": {
+    "server": "Servidor inaccesible",
+    "swap": "No se pudo crear el intercambio",
+    "missingAddress": "Falta la dirección",
+    "missingAsset": "Falta la cantidad del activo",
+    "missingAmount": "Falta la cantidad",
+    "missingAssetList": "Falta la lista de activos",
+    "missingTotal": "Falta la cantidad total",
+    "missingSats": "Falta la cantidad de satoshis",
+    "swapAddUnavailable": "Dirección de intercambio no disponible"
+  },
+  "send": {
+    "bitcoin": {
+      "address": "El método seleccionado requiere una dirección de Bitcoin",
+      "type": "El método seleccionado requiere un tipo de dirección diferente",
+      "lnurl": "El método seleccionado no admite LNURL"
+    },
+    "arkade": {
+      "address": "El método seleccionado requiere una dirección de Arkade",
+      "addressUnable": "No se pudo obtener tu dirección de Arkade",
+      "type": "El método seleccionado requiere un tipo de dirección diferente",
+      "server": "Servidor Ark inaccesible",
+      "lnurl": "LNURL no admite pagos de Ark",
+      "addressReceiveLnurl": "Se recibió una dirección de Arkade no válida desde LNURL",
+      "assets": "Los activos solo pueden enviarse a direcciones de Arkade",
+      "serverKeyMiss": "La clave del servidor Ark no coincide"
+    },
+    "lightning": {
+      "address": "El método seleccionado requiere una factura Lightning",
+      "type": "El método seleccionado requiere un tipo de dirección diferente",
+      "swaps": "Los intercambios Lightning no están habilitados"
+    },
+    "bank": {
+      "transfer": "Las transferencias bancarias se gestionan en Transferencias",
+      "ibanName": "Por favor, introduce tu IBAN y el nombre del titular de la cuenta",
+      "bicSwift": "Por favor, introduce tu código BIC/SWIFT, el nombre del titular y el número de cuenta",
+      "accountRouting": "Por favor, introduce tu número de cuenta y número de ruta",
+      "invalidTransfer": "Método de transferencia no válido",
+      "insufficientBalance": "Saldo insuficiente. Necesitas aproximadamente {{required}} BTC pero solo tienes {{balance}} BTC",
+      "failedWithdrawal": "No se pudo crear la orden de retiro"
+    },
+    "wallet": {
+      "notReady": "La billetera no está lista",
+      "notConfigured": "La billetera de retiro no está configurada"
+    },
+    "parsing": {
+      "bip21": "No se pudo analizar bip21",
+      "recipientAddress": "Dirección del destinatario no válida"
+    },
+    "chain": {
+      "on": "No se permite enviar en cadena",
+      "off": "No se permite enviar fuera de cadena",
+      "self": "No puedes enviarte fondos a ti mismo",
+      "invalidAddress": "Introduce una dirección {{chain}} válida"
+    },
+    "general": {
+      "errorSend": "Error al enviar la transacción"
+    }
+  },
+  "receive": {
+    "general": {
+      "offChain": "No se pudo obtener la dirección fuera de cadena",
+      "boarding": "No se pudo obtener la dirección de embarque",
+      "destination": "No se pudo obtener la dirección de destino",
+      "kycReq": "Se requiere verificación KYC",
+      "amount": "Cantidad no válida",
+      "faucetFail": "El faucet falló",
+      "pendingSwap": "No se pudo crear el intercambio inverso",
+      "chainSwap": "No se pudo crear el intercambio en cadena",
+      "reverseSwap": "No se pudo crear el intercambio inverso",
+      "getAddress": "No se pudo obtener la dirección: {{address}}"
+    },
+    "bank": {
+      "failedOrderExtra": "No se pudo crear la orden: no se devolvió ninguna orden",
+      "failedOrderSimple": "No se pudo crear la orden",
+      "failedDeposit": "No se pudo crear la orden de depósito",
+      "noOrderInfo": "No hay información de la orden disponible",
+      "failedLoad": "No se pudo cargar la orden",
+      "failedRefresh": "No se pudo actualizar la orden"
+    },
+    "lightning": {
+      "tempUnavailable": "Lightning no está disponible temporalmente. Este código QR solo admite pagos de Arkade y en cadena."
+    },
+    "wrapService": {
+      "validAddress": "Introduce una dirección {{name}} válida",
+      "arkadeRcvAddress": "No se pudo obtener tu dirección de recepción de Arkade",
+      "failedWrapQuote": "No se pudo crear la cotización de envoltura"
+    }
+  },
+  "initialisation": {
+    "arkadeUnreachable": "Servidor Arkade inaccesible. Comprueba Configuración → Servidor Arkade.",
+    "invalidPass": "Contraseña no válida",
+    "unlockTimeout": "Tiempo de desbloqueo agotado. Por favor, inténtalo de nuevo."
+  },
+  "backup": {
+    "nostrFail": "La copia de seguridad en Nostr falló"
+  },
+  "biometric": {
+    "failedDisable": "No se pudo desactivar la biometría. Por favor, inténtalo de nuevo.",
+    "failedEnable": "No se pudo activar la biometría. Por favor, inténtalo de nuevo."
+  },
+  "delegates": {
+    "invalidPubkey": "Clave pública esperada del servidor no válida",
+    "unableConnect": "No se pudo conectar",
+    "invalidResponse": "Respuesta del delegado no válida",
+    "missingFee": "Falta la comisión del delegado",
+    "invalidFee": "Comisión del delegado no válida",
+    "negativeFee": "La comisión del delegado no puede ser negativa",
+    "missingPubkey": "Falta la clave pública del delegado",
+    "invalidPubkeySize": "Tamaño de la clave pública del delegado no válido",
+    "invalidPubkeyHex": "Clave pública hexadecimal del delegado no válida",
+    "missingAddress": "Falta la dirección del delegado",
+    "invalidAddress": "Dirección del delegado no válida",
+    "invalidServerKey": "Clave del servidor del delegado no válida",
+    "invalidJSONResp": "JSON no válido en la respuesta del delegado"
+  },
+  "password": {
+    "failedUpdate": "No se pudo actualizar la contraseña"
+  },
+  "server": {
+    "same": "Mismo servidor",
+    "unableConnect": "No se pudo conectar"
+  },
+  "support": {
+    "notConfigured": "El chat de soporte no está configurado",
+    "failedLoad": "No se pudo cargar el chat de soporte",
+    "unavailable": "no disponible"
+  },
+  "verification": {
+    "failedAuth": "No se pudo confirmar la autenticación. Por favor, inténtalo de nuevo.",
+    "failedVerif": "No se pudo iniciar la verificación. Por favor, inténtalo de nuevo.",
+    "email": "Por favor, introduce una dirección de correo electrónico válida.",
+    "failedEmailSend": "No se pudo enviar el correo de verificación. Por favor, inténtalo de nuevo.",
+    "failedEmailResend": "No se pudo reenviar el correo de verificación. Por favor, inténtalo de nuevo."
+  },
+  "vtxo": {
+    "failedFetch": "No se pudieron obtener las monedas"
+  },
+  "addressBook": {
+    "enterAdd": "Por favor, introduce una dirección",
+    "invalidAdd": "{{name}} no válido",
+    "contactName": "Por favor, introduce un nombre de contacto"
+  },
+  "assets": {
+    "positive": "La cantidad debe ser un número positivo",
+    "idNF": "Se requiere el ID del activo",
+    "balance": "No puedes quemar más de tu saldo {{amount}} {{tick}}",
+    "idHex": "El ID del activo debe ser una cadena hexadecimal de 68 caracteres",
+    "assNF": "Activo no encontrado",
+    "range": "Los decimales deben ser un número entero entre 0 y {{max}}"
+  },
+  "boltz": {
+    "swapsRestore": "Error al restaurar intercambios: {{error}}",
+    "integration": "La integración con Boltz aún no está lista. Inténtalo de nuevo en un momento.",
+    "integrationSimple": "La integración con Boltz aún no está lista",
+    "scan": "No se pudo escanear: {{err}}",
+    "recover": "Se recuperaron {{swept}} VTXO{{out}}",
+    "noSweep": "No se recuperó nada; inténtalo de nuevo más tarde."
+  },
+  "lendasat": {
+    "walletNot": "La billetera no está inicializada",
+    "unableSending": "No se pudo enviar bitcoin",
+    "unsuppAddress": "Dirección no compatible {{addr}}",
+    "unableSendNonBtc": "No se pueden enviar activos distintos de BTC",
+    "unableFiat": "No se puede enviar dinero fiduciario",
+    "arkAddrLoad": "La dirección de Arkade aún no se ha cargado",
+    "boardAddrLoad": "La dirección de embarque aún no se ha cargado",
+    "unsuppAddr": "Tipo de dirección no compatible: {{addr}}",
+    "unkownAddr": "Tipo de dirección desconocido: {{addr}}",
+    "npubSupp": "Los NPubs no son compatibles"
+  },
+  "satora": {
+    "satora": "Satora",
+    "addressType": "Tipo de dirección no compatible",
+    "arkAddr": "La dirección de Arkade aún no se ha cargado",
+    "walletNot": "La billetera no está inicializada",
+    "invalidAm": "Cantidad no válida",
+    "unableSending": "No se pudo enviar bitcoin",
+    "unsuppAddress": "Dirección no compatible {{addr}}",
+    "notSat": "No implementado para Satora"
+  },
+  "swap": {
+    "noInfo": "No hay información de la orden disponible",
+    "failedLoad": "No se pudo cargar la orden",
+    "failedRefresh": "No se pudo actualizar la orden",
+    "failedCreate": "No se pudo crear la orden",
+    "failedAss": "No se pudieron cargar los activos",
+    "valAm": "Por favor, introduce una cantidad válida",
+    "kycVer": "Se requiere verificación KYC para cantidades superiores a 1.000 EUR",
+    "destAddr": "No se pudo obtener la dirección de destino"
+  }
+}

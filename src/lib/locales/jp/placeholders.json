@@ -1,0 +1,27 @@
+{
+  "addressFallback": "アドレスを貼り付け",
+  "networkFallback": "説明を表示するネットワークを選択してください",
+  "arkade": {
+    "address": "Arkadeアドレスを貼り付け"
+  },
+  "lightning": {
+    "address": "Lightning請求書アドレスを貼り付け",
+    "invoice": "支払いを送信するにはLightning請求書を貼り付けてください。支払い金額は請求書に含まれています。"
+  },
+  "bitcoin": {
+    "address": "BTCアドレスを貼り付け"
+  },
+  "bank": {
+    "details": "銀行情報を入力"
+  },
+  "contacts": {
+    "name": "連絡先名を入力",
+    "accounts": "例：メインウォレット、貯蓄用...",
+    "enterAddr": "{{name}} を入力"
+  },
+  "assets": {
+    "token": "マイトークン",
+    "assIdPaste": "アセットIDを貼り付け...",
+    "controlAm": "コントロール数量"
+  }
+}

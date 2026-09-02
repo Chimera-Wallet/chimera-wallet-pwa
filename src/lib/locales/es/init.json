@@ -1,0 +1,63 @@
+{
+  "key": {
+    "savePhrase": "Guarda tu frase de recuperación",
+    "saveKey": "Guarda tu clave privada",
+    "mnemonicWarning": "Esta es la única forma de restaurar tu billetera en otro navegador o dispositivo. Guárdala en un lugar seguro: un gestor de contraseñas, notas cifradas o escrita en un lugar protegido.",
+    "keyWarning": "Esta es tu clave privada. Guárdala en un lugar seguro: un gestor de contraseñas, notas cifradas o escrita en un lugar protegido.",
+    "mnemonicSafe": "Mantén tu frase de recuperación a salvo",
+    "keySafe": "Mantén tu clave privada a salvo",
+    "privacyWarning": "No la compartas con nadie",
+    "lossWarning": "Si la pierdes, no podrás recuperarla",
+    "hideKey": "Ocultar clave privada",
+    "revealKey": "Mostrar clave privada",
+    "hidePhrase": "Ocultar frase",
+    "revealPhrase": "Mostrar frase",
+    "copyPhrase": "Copiar frase de recuperación",
+    "copykey": "Copiar clave privada",
+    "saved": "Ya la he guardado — Ir a la billetera"
+  },
+  "warning": {
+    "important": "Advertencia importante",
+    "warning": "⚠ ADVERTENCIA",
+    "lossFunds": "Si depositas fondos en tu billetera <bold>sin hacer una copia de seguridad de tus claves</bold>, corres un riesgo constante de sufrir una <danger>PÉRDIDA TOTAL E IRREVERSIBLE de tus fondos</danger>.",
+    "nonCustodial": "Chimera Wallet es una <bold>billetera totalmente sin custodia</bold>. <strongWarning>NADIE</strongWarning> puede ayudarte a recuperar tus fondos si no tienes tu clave.",
+    "understood": "Lo he entendido, continuar",
+    "goBack": "Volver"
+  },
+  "biometrics": {
+    "secureWallet": "Protege tu billetera",
+    "enableBioAuth": "Activar autenticación biométrica",
+    "bioAuthUnsupported": "La autenticación biométrica no es compatible con este dispositivo. Tendrás que utilizar tu contraseña para desbloquear tu billetera.",
+    "fingerFaceAuth": "Por tu seguridad, activa la autenticación biométrica para desbloquear tu billetera mediante huella digital o reconocimiento facial.",
+    "enableBio": "Activar biometría",
+    "usePass": "Usar contraseña en su lugar"
+  },
+  "connection": {
+    "missingCreds": "Faltan credenciales",
+    "restoringSwaps": "Restaurando intercambios...",
+    "swapsInfo": "Se restauraron {{num}} intercambios desde la red",
+    "connectionFailed": "Conexión fallida",
+    "serverConnection": "Conectando al servidor"
+  },
+  "init": {
+    "createWallet": "Crear nueva billetera",
+    "restoreWallet": "Restaurar billetera"
+  },
+  "restore": {
+    "invalidPhrase": "Frase de recuperación no válida",
+    "validationUnable": "No se pudo validar el formato de la clave privada",
+    "validationUnableSimple": "No se pudo validar el formato de la clave",
+    "restoringWallet": "Restaurando billetera...",
+    "pk": "clave-privada",
+    "recoveryPhraseKey": "Frase de recuperación o clave privada",
+    "phraseEntry": "Introduce tu frase de recuperación de 12 palabras o una clave privada que comience por 'nsec' o una clave hexadecimal sin formato. No la compartas con nadie."
+  },
+  "success": {
+    "walletRestore": "¡Billetera restaurada!",
+    "liveWallet": "¡Tu nueva billetera está activa!",
+    "walletRestoreSucc": "Tu billetera ha sido restaurada correctamente y ya está lista para usar.",
+    "walletCreatedSucc": "Tu billetera ha sido creada correctamente y ya está lista para usar.",
+    "takeControl": "Recupera el control de tu dinero",
+    "goWallet": "IR A LA BILLETERA"
+  }
+}

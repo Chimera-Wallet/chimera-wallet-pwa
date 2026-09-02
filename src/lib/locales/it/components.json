@@ -1,0 +1,203 @@
+{
+  "carousel": {
+    "error": "useCarousel deve essere utilizzato all'interno di un <Carousel />",
+    "previous": "Slide precedente",
+    "next": "Slide successiva"
+  },
+  "chart": {
+    "error": "useChart deve essere utilizzato all'interno di un <ChartContainer />"
+  },
+  "command": {
+    "command": "Palette dei comandi",
+    "search": "Cerca un comando da eseguire..."
+  },
+  "pagination": {
+    "previous": "Precedente",
+    "goPrev": "Vai alla pagina precedente",
+    "next": "Successiva",
+    "goNext": "Vai alla pagina successiva",
+    "more": "Altre pagine"
+  },
+  "sidebar": {
+    "sidebar": "Barra laterale",
+    "error": "useSidebar deve essere utilizzato all'interno di un SidebarProvider.",
+    "mobile": "Mostra la barra laterale mobile",
+    "toggle": "Mostra/Nascondi barra laterale"
+  },
+  "alert": {
+    "protectPass": "Proteggi il tuo wallet con una password"
+  },
+  "announcements": {
+    "intro": "Presentiamo:",
+    "whatDo": "Cosa puoi fare:",
+    "try": "Prova {{title}}",
+    "later": "Forse più tardi",
+    "lightWork": "Lightning che funziona",
+    "bridge": "Bridge",
+    "bridgeDescr": "Scambia tra diversi livelli di Bitcoin mantenendo il pieno controllo dei tuoi fondi.",
+    "fast": "Veloce",
+    "fastDescr": "Boltz utilizza tecnologie di scalabilità Layer 2 come Lightning Network.",
+    "safe": "Sicuro",
+    "safeDescr": "Gli swap su Boltz sono atomici: la crittografia garantisce che gli utenti mantengano sempre il controllo del proprio denaro.",
+    "lendaMess": "Ottieni prestiti utilizzando Bitcoin come garanzia. Ricevi USDC o USDT in 2 minuti.",
+    "chooseLoan": "Scegli un prestito",
+    "chooseLoanDescr": "Seleziona le condizioni di prestito che preferisci da un elenco di offerte oppure pubblica una tua richiesta. Troveremo la soluzione giusta per te.",
+    "lock": "Blocca i tuoi Bitcoin",
+    "lockDescr": "Blocca Bitcoin per un valore superiore all'importo del prestito come garanzia. I tuoi Bitcoin restano al sicuro mentre ottieni la liquidità di cui hai bisogno.",
+    "rcv": "Ricevi i fondi",
+    "rcvDescr": "Ricevi il prestito immediatamente tramite il metodo che preferisci: bonifico bancario, stablecoin (USDT/USDC) o carta VISA.",
+    "satoraMessage": "Scambia Bitcoin con USDC o USDT istantaneamente.",
+    "swapStable": "Scambia in stablecoin",
+    "swapDescr": "Scambia $BTC nativo con $USDT o $USDC su Ethereum e Polygon.",
+    "atomic": "Atomic Swap trustless",
+    "atomicDescr": "Quando uno swap viene avviato, entrambe le parti bloccano i propri fondi in smart contract. Lo swap viene completato interamente oppure entrambe le parti ricevono un rimborso.",
+    "selfCust": "Autocustodia",
+    "selfCustDescr": "Satora è completamente self-custodial. Le tue chiavi, le tue monete.",
+    "nostrBack": "Backup Nostr",
+    "nostrMsg": "Esegui il backup su Nostr.",
+    "backSett": "Impostazioni backup",
+    "backMsg": "Conserva in sicurezza le impostazioni del tuo wallet Chimera su Nostr.",
+    "boltzSw": "Swap Boltz",
+    "boltzMsg": "Ripristina facilmente la cronologia dei tuoi swap Boltz se cambi dispositivo.",
+    "secure": "Protetto",
+    "secureMsg": "Tutti i backup sono crittografati e archiviati in modo sicuro sulla rete Nostr."
+  },
+  "assetCard": {
+    "name": "Nome asset"
+  },
+  "assetNet": {
+    "rcvArk": "Ricevi direttamente su Arkade",
+    "sendArk": "Invia direttamente su Arkade",
+    "depFrom": "Deposita da {{name}}",
+    "withdrawTo": "Preleva verso {{name}}",
+    "arkNet": "Rete Arkade",
+    "select": "Seleziona rete",
+    "net": "Rete",
+    "selectAsset": "Seleziona asset",
+    "ass": "Asset"
+  },
+  "balance": {
+    "wallet": "Saldo del wallet"
+  },
+  "bankDet": {
+    "req": "Obbligatorio",
+    "iban": "IBAN",
+    "bicSwift": "Codice BIC / SWIFT",
+    "benef": "Beneficiario",
+    "name": "Nome della banca",
+    "accNum": "Numero di conto",
+    "routeNum": "Numero di instradamento",
+    "benefAdd": "Indirizzo del beneficiario",
+    "bankAdd": "Indirizzo della banca",
+    "refCode": "Codice di riferimento (obbligatorio)",
+    "mustIncl": "DEVI includere questo riferimento nella descrizione del bonifico affinché venga elaborato correttamente.",
+    "change": "Modifica",
+    "selTrans": "Seleziona metodo di trasferimento",
+    "selCurr": "Seleziona valuta"
+  },
+  "bankVal": {
+    "kycReq": "KYC richiesto",
+    "val": "Verifica",
+    "complVer": "Completa la verifica"
+  },
+  "bootErr": {
+    "retry": "Riprova",
+    "continue": "Continua comunque"
+  },
+  "checkList": {
+    "pass": "Imposta una password sicura con:"
+  },
+  "details": {
+    "addr": "Indirizzo",
+    "arkNote": "Nota Ark",
+    "inv": "Fattura",
+    "swapId": "ID swap",
+    "dest": "Destinazione",
+    "transId": "ID transazione",
+    "assId": "ID asset",
+    "dir": "Direzione",
+    "ty": "Tipo",
+    "stat": "Stato",
+    "when": "Quando",
+    "date": "Data",
+    "exp": "Scadenza",
+    "am": "Importo",
+    "netFee": "Commissioni di rete",
+    "total": "Totale"
+  },
+  "empty": {
+    "noAss": "Nessun asset disponibile",
+    "import": "Importane o creane uno per iniziare",
+    "noVirt": "Nessuna moneta virtuale disponibile",
+    "genImp": "Genera o importa monete per continuare",
+    "noLogs": "Nessun log disponibile",
+    "useApp": "Inizia a usare l'app per generare log.",
+    "noSwap": "Nessuno swap disponibile",
+    "swapHist": "La cronologia degli swap apparirà qui una volta che inizierai a effettuare swap.",
+    "noTrans": "Nessuna transazione disponibile",
+    "makeTrans": "Effettua una transazione per iniziare."
+  },
+  "errorBoundary": {
+    "somethingWrong": "Qualcosa è andato storto",
+    "unexpError": "L'app ha riscontrato un errore imprevisto",
+    "reloadPrompt": "Ricarica per continuare",
+    "reload": "Ricarica"
+  },
+  "expandAddr": {
+    "btc": "Indirizzo BTC",
+    "ark": "Indirizzo Arkade",
+    "light": "Indirizzo Lightning"
+  },
+  "installBanner": {
+    "addChimera": "Aggiungi CHIMERA alla schermata Home"
+  },
+  "needsPass": {
+    "passkeyNF": "La tua passkey non è stata trovata su questo dispositivo. Ripristina il wallet utilizzando la tua frase segreta.",
+    "tryAgain": "Riprova",
+    "restorePhrase": "Ripristina dalla frase segreta",
+    "unlockBio": "Sblocca tramite biometria",
+    "insPass": "Inserisci password",
+    "pass": "password",
+    "unlock": "Sblocca wallet",
+    "forgot": "Password dimenticata? Ripristina con la chiave privata",
+    "passkeyNFText": "Passkey non trovata",
+    "pkText": "La tua passkey non è stata trovata su questo dispositivo. Dovrai ripristinare il wallet utilizzando la tua frase segreta.",
+    "welcome": "Bentornato",
+    "unlockPk": "Sblocca con la tua passkey per continuare",
+    "passkeyMismatch": "Questa passkey non corrisponde a questo portafoglio."
+  },
+  "newPass": {
+    "passwordMatch": "Le password devono coincidere",
+    "save": "Salva password",
+    "charMin": "Minimo 8 caratteri",
+    "num": "contenere almeno 1 numero",
+    "special": "contenere almeno 1 carattere speciale",
+    "pass": "Password",
+    "confirm": "Conferma password"
+  },
+  "onboarding": {
+    "takeBack": "Riprendi il controllo del tuo denaro"
+  },
+  "pillNav": {
+    "card": "Carta",
+    "trade": "Trading",
+    "apps": "App",
+    "settings": "Impostazioni"
+  },
+  "reminder": {
+    "googleCal": "Google Calendar",
+    "appleCal": "Calendario Apple",
+    "outlook": "Outlook"
+  },
+  "scanner": {
+    "camera": "Fotocamera non disponibile",
+    "cancel": "Annulla"
+  },
+  "stakingBanner": {
+    "title": "Preparati al TGE del Token Chimera",
+    "descr": "Blocca i tuoi CEXT e osserva le tue ricompense crescere nel tempo, con rendimenti annuali fino al 15%, pagati direttamente in CEXT nel tuo wallet.",
+    "live": "Disponibile ora!",
+    "launch": "Lancio tra",
+    "joinComm": "Unisciti alla community"
+  }
+}

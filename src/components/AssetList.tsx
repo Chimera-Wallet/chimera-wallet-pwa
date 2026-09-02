@@ -1,9 +1,10 @@
 import { useContext, useEffect, useState } from 'react'
 import AssetRow from './AssetRow'
-import { ASSET_LIST, type AssetSymbol } from '../lib/assets'
+import { ASSET_LIST, getHomeAssetList, getDisplayTicker, type AssetSymbol } from '../lib/assets'
 import { CoinGeckoConversionService, type ConversionRateResult } from '../lib/coingecko/service'
 import { consoleError } from '../lib/logs'
 import { ConfigContext } from '../providers/config'
+import { useTranslation } from 'react-i18next'
 
 // Filter icon component
 const FilterIcon = () => (
@@ -25,9 +26,15 @@ interface AssetListProps {
 export default function AssetList({ balances = [], onAssetClick }: AssetListProps) {
   const { config } = useContext(ConfigContext)
   const currency = config.fiat.toLowerCase()
+  const {t} = useTranslation()
 
   const [prices, setPrices] = useState<ConversionRateResult>({})
   const [loading, setLoading] = useState(true)
+
+  const balancesBySymbol = Object.fromEntries(balances.map((b) => [b.symbol, b.balance])) as Partial<
+    Record<AssetSymbol, number>
+  >
+  const homeAssetList = getHomeAssetList(balancesBySymbol)
 
   useEffect(() => {
     const fetchPrices = async () => {
@@ -90,7 +97,7 @@ export default function AssetList({ balances = [], onAssetClick }: AssetListProp
             fontWeight: 600,
           }}
         >
-          Assets
+          {t('lib.transactions.assets')}
         </span>
         <button
           style={{
@@ -126,24 +133,29 @@ export default function AssetList({ balances = [], onAssetClick }: AssetListProp
             Loading prices...
           </div>
         ) : (
-          ASSET_LIST.map((asset, index) => {
+          homeAssetList.map((asset, index) => {
             const symbol = asset.symbol as AssetSymbol
             const balance = getBalance(symbol)
             const priceData = getPriceData(asset.symbol)
-            const balanceFiat = balance * priceData.rate
+            // No defined price means no fiat figure. CEXT is currently mapped to
+            // bitcoin in lib/coingecko/mapping.ts as a placeholder, so converting
+            // here would price it at bitcoin's rate — better to show nothing
+            // until a real CEXT price source exists.
+            const balanceFiat = asset.noMarketData ? undefined : balance * priceData.rate
 
             return (
               <AssetRow
                 key={asset.symbol}
                 symbol={asset.symbol}
+                ticker={getDisplayTicker(asset.symbol)}
                 name={asset.name}
                 balance={balance}
                 balanceFiat={balanceFiat}
                 currency={config.fiat}
-                percentChange={priceData.change || 0}
+                percentChange={asset.noMarketData ? undefined : priceData.change}
                 badge={asset.comingSoon ? 'Coming Soon' : undefined}
                 onClick={!asset.comingSoon && onAssetClick ? () => onAssetClick(symbol) : undefined}
-                isLast={index === ASSET_LIST.length - 1}
+                isLast={index === homeAssetList.length - 1}
               />
             )
           })

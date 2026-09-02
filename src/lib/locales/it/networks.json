@@ -1,0 +1,59 @@
+{
+  "select": "Seleziona rete",
+  "arkade": {
+    "description": "Trasferimenti Bitcoin istantanei a basse commissioni"
+  },
+  "lightning": {
+    "description": "Pagamenti rapidi tramite Lightning Network"
+  },
+  "bitcoin": {
+    "onChain": "Rete nativa",
+    "description": "Transazioni Bitcoin on-chain"
+  },
+  "bank": {
+    "bank": "Bonifico bancario",
+    "description": "Trasferimenti bancari tradizionali"
+  },
+  "browser": {
+    "welcomeMessage": "Benvenuto su Arkade 👾",
+    "compatibilityIssue": "Non funziona in questo browser.",
+    "copyLink": "Copia il link qui sotto",
+    "openBrowserPrompt": "Apri Safari, Chrome o il tuo browser",
+    "pastePrompt": "Incolla il link e vai",
+    "copied": "Copiato",
+    "excitedCopy": "Copiato!",
+    "copyLinkPrompt": "Copia link",
+
+    "safariShare": "Tocca l'icona Condividi nella barra degli strumenti di Safari, quindi seleziona 'Aggiungi alla schermata Home'.",
+    "chromeShare": "Tocca l'icona Condividi nella barra degli indirizzi di Chrome, quindi seleziona 'Aggiungi alla schermata Home'.",
+    "firefoxShare": "Tocca l'icona del menu in Firefox, quindi seleziona 'Aggiungi alla schermata Home'. Per il supporto completo, apri questa pagina in Safari.",
+    "edgeShare": "Tocca l'icona del menu in Edge, quindi seleziona 'Aggiungi alla schermata Home'. Per il supporto completo, apri questa pagina in Safari.",
+    "defaultShare": "Tocca l'icona Condividi, quindi seleziona 'Aggiungi alla schermata Home'. Per il supporto completo, apri questa pagina in Safari.",
+
+    "installDescr": "Tocca 'Installa' per aggiungere Chimera alla schermata Home.",
+    "install": "Installa"
+  },
+
+  "transactions": {
+    "viewAll": "Visualizza tutte le transazioni",
+    "seeAll": "Vedi tutte le transazioni",
+    "allTransactions": "Tutte le transazioni",
+
+    "completeBoarding": "Completa il boarding",
+    "settleTransaction": "Regola la transazione",
+    "settling": "Regolazione in corso...",
+    "processingBoarding": "Elaborazione della tua transazione di boarding...",
+    "settlingTransaction": "Regolazione della transazione...",
+    "boardingExpired": "La transazione di boarding è scaduta.",
+    "onchainUnconfirmed": "Transazione on-chain non confermata. Attendi la conferma.",
+    "onboardConfirmed": "Transazione di onboarding confermata on-chain.",
+    "transactionSettledSucc": "Transazione regolata con successo",
+    "resend": "Invia di nuovo",
+    "reminder": "Aggiungi promemoria",
+    "transaction": "Transazione",
+    "pendingBoarding": "Boarding in sospeso",
+    "preconfirmed": "Preconfermata",
+    "boarding": "Boarding",
+    "offchain": "Off-chain"
+  }
+}

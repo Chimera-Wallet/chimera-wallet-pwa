@@ -22,6 +22,7 @@ import {
   getOffchainTxURL,
   getAssetURL,
 } from '../lib/explorers'
+import { useTranslation } from 'react-i18next'
 
 export interface DetailsProps {
   address?: string
@@ -32,9 +33,12 @@ export interface DetailsProps {
   direction?: string
   expiry?: string
   fees?: number
+  fundedTxid?: string
   invoice?: string
   isOffchainTx?: boolean
   satoshis?: number
+  spendTxid?: string
+  spendLabel?: string
   status?: string
   swapId?: string
   total?: number
@@ -47,6 +51,7 @@ export interface DetailsProps {
 export default function Details({ details }: { details?: DetailsProps }) {
   const { config, useFiat } = useContext(ConfigContext)
   const { toFiat } = useContext(FiatContext)
+  const {t} = useTranslation()
 
   if (!details) return <></>
 
@@ -59,9 +64,12 @@ export default function Details({ details }: { details?: DetailsProps }) {
     destination,
     expiry,
     fees,
+    fundedTxid,
     invoice,
     isOffchainTx,
     satoshis,
+    spendTxid,
+    spendLabel,
     status,
     swapId,
     txid,
@@ -103,22 +111,24 @@ export default function Details({ details }: { details?: DetailsProps }) {
       : undefined
 
   const data: TableData = [
-    ['Address', address, <TypeIcon key='address-icon' />],
-    ['Arknote', arknote, <NotesIcon key='notes-icon' small />],
-    ['Invoice', invoice, <TypeIcon key='invoice-icon' />],
-    ['Swap ID', swapId, <InfoIcon key='swap-id-icon' />],
-    ['Destination', destination, <TypeIcon key='destination-icon' />],
-    ['Transaction ID', txid, <HashIcon key='txid-icon' />, showTxidLink ? txidOnClick : undefined],
-    ['Asset ID', assetId, <InfoIcon key='asset-id-icon' />, assetIdOnClick],
-    ['Direction', direction, <DirectionIcon key='direction-icon' />],
-    ['Type', type, <TypeIcon key='type-icon' />],
-    ['Status', status, <StatusIcon key='status-icon' />],
-    ['When', when, <WhenIcon key='when-icon' />],
-    ['Date', date, <DateIcon key='date-icon' />],
-    ['Expiry', expiry, <DateIcon key='expiry-icon' />],
-    ['Amount', formatAmount(satoshis), <AmountIcon key='amount-icon' />],
-    ['Network fees', formatAmount(fees), <FeesIcon key='fees-icon' />],
-    ['Total', formatAmount(total), <TotalIcon key='total-icon' />],
+    [t('components.details.addr'), address, <TypeIcon key='address-icon' />],
+    [t('components.details.arkNote'), arknote, <NotesIcon key='notes-icon' small />],
+    [t('components.details.inv'), invoice, <TypeIcon key='invoice-icon' />],
+    [t('components.details.swapId'), swapId, <InfoIcon key='swap-id-icon' />],
+    [t('components.details.dest'), destination, <TypeIcon key='destination-icon' />],
+    [t('components.details.transId'), txid, <HashIcon key='txid-icon' />, showTxidLink ? txidOnClick : undefined],
+    [t('components.details.transId'), fundedTxid, <HashIcon key='funded-txid-icon' />],
+    [spendLabel ?? t('components.details.transId'), spendTxid, <HashIcon key='spend-txid-icon' />],
+    [t('components.details.assId'), assetId, <InfoIcon key='asset-id-icon' />, assetIdOnClick],
+    [t('components.details.dir'), direction, <DirectionIcon key='direction-icon' />],
+    [t('components.details.ty'), type, <TypeIcon key='type-icon' />],
+    [t('components.details.stat'), status, <StatusIcon key='status-icon' />],
+    [t('components.details.when'), when, <WhenIcon key='when-icon' />],
+    [t('components.details.date'), date, <DateIcon key='date-icon' />],
+    [t('components.details.exp'), expiry, <DateIcon key='expiry-icon' />],
+    [t('components.details.am'), formatAmount(satoshis), <AmountIcon key='amount-icon' />],
+    [t('components.details.netFee'), formatAmount(fees), <FeesIcon key='fees-icon' />],
+    [t('components.details.total'), formatAmount(total), <TotalIcon key='total-icon' />],
   ]
 
   return <Table data={data} />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import Text, { TextSecondary } from './Text'
 import { prettyLongText } from '../lib/format'
 import ChevronDownIcon from '../icons/ChevronDown'
@@ -12,6 +12,7 @@ import CheckMarkIcon from '../icons/CheckMark'
 import { useToast } from './Toast'
 import Focusable from './Focusable'
 import { hapticSubtle } from '../lib/haptics'
+import { useTranslation } from 'react-i18next'
 
 interface ExpandAddressesProps {
   bip21uri: string
@@ -34,6 +35,8 @@ export default function ExpandAddresses({
   const [expand, setExpand] = useState(false)
 
   const { toast } = useToast()
+
+  const {t} = useTranslation()
 
   useEffect(() => {
     const handleArrowDown = (event: KeyboardEvent) => {
@@ -92,7 +95,7 @@ export default function ExpandAddresses({
       <Focusable onEnter={handleExpand}>
         <Shadow testId='expand-addresses'>
           <FlexRow between onClick={handleExpand}>
-            <Text>Copy address</Text>
+            <Text>{t('common.general.copyAddress')}</Text>
             {expand ? <ChevronUpIcon /> : <ChevronDownIcon />}
           </FlexRow>
         </Shadow>
@@ -100,9 +103,9 @@ export default function ExpandAddresses({
       {expand ? (
         <div style={{ padding: '1rem 0 0 0.5rem', width: '100%' }}>
           <FlexCol gap='0.21rem'>
-            {boardingAddr ? <ExpandLine testId='btc' title='BTC address' value={boardingAddr} /> : null}
-            {offchainAddr ? <ExpandLine testId='ark' title='Arkade address' value={offchainAddr} /> : null}
-            {invoice ? <ExpandLine testId='invoice' title='Lightning invoice' value={invoice} /> : null}
+            {boardingAddr ? <ExpandLine testId='btc' title={t('components.expandAddr.btc')} value={boardingAddr} /> : null}
+            {offchainAddr ? <ExpandLine testId='ark' title={t('components.expandAddr.ark')} value={offchainAddr} /> : null}
+            {invoice ? <ExpandLine testId='invoice' title={t('components.expandAddr.light')} value={invoice} /> : null}
             {lnurl ? <ExpandLine testId='lnurl' title='LNURL' value={lnurl} /> : null}
           </FlexCol>
         </div>

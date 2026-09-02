@@ -9,11 +9,12 @@ import { WalletContext } from '../../providers/wallet'
 import { isBiometricsSupported, registerUser } from '../../lib/biometrics'
 import { consoleError } from '../../lib/logs'
 import { hapticSubtle } from '../../lib/haptics'
-import { getPrivateKey, setPrivateKey, noUserDefinedPassword, isValidPassword } from '../../lib/privateKey'
-import { hasMnemonic, getMnemonic, setMnemonic } from '../../lib/mnemonic'
+import { noUserDefinedPassword, isValidPassword } from '../../lib/privateKey'
+import { reencryptSecret } from '../../lib/lock'
 import { defaultPassword } from '../../lib/constants'
 import NeedsPassword from '../../components/NeedsPassword'
 import { OptionsContext } from '../../providers/options'
+import {useTranslation} from 'react-i18next' 
 
 export default function Biometric() {
   const { updateWallet, wallet } = useContext(WalletContext)
@@ -32,27 +33,16 @@ export default function Biometric() {
     })
   }, [])
 
+  const {t} = useTranslation() 
+
   // Validate password when set
   useEffect(() => {
     if (!currentPassword) return
     isValidPassword(currentPassword).then((isValid) => {
-      setError(isValid ? '' : 'Invalid password')
+      setError(isValid ? '' : t('common.general.invalidPass'))
       setAuthenticated(isValid)
     })
   }, [currentPassword])
-
-  // Re-encrypt the wallet secret from one password to another. The secret is
-  // the mnemonic when present (the primary store that lock detection and
-  // unlockWallet read), otherwise the raw private key. Mirrors Password.tsx.
-  const reencryptSecret = async (fromPassword: string, toPassword: string) => {
-    if (hasMnemonic()) {
-      const mnemonic = await getMnemonic(fromPassword)
-      await setMnemonic(mnemonic, toPassword)
-    } else {
-      const privateKey = await getPrivateKey(fromPassword)
-      await setPrivateKey(privateKey, toPassword)
-    }
-  }
 
   const handleToggle = async () => {
     hapticSubtle()
@@ -66,7 +56,7 @@ export default function Biometric() {
         goBack()
       } catch (err) {
         consoleError(err, 'Failed to disable biometrics')
-        setError('Failed to disable biometrics. Please try again.')
+        setError(t('errors.biometric.failedDisable'))
       }
     } else {
       // Enable biometrics - re-encrypt the secret with the biometric password
@@ -78,7 +68,7 @@ export default function Biometric() {
         goBack()
       } catch (err) {
         consoleError(err, 'Failed to enable biometrics')
-        setError('Failed to enable biometrics. Please try again.')
+        setError(t('errors.biometric.failedEnable'))
       }
     }
   }
@@ -90,21 +80,21 @@ export default function Biometric() {
 
   return (
     <>
-      <Header text='Biometric Authentication' back />
+      <Header text={t('settings.biometric.bioAuth')}back />
       <Content>
         <Padded>
           <FlexCol gap='1.5rem'>
             {!biometricsSupported ? (
-              <TextSecondary>Biometric authentication is not supported on this device</TextSecondary>
+              <TextSecondary>{t('settings.biometric.bioUnsupported')}</TextSecondary>
             ) : (
               <Toggle
                 checked={biometricsEnabled}
                 onClick={handleToggle}
-                text='Use Biometrics'
+                text={t('settings.biometric.useBio')}
                 subtext={
                   biometricsEnabled
-                    ? 'Biometric authentication is active. Disabling it will remove your current lock — you can then set a password from Advanced Settings.'
-                    : 'Enable fingerprint or face recognition to unlock your wallet. This will replace your current password.'
+                    ? t('settings.biometric.disableWarn')
+                    : t('settings.biometric.enableFingerFace')
                 }
               />
             )}

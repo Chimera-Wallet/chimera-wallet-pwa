@@ -1,0 +1,58 @@
+{
+  "arkade": {
+    "description": "Transferencias instantáneas de Bitcoin con bajas comisiones"
+  },
+  "lightning": {
+    "description": "Pagos rápidos mediante Lightning Network"
+  },
+  "bitcoin": {
+    "onChain": "Cadena Nativa",
+    "description": "Transacciones de Bitcoin en cadena"
+  },
+  "bank": {
+    "bank": "Transferencia bancaria",
+    "description": "Transferencias bancarias tradicionales"
+  },
+  "browser": {
+    "welcomeMessage": "Bienvenido a Arkade 👾",
+    "compatibilityIssue": "No funcionará en este navegador.",
+    "copyLink": "Copia el enlace de abajo",
+    "openBrowserPrompt": "Abre Safari, Chrome o tu navegador",
+    "pastePrompt": "Pega el enlace y accede",
+    "copied": "Copiado",
+    "excitedCopy": "¡Copiado!",
+    "copyLinkPrompt": "Copiar enlace",
+
+    "safariShare": "Toca el icono Compartir en la barra de herramientas de Safari y luego selecciona 'Añadir a pantalla de inicio'.",
+    "chromeShare": "Toca el icono Compartir en la barra de direcciones de Chrome y luego selecciona 'Añadir a pantalla de inicio'.",
+    "firefoxShare": "Toca el icono de menú en Firefox y luego selecciona 'Añadir a pantalla de inicio'. Para una compatibilidad completa, abre esta página en Safari.",
+    "edgeShare": "Toca el icono de menú en Edge y luego selecciona 'Añadir a pantalla de inicio'. Para una compatibilidad completa, abre esta página en Safari.",
+    "defaultShare": "Toca el icono Compartir y luego selecciona 'Añadir a pantalla de inicio'. Para una compatibilidad completa, abre esta página en Safari.",
+
+    "installDescr": "Toca 'Instalar' para añadir Chimera a tu pantalla de inicio.",
+    "install": "Instalar"
+  },
+
+  "transactions": {
+    "viewAll": "Ver todas las transacciones",
+    "seeAll": "Ver todas las transacciones",
+    "allTransactions": "Todas las transacciones",
+
+    "completeBoarding": "Completar incorporación",
+    "settleTransaction": "Liquidar transacción",
+    "settling": "Liquidando...",
+    "processingBoarding": "Procesando tu transacción de incorporación...",
+    "settlingTransaction": "Liquidando transacción...",
+    "boardingExpired": "La transacción de incorporación ha expirado.",
+    "onchainUnconfirmed": "La transacción en cadena no está confirmada. Por favor, espera la confirmación.",
+    "onboardConfirmed": "La transacción de incorporación fue confirmada en cadena.",
+    "transactionSettledSucc": "Transacción liquidada correctamente",
+    "resend": "Reenviar",
+    "reminder": "Añadir recordatorio",
+    "transaction": "Transacción",
+    "pendingBoarding": "Incorporación pendiente",
+    "preconfirmed": "Preconfirmado",
+    "boarding": "Incorporación",
+    "offchain": "Fuera de cadena"
+  }
+}

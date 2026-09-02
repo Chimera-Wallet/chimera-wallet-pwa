@@ -10,7 +10,7 @@ import Content from '../../../components/Content'
 import FlexCol from '../../../components/FlexCol'
 import Header from '../../../components/Header'
 import Padded from '../../../components/Padded'
-import Text, { TextLabel, TextSecondary } from '../../../components/Text'
+import Text, { TextSecondary } from '../../../components/Text'
 import Button from '../../../components/Button'
 import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import Shadow from '../../../components/Shadow'
@@ -21,7 +21,7 @@ import NetworkSelector from '../../../components/NetworkSelector'
 import InlineAmountInput from '../../../components/InlineAmountInput'
 import BankTransferValidationMessages from '../../../components/BankTransferValidation'
 import WaitingForRound from '../../../components/WaitingForRound'
-import { type AssetSymbol } from '../../../lib/assets'
+import { BANK_TRANSFER_ASSET_LIST, type AssetSymbol } from '../../../lib/assets'
 import { TRANSFER_METHOD, type TransferMethod } from '../../../lib/transferMethods'
 import TransactionsIcon from '../../../icons/Transactions'
 import { BankCircuitSelector, BankCurrencySelector } from '../../../components/BankDetails'
@@ -32,7 +32,7 @@ import { FiatContext } from '../../../providers/fiat'
 import { TxResultContext } from '../../../providers/txResult'
 import { sendOffChain } from '../../../lib/asp'
 import { prettyNumber, fromSatoshis } from '../../../lib/format'
-import { createBankWithdraw } from '../../../providers/chimera'
+import { createBankWithdraw } from '../../../providers/bankTransfer'
 import { addOrderToHistory } from '../../../lib/bankOrderHistory'
 import { useBankTransferValidation } from '../../../hooks/useBankTransferValidation'
 import {
@@ -49,6 +49,8 @@ import { getUserEmailForBankTransfer } from '../../../lib/kyc'
 import { AspContext } from '@/providers/asp'
 import rightIcon from '../../../../public/images/icons/ Right.png'
 import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
+import {useTranslation} from 'react-i18next'
+
 
 // Company Ark wallet address from environment — set VITE_BANK_WITHDRAW_WALLET in .env files
 const COMPANY_WALLET = import.meta.env.VITE_BANK_WITHDRAW_WALLET as string
@@ -77,6 +79,13 @@ export default function BankSend() {
   const [accountHolderName, setAccountHolderName] = useState<string>('')
   const [accountNumber, setAccountNumber] = useState<string>('')
   const [routingNumber, setRoutingNumber] = useState<string>('')
+  // SWIFT structured beneficiary address — required by IBSettle's
+  // international payment rail (see bankTransferConfig.ts::BankDataSwift)
+  const [country, setCountry] = useState<string>('')
+  const [streetName, setStreetName] = useState<string>('')
+  const [buildingNumber, setBuildingNumber] = useState<string>('')
+  const [townName, setTownName] = useState<string>('')
+  const [postCode, setPostCode] = useState<string>('')
 
   // API state
   const [loading, setLoading] = useState(false)
@@ -89,9 +98,11 @@ export default function BankSend() {
 
   const [availableBalance, setAvailableBalance] = useState(0)
   const { aspInfo } = useContext(AspContext)
-  
+  const { t } = useTranslation()
+
+
   const smartSetError = (str: string) => {
-    setError(str === '' ? (aspInfo.unreachable ? 'Arkade server unreachable' : '') : str)
+    setError(str === '' ? (aspInfo.unreachable ? t('errors.send.arkade.server') : '') : str)
   }
 
   const handleOrderHistory = () => {
@@ -115,11 +126,17 @@ export default function BankSend() {
       .catch(smartSetError)
   }, [balance])
 
+  // sepa is the only circuit where bank details can be skipped for a
+  // KYC-verified customer — ramp-system fills in their IBAN from ID-Flow
+  // server-side. swift/us always need the form (BIC/address, or account +
+  // routing number, aren't things KYC provides).
+  const skipBankDetails = validation.kycVerified && circuit === 'sepa'
+
   const validateBankDetails = (): BankData | null => {
     switch (circuit) {
       case 'sepa':
         if (!iban || !accountHolderName) {
-          setError('Please enter your IBAN and account holder name')
+          setError(t('errors.send.bank.ibanName'))
           return null
         }
         return {
@@ -129,30 +146,36 @@ export default function BankSend() {
         }
 
       case 'swift':
-        if (!bic || !accountHolderName || !accountNumber) {
-          setError('Please enter your BIC/SWIFT code, account holder name, and account number')
+        if (!iban || !bic || !accountHolderName || !country || !streetName || !buildingNumber || !townName || !postCode) {
+          setError('Please fill in all SWIFT transfer fields, including your address')
           return null
         }
         return {
           circuit: 'swift',
+          destinationBankAddress: iban,
           bic,
           accountHolderName,
-          accountNumber,
+          country,
+          streetName,
+          buildingNumber,
+          townName,
+          postCode,
         }
 
       case 'us':
-        if (!accountNumber || !routingNumber) {
-          setError('Please enter your account number and routing number')
+        if (!accountNumber || !routingNumber || !accountHolderName) {
+          setError('Please enter your account holder name, account number, and routing number')
           return null
         }
         return {
           circuit: 'us',
           accountNumber,
           routingNumber,
+          accountHolderName,
         }
 
       default:
-        setError('Invalid transfer method')
+        setError(t('errors.send.bank.invalidTransfer'))
         return null
     }
   }
@@ -166,10 +189,7 @@ export default function BankSend() {
       return
     }
 
-    // When KYC email is present, skip bank detail collection entirely
-    const skipBankDetails = validation.kycVerified
-
-    let bankData
+    let bankData: BankData | undefined
     if (!skipBankDetails) {
       const validated = validateBankDetails()
       if (!validated) return
@@ -185,55 +205,60 @@ export default function BankSend() {
 
       // Check balance before doing anything
       if (balance < requiredSats) {
+        // The message has to be assigned to state — building the string alone
+        // left the screen silent, so the button just appeared to do nothing.
         setError(
-          `Insufficient balance. You need ~${prettyNumber(fromSatoshis(requiredSats), 8)} BTC but only have ${prettyNumber(fromSatoshis(balance), 8)} BTC`,
+          t('errors.insufficientBalance', {
+            required: prettyNumber(fromSatoshis(requiredSats), 8),
+            balance: prettyNumber(fromSatoshis(balance), 8),
+          }),
         )
         return
       }
 
       if (!svcWallet) {
-        setError('Wallet not ready')
+        setError(t('errors.send.wallet.notReady'))
         return
       }
 
       if (!COMPANY_WALLET) {
-        setError('Withdrawal wallet not configured')
+        setError(t('errors.send.wallet.notConfigured'))
         return
       }
 
+      const email = getUserEmailForBankTransfer()
+
       // Register the withdrawal order with the backend
-      const response = await createBankWithdraw({
-        email: getUserEmailForBankTransfer(),
-        fromAmount: requiredSats,
-        fromAsset: 'BTC-ARK',
-        toAsset: currency,
+      const { order } = await createBankWithdraw({
+        asset: 'BTC',
+        fiatCurrency: currency,
+        email,
+        cryptoAmountSats: requiredSats,
         circuit,
         bankData,
       })
 
-      if (response.order) {
-        setBankSendInfo({
-          currency,
-          circuit,
-          amount: numAmount,
-          bankData,
-          order: response.order,
-        })
-        setCurrentBankOrderType('send')
-        addOrderToHistory(response.order, 'send')
+      setBankSendInfo({
+        currency,
+        circuit,
+        amount: numAmount,
+        bankData,
+        order,
+      })
+      setCurrentBankOrderType('send')
+      addOrderToHistory(order, 'send')
 
-        // Send BTC-ARK to the company wallet to fund the withdrawal
-        const companyWallet = COMPANY_WALLET
-        setSending(true)
-        await sendOffChain(svcWallet, requiredSats, companyWallet)
+      // Send BTC-ARK to the company wallet to fund the withdrawal
+      const companyWallet = COMPANY_WALLET
+      setSending(true)
+      await sendOffChain(svcWallet, requiredSats, companyWallet)
 
-        // Success popup, then land on the order-status screen to track the payout
-        notifyResult(true, 'Withdrawal submitted').then(() => navigate(Pages.BankOrderStatus))
-      }
+      // Success popup, then land on the order-status screen to track the payout
+      notifyResult(true, t('common.notifications.bank.submissionSuccess')).then(() => navigate(Pages.BankOrderStatus))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create withdrawal order')
+      setError(err instanceof Error ? err.message : t('errors.send.bank.failedWithdrawal'))
       setSending(false)
-      notifyResult(false, 'Withdrawal failed')
+      notifyResult(false, t('common.notifications.bank.submissionFailed'))
     } finally {
       setLoading(false)
     }
@@ -251,7 +276,7 @@ export default function BankSend() {
                   <Text tiny color='neutral-500'>
                     IBAN
                   </Text>
-         
+
                 <input
                   type='text'
                   value={iban}
@@ -273,7 +298,7 @@ export default function BankSend() {
               <Shadow input>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
                   <Text tiny color='neutral-500'>
-                    Account Holder Name
+                    {t('common.accountName')}
                   </Text>
                 <input
                   type='text'
@@ -298,75 +323,40 @@ export default function BankSend() {
       case 'swift':
         return (
           <>
-            <FlexCol gap='0.5rem'>
-              <Shadow input>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
-                  <Text tiny color='neutral-500'>
-                    BIC/SWIFT
-                  </Text>
-                <input
-                  type='text'
-                  value={bic}
-                  onChange={(e) => setBic(e.target.value.toUpperCase())}
-                  placeholder='DEUTDEDB'
-                  style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--white)',
-                    fontSize: '1rem',
-                    outline: 'none',
-                  }}
-                />
-                </div>
-              </Shadow>
-            </FlexCol>
-            <FlexCol gap='0.5rem'>
-              <Shadow input>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
-                  <Text tiny color='neutral-500'>
-                    Account Holder Name
-                  </Text>
-                <input
-                  type='text'
-                  value={accountHolderName}
-                  onChange={(e) => setAccountHolderName(e.target.value)}
-                  placeholder='John Doe'
-                  style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--white)',
-                    fontSize: '1rem',
-                    outline: 'none',
-                  }}
-                />
-                </div>
-              </Shadow>
-            </FlexCol>
-            <FlexCol gap='0.5rem'>
-              <Shadow input>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
-                  <Text tiny color='neutral-500'>
-                    Account Number
-                  </Text>
-                <input
-                  type='text'
-                  value={accountNumber}
-                  onChange={(e) => setAccountNumber(e.target.value)}
-                  placeholder='123456789'
-                  style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--white)',
-                    fontSize: '1rem',
-                    outline: 'none',
-                  }}
-                />
-                </div>
-              </Shadow>
-            </FlexCol>
+            {([
+              ['IBAN', iban, setIban, 'DE89 3704 0044 0532 0130 00', true],
+              ['BIC/SWIFT', bic, setBic, 'DEUTDEFF', true],
+              ['Account Holder Name', accountHolderName, setAccountHolderName, 'John Doe', false],
+              ['Country (ISO code)', country, setCountry, 'DE', true],
+              ['Street Name', streetName, setStreetName, 'Musterstrasse', false],
+              ['Building Number', buildingNumber, setBuildingNumber, '1', false],
+              ['Town', townName, setTownName, 'Frankfurt', false],
+              ['Postal Code', postCode, setPostCode, '60306', false],
+            ] as [string, string, (v: string) => void, string, boolean][]).map(([label, value, setValue, placeholder, upper]) => (
+              <FlexCol gap='0.5rem' key={label}>
+                <Shadow input>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
+                    <Text tiny color='neutral-500'>
+                      {label}
+                    </Text>
+                    <input
+                      type='text'
+                      value={value}
+                      onChange={(e) => setValue(upper ? e.target.value.toUpperCase() : e.target.value)}
+                      placeholder={placeholder}
+                      style={{
+                        width: '100%',
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--white)',
+                        fontSize: '1rem',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                </Shadow>
+              </FlexCol>
+            ))}
           </>
         )
 
@@ -375,9 +365,32 @@ export default function BankSend() {
           <>
             <FlexCol gap='0.5rem'>
               <Shadow input>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
+                  <Text tiny color='neutral-500'>
+                    {t('common.accountName')}
+                  </Text>
+                  <input
+                    type='text'
+                    value={accountHolderName}
+                    onChange={(e) => setAccountHolderName(e.target.value)}
+                    placeholder='John Doe'
+                    style={{
+                      width: '100%',
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--white)',
+                      fontSize: '1rem',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+              </Shadow>
+            </FlexCol>
+            <FlexCol gap='0.5rem'>
+              <Shadow input>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
                   <Text tiny color='neutral-500'>
-                    Account Number
+                    {t('common.accountNumber')}
                   </Text>
                 <input
                   type='text'
@@ -400,7 +413,7 @@ export default function BankSend() {
               <Shadow input>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
                   <Text tiny color='neutral-500'>
-                    Routing Number
+                    {t('common.routingNumber')}
                   </Text>
                 <input
                   type='text'
@@ -433,22 +446,20 @@ export default function BankSend() {
       case 'sepa':
         return Boolean(iban && accountHolderName)
       case 'swift':
-        return Boolean(bic && accountHolderName && accountNumber)
+        return Boolean(iban && bic && accountHolderName && country && streetName && buildingNumber && townName && postCode)
       case 'us':
-        return Boolean(accountNumber && routingNumber)
+        return Boolean(accountNumber && routingNumber && accountHolderName)
       default:
         return false
     }
   }
 
-  // When KYC email is present, bank details are not needed regardless of amount
-  const skipBankDetails = validation.kycVerified
   const canSubmit = validation.canProceed && (skipBankDetails || isBankDetailsComplete()) && !loading && !sending
 
   if (sending) {
     return (
       <>
-        <Header text='Send' />
+        <Header text= {t('common.general.send')} />
         <Content>
           <WaitingForRound />
         </Content>
@@ -463,7 +474,7 @@ export default function BankSend() {
         back={goBack}
         auxIcon={<TransactionsIcon />}
         auxFunc={handleOrderHistory}
-        auxAriaLabel='View order history'
+        auxAriaLabel= {t('common.orderHistory')}
       />
       <Content>
         <Padded>
@@ -477,6 +488,7 @@ export default function BankSend() {
               <div style={{ display: 'flex', justifyContent: 'center', }}>
                 <AssetSelector
                   label=''
+                  assets={BANK_TRANSFER_ASSET_LIST}
                   selected={selectedAsset}
                   onSelect={setSelectedAsset}
                   selectedBalance={availableBalance}
@@ -492,6 +504,7 @@ export default function BankSend() {
                 />
               </div>
             <NetworkSelector
+              assetSymbol={selectedAsset}
               label=''
               selected={selectedMethod}
               onSelect={(network) => {
@@ -516,8 +529,10 @@ export default function BankSend() {
             {circuit === 'swift' ? (
               <Info color='orange' icon = {<img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />} title={`SWIFT Transfer Fee: ${SWIFT_SEND_FEE} ${currency}`}>
                 <TextSecondary>
-                  A flat fee of {SWIFT_SEND_FEE} {currency} applies to all outgoing SWIFT withdrawals and will be
-                  deducted from the received amount.
+                  {t('common.notifications.bank.swiftFee', {
+                    fee: SWIFT_SEND_FEE,
+                    currency,
+                  })}
                 </TextSecondary>
               </Info>
             ) : null}
@@ -538,7 +553,7 @@ export default function BankSend() {
       </Content>
       <ButtonsOnBottom>
         <Button
-          label={loading ? 'Creating Order...' : 'Create Withdrawal'}
+          label={loading ? t('common.notifications.bank.creatingOrder') : t('common.notifications.bank.createWithdrawal')}
           onClick={handleCreateWithdraw}
           icon = {<img src = {rightIcon} alt = 'rightArrow' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)', marginLeft: '0.5rem'}} />}
           disabled={!canSubmit}

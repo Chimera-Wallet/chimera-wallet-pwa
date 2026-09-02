@@ -41,8 +41,10 @@ import { calcBatchLifetimeMs, calcNextRollover } from '../lib/wallet'
 import { hex } from '@scure/base'
 import * as secp from '@noble/secp256k1'
 import { ConfigContext } from './config'
-import { defaultPassword, getDelegateUrlForNetwork, maxPercentage } from '../lib/constants'
+import { defaultPassword, getDelegateUrl, isDelegationEnabled, maxPercentage } from '../lib/constants'
 import { setLoadingStatus } from '../lib/loadingStatus'
+import { assetSwapRepository, type WalletAssetSwap } from '../lib/swapRepository'
+
 
 // Thrown by initWallet when we refuse to boot the service worker because the
 // Arkade server is unreachable. Unlock.tsx inspects this to show a useful
@@ -60,6 +62,7 @@ import { AssetIconApprovalManager } from '../lib/assetIconApproval'
 import { IndexedDBStorageAdapter } from '@arkade-os/sdk/adapters/indexedDB'
 import { Indexer } from '../lib/indexer'
 import { IndexedDbSwapRepository, migrateToSwapRepository, Network } from '@arkade-os/boltz-swap'
+import { useTranslation } from 'react-i18next'
 
 const SERVICE_WORKER_ACTIVATION_TIMEOUT_MS = 5_000
 const MESSAGE_BUS_INIT_TIMEOUT_MS = 30_000
@@ -81,12 +84,30 @@ const defaultWallet: Wallet = {
 
 export type WalletAuthState = 'unknown' | 'passwordless' | 'locked' | 'authenticated'
 
+/**
+ * True when the wallet secret still decrypts with `defaultPassword`, i.e. the
+ * user never chose a lock. Shared by the boot check and `refreshAuthState` so
+ * both answer the question the same way.
+ */
+const detectPasswordState = async (): Promise<boolean> => {
+  if (hasMnemonic()) {
+    try {
+      await getMnemonic(defaultPassword)
+      return true // passwordless
+    } catch {
+      return false // has custom password
+    }
+  }
+  return noUserDefinedPassword()
+}
+
 interface WalletContextProps {
   initWallet: (credentials: { mnemonic?: string; privateKey?: Uint8Array }) => Promise<void>
   lockWallet: () => Promise<void>
   resetWallet: () => Promise<void>
   settlePreconfirmed: () => Promise<void>
   unlockWallet: (password: string) => Promise<void>
+  refreshAuthState: () => Promise<void>
   updateWallet: (w: Wallet | ((prev: Wallet) => Wallet)) => void
   isLocked: () => Promise<boolean>
   reloadWallet: (svcWallet?: ServiceWorkerWallet) => Promise<void>
@@ -95,6 +116,10 @@ interface WalletContextProps {
   walletLoaded: boolean
   svcWallet: ServiceWorkerWallet | undefined
   vtxoManager: IVtxoManager | undefined
+    /** Set by the asset-swaps provider, which owns the records. This provider
+   * merges them into `txs`; the dependency runs one way, so they travel up
+   * rather than being read back down. */
+  setAssetSwaps: (swaps: WalletAssetSwap[]) => void
   txs: Tx[]
   vtxos: { spendable: Vtxo[]; spent: Vtxo[] }
   balance: WalletBalance['total']
@@ -116,6 +141,7 @@ export const WalletContext = createContext<WalletContextProps>({
   resetWallet: () => Promise.resolve(),
   settlePreconfirmed: () => Promise.resolve(),
   unlockWallet: () => Promise.resolve(),
+  refreshAuthState: () => Promise.resolve(),
   updateWallet: () => {},
   reloadWallet: () => Promise.resolve(),
   restartWallet: () => Promise.resolve(),
@@ -133,6 +159,7 @@ export const WalletContext = createContext<WalletContextProps>({
   loadError: null,
   dismissLoadError: () => {},
   authState: 'unknown',
+  setAssetSwaps: () => {},
   txs: [],
   vtxos: { spendable: [], spent: [] },
   synced: false,
@@ -157,6 +184,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [synced, setSynced] = useState(false)
   const [vtxos, setVtxos] = useState<{ spendable: Vtxo[]; spent: Vtxo[] }>({ spendable: [], spent: [] })
   const [assetBalances, setAssetBalances] = useState<WalletBalance['assets']>([])
+  const [assetSwaps, setAssetSwaps] = useState<WalletAssetSwap[]>([])
+
 
   const [vtxoManager, setVtxoManager] = useState<IVtxoManager>()
 
@@ -174,6 +203,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const reinitInProgress = useRef(false)
   const initAbortRef = useRef<AbortController | null>(null)
   const reinitSvcWalletRef = useRef<((identity: Identity) => Promise<void>) | null>(null)
+  const {t} = useTranslation()
 
   // Each init gets its own AbortSignal; lock/reset aborts the current signal
   // with 'lock-reset' so stale paths can decide whether to tear down the SW.
@@ -259,25 +289,18 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     let cancelled = false
     setAuthState('unknown')
 
-    const detectPasswordState = async () => {
-      if (hasMnemonic()) {
-        try {
-          await getMnemonic(defaultPassword)
-          return true // passwordless
-        } catch {
-          return false // has custom password
-        }
-      }
-      return noUserDefinedPassword()
+    // This check is async (PBKDF2), so it can still be in flight when the wallet
+    // is booted with the real secret — during a restore, where the lock setup
+    // follows immediately. Never let a stale result downgrade an already
+    // authenticated session, or App would bounce the user back into the setup.
+    const applyDetected = (next: WalletAuthState) => {
+      if (cancelled) return
+      setAuthState((prev) => (prev === 'authenticated' ? prev : next))
     }
 
     detectPasswordState()
-      .then((noPassword) => {
-        if (!cancelled) setAuthState(noPassword ? 'passwordless' : 'locked')
-      })
-      .catch(() => {
-        if (!cancelled) setAuthState('locked')
-      })
+      .then((noPassword) => applyDetected(noPassword ? 'passwordless' : 'locked'))
+      .catch(() => applyDetected('locked'))
 
     return () => {
       cancelled = true
@@ -402,14 +425,14 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     const isFirstLoad = !hasLoadedOnce.current
     if (isFirstLoad) setLoadError(null)
     try {
-      if (isFirstLoad) setLoadingStatus('Fetching coins...')
+      if (isFirstLoad) setLoadingStatus(t('lib.wallet.fetchCoins'))
       const vtxos = await getVtxos(swWallet)
-      if (isFirstLoad) setLoadingStatus('Fetching transactions...')
+      if (isFirstLoad) setLoadingStatus(t('lib.wallet.fetchTrans'))
       const txs = await getTxHistory(swWallet)
-      if (isFirstLoad) setLoadingStatus('Updating balance...')
+      if (isFirstLoad) setLoadingStatus(t('lib.wallet.updBal'))
       const { total, assets } = await getBalance(swWallet)
       // prefetch asset metadata before triggering re-renders
-      if (isFirstLoad && assets.length > 0) setLoadingStatus('Loading asset metadata...')
+      if (isFirstLoad && assets.length > 0) setLoadingStatus(t('lib.wallet.loadingMeta'))
       for (const ab of assets) {
         const cached = assetMetadataCache.current.get(ab.assetId)
         if (cached && Date.now() - cached.cachedAt < ASSET_METADATA_TTL_MS) continue
@@ -437,7 +460,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       consoleError(err, 'Error reloading wallet')
       if (!hasLoadedOnce.current) {
-        setLoadError('Unable to load wallet data. Check your connection and try again.')
+        setLoadError(t('lib.wallet.unableLoadWall'))
       }
     }
   }
@@ -462,7 +485,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   ): Promise<boolean> => {
     const { arkServerUrl, esploraUrl, skipMigration = false, retryCount = 0, maxRetries = 2, delegatorUrl } = params
     try {
-      setLoadingStatus('Starting wallet...')
+      setLoadingStatus(t('lib.wallet.startWall'))
       const walletRepository = new IndexedDBWalletRepository()
       const contractRepository = new IndexedDBContractRepository()
 
@@ -513,7 +536,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       })
 
       if (!skipMigration) {
-        setLoadingStatus('Migrating data...')
+        setLoadingStatus(t('lib.wallet.migrateData'))
         try {
           const oldStorage = new IndexedDBStorageAdapter('arkade-service-worker')
           const walletStatus = await getMigrationStatus('wallet', oldStorage)
@@ -606,7 +629,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       // Renew expiring coins on startup (non-delegate mode only).
       // When delegation is enabled, the SDK's VtxoManager auto-delegates
       // via onContractEvent, so no wallet-side call is needed.
-      if (!config.delegate) {
+      if (!(config.delegate && isDelegationEnabled())) {
         vtxoMgr.renewVtxos().catch(() => {})
       }
       return true
@@ -620,7 +643,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       if (isTimeoutError && retryCount < maxRetries) {
         // exponential backoff: wait 1s, 2s, 4s, 8s, 16s for each retry
         const delay = Math.pow(2, retryCount) * 1000
-        setLoadingStatus('Retrying connection...')
+        setLoadingStatus(t('lib.wallet.retryConn'))
         consoleError(
           new Error(
             `Service worker activation timed out, retrying in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`,
@@ -661,7 +684,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     let identity: Identity
     let pubkey: string
 
-    const delegatorUrl = config.delegate ? getDelegateUrlForNetwork(network).url : undefined
+    const delegatorUrl = config.delegate && isDelegationEnabled() ? getDelegateUrl().url : undefined
 
     if (credentials.mnemonic) {
       const mnemonicIdentity = MnemonicIdentity.fromMnemonic(credentials.mnemonic, { isMainnet: isMainnet(network) })
@@ -686,8 +709,37 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       delegatorUrl,
     })
     if (!didInit) return
-    updateWallet({ ...wallet, network, pubkey })
+    // Functional update, not `{ ...wallet, ... }`. This runs after awaits, so the
+    // `wallet` captured in this closure can be older than what is actually in
+    // state — spreading it wrote a stale snapshot over the top and, because
+    // updateWallet also persists, wiped the newer fields from storage too.
+    // That is how enabling biometrics used to lose `lockedByBiometrics` and
+    // `passkeyId`: InitBiometric set them, then unlockWallet -> initWallet
+    // landed here and overwrote them, leaving a wallet encrypted under the
+    // passkey password but with no record that a passkey existed.
+    updateWallet((prev) => ({ ...prev, network, pubkey }))
     setInitialized(true)
+    // Booting the wallet means the caller held the real secret, so the session
+    // is authenticated. InitConnect calls this directly rather than going
+    // through unlockWallet; without this the state stayed at whatever the boot
+    // check found. After onboarding re-encrypts with the chosen password that
+    // stale 'passwordless' made App bounce the user straight back into the lock
+    // setup, which then tried to decrypt with defaultPassword and threw.
+    setAuthState('authenticated')
+  }
+
+  /**
+   * Re-derive the auth state from what is actually in storage. Needed because
+   * the boot check keys off `wallet.pubkey`, which does not change when the
+   * secret is re-encrypted under a new password.
+   */
+  const refreshAuthState = async () => {
+    if (!wallet.pubkey) return setAuthState('authenticated')
+    try {
+      setAuthState((await detectPasswordState()) ? 'passwordless' : 'locked')
+    } catch {
+      setAuthState('locked')
+    }
   }
 
   const unlockWallet = async (password: string) => {
@@ -719,7 +771,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     const identity = svcWallet.identity as Identity
     const arkServerUrl = aspInfo.url
     const esploraUrl = getRestApiExplorerURL(aspInfo.network as NetworkName) ?? ''
-    const delegatorUrl = delegateEnabled ? getDelegateUrlForNetwork(aspInfo.network as Network).url : undefined
+    const delegatorUrl = delegateEnabled && isDelegationEnabled() ? getDelegateUrl().url : undefined
     await initSvcWorkerWallet({
       identity,
       arkServerUrl,
@@ -741,7 +793,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     try {
       const arkServerUrl = aspInfo.url
       const esploraUrl = getRestApiExplorerURL(aspInfo.network as NetworkName) ?? ''
-      const delegatorUrl = config.delegate ? getDelegateUrlForNetwork(aspInfo.network as Network).url : undefined
+      const delegatorUrl = config.delegate && isDelegationEnabled() ? getDelegateUrl().url : undefined
       const initialized = await initSvcWorkerWallet({
         identity,
         arkServerUrl,
@@ -788,6 +840,12 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     removeServiceWorkerMessageHandler()
     if (!svcWallet) throw new Error('Service worker not initialized')
     await clearStorage()
+    // swap records outlive localStorage now: without this a reset leaves the
+    // previous wallet's swaps in the activity list. Never fatal — a reset that
+    // aborted here would leave the wallet itself half-cleared, which is worse
+    // than stale swap rows.
+    await assetSwapRepository.clear().catch((err) => consoleError(err, 'failed to clear swap records'))
+    setAssetSwaps([])
     await svcWallet.clear()
     await svcWallet.walletRepository.clear()
     await svcWallet.contractRepository.clear()
@@ -833,6 +891,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         resetWallet,
         settlePreconfirmed,
         unlockWallet,
+        refreshAuthState,
         updateWallet,
         wallet,
         walletLoaded,
@@ -841,6 +900,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         lockWallet,
         restartWallet,
         txs,
+        setAssetSwaps,
         balance,
         assetBalances,
         assetMetadataCache: assetMetadataCache.current,

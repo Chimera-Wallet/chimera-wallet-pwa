@@ -11,14 +11,16 @@ import { SettingsOptions, Themes } from '../../lib/types'
 import { OptionsContext } from '../../providers/options'
 import Focusable from '../../components/Focusable'
 import { hapticSubtle } from '../../lib/haptics'
+import {useTranslation} from 'react-i18next'
 
 export default function General() {
   const { config, systemTheme } = useContext(ConfigContext)
   const { setOption } = useContext(OptionsContext)
+  const {t} = useTranslation()
 
   const Row = ({ option, value }: { option: SettingsOptions; value: string }) => (
     <Focusable
-      ariaLabel={`${option} settings`}
+      ariaLabel={t('settings.general.settingsOpt', {opt: option})}
       onEnter={() => {
         hapticSubtle()
         setOption(option)
@@ -47,7 +49,7 @@ export default function General() {
 
   return (
     <>
-      <Header text='App Settings' back />
+      <Header text={t('settings.general.appSett')} back />
       <Content>
         <Padded>
           <FlexCol gap='0'>
@@ -60,7 +62,7 @@ export default function General() {
             <hr />
             <Row option={SettingsOptions.Display} value={config.currencyDisplay} />
             <hr />
-            <Row option={SettingsOptions.Haptics} value={config.haptics ? 'On' : 'Off'} />
+            <Row option={SettingsOptions.Haptics} value={config.haptics ? t('common.general.on') : t('common.general.off')} />
           </FlexCol>
         </Padded>
       </Content>

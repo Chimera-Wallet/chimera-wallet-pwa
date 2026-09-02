@@ -10,6 +10,7 @@ import FlexCol from '../../components/FlexCol'
 import { defaultPassword } from '../../lib/constants'
 import { WalletContext } from '../../providers/wallet'
 import OnboardingLayout from '../../components/OnboardingLayout'
+import {useTranslation} from 'react-i18next'
 
 export default function Init() {
   const { aspInfo } = useContext(AspContext)
@@ -18,6 +19,8 @@ export default function Init() {
   const { authState, wallet } = useContext(WalletContext)
 
   const [error, setError] = useState(false)
+
+  const {t} = useTranslation()
 
   useEffect(() => {
     if (wallet.pubkey && authState === 'authenticated') navigate(Pages.Wallet)
@@ -37,10 +40,10 @@ export default function Init() {
 
   return (
     <OnboardingLayout>
-      <ErrorMessage error={error} text='Ark server unreachable' />
+      <ErrorMessage error={error} text={t('errors.send.arkade.server')} />
       <FlexCol gap='0'>
-        <Button disabled={error} onClick={handleNewWallet} label='Create New Wallet' />
-        <Button disabled={error} onClick={handleOldWallet} label='Restore Wallet' secondary />
+        <Button disabled={error} onClick={handleNewWallet} label={t('init.init.createWallet')} />
+        <Button disabled={error} onClick={handleOldWallet} label={t('init.init.restoreWallet')} secondary />
       </FlexCol>
     </OnboardingLayout>
   )

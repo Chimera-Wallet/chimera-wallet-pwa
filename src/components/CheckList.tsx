@@ -3,6 +3,7 @@ import UnheckedIcon from '../icons/Unchecked'
 import FlexCol from './FlexCol'
 import FlexRow from './FlexRow'
 import Text from './Text'
+import { useTranslation } from 'react-i18next'
 
 type CheckListData = {
   text: string
@@ -32,9 +33,10 @@ const Line = ({ row }: { row: CheckListData }) => (
 )
 
 export default function CheckList({ data }: CheckListProps) {
+  const {t} = useTranslation()
   return (
     <FlexCol gap='0.5rem'>
-      <Text smaller>Set a strong password with:</Text>
+      <Text smaller>{t('components.checkList.pass')}</Text>
       {data.map((row) => (
         <Line key={row.text} row={row} />
       ))}

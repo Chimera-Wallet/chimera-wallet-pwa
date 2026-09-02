@@ -7,6 +7,7 @@ import Content from './Content'
 import Button from './Button'
 import Padded from './Padded'
 import Header from './Header'
+import { useTranslation } from 'react-i18next' 
 
 interface Props {
   children: ReactNode

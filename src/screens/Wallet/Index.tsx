@@ -24,47 +24,60 @@ import { psaMessage } from '../../lib/constants'
 import { AnnouncementContext } from '../../providers/announcements'
 import { WalletStaggerContainer, WalletStaggerChild } from '../../components/WalletLoadIn'
 import { fromSatoshis } from '../../lib/format'
-import { ASSETS, type AssetSymbol } from '../../lib/assets'
+import {
+  ASSETS,
+  ASSET_LIST,
+  getDisplayTicker,
+  getWrappedAssetId,
+  requireAssetConfig,
+  wrappedAmountToNumber,
+  type AssetSymbol,
+} from '../../lib/assets'
+import { assetSupportsWrap, requireAssetChainOption, type SourceChainId } from '../../lib/sourceChains'
 import Header from '../../components/Header'
 import TransactionsIcon from '../../icons/Transactions'
 import AssetSelector from '../../components/AssetSelector'
 import NetworkSelector from '../../components/NetworkSelector'
+import AssetNetworkSelector, { type AssetNetworkChoice } from '../../components/AssetNetworkSelector'
 import { TRANSFER_METHOD, type TransferMethod } from '../../lib/transferMethods'
 import StakingBanner from '../../components/StakingBanner'
 import InstallBanner from '../../components/InstallBanner'
 import BannerCarousel from '../../components/BannerCarousel'
+import {useTranslation} from 'react-i18next'
 
 export default function Wallet() {
   const { aspInfo } = useContext(AspContext)
   const { announcement } = useContext(AnnouncementContext)
   const { config, updateConfig } = useContext(ConfigContext)
-  const { setRecvInfo, setSendInfo } = useContext(FlowContext)
+  const { setRecvInfo, setSendInfo, setWrapRecvInfo, setUnwrapSendInfo } = useContext(FlowContext)
   const { isInitialLoad, navigate, navigationCount, screen } = useContext(NavigationContext)
-  const { balance, dataReady, txs } = useContext(WalletContext)
+  const { balance, dataReady, txs, assetBalances } = useContext(WalletContext)
   const { nudge, nudgeVisible, nudgeCheckComplete } = useContext(NudgeContext)
 
   const pwaInstalled = usePwaInstalled()
   const dismissed = (config?.dismissedBanners ?? []).includes('pwa-install')
   const showPwaBanner = pwaCanInstall() && (isIOS() || isAndroid()) && !pwaInstalled && !dismissed
+  
+  const {t} = useTranslation()
 
   const iosInstallDescription = (): string => {
     switch (getIOSBrowser()) {
       case 'safari':
-        return "Tap the Share icon in Safari's toolbar, then 'Add to Home Screen'."
+        return t('networks.browser.safariShare')
       case 'chrome':
-        return "Tap the Share icon in Chrome's address bar, then 'Add to Home Screen'."
+        return t('networks.browser.chromeShare')
       case 'firefox':
-        return "Tap the menu icon in Firefox, then 'Add to Home Screen'. For full support, open this page in Safari."
+        return t('networks.browser.firefoxShare')
       case 'edge':
-        return "Tap the menu icon in Edge, then 'Add to Home Screen'. For full support, open this page in Safari."
+        return t('networks.browser.edgeShare')
       default:
-        return "Tap the Share icon, then 'Add to Home Screen'. For full support, open this page in Safari."
+        return t('networks.browser.defaultShare')
     }
   }
 
   const pwaDescription = isIOS()
     ? iosInstallDescription()
-    : "Tap 'Install' to add Chimera to your home screen."
+    : t('networks.browser.installDescr')
 
   const [showInstallBanner, setShowInstallBanner] = useState(Boolean(!dismissed && !pwaInstalled))
   const dismissPwaBanner = () => {
@@ -165,6 +178,60 @@ export default function Wallet() {
     setFlowMode(null)
   }
 
+  const handleAssetNetworkChoice = (choice: AssetNetworkChoice) => {
+    setShowNetworkSelector(false)
+    if (!flowMode) return
+
+    const symbol = requireAssetConfig(selectedFlowAsset).symbol
+
+    if (choice === TRANSFER_METHOD.bank) {
+      if (flowMode === 'send') {
+        setSendInfo({ ...emptySendInfo, method: TRANSFER_METHOD.bank })
+        navigate(Pages.BankSend)
+      } else {
+        setRecvInfo({ ...emptyRecvInfo, method: TRANSFER_METHOD.bank })
+        navigate(Pages.BankReceive)
+      }
+      setFlowMode(null)
+      return
+    }
+
+    if (choice === TRANSFER_METHOD.ark) {
+      if (flowMode === 'send') {
+        setSendInfo({ ...emptySendInfo, method: TRANSFER_METHOD.ark })
+        navigate(Pages.SendForm)
+      } else {
+        setRecvInfo({ ...emptyRecvInfo, method: TRANSFER_METHOD.ark })
+        navigate(Pages.ReceiveAmount)
+      }
+      setFlowMode(null)
+      return
+    }
+
+    // Native source/destination chain -> Arkade Wrap / Unwrap flow
+    const option = requireAssetChainOption(symbol, choice as SourceChainId)
+    if (flowMode === 'send') {
+      setUnwrapSendInfo({
+        assetSymbol: symbol,
+        chainId: choice as SourceChainId,
+        ticker: option.ticker,
+        sender: '',
+        receiver: '',
+      })
+      navigate(Pages.UnwrapSend)
+    } else {
+      setWrapRecvInfo({
+        assetSymbol: symbol,
+        chainId: choice as SourceChainId,
+        ticker: option.ticker,
+        receiver: '',
+        sender: '',
+      })
+      navigate(Pages.WrapReceive)
+    }
+    setFlowMode(null)
+  }
+
   const handleAssetClick = (symbol: AssetSymbol) => {
     setSelectedAsset(symbol)
   }
@@ -177,29 +244,39 @@ export default function Wallet() {
     navigate(Pages.Transactions)
   }
 
-  // Get balance for the selected asset (currently only BTC is supported)
+  // Get balance for the selected asset. BTC uses the on-chain sats balance;
+  // wrapped assets use their Arkade balance matched by wrapped asset ID.
   const getAssetBalance = (symbol: AssetSymbol): number => {
-    // Currently all balance is BTC, so return the wallet balance only for BTC
-    if (symbol === ASSETS.BTC.symbol) {
-      return fromSatoshis(balance)
-    }
-    // Other assets return 0 for now (would come from multi-asset wallet support)
-    return 0
+    if (symbol === ASSETS.BTC.symbol) return fromSatoshis(balance)
+    const assetId = getWrappedAssetId(symbol)
+    if (!assetId) return 0
+    const ab = assetBalances.find((a) => a.assetId === assetId)
+    if (!ab) return 0
+    // CX wrapped assets map 1-to-1 with the original, so interpret the raw
+    // amount with the original asset's precision (not the Arkade metadata).
+    const decimals = requireAssetConfig(symbol).precision
+    return wrappedAmountToNumber(ab.amount, decimals)
   }
+
+  // Balances for every listed asset, used by the home asset list.
+  const assetBalancesForList = ASSET_LIST.map((asset) => ({
+    symbol: asset.symbol as AssetSymbol,
+    balance: getAssetBalance(asset.symbol as AssetSymbol),
+  }))
 
   // Render asset detail view
   if (selectedAsset) {
     return (
       <>
-        <Header text={selectedAsset} back={handleBackToAll} />
+        <Header text={getDisplayTicker(selectedAsset)} back={handleBackToAll} />
         {announcement}
         <Content>
           <Padded>
             <FlexCol>
               <AssetBalanceView symbol={selectedAsset} balance={getAssetBalance(selectedAsset)} />
               <FlexRow padding='0.5rem 0'>
-                <Button icon={<SendIcon />} label='Send' onClick={handleSend} />
-                <Button icon={<ReceiveIcon />} label='Receive' onClick={handleReceive} />
+                <Button icon={<SendIcon />} label={t('common.general.send')} onClick={handleSend} />
+                <Button icon={<ReceiveIcon />} label={t('common.general.receive')} onClick={handleReceive} />
               </FlexRow>
               <TransactionsList filterAsset={selectedAsset} maxItems={4} />
             </FlexCol>
@@ -215,12 +292,23 @@ export default function Wallet() {
           />
         ) : null}
         {showNetworkSelector ? (
-          <NetworkSelector
-            selected={selectedNetwork}
-            onSelect={handleNetworkSelected}
-            isOpen={showNetworkSelector}
-            setIsOpen={setShowNetworkSelector}
-          />
+          assetSupportsWrap(requireAssetConfig(selectedFlowAsset).symbol) ? (
+            <AssetNetworkSelector
+              assetSymbol={requireAssetConfig(selectedFlowAsset).symbol}
+              mode={flowMode === 'send' ? 'send' : 'receive'}
+              selected={selectedNetwork as AssetNetworkChoice | undefined}
+              onSelect={handleAssetNetworkChoice}
+              isOpen={showNetworkSelector}
+              setIsOpen={setShowNetworkSelector}
+            />
+          ) : (
+            <NetworkSelector
+              selected={selectedNetwork}
+              onSelect={handleNetworkSelected}
+              isOpen={showNetworkSelector}
+              setIsOpen={setShowNetworkSelector}
+            />
+          )
         ) : null}
       </>
     )
@@ -230,10 +318,10 @@ export default function Wallet() {
   return (
     <>
       <Header
-        text='Wallet'
+        text={t('common.general.wallet')}
         auxIcon={<TransactionsIcon />}
         auxFunc={handleTransactions}
-        auxAriaLabel='View all transactions'
+        auxAriaLabel={t('networks.transactions.viewAll')}
       />
       {announcement}
       <Content>
@@ -245,12 +333,12 @@ export default function Wallet() {
                   <Balance amount={balance} centered usdOnly />
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
-                  <ErrorMessage error={error} text='Ark server unreachable' />
+                  <ErrorMessage error={error} text={t('errors.send.arkade.server')} />
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
                   <FlexRow padding='0 0 0.5rem 0'>
-                    <Button icon={<SendIcon />} label='Send' onClick={handleSend} />
-                    <Button icon={<ReceiveIcon />} label='Receive' onClick={handleReceive} />
+                    <Button icon={<SendIcon />} label={t('common.general.send')} onClick={handleSend} />
+                    <Button icon={<ReceiveIcon />} label={t('common.general.receive')} onClick={handleReceive} />
                   </FlexRow>
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
@@ -263,7 +351,7 @@ export default function Wallet() {
                         action={
                           canPromptInstall()
                             ? {
-                                label: 'Install',
+                                label: t('networks.browser.install'),
                                 onClick: async () => {
                                   const outcome = await promptPwaInstall().catch(() => null)
                                   if (outcome) dismissPwaBanner()
@@ -299,13 +387,13 @@ export default function Wallet() {
                       marginTop: '0.5rem',
                     }}
                   >
-                    See all transactions
+                    {t('networks.transactions.seeAll')}
                   </button>
                 </WalletStaggerChild>
               )}
               <WalletStaggerChild animate={shouldStagger}>
                 <AssetList
-                  balances={[{ symbol: ASSETS.BTC.symbol, balance: fromSatoshis(balance) }]}
+                  balances={assetBalancesForList}
                   onAssetClick={handleAssetClick}
                 />
               </WalletStaggerChild>
@@ -323,12 +411,24 @@ export default function Wallet() {
         />
       ) : null}
       {showNetworkSelector ? (
-        <NetworkSelector
-          selected={selectedNetwork}
-          onSelect={handleNetworkSelected}
-          isOpen={showNetworkSelector}
-          setIsOpen={setShowNetworkSelector}
-        />
+        assetSupportsWrap(requireAssetConfig(selectedFlowAsset).symbol) ? (
+          <AssetNetworkSelector
+            assetSymbol={requireAssetConfig(selectedFlowAsset).symbol}
+            mode={flowMode === 'send' ? 'send' : 'receive'}
+            selected={selectedNetwork as AssetNetworkChoice | undefined}
+            onSelect={handleAssetNetworkChoice}
+            isOpen={showNetworkSelector}
+            setIsOpen={setShowNetworkSelector}
+          />
+        ) : (
+          <NetworkSelector
+            assetSymbol={requireAssetConfig(selectedFlowAsset).symbol}
+            selected={selectedNetwork}
+            onSelect={handleNetworkSelected}
+            isOpen={showNetworkSelector}
+            setIsOpen={setShowNetworkSelector}
+          />
+        )
       ) : null}
     </>
   )

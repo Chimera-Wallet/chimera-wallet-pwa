@@ -5,6 +5,7 @@ import Padded from '../../components/Padded'
 import Content from '../../components/Content'
 import { ConfigContext } from '../../providers/config'
 import Header from './Header'
+import { useTranslation } from 'react-i18next'
 
 export default function Fiat() {
   const { backupConfig, config, updateConfig } = useContext(ConfigContext)
@@ -15,9 +16,10 @@ export default function Fiat() {
     updateConfig(newConfig)
   }
 
+  const {t} = useTranslation()
   return (
     <>
-      <Header text='Fiat' back />
+      <Header text= {t('settings.fiat.fiat')} back />
       <Content>
         <Padded>
           <Select

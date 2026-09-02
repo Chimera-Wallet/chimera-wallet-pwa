@@ -1,4 +1,4 @@
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import Header from '../../components/Header'
 import Content from '../../components/Content'
 import Padded from '../../components/Padded'
@@ -10,44 +10,81 @@ import { WalletContext } from '../../providers/wallet'
 import { NavigationContext, Pages } from '../../providers/navigation'
 import { FlowContext } from '../../providers/flow'
 import { isBiometricsSupported, registerUser } from '../../lib/biometrics'
+import { reencryptSecret } from '../../lib/lock'
+import { isValidPassword } from '../../lib/privateKey'
+import { defaultPassword } from '../../lib/constants'
+import ErrorMessage from '../../components/Error'
 import { consoleError } from '../../lib/logs'
 import { hapticSubtle } from '../../lib/haptics'
 import CenterScreen from '../../components/CenterScreen'
 import LockIcon from '../../icons/Lock'
 import { OnboardStaggerContainer, OnboardStaggerChild } from '../../components/OnboardLoadIn'
+import {useTranslation} from 'react-i18next'
 
 export default function InitBiometric() {
-  const { updateWallet, wallet } = useContext(WalletContext)
+  const { updateWallet, unlockWallet, refreshAuthState, wallet } = useContext(WalletContext)
   const { navigate } = useContext(NavigationContext)
   const { initInfo, setInitInfo } = useContext(FlowContext)
 
   const biometricsSupported = isBiometricsSupported()
-  const biometricsEnabled = wallet.lockedByBiometrics || false
+  // During onboarding the secret is still in `initInfo` and InitConnect does the
+  // re-encrypting. Reached without one, this is an existing wallet that has no
+  // lock yet (App holds it here), so re-encrypt in place and boot it ourselves.
+  const isOnboarding = Boolean(initInfo.mnemonic || initInfo.privateKey)
 
-  const handleEnableBiometrics = () => {
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const {t} = useTranslation()
+
+  const handleEnableBiometrics = async () => {
     hapticSubtle()
-    registerUser()
-      .then(({ password, passkeyId }) => {
+    setError('')
+    setBusy(true)
+    try {
+      // The wallet only belongs on this screen while its secret still decrypts
+      // with defaultPassword. If a lock was already set (an earlier attempt, or
+      // a stale auth state) re-encrypting would throw, so re-derive the state
+      // and let App route to Unlock instead. Checked before registerUser so a
+      // dead-end attempt doesn't leave an orphan passkey behind.
+      if (!isOnboarding && !(await isValidPassword(defaultPassword))) return refreshAuthState()
+      const { password, passkeyId } = await registerUser()
+      if (isOnboarding) {
         updateWallet({ ...wallet, lockedByBiometrics: true, passkeyId })
-        setInitInfo({ ...initInfo, password })
+        setInitInfo({ ...initInfo, password, lockDone: true })
         navigate(Pages.InitConnect)
-      })
-      .catch((err) => consoleError(err, 'Biometric registration failed'))
+        return
+      }
+      // Persist the passkey id BEFORE re-encrypting. The passkey's user handle
+      // IS the new password, and authenticateUser() needs a stored passkeyId to
+      // ask for it — so if we re-encrypted first and the write never landed
+      // (crash, closed tab, failed unlock), the secret would be locked under a
+      // password nothing can retrieve. Writing first is the recoverable order:
+      // a stale passkeyId over a still-defaultPassword secret just means this
+      // screen re-registers on the next attempt.
+      updateWallet({ ...wallet, lockedByBiometrics: true, passkeyId })
+      await reencryptSecret(defaultPassword, password)
+      await unlockWallet(password)
+      navigate(Pages.Wallet)
+    } catch (err) {
+      consoleError(err, 'Biometric registration failed')
+      setError(t('errors.biometric.failedEnable'))
+      setBusy(false)
+    }
   }
 
   const handleContinue = () => {
     navigate(Pages.InitPassword)
   }
 
-  // If biometrics are already enabled, continue to next step
-  if (biometricsEnabled) {
-    navigate(Pages.InitConnect)
-    return null
-  }
+  // A leftover `lockedByBiometrics` flag used to short-circuit to InitConnect
+  // here, but the passkey password behind it is unrecoverable, so that path
+  // dead-ended with "missing credentials". The screen always offers a fresh
+  // registration instead — onboarding must not end without a working lock.
 
   return (
     <>
-      <Header text='Secure Your Wallet' />
+      <Header text={t('init.biometrics.secureWallet')} />
       <Content>
         <Padded>
           <CenterScreen>
@@ -60,7 +97,7 @@ export default function InitBiometric() {
               <OnboardStaggerChild>
                 <FlexCol gap='1rem' centered>
                   <Text big centered heading wrap>
-                    Enable Biometric Authentication
+                    {t('init.biometrics.enableBioAuth')}
                   </Text>
                 </FlexCol>
               </OnboardStaggerChild>
@@ -68,16 +105,17 @@ export default function InitBiometric() {
                 <FlexCol gap='1.5rem' centered>
                   {!biometricsSupported ? (
                     <TextSecondary centered wrap>
-                      Biometric authentication is not supported on this device. You'll need to use your password to
-                      unlock your wallet.
+                      {t('init.biometrics.bioAuthUnsupported')}
                     </TextSecondary>
                   ) : (
                     <TextSecondary centered wrap>
-                      For your security, enable biometric authentication to unlock your wallet using fingerprint or face
-                      recognition.
+                     {t('init.biometrics.fingerFaceAuth')}
                     </TextSecondary>
                   )}
                 </FlexCol>
+              </OnboardStaggerChild>
+              <OnboardStaggerChild>
+                <ErrorMessage error={Boolean(error)} text={error} />
               </OnboardStaggerChild>
             </OnboardStaggerContainer>
           </CenterScreen>
@@ -86,11 +124,16 @@ export default function InitBiometric() {
       <ButtonsOnBottom>
         {biometricsSupported ? (
           <>
-            <Button onClick={handleEnableBiometrics} label='Enable Biometrics' />
-            <Button onClick={handleContinue} label='Use password instead' secondary />
+            <Button
+              onClick={handleEnableBiometrics}
+              label={t('init.biometrics.enableBio')}
+              loading={busy}
+              disabled={busy}
+            />
+            <Button onClick={handleContinue} label={t('init.biometrics.usePass')} secondary disabled={busy} />
           </>
         ) : (
-          <Button onClick={handleContinue} label='Continue' />
+          <Button onClick={handleContinue} label={t('common.general.continue')} />
         )}
       </ButtonsOnBottom>
     </>

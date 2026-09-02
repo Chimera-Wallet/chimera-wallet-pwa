@@ -14,6 +14,7 @@ import { collaborativeExit, getReceivingAddresses } from '../../../lib/asp'
 import { Transaction } from '@arkade-os/sdk'
 import { isArkAddress, isBTCAddress } from '../../../lib/address'
 import { NavigationContext, Pages } from '../../../providers/navigation'
+import {useTranslation} from 'react-i18next'
 
 const { bytesToHex, hexToBytes } = utils
 
@@ -28,6 +29,7 @@ export default function AppLendasat() {
   const [arkAddress, setArkAddress] = useState<string | null>(null)
   const [boardingAddress, setBoardingAddress] = useState<string | null>(null)
 
+  const {t} = useTranslation()
   useEffect(() => {
     const loadAddress = async () => {
       if (svcWallet) {
@@ -68,7 +70,7 @@ export default function AppLendasat() {
         },
         async onSendToAddress(address: string, amount: number, asset: 'bitcoin' | LoanAsset): Promise<string> {
           if (!svcWallet) {
-            throw Error('Wallet not initialized')
+            throw Error(t('errors.lendasat.walletNot'))
           }
 
           switch (asset) {
@@ -78,12 +80,12 @@ export default function AppLendasat() {
                 if (txId) {
                   return txId
                 } else {
-                  throw new Error('Unable to send bitcoin')
+                  throw new Error(t('errors.lendasat.unableSending'))
                 }
               } else if (isBTCAddress(address)) {
                 return await collaborativeExit(svcWallet, amount, address)
               } else {
-                throw Error(`Unsupported address ${address}`)
+                throw Error(t('errors.lendasat.unsuppAddress', {addr: address}))
               }
             case 'UsdcPol':
             case 'UsdtPol':
@@ -94,17 +96,17 @@ export default function AppLendasat() {
             case 'UsdcSol':
             case 'UsdtSol':
             case 'UsdtLiquid':
-              throw new Error('Unable to send non btc assets')
+              throw new Error(t('errors.lendasat.unableSendNonBtc'))
             case 'Usd':
             case 'Eur':
             case 'Chf':
             case 'Mxn':
-              throw new Error('Unable to send fiat')
+              throw new Error(t('errors.lendasat.unableFiat'))
           }
         },
         onGetPublicKey: async () => {
           if (!svcWallet) {
-            throw new Error('Wallet not initialized')
+            throw new Error(t('errors.lendasat.walletNot'))
           }
 
           const pk = await svcWallet.identity.compressedPublicKey()
@@ -120,28 +122,28 @@ export default function AppLendasat() {
 
           switch (addressType) {
             case AddressType.ARK:
-              if (!arkAddress) throw new Error('Arkade address not yet loaded')
+              if (!arkAddress) throw new Error(t('errors.lendasat.arkAddrLoad'))
               return arkAddress
 
             case AddressType.BITCOIN:
-              if (!boardingAddress) throw new Error('Boarding address not yet loaded')
+              if (!boardingAddress) throw new Error(t('errors.lendasat.boardAddrLoad'))
               return boardingAddress
 
             case AddressType.LOAN_ASSET:
-              throw new Error(`Unsupported address type: ${addressType}`)
+              throw new Error(t('errors.lendasat.unsuppAddr', {addr:addressType}))
 
             default:
-              throw new Error(`Unknown address type: ${addressType}`)
+              throw new Error(t('errors.lendasat.unkownAddr', {addr: addressType}))
           }
         },
         onGetNpub: () => {
           console.log(`Called on get npub`)
           // Optional - returning null for now
-          throw new Error(`NPubs are not supported`)
+          throw new Error(t('errors.lendasat.npubSupp'))
         },
         onSignPsbt: async (psbt: string) => {
           if (!svcWallet) {
-            throw Error('Wallet not initialized')
+            throw Error(t('errors.lendasat.walletNot'))
           }
           const psbtBytes = hexToBytes(psbt)
           const tx = Transaction.fromPSBT(psbtBytes)
@@ -152,7 +154,7 @@ export default function AppLendasat() {
         },
         async onSignMessage(message: string): Promise<string> {
           if (!svcWallet) {
-            throw new Error('Wallet not initialized')
+            throw new Error(t('errors.lendasat.walletNot'))
           }
 
           // Hash the message with SHA256
@@ -179,14 +181,14 @@ export default function AppLendasat() {
 
   return (
     <>
-      <Header text='Lendasat' back={() => navigate(Pages.Apps)} />
+      <Header text={t('apps.lendasat.lendasat')} back={() => navigate(Pages.Apps)} />
       <Content>
         <Padded>
           <FlexCol gap='2rem' between>
             <iframe
               ref={iframeRef}
               src={import.meta.env.VITE_LENDASAT_IFRAME_URL || 'https://iframe.lendasat.com'}
-              title='Lendasat'
+              title={t('apps.lendasat.lendasat')}
               className='lendasat-iframe'
               allow='clipboard-write; clipboard-read'
               style={{ height: '100%' }}

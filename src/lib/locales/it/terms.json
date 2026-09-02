@@ -1,0 +1,45 @@
+{
+  "send": {
+    "bitcoin": {
+      "address": "Assicurati di inviare solo Bitcoin a un indirizzo Arkade o mainnet valido. Qualsiasi altro indirizzo comporterà la perdita permanente degli asset e non esiste alcuna possibilità di recupero.",
+      "time": "Il tempo di trasferimento per Bitcoin on-chain dipende dalla congestione della rete ed è in media di 10 minuti per la prima conferma. Se il tuo wallet supporta Arkade VTXO, la transazione sarà istantanea.",
+      "fees": "Le commissioni sulla rete Bitcoin sono dinamiche e dipendono dalla velocità con cui desideri ricevere la transazione e da come il wallet mittente gestisce le transazioni. Le commissioni per i wallet compatibili con Arkade sono prossime allo zero."
+    },
+    "arkade": {
+      "address": "Assicurati di inviare solo Bitcoin a un indirizzo Arkade o mainnet valido. Qualsiasi altro indirizzo comporterà la perdita permanente degli asset e non esiste alcuna possibilità di recupero.",
+      "time": "Il tempo di trasferimento on-chain su Arkade dipende dalla congestione della rete ed è in media di 10 minuti per la prima conferma. Se il tuo wallet supporta Arkade VTXO, la transazione sarà istantanea.",
+      "fees": "Le commissioni sulla rete Arkade sono dinamiche e dipendono dalla velocità con cui desideri ricevere la transazione e da come il wallet mittente gestisce le transazioni. Le commissioni per i wallet compatibili con Arkade sono prossime allo zero."
+    },
+    "lightning": {
+      "address": "Invia esclusivamente utilizzando una fattura della rete Lightning. Qualsiasi altro indirizzo comporterà la perdita permanente degli asset e non esiste alcuna possibilità di recupero.",
+      "time": "Il tempo di trasferimento sulla rete Lightning dipende da diversi fattori ed è in media di pochi secondi.",
+      "fees": "Le commissioni su Lightning sono dinamiche e generalmente inferiori a 0,01 $."
+    },
+    "bank": {
+      "time": "I tempi di trasferimento possono variare a seconda della banca, da istantanei fino a 48 ore.",
+      "fees": "Le commissioni per i prelievi bancari sono pari allo 0,3% dell'importo inviato se superiore a 1000 CHF.\nLe commissioni per i prelievi bancari sono pari all'1% dell'importo inviato se inferiore a 1000 CHF.\nLa tua banca potrebbe applicare commissioni aggiuntive di cui non siamo a conoscenza."
+    }
+  },
+  "receive": {
+    "bitcoin": {
+      "address": "Invia esclusivamente Bitcoin tramite Arkade o mainnet. Qualsiasi altro asset inviato andrà perso in modo permanente e non esiste alcuna possibilità di recupero.",
+      "time": "Il tempo di trasferimento per Bitcoin on-chain dipende dalla congestione della rete ed è in media di 10 minuti per la prima conferma.",
+      "fees": "Le commissioni sulla rete Bitcoin sono dinamiche e dipendono dalla velocità con cui desideri ricevere la transazione e da come il wallet mittente gestisce le transazioni."
+    },
+    "arkade": {
+      "address": "Invia esclusivamente Bitcoin utilizzando un wallet compatibile con Arkade. Qualsiasi altro asset inviato andrà perso in modo permanente e non esiste alcuna possibilità di recupero.",
+      "time": "Se il mittente supporta Arkade VTXO, la transazione sarà istantanea.",
+      "fees": "Le commissioni per i wallet compatibili con Arkade sono prossime allo zero."
+    },
+    "lightning": {
+      "address": "Invia esclusivamente Bitcoin tramite la rete Lightning. Qualsiasi altro asset inviato andrà perso in modo permanente e non esiste alcuna possibilità di recupero.",
+      "info": "Per ricevere i fondi devi rimanere nell'app fino al completamento della transazione.",
+      "time": "Il tempo di trasferimento sulla rete Lightning dipende da diversi fattori ed è in media di pochi secondi.",
+      "fees": "Le commissioni su Lightning sono dinamiche e generalmente inferiori a 0,01 $."
+    },
+    "bank": {
+      "time": "I tempi di trasferimento possono variare a seconda della banca, da istantanei fino a 48 ore.",
+      "fees": "Le commissioni per i depositi bancari sono pari allo 0,6% dell'importo ricevuto se superiore a 1000 CHF.\nLe commissioni per i depositi bancari sono pari all'1% dell'importo ricevuto se inferiore a 1000 CHF.\nLa tua banca potrebbe applicare commissioni aggiuntive di cui non siamo a conoscenza."
+    }
+  }
+}

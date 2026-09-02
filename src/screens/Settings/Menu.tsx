@@ -18,52 +18,55 @@ import GlobeOutlineIcon from '../../icons/GlobeOutline'
 import CogIcon from '../../icons/Cog'
 import NotificationIcon from '../../icons/Notification'
 import PuzzleIcon from '../../icons/Puzzle'
+import {useTranslation} from 'react-i18next'
 
 // map the stored KYC status to a status pill
 function kycBadge(status: KycStatus): { text: string; tone: BadgeTone } {
+  const {t} = useTranslation()
   switch (status) {
     case 'confirmed':
-      return { text: 'Verified', tone: 'success' }
+      return { text: t('settings.menu.verified'), tone: 'success' }
     case 'pending':
     case 'incomplete':
     case 'more_info_needed':
-      return { text: 'Pending', tone: 'warning' }
+      return { text: t('settings.menu.pending'), tone: 'warning' }
     default:
-      return { text: 'Not Verified', tone: 'danger' }
+      return { text: t('settings.menu.unverified'), tone: 'danger' }
   }
 }
 
 export default function SettingsMenu() {
   const { setOption } = useContext(OptionsContext)
   const { wallet } = useContext(WalletContext)
+  const {t} = useTranslation()
 
   const accountRows: MenuRow[] = [
-    { icon: <KYCIcon />, option: SettingsOptions.KYC, label: 'KYC - Verification', badge: kycBadge(getStoredKycStatus()) },
-    { icon: <KnowledgeBaseIcon />, option: SettingsOptions.KnowledgeBase, label: 'Knowledge Base', right: 'external' },
-    { icon: <XIcon />, option: SettingsOptions.ManageAccount, label: 'Manage Account', right: 'external' },
-    { icon: <AddressBookIcon />, option: SettingsOptions.AddressBook, label: 'Address Book' },
+    { icon: <KYCIcon />, option: SettingsOptions.KYC, label: t('settings.menu.kycVer') , badge: kycBadge(getStoredKycStatus()) },
+    { icon: <KnowledgeBaseIcon />, option: SettingsOptions.KnowledgeBase, label: t('settings.menu.knowledgeBase'), right: 'external' },
+    { icon: <XIcon />, option: SettingsOptions.ManageAccount, label: t('settings.menu.manage'), right: 'external' },
+    { icon: <AddressBookIcon />, option: SettingsOptions.AddressBook, label: t('settings.menu.addressBook') },
   ]
 
   const securityRows: MenuRow[] = [
     {
       icon: <EyeIcon size={20} />,
       option: SettingsOptions.Biometric,
-      label: 'Biometric Authentication',
+      label: t('settings.biometric.bioAuth'),
       right: 'toggle',
       toggleChecked: wallet.lockedByBiometrics || false,
       onToggle: () => setOption(SettingsOptions.Biometric),
     },
-    { icon: <KeyIcon size={20} />, option: SettingsOptions.SecretPhrase, label: 'Show Secret Phrase' },
+    { icon: <KeyIcon size={20} />, option: SettingsOptions.SecretPhrase, label: t('settings.menu.showPhrase') },
   ]
 
   const appRows: MenuRow[] = [
-    { icon: <GlobeOutlineIcon />, option: SettingsOptions.Language, label: 'App Language' },
-    { icon: <CogIcon />, option: SettingsOptions.Currency, label: 'Currency' },
-    { icon: <NotificationIcon />, option: SettingsOptions.Notifications, label: 'Set Notifications' },
+    { icon: <GlobeOutlineIcon />, option: SettingsOptions.Language, label: t('settings.language.appLang') },
+    { icon: <CogIcon />, option: SettingsOptions.Currency, label: t('settings.menu.currency') },
+    { icon: <NotificationIcon />, option: SettingsOptions.Notifications, label: t('settings.menu.setNotifs') },
   ]
 
   const advancedRows: MenuRow[] = [
-    { icon: <PuzzleIcon />, option: SettingsOptions.Advanced, label: 'Advanced Settings' },
+    { icon: <PuzzleIcon />, option: SettingsOptions.Advanced, label: t('settings.menu.advancedSettings') },
   ]
 
   return (
@@ -72,19 +75,19 @@ export default function SettingsMenu() {
       <Content>
         <FlexCol gap='1.25rem'>
           <FlexCol gap='0'>
-            <TextLabel>Account</TextLabel>
+            <TextLabel>{t('common.general.account')}</TextLabel>
             <Menu rows={accountRows} />
           </FlexCol>
           <FlexCol gap='0'>
-            <TextLabel>Security</TextLabel>
+            <TextLabel>{t('common.general.security')}</TextLabel>
             <Menu rows={securityRows} />
           </FlexCol>
           <FlexCol gap='0'>
-            <TextLabel>App</TextLabel>
+            <TextLabel>{t('common.general.app')}</TextLabel>
             <Menu rows={appRows} />
           </FlexCol>
           <FlexCol gap='0'>
-            <TextLabel>Advanced</TextLabel>
+            <TextLabel>{t('common.general.advanced')}</TextLabel>
             <Menu rows={advancedRows} />
           </FlexCol>
         </FlexCol>

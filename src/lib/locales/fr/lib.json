@@ -1,0 +1,26 @@
+{
+  "wallet": {
+    "fetchCoins": "Récupération des pièces...",
+    "fetchTrans": "Récupération des transactions...",
+    "updBal": "Mise à jour du solde...",
+    "loadingMeta": "Chargement des métadonnées de l'actif...",
+    "unableLoadWall": "Impossible de charger les données du portefeuille. Vérifiez votre connexion et réessayez.",
+    "startWall": "Démarrage du portefeuille...",
+    "migrateData": "Migration des données",
+    "retryConn": "Nouvelle tentative de connexion..."
+  },
+  "config": {
+    "statement": "Relevé",
+    "stateDescr": "Consultez votre historique de transactions et vos relevés de compte",
+    "stateInfoTitle": "Votre aperçu financier",
+    "stateInfoDescr": "Accédez à des relevés détaillés de toutes vos transactions, soldes et activités de compte en un seul endroit.",
+    "referral": "Parrainage",
+    "referralDescr": "Invitez des amis et gagnez des récompenses",
+    "referralInfoTitle": "Qu'est-ce que le programme de parrainage ?",
+    "referralInfoDescr": "Vous êtes au centre du programme, et les récompenses sont illimitées !\n\nGagnez 20 % de tous les frais générés par chaque ami qui s'inscrit avec votre lien — pour toujours.\nAucun plafond, aucune limite, aucune expiration ; seulement des récompenses continues. Plus vous partagez, plus vous gagnez. Prêt ?\n\nCopiez votre lien, faites passer le mot et laissez les récompenses s'accumuler !",
+    "giftCard": "Cartes-cadeaux",
+    "giftCardDescr": "Achetez et utilisez des cartes-cadeaux avec Bitcoin",
+    "cardReserve": "Réservation de carte",
+    "cardReserveDescr": "Réservez votre carte de débit Chimera"
+  }
+}

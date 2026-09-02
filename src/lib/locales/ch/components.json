@@ -1,0 +1,203 @@
+{
+  "carousel": {
+    "error": "useCarousel 必须在 <Carousel /> 中使用",
+    "previous": "上一张幻灯片",
+    "next": "下一张幻灯片"
+  },
+  "chart": {
+    "error": "useChart 必须在 <ChartContainer /> 中使用"
+  },
+  "command": {
+    "command": "命令面板",
+    "search": "搜索要执行的命令..."
+  },
+  "pagination": {
+    "previous": "上一页",
+    "goPrev": "前往上一页",
+    "next": "下一页",
+    "goNext": "前往下一页",
+    "more": "更多页面"
+  },
+  "sidebar": {
+    "sidebar": "侧边栏",
+    "error": "useSidebar 必须在 SidebarProvider 中使用。",
+    "mobile": "显示移动端侧边栏",
+    "toggle": "切换侧边栏"
+  },
+  "alert": {
+    "protectPass": "使用密码保护您的钱包"
+  },
+  "announcements": {
+    "intro": "隆重介绍：",
+    "whatDo": "您可以做什么：",
+    "try": "试试 {{title}}",
+    "later": "以后再说",
+    "lightWork": "顺畅运行的 Lightning",
+    "bridge": "跨链桥",
+    "bridgeDescr": "在不同 Bitcoin 层之间进行兑换，同时始终掌控您的资金。",
+    "fast": "快速",
+    "fastDescr": "Boltz 利用 Lightning Network 等 Layer 2 扩容技术。",
+    "safe": "安全",
+    "safeDescr": "Boltz 上的兑换采用原子交换，密码学技术确保用户始终掌控自己的资金。",
+    "lendaMess": "以 Bitcoin 作为抵押借款。2 分钟内即可收到 USDC 或 USDT。",
+    "chooseLoan": "选择贷款",
+    "chooseLoanDescr": "从贷款报价列表中选择您偏好的贷款条件，或发布自己的贷款请求。我们会为您找到合适的匹配。",
+    "lock": "锁定您的 Bitcoin",
+    "lockDescr": "锁定价值高于贷款金额的 Bitcoin 作为抵押。您的 Bitcoin 保持安全，同时您可以获得所需资金。",
+    "rcv": "接收资金",
+    "rcvDescr": "通过您偏好的方式即时获得贷款：银行转账、稳定币（USDT/USDC）或 VISA 卡。",
+    "satoraMessage": "即时将 Bitcoin 兑换为 USDC 或 USDT。",
+    "swapStable": "兑换为稳定币",
+    "swapDescr": "在 Ethereum 和 Polygon 上将原生 $BTC 兑换为 $USDT 或 $USDC。",
+    "atomic": "无需信任的原子交换",
+    "atomicDescr": "交换开始时，双方都会将资金锁定在智能合约中。交换要么完整完成，要么双方均可获得退款。",
+    "selfCust": "自托管",
+    "selfCustDescr": "Satora 完全采用自托管模式。您的密钥，您的币。",
+    "nostrBack": "Nostr 备份",
+    "nostrMsg": "备份至 Nostr。",
+    "backSett": "备份设置",
+    "backMsg": "将您的 Chimera 钱包设置安全地备份到 Nostr。",
+    "boltzSw": "Boltz 兑换",
+    "boltzMsg": "更换设备后，可以轻松恢复您的 Boltz 兑换历史。",
+    "secure": "安全",
+    "secureMsg": "所有备份均经过加密，并安全存储在 Nostr 网络上。"
+  },
+  "assetCard": {
+    "name": "资产名称"
+  },
+  "assetNet": {
+    "rcvArk": "直接在 Arkade 上接收",
+    "sendArk": "直接从 Arkade 上发送",
+    "depFrom": "从 {{name}} 存款",
+    "withdrawTo": "提现至 {{name}}",
+    "arkNet": "Arkade 网络",
+    "select": "选择网络",
+    "net": "网络",
+    "selectAsset": "选择资产",
+    "ass": "资产"
+  },
+  "balance": {
+    "wallet": "钱包余额"
+  },
+  "bankDet": {
+    "req": "必填",
+    "iban": "IBAN",
+    "bicSwift": "BIC / SWIFT 代码",
+    "benef": "收款人",
+    "name": "银行名称",
+    "accNum": "账户号码",
+    "routeNum": "路由号码",
+    "benefAdd": "收款人地址",
+    "bankAdd": "银行地址",
+    "refCode": "参考代码（必填）",
+    "mustIncl": "您必须在银行转账备注中填写此参考代码，否则无法正确处理。",
+    "change": "更改",
+    "selTrans": "选择转账方式",
+    "selCurr": "选择货币"
+  },
+  "bankVal": {
+    "kycReq": "需要 KYC",
+    "val": "验证",
+    "complVer": "完成验证"
+  },
+  "bootErr": {
+    "retry": "重试",
+    "continue": "仍然继续"
+  },
+  "checkList": {
+    "pass": "设置强密码，密码应包含："
+  },
+  "details": {
+    "addr": "地址",
+    "arkNote": "ArkNote",
+    "inv": "发票",
+    "swapId": "兑换 ID",
+    "dest": "目标地址",
+    "transId": "交易 ID",
+    "assId": "资产 ID",
+    "dir": "方向",
+    "ty": "类型",
+    "stat": "状态",
+    "when": "时间",
+    "date": "日期",
+    "exp": "过期时间",
+    "am": "金额",
+    "netFee": "网络费用",
+    "total": "总计"
+  },
+  "empty": {
+    "noAss": "暂无资产",
+    "import": "导入或增发资产以开始使用",
+    "noVirt": "暂无可用的虚拟币",
+    "genImp": "生成或导入币以继续",
+    "noLogs": "暂无日志",
+    "useApp": "开始使用应用以生成日志。",
+    "noSwap": "暂无兑换记录",
+    "swapHist": "开始兑换后，您的兑换历史将显示在这里。",
+    "noTrans": "暂无交易",
+    "makeTrans": "进行一笔交易以开始使用。"
+  },
+  "errorBoundary": {
+    "somethingWrong": "出了点问题",
+    "unexpError": "应用遇到了意外错误",
+    "reloadPrompt": "请重新加载以继续",
+    "reload": "重新加载"
+  },
+  "expandAddr": {
+    "btc": "BTC 地址",
+    "ark": "Arkade 地址",
+    "light": "Lightning 地址"
+  },
+  "installBanner": {
+    "addChimera": "将 CHIMERA 添加到主屏幕"
+  },
+  "needsPass": {
+    "passkeyNF": "在此设备上找不到您的 Passkey。请使用您的助记词恢复钱包。",
+    "tryAgain": "重试",
+    "restorePhrase": "从助记词恢复",
+    "unlockBio": "使用生物识别解锁",
+    "insPass": "输入密码",
+    "pass": "密码",
+    "unlock": "解锁钱包",
+    "forgot": "忘记密码？使用私钥恢复",
+    "passkeyNFText": "未找到 Passkey",
+    "pkText": "在此设备上找不到您的 Passkey。您需要使用助记词恢复钱包。",
+    "welcome": "欢迎回来",
+    "unlockPk": "使用您的 Passkey 解锁以继续",
+    "passkeyMismatch": "Dieser Passkey passt nicht zu dieser Wallet."
+  },
+  "newPass": {
+    "passwordMatch": "两次输入的密码必须一致",
+    "save": "保存密码",
+    "charMin": "至少 8 个字符",
+    "num": "至少包含 1 个数字",
+    "special": "至少包含 1 个特殊字符",
+    "pass": "密码",
+    "confirm": "确认密码"
+  },
+  "onboarding": {
+    "takeBack": "重新掌控您的资金"
+  },
+  "pillNav": {
+    "card": "卡片",
+    "trade": "交易",
+    "apps": "应用",
+    "settings": "设置"
+  },
+  "reminder": {
+    "googleCal": "Google 日历",
+    "appleCal": "Apple 日历",
+    "outlook": "Outlook"
+  },
+  "scanner": {
+    "camera": "摄像头不可用",
+    "cancel": "取消"
+  },
+  "stakingBanner": {
+    "title": "为 Chimera Token TGE 做好准备",
+    "descr": "锁定您的 CEXT，见证奖励随时间增长，年化收益最高可达 15%，并直接以 CEXT 形式发放至您的钱包。",
+    "live": "现已上线！",
+    "launch": "距离上线还有",
+    "joinComm": "加入社区"
+  }
+}

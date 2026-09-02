@@ -15,11 +15,14 @@ import Scanner from '../../components/Scanner'
 import { AspContext, AspInfo } from '../../providers/asp'
 import { consoleError } from '../../lib/logs'
 import LoadingLogo from '../../components/LoadingLogo'
+import {useTranslation} from 'react-i18next'
 
 export default function Server() {
   const { aspInfo } = useContext(AspContext)
   const { backupConfig, config, updateConfig } = useContext(ConfigContext)
   const { svcWallet, resetWallet } = useContext(WalletContext)
+
+  const {t} = useTranslation()
 
   const [aspUrl, setAspUrl] = useState('')
   const [error, setError] = useState('')
@@ -35,21 +38,21 @@ export default function Server() {
   }
 
   useEffect(() => {
-    setError(aspInfo.unreachable ? 'Ark server unreachable' : '')
+    setError(aspInfo.unreachable ? t('errors.send.arkade.server') : '')
   }, [aspInfo.unreachable])
 
   useEffect(() => {
     if (!aspUrl || !isValidUrl(aspUrl)) return
     // don't do anything if same server
-    if (aspUrl === config.aspUrl) return setError('Same server')
+    if (aspUrl === config.aspUrl) return setError(t('errors.server.same'))
     // test connection
     getAspInfo(aspUrl).then((info) => {
-      setError(info.unreachable ? 'Unable to connect' : '')
+      setError(info.unreachable ? t('errors.server.unableConnect') : '')
       setInfo(info)
     })
   }, [aspUrl])
 
-  if (!svcWallet) return <LoadingLogo text='Loading...' />
+  if (!svcWallet) return <LoadingLogo text={t('common.general.loading')} />
 
   const handleConnect = async () => {
     setLoading(true)
@@ -72,17 +75,17 @@ export default function Server() {
     handleConnect()
   }
 
-  if (scan) return <Scanner close={() => setScan(false)} label='Server URL' onData={setAspUrl} onError={setError} />
+  if (scan) return <Scanner close={() => setScan(false)} label={t('settings.server.serverURL')} onData={setAspUrl} onError={setError} />
 
   return (
     <>
-      <Header text='Server' back />
+      <Header text={t('settings.server.server')} back />
       <Content>
         <Padded>
           <FlexCol>
             <InputUrl
               focus
-              label='Server URL'
+              label={t('settings.server.serverURL')}
               onChange={setAspUrl}
               onEnter={handleEnter}
               openScan={() => setScan(true)}
@@ -90,15 +93,15 @@ export default function Server() {
               value={aspUrl}
             />
             <ErrorMessage error={Boolean(error)} text={error} />
-            {info && !error ? <WarningBox green text='Server found' /> : null}
-            <WarningBox text='Your wallet will be reset. Make sure you backup your wallet first.' />
+            {info && !error ? <WarningBox green text={t('settings.server.found')} /> : null}
+            <WarningBox text={t('settings.server.walletReset')} />
           </FlexCol>
         </Padded>
       </Content>
       <ButtonsOnBottom>
         <Button
           onClick={handleConnect}
-          label='Connect to server'
+          label={t('settings.server.connect')}
           disabled={!info || Boolean(error)}
           loading={loading}
         />

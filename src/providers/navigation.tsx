@@ -16,6 +16,8 @@ import SendDetails from '../screens/Wallet/Send/Details'
 import SendSuccess from '../screens/Wallet/Send/Success'
 import BankReceive from '../screens/Wallet/Receive/BankReceive'
 import BankSend from '../screens/Wallet/Send/BankSend'
+import WrapReceive from '../screens/Wallet/Receive/WrapReceive'
+import UnwrapSend from '../screens/Wallet/Send/UnwrapSend'
 import BankOrderStatus from '../screens/Wallet/BankOrderStatus'
 import BankOrderHistory from '../screens/Wallet/BankOrderHistory'
 import Transaction from '../screens/Wallet/Transaction'
@@ -46,6 +48,8 @@ import InAppBrowser from '../screens/Wallet/InAppBrowser'
 import AppStatement from '../screens/Apps/Statement/Index'
 import AppReferral from '../screens/Apps/Referral/Index'
 import AppGiftCards from '../screens/Apps/GiftCards/Index'
+import AppGiftCardPurchase from '../screens/Apps/GiftCards/Purchase'
+import AppGiftCardRedeem from '../screens/Apps/GiftCards/Redeem'
 import AppCardReservation from '../screens/Apps/CardReservation/Index'
 import AppSwap from '../screens/Apps/Swap/Index'
 import AppSwapOrderDetails from '../screens/Apps/Swap/OrderDetails'
@@ -75,6 +79,8 @@ export enum Pages {
   AppStatement,
   AppReferral,
   AppGiftCards,
+  AppGiftCardPurchase,
+  AppGiftCardRedeem,
   AppCardReservation,
   AppSwap,
   AppSwapOrderDetails,
@@ -98,6 +104,8 @@ export enum Pages {
   ReceiveAmount,
   ReceiveQRCode,
   ReceiveSuccess,
+  WrapReceive,
+  UnwrapSend,
   BankReceive,
   BankSend,
   BankOrderStatus,
@@ -141,6 +149,8 @@ const pageTab: Record<Pages, Tabs> = {
   [Pages.AppStatement]: Tabs.Apps,
   [Pages.AppReferral]: Tabs.Apps,
   [Pages.AppGiftCards]: Tabs.Apps,
+  [Pages.AppGiftCardPurchase]: Tabs.Apps,
+  [Pages.AppGiftCardRedeem]: Tabs.Apps,
   [Pages.AppCardReservation]: Tabs.Card,
   [Pages.AppSwap]: Tabs.Trade,
   [Pages.AppSwapOrderDetails]: Tabs.Trade,
@@ -164,6 +174,8 @@ const pageTab: Record<Pages, Tabs> = {
   [Pages.ReceiveAmount]: Tabs.Wallet,
   [Pages.ReceiveQRCode]: Tabs.Wallet,
   [Pages.ReceiveSuccess]: Tabs.Wallet,
+  [Pages.WrapReceive]: Tabs.Wallet,
+  [Pages.UnwrapSend]: Tabs.Wallet,
   [Pages.BankReceive]: Tabs.Wallet,
   [Pages.BankSend]: Tabs.Wallet,
   [Pages.BankOrderStatus]: Tabs.Wallet,
@@ -233,6 +245,10 @@ export const pageComponent = (page: Pages, navigationData?: Record<string, unkno
       return <AppReferral />
     case Pages.AppGiftCards:
       return <AppGiftCards />
+    case Pages.AppGiftCardPurchase:
+      return <AppGiftCardPurchase />
+    case Pages.AppGiftCardRedeem:
+      return <AppGiftCardRedeem />
     case Pages.AppCardReservation:
       return <AppCardReservation />
     case Pages.AppSwap:
@@ -277,6 +293,10 @@ export const pageComponent = (page: Pages, navigationData?: Record<string, unkno
       return <ReceiveQRCode />
     case Pages.ReceiveSuccess:
       return <ReceiveSuccess />
+    case Pages.WrapReceive:
+      return <WrapReceive />
+    case Pages.UnwrapSend:
+      return <UnwrapSend />
     case Pages.BankReceive:
       return <BankReceive />
     case Pages.BankSend:

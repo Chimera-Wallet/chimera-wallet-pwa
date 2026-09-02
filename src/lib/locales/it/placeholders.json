@@ -1,0 +1,27 @@
+{
+  "addressFallback": "Incolla indirizzo",
+  "networkFallback": "Seleziona una rete per visualizzarne la descrizione",
+  "arkade": {
+    "address": "Incolla indirizzo Arkade"
+  },
+  "lightning": {
+    "address": "Incolla indirizzo fattura Lightning",
+    "invoice": "Incolla una fattura Lightning per inviare il pagamento. L'importo del pagamento è codificato nella fattura."
+  },
+  "bitcoin": {
+    "address": "Incolla indirizzo BTC"
+  },
+  "bank": {
+    "details": "Inserisci i dati bancari"
+  },
+  "contacts": {
+    "name": "Inserisci il nome del contatto",
+    "accounts": "es. Wallet principale, Risparmi...",
+    "enterAddr": "Inserisci {{name}}"
+  },
+  "assets": {
+    "token": "Il mio token",
+    "assIdPaste": "Incolla ID asset...",
+    "controlAm": "Importo di controllo"
+  }
+}

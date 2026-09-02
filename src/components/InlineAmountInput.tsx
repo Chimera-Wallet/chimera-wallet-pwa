@@ -2,7 +2,7 @@ import { useContext, useState } from 'react'
 import { ConfigContext } from '../providers/config'
 import { FiatContext } from '../providers/fiat'
 import { prettyNumber } from '../lib/format'
-import { ASSETS, type AssetSymbol } from '../lib/assets'
+import { ASSETS, getDisplayTicker, type AssetSymbol } from '../lib/assets'
 import CurrencySwapIcon from '../icons/CurrencySwap'
 
 interface InlineAmountInputProps {
@@ -38,6 +38,7 @@ export default function InlineAmountInput({
   const [inputString, setInputString] = useState('')
 
   const assetInfo = ASSETS[asset]
+  const assetTicker = getDisplayTicker(asset)
   const isBankTransfer = Boolean(bankCurrency)
 
   // Calculate display values based on input mode
@@ -112,12 +113,12 @@ export default function InlineAmountInput({
   }
 
   // Display strings
-  const primaryCurrency = inputMode === 'crypto' ? assetInfo.symbol : bankCurrency || config.fiat
+  const primaryCurrency = inputMode === 'crypto' ? assetTicker : bankCurrency || config.fiat
 
   const secondaryValue =
     inputMode === 'crypto'
       ? `${prettyNumber(fiatValue, 2)} ${bankCurrency || config.fiat}`
-      : `≈ ${prettyNumber(cryptoValue, 8)} ${assetInfo.symbol}`
+      : `≈ ${prettyNumber(cryptoValue, 8)} ${assetTicker}`
 
   // Calculate dynamic font size based on number of digits
   const displayString = String(displayValue)

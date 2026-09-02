@@ -1,11 +1,14 @@
 import { useState } from 'react'
-import { ASSET_LIST, type AssetSymbol, getAssetConfig } from '../lib/assets'
+import { ASSET_LIST, type AssetConfig, type AssetSymbol, getAssetConfig, getDisplayTicker } from '../lib/assets'
 import AssetIcon from '../icons/AssetIcon'
 import SelectSheet from './SelectSheet'
 import SelectorField from './SelectorField'
 import {fromSatoshis} from '../lib/format'
+import { useTranslation } from 'react-i18next'
 
 interface AssetSelectorProps {
+  /** Assets to offer; defaults to every asset in the wallet. */
+  assets?: AssetConfig[]
   label?: string
   onSelect: (symbol: AssetSymbol) => void
   selected: AssetSymbol
@@ -18,6 +21,7 @@ interface AssetSelectorProps {
 }
 
 export default function AssetSelector({
+  assets = ASSET_LIST,
   label,
   onSelect,
   selected,
@@ -34,23 +38,25 @@ export default function AssetSelector({
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen
   const setIsOpen = externalSetIsOpen || setInternalIsOpen
 
+  const {t} = useTranslation()
+
   const selectedConfig = getAssetConfig(selected)
-  const options = ASSET_LIST.filter((asset) => !asset.comingSoon).map((asset) => ({
+  const options = assets.filter((asset) => !asset.comingSoon).map((asset) => ({
     id: asset.symbol,
     label: asset.name,
-    description: asset.symbol,
+    description: getDisplayTicker(asset.symbol),
     icon: <AssetIcon symbol={asset.symbol} size={32} />,
   }))
   const selectedBalanceLabel =
   selectedBalance !== undefined
     ? `${selectedConfig?.name} - ${fromSatoshis(selectedBalance)} BTC`
-    : selected
+    : getDisplayTicker(selected)
 
   return (
     <>
       <SelectorField
         icon={<AssetIcon symbol={selected} size={iconSize} />}
-        label={label !== undefined ? label : 'Asset'}        
+        label={label !== undefined ? label : t('components.assetNet.ass')}        
         onClick={() => setIsOpen(true)}
         value={selectedConfig?.name || selected}
         sublabel={selectedBalanceLabel}
@@ -63,7 +69,7 @@ export default function AssetSelector({
         onSelect={(id) => onSelect(id as AssetSymbol)}
         options={options}
         selected={selected}
-        title='Select Asset'
+        title={t('components.assetNet.selectAsset')}
       />
     </>
   )

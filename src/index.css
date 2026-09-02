@@ -25,6 +25,21 @@ html.palette-dark {
   right: 0;
   bottom: 0;
   left: 0;
+  /* On iOS the initial containing block — what a `position: absolute` shell
+     with no positioned ancestor resolves against, and what 100vh measures — is
+     the LARGE viewport: the layout as it would be with the Safari toolbars
+     retracted. Anchoring the shell with `bottom: 0` alone therefore stretches
+     it past the bottom of what is actually on screen, and that overhang reads
+     as empty scrollable space below the page content (most visible under a
+     short list, e.g. the wallet asset list). Android's browser chrome behaves
+     closely enough that it never showed there.
+
+     An explicit dynamic-viewport height tracks the visible area as the toolbars
+     show and hide. It also over-constrains top/height/bottom, so `bottom` is
+     ignored — which is what we want. The 100vh line stays first as the fallback
+     for engines without dvh. */
+  height: calc(100vh - env(safe-area-inset-top, 0px));
+  height: calc(100dvh - env(safe-area-inset-top, 0px));
   display: flex;
   position: absolute;
   flex-direction: column;
@@ -212,8 +227,11 @@ video {
 
 html {
   background-color: var(--bg);
+  /* dvh rather than the old vh + -webkit-fill-available pair: on iOS 100vh is
+     the large viewport, so it made the document taller than the screen and gave
+     the page something to scroll into. See the note on `.page`. */
   min-height: 100vh;
-  min-height: -webkit-fill-available;
+  min-height: 100dvh;
 }
 
 html,
@@ -234,7 +252,7 @@ body {
   color: var(--white);
   /* Prevent white background on iOS Safari */
   min-height: 100vh;
-  min-height: -webkit-fill-available;
+  min-height: 100dvh;
 }
 
 #root {
@@ -574,8 +592,7 @@ hr {
 }
 
 .pill-nav-btn--active {
-  color: #040404;
-  background-color: var(--neutral-50);
+  color: rgba(29, 255, 120, 1);
 }
 
 .palette-dark .pill-nav-btn--active {
@@ -586,11 +603,18 @@ hr {
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--fg);
+  transition: color 150ms ease-out;
+}
+
+.pill-nav-btn--active .pill-nav-icon {
+  color: var(--green-active);
 }
 
 .pill-nav-icon svg {
   display: block;
   shape-rendering: geometricPrecision;
+  color: currentColor;
 }
 
 .pill-icon-pop {
@@ -792,6 +816,49 @@ hr {
 /* Prevent visual overflow during page transitions */
 .tabs-inner {
   overflow: hidden;
+}
+
+/* ============================================================
+   Chatwoot support widget
+   Chatwoot only goes full-screen below its own 667px breakpoint, so on
+   anything wider the chat opens as a small floating panel. The support
+   screen is a full-page experience, so pin the widget to the viewport.
+   The global `iframe` rule above (height: calc(100% - 50px)) also has to
+   be undone for the embedded chat frame.
+   ============================================================ */
+
+.woot-widget-holder {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  box-sizing: border-box !important;
+  z-index: 2147483000;
+}
+
+.woot-widget-holder iframe,
+iframe#chatwoot_live_chat_widget {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  border: none !important;
+}
+
+/* Chatwoot's own hide class must still win over the sizing above */
+.woot-widget-holder.woot--hide,
+.woot--hide {
+  display: none !important;
+}
+
+/* Keep the chat clear of the notch / home indicator */
+.woot-widget-holder {
+  padding-top: env(safe-area-inset-top, 0px) !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
 }
 
 /* Intercom messenger safe area adjustments for iOS */

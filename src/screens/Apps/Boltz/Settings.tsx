@@ -15,6 +15,9 @@ import { useToast } from '../../../components/Toast'
 import { consoleError } from '../../../lib/logs'
 import { extractError } from '../../../lib/error'
 import { prettyAmount } from '../../../lib/format'
+import {useTranslation} from 'react-i18next'
+import { T } from 'vitest/dist/chunks/reporters.d.BuRON0I0.js'
+import { t } from 'i18next'
 
 export default function AppBoltzSettings() {
   const { arkadeSwaps, connected, getApiUrl, restoreSwaps, toggleConnection } = useContext(SwapsContext)
@@ -31,19 +34,21 @@ export default function AppBoltzSettings() {
   const [recoveringIds, setRecoveringIds] = useState<Set<string>>(new Set())
   const [rowErrors, setRowErrors] = useState<Record<string, RowError>>({})
 
+  const {t} = useTranslation()
+
   useEffect(() => {
     if (counter !== 5) return
     restoreSwaps()
       .then((numSwapsRestored) => {
         setRestoreResults(
           numSwapsRestored === 0
-            ? 'Unable to find swaps available to restore'
-            : `Successfully restored ${numSwapsRestored} swaps`,
+            ? t('apps.boltz.badSwapsRestore')
+            : t('apps.boltz.goodSwapsRestore', {numRestore: numSwapsRestored})
         )
       })
       .catch((error) => {
         consoleError(error, 'Error restoring swaps')
-        setRestoreResults(`Error restoring swaps: ${extractError(error)}`)
+        setRestoreResults(t('errors.boltz.swapsRestore', {error: extractError(error)}))
       })
   }, [counter, restoreSwaps])
 
@@ -56,7 +61,7 @@ export default function AppBoltzSettings() {
 
   const handleScan = async () => {
     if (!arkadeSwaps) {
-      setScanError('Boltz integration is not ready yet. Try again in a moment.')
+      setScanError(t('errors.boltz.integration'))
       return
     }
     setScanning(true)
@@ -68,7 +73,7 @@ export default function AppBoltzSettings() {
       setScanned(results)
     } catch (err) {
       consoleError(err, 'Failed to scan recoverable submarine swaps')
-      setScanError(`Could not scan: ${extractError(err)}`)
+      setScanError(t('errors.boltz.scan', {err: extractError(err)}))
     } finally {
       setScanning(false)
     }
@@ -76,7 +81,7 @@ export default function AppBoltzSettings() {
 
   const handleRecoverOne = async (swap: BoltzSubmarineSwap) => {
     if (!arkadeSwaps) {
-      toast('Boltz integration is not ready yet')
+      toast(t('errors.boltz.integrationSimple'))
       return
     }
     setRecoveringIds((prev) => {
@@ -94,7 +99,7 @@ export default function AppBoltzSettings() {
     try {
       const outcome = await arkadeSwaps.recoverSubmarineFunds(swap)
       if (outcome.swept > 0) {
-        toast(`Recovered ${outcome.swept} VTXO${outcome.swept === 1 ? '' : 's'}`)
+        toast(t('errors.boltz.recover', {swept: outcome.swept, out: (outcome.swept === 1 ? '' : 's')}))
         try {
           const fresh = await arkadeSwaps.scanRecoverableSubmarineSwaps()
           setScanned(fresh)
@@ -106,7 +111,7 @@ export default function AppBoltzSettings() {
       } else {
         setRowErrors((prev) => ({
           ...prev,
-          [swap.id]: { type: 'message', message: 'Nothing was swept; try again later.' },
+          [swap.id]: { type: 'message', message: t('errors.boltz.noSweep') },
         }))
       }
     } catch (err) {
@@ -123,22 +128,22 @@ export default function AppBoltzSettings() {
 
   return (
     <>
-      <Header text='Boltz settings' back />
+      <Header text={t('apps.boltz.boltzSett')} back />
       <Content>
         <Padded>
           <FlexCol gap='2rem'>
             <Toggle
               checked={connected}
               onClick={toggleConnection}
-              text='Enable Boltz'
-              subtext='Turn Boltz integration on or off'
+              text={t('apps.boltz.enable')}
+              subtext={t('apps.boltz.toggle')}
             />
             <FlexCol border gap='0.5rem' padding='0 0 1rem 0'>
               <div onClick={() => setCounter((c) => (c += 1))}>
-                <Text thin>Boltz API URL</Text>
+                <Text thin>{t('apps.boltz.boltzAPI')}</Text>
               </div>
               <Text color='neutral-500' small thin>
-                {getApiUrl() ?? 'No server available'}
+                {getApiUrl() ?? t('apps.boltz.noServ')}
               </Text>
             </FlexCol>
             {restoreResults ? (
@@ -201,25 +206,25 @@ function RecoverSection({
 }: RecoverSectionProps) {
   const nothingFound = scanned !== null && recoverable.length === 0 && preCltv.length === 0 && invalid.length === 0
 
+  const {t} = useTranslation()
+
   return (
     <FlexCol gap='1rem'>
-      <Text thin>Recover stranded funds</Text>
+      <Text thin>{t('apps.boltz.recoverStranded')}</Text>
       <Text color='neutral-500' small thin wrap>
-        Scan your local swap history for funds still locked at submarine swap addresses. This includes failed swaps that
-        were never refunded and successful swaps that received an extra deposit. Boltz is not contacted; only swaps
-        recorded on this device are checked.
+        {t('apps.boltz.scanLocalSwap')}
       </Text>
 
       <ErrorMessage error={Boolean(scanError)} text={scanError} />
 
       {scanned ? (
         nothingFound ? (
-          <WarningBox green text='Nothing to recover. No stranded funds were found in your local swap history.' />
+          <WarningBox green text={t('apps.boltz.noStranded')} />
         ) : (
           <FlexCol gap='1.5rem'>
             {recoverable.length > 0 ? (
               <RecoveryGroup
-                title='Refundable now'
+                title={t('apps.boltz.refundNow')}
                 tone='green'
                 entries={recoverable}
                 recoveringIds={recoveringIds}
@@ -230,18 +235,18 @@ function RecoverSection({
             ) : null}
             {preCltv.length > 0 ? (
               <RecoveryGroup
-                title='Waiting for timelock'
+                title={t('apps.boltz.timelock')}
                 tone='orange'
                 entries={preCltv}
-                hint='These VTXOs become refundable once the on-chain locktime expires.'
+                hint={t('apps.boltz.hintVTXO')}
               />
             ) : null}
             {invalid.length > 0 ? (
               <RecoveryGroup
-                title='Could not inspect'
+                title={t('apps.boltz.inspect')}
                 tone='red'
                 entries={invalid}
-                hint='These swaps are missing data or are still pending; they cannot be inspected for recovery.'
+                hint={t('apps.boltz.swapsMissing')}
               />
             ) : null}
           </FlexCol>
@@ -252,7 +257,7 @@ function RecoverSection({
         onClick={onScan}
         loading={scanning}
         disabled={!arkadeSwapsReady || scanning || anyRecovering}
-        label={scanned ? 'Scan again' : 'Check for refundable funds'}
+        label={scanned ? t('apps.boltz.scanAgain') : t('apps.boltz.checkRefundable')}
         secondary={scanned !== null}
       />
     </FlexCol>
@@ -281,6 +286,7 @@ function RecoveryGroup({
   disabled,
 }: RecoveryGroupProps) {
   const toneColor = tone === 'green' ? 'green' : tone === 'orange' ? 'orange' : 'red'
+  const {t} = useTranslation()
   return (
     <FlexCol gap='0.5rem'>
       <FlexRow between>
@@ -288,7 +294,7 @@ function RecoveryGroup({
           {title}
         </Text>
         <Text color='dark50' small thin>
-          {entries.length} swap{entries.length === 1 ? '' : 's'}
+          {entries.length} {t('apps.boltz.swap')}{entries.length === 1 ? '' : 's'}
         </Text>
       </FlexRow>
       {hint ? (
@@ -365,7 +371,7 @@ function RecoveryRow({ info, recovering, error, onRecover, disabled }: RecoveryR
                 onClick={() => onRecover?.(info.swap)}
                 loading={recovering}
                 disabled={disabled || recovering}
-                label='Recover'
+                label={t('apps.boltz.recover')}
                 secondary
               />
             </div>
@@ -373,13 +379,13 @@ function RecoveryRow({ info, recovering, error, onRecover, disabled }: RecoveryR
           {info.status === 'pre_cltv' && (blocksAway !== null || secondsAway !== null) ? (
             <Text color='orange' tiny>
               {secondsAway !== null && secondsAway <= 0 ? (
-                <>Ready now; scan again</>
+                <>{t('apps.boltz.readyScan')}</>
               ) : blocksAway !== null ? (
                 <>
-                  {blocksAway} block{blocksAway === 1 ? '' : 's'} to go
+                  {blocksAway} {t('apps.boltz.block')}{blocksAway === 1 ? '' : 's'} {t('apps.boltz.togo')}
                 </>
               ) : (
-                <>{formatRemainingTime(secondsAway!)} to go</>
+                <>{formatRemainingTime(secondsAway!)} {t('apps.boltz.togo')}</>
               )}
             </Text>
           ) : null}
@@ -401,8 +407,8 @@ function formatRowError(error: RowError, blocksAway: number | null, secondsAway:
   // and the unilateral refundWithoutReceiver still needs CLTV).
   const remaining = formatLocktimeRemaining(blocksAway, secondsAway)
   return remaining
-    ? `Refund locktime not reached yet — try again in ${remaining}.`
-    : 'Refund locktime not reached yet — try again later.'
+    ? t('apps.boltz.refundNotReachedSecs', {secs: remaining})
+    : t('apps.boltz.refundNotReached')
 }
 
 function formatLocktimeRemaining(blocksAway: number | null, secondsAway: number | null): string | null {
@@ -412,7 +418,7 @@ function formatLocktimeRemaining(blocksAway: number | null, secondsAway: number 
   }
   if (blocksAway !== null) {
     if (blocksAway <= 0) return null
-    return `${blocksAway} block${blocksAway === 1 ? '' : 's'}`
+    return `${blocksAway} ${t('apps.boltz.block')}${blocksAway === 1 ? '' : 's'}`
   }
   return null
 }
@@ -427,13 +433,13 @@ function truncate(s: string, n: number): string {
 }
 
 function formatRemainingTime(seconds: number): string {
-  if (seconds <= 0) return '0 seconds'
+  if (seconds <= 0) return t('apps.boltz.0sec')
   const minutes = Math.floor(seconds / 60)
   const hours = Math.floor(minutes / 60)
   const days = Math.floor(hours / 24)
 
-  if (days > 0) return `~${days} day${days === 1 ? '' : 's'}`
-  if (hours > 0) return `~${hours} hour${hours === 1 ? '' : 's'}`
-  if (minutes > 0) return `~${minutes} minute${minutes === 1 ? '' : 's'}`
-  return `${seconds} second${seconds === 1 ? '' : 's'}`
+  if (days > 0) return `~${days} ${t('apps.boltz.day')}${days === 1 ? '' : 's'}`
+  if (hours > 0) return `~${hours} ${t('apps.boltz.hours')}${hours === 1 ? '' : 's'}`
+  if (minutes > 0) return `~${minutes} ${t('apps.boltz.minute')}${minutes === 1 ? '' : 's'}`
+  return `${seconds} ${t('apps.boltz.second')}${seconds === 1 ? '' : 's'}`
 }

@@ -2,6 +2,7 @@ import React from 'react'
 import Button from './Button'
 import HomeIcon from '../icons/Home'
 import { hapticSubtle } from '../lib/haptics'
+import { useTranslation } from 'react-i18next'
 
 const FONT = "'Titillium Web', sans-serif"
 
@@ -63,6 +64,7 @@ export default function InstallBanner({ description, action, onDismiss }: Instal
     hapticSubtle()
     onDismiss()
   }
+  const {t} = useTranslation()
 
   return (
     <div style={wrapperStyle}>
@@ -82,7 +84,7 @@ export default function InstallBanner({ description, action, onDismiss }: Instal
             <HomeIcon />
           </div>
           <span style={{ color: 'var(--fg)', fontWeight: 700, fontSize: 17, lineHeight: 1.3, fontFamily: FONT }}>
-            Add CHIMERA to your home screen
+            {t('components.installBanner.addChimera')}
           </span>
         </div>
         <span style={{ color: 'var(--neutral-600)', fontSize: 14, lineHeight: 1.5, fontFamily: FONT }}>

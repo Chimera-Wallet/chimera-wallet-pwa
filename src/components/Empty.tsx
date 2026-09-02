@@ -2,6 +2,7 @@ import { ReactNode } from 'react'
 import CenterScreen from './CenterScreen'
 import FlexCol from './FlexCol'
 import Text, { TextSecondary } from './Text'
+import { useTranslation } from 'react-i18next'
 
 interface EmptyProps {
   text: string
@@ -24,47 +25,52 @@ function EmptyTemplate({ icon, text, secondaryText }: EmptyProps) {
 }
 
 export function EmptyAssetsList() {
+  const {t} = useTranslation()
   return (
-    <EmptyTemplate icon={<EmptyCoinsIcon />} text='No assets yet' secondaryText='Import or mint one to get started' />
+    <EmptyTemplate icon={<EmptyCoinsIcon />} text={t('components.empty.noAss')} secondaryText={t('components.empty.import')}/>
   )
 }
 
 export function EmptyCoinsList() {
+  const {t} = useTranslation()
   return (
     <EmptyTemplate
       icon={<EmptyCoinsIcon />}
-      text='No virtual coins available'
-      secondaryText='Generate or import coins to continue'
+      text={t('components.empty.noVirt')}
+      secondaryText={t('components.empty.genImp')}
     />
   )
 }
 
 export function EmptyLogsList() {
+  const {t} = useTranslation()
   return (
     <EmptyTemplate
       icon={<EmptyListIcon />}
-      text='No logs available'
-      secondaryText='Start using the app to generate logs.'
+      text={t('components.empty.noLogs')}
+      secondaryText={t('components.empty.useApp')}
     />
   )
 }
 
 export function EmptySwapList() {
+  const {t} = useTranslation()
   return (
     <EmptyTemplate
       icon={<EmptySwapListIcon />}
-      text='No swaps yet'
-      secondaryText='Your swap history will appear here once you start swapping.'
+      text={t('components.empty.noSwap')}
+      secondaryText={t('components.empty.swapHist')}
     />
   )
 }
 
 export function EmptyTxList() {
+  const {t} = useTranslation()
   return (
     <EmptyTemplate
       icon={<EmptyListIcon />}
-      text='No transactions yet'
-      secondaryText='Make a transaction to get started.'
+      text={t('components.empty.noTrans')}
+      secondaryText={t('components.empty.makeTrans')}
     />
   )
 }

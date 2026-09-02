@@ -10,9 +10,11 @@ import { consoleError } from '../lib/logs'
 import InputPassword from './InputPassword'
 import ButtonsOnBottom from './ButtonsOnBottom'
 import { WalletContext } from '../providers/wallet'
-import { authenticateUser } from '../lib/biometrics'
+import { authenticateUser, isBiometricsSupported, recoverPasskeyAuth } from '../lib/biometrics'
+import { isValidPassword } from '../lib/privateKey'
 import LockIcon from '../icons/Lock'
 import OnboardingLayout from './OnboardingLayout'
+import { useTranslation } from 'react-i18next'
 
 interface NeedsPasswordProps {
   error: string
@@ -33,19 +35,64 @@ export default function NeedsPassword({
   onRestore,
   onboarding = false,
 }: NeedsPasswordProps) {
-  const { wallet } = useContext(WalletContext)
+  const { wallet, updateWallet } = useContext(WalletContext)
   const [password, setPassword] = useState('')
   const [biometricFailed, setBiometricFailed] = useState(false)
+  const [biometricError, setBiometricError] = useState('')
+  const [recovering, setRecovering] = useState(false)
+  const {t} = useTranslation()
+
+  // The biometric branches below used to render no error at all, so a failed
+  // unlock looked identical to not having tried yet: the OS prompt succeeded
+  // and the screen simply sat there. Whatever went wrong has to be visible.
+  const shownError = error || biometricError
 
   const handleBiometrics = () => {
     setBiometricFailed(false)
+    setBiometricError('')
     authenticateUser(wallet.passkeyId)
-      .then(onPassword)
+      .then((biometricPassword) => {
+        // Guard the caller as well as the library: an empty password would be
+        // dropped by the unlock effect, leaving the user staring at a screen
+        // that just told them authentication succeeded.
+        if (!biometricPassword) throw new Error('Passkey returned no user handle')
+        onPassword(biometricPassword)
+      })
       .catch((err) => {
         consoleError(err, 'Biometric authentication failed')
+        setBiometricError(err instanceof Error ? err.message : String(err))
         setBiometricFailed(true)
       })
   }
+
+  // Recovery for a wallet that is locked under a passkey password but has lost
+  // `lockedByBiometrics`/`passkeyId` from its record — those wallets render the
+  // password branch below and would otherwise have no way in at all, since the
+  // password only ever existed inside the passkey.
+  //
+  // The recovered handle is checked against the stored secret BEFORE anything is
+  // written, so answering with an unrelated passkey reports a mismatch instead
+  // of marking the wallet biometric with a passkey that cannot open it.
+  const handlePasskeyRecovery = async () => {
+    setBiometricError('')
+    setRecovering(true)
+    try {
+      const { password: recovered, passkeyId } = await recoverPasskeyAuth()
+      if (!(await isValidPassword(recovered))) {
+        throw new Error(t('components.needsPass.passkeyMismatch'))
+      }
+      updateWallet((prev) => ({ ...prev, lockedByBiometrics: true, passkeyId }))
+      onPassword(recovered)
+    } catch (err) {
+      consoleError(err, 'Passkey recovery failed')
+      setBiometricError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setRecovering(false)
+    }
+  }
+
+  // Only worth offering where a passkey could exist at all.
+  const canTryPasskey = !wallet.lockedByBiometrics && isBiometricsSupported()
 
   const handleChange = (ev: any) => setPassword(ev.target.value)
   const handleClick = () => onPassword(password)
@@ -88,10 +135,11 @@ export default function NeedsPassword({
     if (wallet.lockedByBiometrics && biometricFailed) {
       return (
         <OnboardingLayout>
-          {secondaryText('Your passkey could not be found on this device. Restore your wallet using your secret phrase.')}
+          {secondaryText(t('components.needsPass.passkeyNF'))}
           <FlexCol gap='0'>
-            <Button onClick={handleBiometrics} label='Try again' secondary disabled={loading} />
-            {onRestore ? <Button onClick={onRestore} label='Restore from secret phrase' disabled={loading} /> : null}
+            <ErrorMessage text={shownError} error={Boolean(shownError)} />
+            <Button onClick={handleBiometrics} label={t('components.needsPass.tryAgain')} secondary disabled={loading} />
+            {onRestore ? <Button onClick={onRestore} label={t('components.needsPass.restorePhrase')} disabled={loading} /> : null}
           </FlexCol>
         </OnboardingLayout>
       )
@@ -102,7 +150,9 @@ export default function NeedsPassword({
       return (
         <OnboardingLayout>
           <FlexCol gap='0'>
-            <Button onClick={handleBiometrics} label='Unlock using biometrics' loading={loading} disabled={loading} />
+            <ErrorMessage text={shownError} error={Boolean(shownError)} />
+            <Button onClick={handleBiometrics} label={t('components.needsPass.unlockBio')} loading={loading} disabled={loading} />
+            {onRestore ? restoreLink(t('components.needsPass.restorePhrase')) : null}
           </FlexCol>
         </OnboardingLayout>
       )
@@ -114,14 +164,23 @@ export default function NeedsPassword({
         <FlexCol gap='1rem'>
           <InputPassword
             focus
-            label='Insert password'
+            label={t('components.needsPass.insPass')}
             onChange={handleChange}
             onEnter={handleClick}
-            placeholder='password'
+            placeholder={t('components.needsPass.pass')}
           />
-          <ErrorMessage text={error} error={Boolean(error)} />
-          <Button onClick={handleClick} label='Unlock wallet' loading={loading} disabled={loading} />
-          {restoreLink('Forgot password? Restore with private key')}
+          <ErrorMessage text={shownError} error={Boolean(shownError)} />
+          <Button onClick={handleClick} label={t('components.needsPass.unlock')} loading={loading} disabled={loading} />
+          {canTryPasskey ? (
+            <Button
+              onClick={handlePasskeyRecovery}
+              label={t('components.needsPass.unlockBio')}
+              secondary
+              loading={recovering}
+              disabled={loading || recovering}
+            />
+          ) : null}
+          {restoreLink(t('components.needsPass.forgot'))}
         </FlexCol>
       </OnboardingLayout>
     )
@@ -137,19 +196,19 @@ export default function NeedsPassword({
               <LockIcon big />
               <FlexCol centered gap='0.5rem'>
                 <Text centered heading>
-                  Passkey not found
+                  {t('components.needsPass.passkeyNFText')}
                 </Text>
                 <TextSecondary centered wrap>
-                  Your passkey could not be found on this device. You will need to restore your wallet using your secret
-                  phrase.
+                  {t('components.needsPass.pkText')}
                 </TextSecondary>
+                <ErrorMessage text={shownError} error={Boolean(shownError)} />
               </FlexCol>
             </CenterScreen>
           </Padded>
         </Content>
         <ButtonsOnBottom>
-          <Button onClick={handleBiometrics} label='Try again' secondary disabled={loading} />
-          {onRestore ? <Button onClick={onRestore} label='Restore from secret phrase' disabled={loading} /> : null}
+          <Button onClick={handleBiometrics} label={t('components.needsPass.tryAgain')} secondary disabled={loading} />
+          {onRestore ? <Button onClick={onRestore} label={t('components.needsPass.restorePhrase')} disabled={loading} /> : null}
         </ButtonsOnBottom>
       </>
     )
@@ -164,16 +223,17 @@ export default function NeedsPassword({
             <LockIcon big />
             <FlexCol centered gap='0.5rem'>
               <Text centered heading>
-                Welcome back
+                {t('components.needsPass.welcome')}
               </Text>
               <TextSecondary centered wrap>
-                Unlock with your passkey to continue
+                {t('components.needsPass.unlockPk')}
               </TextSecondary>
+              <ErrorMessage text={shownError} error={Boolean(shownError)} />
             </FlexCol>
           </CenterScreen>
         </Content>
         <ButtonsOnBottom>
-          <Button onClick={handleBiometrics} label='Unlock using biometrics' loading={loading} disabled={loading} />
+          <Button onClick={handleBiometrics} label={t('components.needsPass.unlockBio')} loading={loading} disabled={loading} />
         </ButtonsOnBottom>
       </>
     )
@@ -189,12 +249,12 @@ export default function NeedsPassword({
             <FlexCol centered gap='1rem'>
               <InputPassword
                 focus
-                label='Insert password'
+                label={t('components.needsPass.insPass')}
                 onChange={handleChange}
                 onEnter={handleClick}
-                placeholder='password'
+                placeholder={t('components.needsPass.pass')}
               />
-              <ErrorMessage text={error} error={Boolean(error)} />
+              <ErrorMessage text={shownError} error={Boolean(shownError)} />
               {onRestore ? (
                 <span
                   onClick={onRestore}
@@ -208,7 +268,7 @@ export default function NeedsPassword({
                     display: 'block',
                   }}
                 >
-                  Forgot password? Restore with private key
+                  F{t('components.needsPass.forgot')}
                 </span>
               ) : null}
             </FlexCol>
@@ -216,7 +276,16 @@ export default function NeedsPassword({
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        <Button onClick={handleClick} label='Unlock wallet' loading={loading} disabled={loading} />
+        <Button onClick={handleClick} label={t('components.needsPass.unlock')} loading={loading} disabled={loading} />
+        {canTryPasskey ? (
+          <Button
+            onClick={handlePasskeyRecovery}
+            label={t('components.needsPass.unlockBio')}
+            secondary
+            loading={recovering}
+            disabled={loading || recovering}
+          />
+        ) : null}
       </ButtonsOnBottom>
     </>
   )

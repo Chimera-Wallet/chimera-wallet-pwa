@@ -1,4 +1,5 @@
 import { testDomains } from './constants'
+import { useTransition } from 'react'
 
 export interface AppInfoSlide {
   title: string

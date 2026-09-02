@@ -9,6 +9,8 @@ import LendasatIcon from './Lendasat/LendasatIcon'
 import SatoraIcon from './Satora/SatoraIcon'
 import Focusable from '../../components/Focusable'
 import { hapticSubtle } from '../../lib/haptics'
+import {useTranslation} from 'react-i18next'
+ 
 
 interface AppProps {
   icon?: React.ReactElement
@@ -22,6 +24,7 @@ interface AppProps {
 function App({ icon, image, link, name, page, comingSoon }: AppProps) {
   const { navigate } = useContext(NavigationContext)
 
+  const {t} = useTranslation()
   const handleClick = () => {
     if (comingSoon) return
     hapticSubtle()
@@ -81,7 +84,7 @@ function App({ icon, image, link, name, page, comingSoon }: AppProps) {
                 fontWeight: 500,
               }}
             >
-              Coming Soon
+              {t('common.general.comingSoon')}
             </div>
           ) : null}
         </div>
@@ -98,24 +101,25 @@ const gridStyle: React.CSSProperties = {
 }
 
 export default function Apps() {
+  const {t} = useTranslation()
   return (
     <>
-      <Header text='Apps' />
+      <Header text={t('common.general.apps')} />
       <Content>
         <Padded>
           <div style={gridStyle}>
-            <App name='Swap' image='/images/apps/Transfer.svg' page={Pages.AppSwap} />
-            <App name='Address Book' image='/images/apps/AddressBook.svg' page={Pages.AppAddressBook} />
-            <App name='Statement' image='/images/apps/Statement.svg' page={Pages.AppStatement} />
-            <App name='Referral' image='/images/apps/Referral.svg' page={Pages.AppReferral} />
-            <App name='Gift Cards' image='/images/apps/GiftCards.svg' page={Pages.AppGiftCards} />
-            <App name='Card Reservation' image='/images/apps/CardReservation.svg' page={Pages.AppCardReservation} />
-            <App name='Staking' image='/images/apps/Transfer.svg' comingSoon />
+            <App name={t('apps.swap.swap')} image='/images/apps/Transfer.svg' page={Pages.AppSwap} />
+            <App name={t('apps.addressBook.addressBook')} image='/images/apps/AddressBook.svg' page={Pages.AppAddressBook} />
+            <App name={t('common.general.statement')} image='/images/apps/Statement.svg' page={Pages.AppStatement} />
+            <App name={t('apps.referral.referral')} image='/images/apps/Referral.svg' page={Pages.AppReferral} />
+            <App name={t('apps.giftCards.giftCards')} image='/images/apps/GiftCards.svg' page={Pages.AppGiftCards} />
+            <App name={t('apps.card.card')} image='/images/apps/CardReservation.svg' page={Pages.AppCardReservation} />
+            <App name={t('apps.staking.staking')} image='/images/apps/Transfer.svg' comingSoon />
           </div>
 
           <div style={{ marginTop: '2rem', marginBottom: '1rem' }}>
             <Text bold large>
-              Third Party Apps
+              {t('common.general.thirdParty')}
             </Text>
           </div>
 

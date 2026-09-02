@@ -18,11 +18,14 @@ import { extractError } from '../../../lib/error'
 import Input from '../../../components/Input'
 import AssetCard from '../../../components/AssetCard'
 import { centsToUnits, prettyAssetAmount, unitsToCents } from '../../../lib/assets'
+import {useTranslation} from 'react-i18next'
 
 export default function AppAssetBurn() {
   const { navigate } = useContext(NavigationContext)
   const { assetInfo } = useContext(FlowContext)
   const { assetBalances, svcWallet, reloadWallet } = useContext(WalletContext)
+
+  const {t} = useTranslation()
 
   const [amount, setAmount] = useState(BigInt(0))
   const [error, setError] = useState('')
@@ -32,7 +35,7 @@ export default function AppAssetBurn() {
   const pendingConfirm = useRef(false)
   const [showConfirm, setShowConfirm] = useState(false)
 
-  const name = assetInfo.metadata?.name ?? 'Unknown'
+  const name = assetInfo.metadata?.name ?? t('common.general.unkown')
   const ticker = assetInfo.metadata?.ticker ?? assetInfo.assetId.slice(0, 8)
   const icon = assetInfo.metadata?.icon
   const decimals = assetInfo.metadata?.decimals ?? 8
@@ -45,11 +48,11 @@ export default function AppAssetBurn() {
 
   const handleBurnRequest = () => {
     if (!amount || amount <= 0) {
-      setError('Amount must be a positive number')
+      setError(t('errors.assets.positive'))
       return
     }
     if (amount > balance) {
-      setError(`Cannot burn more than your balance (${prettyAssetAmount(balance, decimals)} ${ticker})`)
+      setError(t('errors.assets.positive', {amount: prettyAssetAmount(balance, decimals) , tick: ticker}))
       return
     }
     setError('')
@@ -92,7 +95,7 @@ export default function AppAssetBurn() {
   const handleMax = () => setAmount(balance)
 
   if (processing || opDone)
-    return <LoadingLogo text='Burning...' done={opDone} exitMode='fly-up' onExitComplete={handleExitComplete} />
+    return <LoadingLogo text={t('apps.assets.burning')} done={opDone} exitMode='fly-up' onExitComplete={handleExitComplete} />
 
   return (
     <>
@@ -101,15 +104,15 @@ export default function AppAssetBurn() {
         <FlexCol gap='1.5rem'>
           <FlexCol centered gap='0.5rem'>
             <Text big bold>
-              Confirm Burn
+              {t('apps.assets.confBurn')}
             </Text>
             <Text centered wrap color='neutral-500'>
-              You are about to burn {prettyAssetAmount(amount, decimals)} {ticker || name}. This action is irreversible.
+              {t('apps.assets.burning', {amount: prettyAssetAmount(amount, decimals), id:(ticker || name)}) }
             </Text>
           </FlexCol>
           <FlexRow>
-            <Button onClick={() => setShowConfirm(false)} label='Cancel' secondary />
-            <Button onClick={handleBurnConfirm} label='Burn' />
+            <Button onClick={() => setShowConfirm(false)} label={t('common.general.cancel')} secondary />
+            <Button onClick={handleBurnConfirm} label={t('common.general.burn')} />
           </FlexRow>
         </FlexCol>
       </Modal>
@@ -140,7 +143,7 @@ export default function AppAssetBurn() {
               step='1'
               type='number'
               placeholder='0'
-              label='Amount to Burn'
+              label={t('apps.assets.amountToBurn')}
               onChange={handleAmountChange}
               value={amount ? centsToUnits(amount, decimals) : ''}
             />
@@ -148,7 +151,7 @@ export default function AppAssetBurn() {
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        <Button label='Burn' onClick={handleBurnRequest} disabled={amount <= 0} />
+        <Button label={t('common.general.burn')} onClick={handleBurnRequest} disabled={amount <= 0} />
       </ButtonsOnBottom>
     </>
   )

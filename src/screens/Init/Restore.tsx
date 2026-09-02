@@ -4,14 +4,15 @@ import ButtonsOnBottom from '../../components/ButtonsOnBottom'
 import { useContext, useEffect, useState } from 'react'
 import { ConfigContext } from '../../providers/config'
 import { BackupProvider } from '../../lib/backup'
-import { defaultPassword } from '../../lib/constants'
+import { defaultArkServer, defaultPassword } from '../../lib/constants'
 import { FlowContext } from '../../providers/flow'
+import type { Config } from '../../lib/types'
 import ErrorMessage from '../../components/Error'
 import Content from '../../components/Content'
 import FlexCol from '../../components/FlexCol'
 import { extractError } from '../../lib/error'
 import Loading from '../../components/Loading'
-import { consoleError } from '../../lib/logs'
+import { consoleError, consoleLog } from '../../lib/logs'
 import Button from '../../components/Button'
 import Header from '../../components/Header'
 import Padded from '../../components/Padded'
@@ -24,14 +25,36 @@ import { validateMnemonic } from '@scure/bip39'
 import { wordlist } from '@scure/bip39/wordlists/english'
 import { deriveNostrKeyFromMnemonic } from '../../lib/mnemonic'
 import { AspContext } from '../../providers/asp'
+import {useTranslation} from 'react-i18next'
+
+// The ARK server is env-only (single source of truth). A backup made on another
+// network carries a different aspUrl; this detects that so we can ignore that
+// backup's settings instead of importing them into the wrong network.
+const serverHost = (url?: string): string | undefined => {
+  if (!url) return undefined
+  const withProto = /^https?:\/\//.test(url) ? url : `https://${url}`
+  try {
+    return new URL(withProto).host
+  } catch {
+    return undefined
+  }
+}
+
+const isForeignArkServer = (backupUrl?: string): boolean => {
+  const backup = serverHost(backupUrl)
+  if (!backup) return false // no server in backup means nothing to cross
+  return backup !== serverHost(defaultArkServer())
+}
 
 export default function InitRestore() {
-  const { updateConfig } = useContext(ConfigContext)
+  const { config, updateConfig } = useContext(ConfigContext)
   const { navigate } = useContext(NavigationContext)
   const { setInitInfo } = useContext(FlowContext)
   const { aspInfo } = useContext(AspContext)
 
-  const buttonLabel = 'Continue'
+  const {t} = useTranslation()
+
+  const buttonLabel = t('common.general.continue')
 
   const [error, setError] = useState('')
   const [label, setLabel] = useState(buttonLabel)
@@ -61,8 +84,8 @@ export default function InitRestore() {
       } else {
         setMnemonic(undefined)
         setPrivateKey(undefined)
-        setLabel('Invalid recovery phrase')
-        setError('Invalid recovery phrase')
+        setLabel(t('init.restore.invalidPhrase'))
+        setError(t('init.restore.invalidPhrase'))
       }
       return
     }
@@ -74,10 +97,10 @@ export default function InitRestore() {
       if (trimmed.match(/^nsec/)) pk = nsecToPrivateKey(trimmed)
       else pk = hex.decode(trimmed)
       const invalid = invalidPrivateKey(pk)
-      setLabel(invalid ? 'Unable to validate private key format' : buttonLabel)
+      setLabel(invalid ? t('init.restore.validationUnable') : buttonLabel)
       setError(invalid)
     } catch (err) {
-      setLabel('Unable to validate key format')
+      setLabel( t('init.restore.validationUnableSimple'))
       setError(extractError(err))
     }
     setPrivateKey(pk)
@@ -101,10 +124,25 @@ export default function InitRestore() {
       seckey = privateKey!
     }
     new BackupProvider({ seckey }, new IndexedDbSwapRepository())
-      .restore((conf) =>
-        // we enforce delegates on restore
-        updateConfig({ ...conf, delegate: true }),
-      )
+      .restore((conf) => {
+        // A recovery phrase is network-agnostic and the same one is legitimately
+        // used on more than one network. The Nostr backup is keyed by the phrase,
+        // so restoring on staging can turn up the mainnet backup. That must not
+        // block the restore — the wallet is rebuilt from the phrase itself, and
+        // this callback only imports preferences. Skip a foreign network's
+        // settings (its importedAssets are asset IDs that mean nothing here) and
+        // let the restore continue with local defaults.
+        if (isForeignArkServer(conf.aspUrl)) {
+          consoleLog('Backup belongs to another network; keeping local settings')
+          return
+        }
+        // Never adopt network-critical fields (aspUrl, delegate) from a backup;
+        // only the user's preferences are safe to restore.
+        const preferences: Partial<Config> = { ...conf }
+        delete preferences.aspUrl
+        delete preferences.delegate
+        updateConfig({ ...config, ...preferences })
+      })
       .catch((err) => consoleError(err, 'Error restoring from nostr'))
       .finally(() => setRestoreDone(true))
   }
@@ -123,23 +161,22 @@ export default function InitRestore() {
   const disabled = Boolean((!privateKey && !mnemonic) || error)
 
   if (restoring)
-    return <Loading text='Restoring wallet...' />
+    return <Loading text={t('init.restore.restoringWallet')} />
 
   return (
     <>
-      <Header text='Restore wallet' back />
+      <Header text={t('init.init.restoreWallet')} back />
       <Content>
         <Padded>
           <OnboardStaggerContainer>
             <OnboardStaggerChild>
               <FlexCol between>
                 <FlexCol>
-                  <Input name='private-key' label='Recovery phrase or private key' onChange={setSomeKey} />
+                  <Input name={t('init.restore.pk')} label={t('init.restore.recoveryPhraseKey')} onChange={setSomeKey} />
                   <ErrorMessage error={Boolean(error)} text={error} />
                 </FlexCol>
                 <TextSecondary wrap>
-                  Enter your 12-word recovery phrase, or a private key starting with 'nsec' or a raw hex key. Do not
-                  share it with anyone.
+                  {t('init.restore.phraseEntry')}
                 </TextSecondary>
               </FlexCol>
             </OnboardStaggerChild>
@@ -148,7 +185,7 @@ export default function InitRestore() {
       </Content>
       <ButtonsOnBottom>
         <Button onClick={handleProceed} label={label} disabled={disabled} />
-        <Button onClick={handleCancel} label='Cancel' secondary />
+        <Button onClick={handleCancel} label={t('common.general.cancel')} secondary />
       </ButtonsOnBottom>
     </>
   )
