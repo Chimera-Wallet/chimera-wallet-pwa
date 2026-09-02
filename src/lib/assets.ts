@@ -134,6 +134,29 @@ export const getWrappedAssetId = (symbol: string): string | undefined => {
   return WRAPPED_ASSET_IDS[symbol.toUpperCase() as AssetSymbol]
 }
 
+// Symbols held as Arkade wrapped assets. Taken from the keys above, so it stays
+// true whether or not the corresponding env var happens to be set — unlike
+// getWrappedAssetId(), which cannot tell "not a wrapped asset" from "wrapped but
+// unconfigured".
+const WRAPPED_ASSET_SYMBOLS = Object.keys(WRAPPED_ASSET_IDS) as AssetSymbol[]
+
+/**
+ * The `VITE_ARKADE_*` env vars this build actually needs, derived from the
+ * assets it offers rather than listed by hand.
+ *
+ * An asset that is hidden (absent from ASSET_LIST) or still `comingSoon` cannot
+ * be held or moved, so its id is not needed to boot. Hardcoding all of them
+ * meant production — where only BTC is live and CEXT is "Coming Soon" — failed
+ * its startup check over ids for assets that are switched off.
+ *
+ * Launching an asset is therefore still a one-line change: add it to
+ * ASSET_LIST (and drop `comingSoon`), and its id becomes required automatically.
+ */
+export const getRequiredAssetIdEnvVars = (): string[] =>
+  ASSET_LIST.filter(
+    (asset) => !asset.comingSoon && WRAPPED_ASSET_SYMBOLS.includes(asset.symbol.toUpperCase() as AssetSymbol),
+  ).map((asset) => `VITE_ARKADE_${asset.symbol.toUpperCase()}`)
+
 /** Reverse lookup: the app symbol for a given Arkade wrapped asset ID. */
 export const getAssetSymbolByAssetId = (assetId: string): AssetSymbol | undefined => {
   for (const [symbol, id] of Object.entries(WRAPPED_ASSET_IDS)) {
