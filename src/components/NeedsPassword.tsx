@@ -10,7 +10,8 @@ import { consoleError } from '../lib/logs'
 import InputPassword from './InputPassword'
 import ButtonsOnBottom from './ButtonsOnBottom'
 import { WalletContext } from '../providers/wallet'
-import { authenticateUser } from '../lib/biometrics'
+import { authenticateUser, isBiometricsSupported, recoverPasskeyAuth } from '../lib/biometrics'
+import { isValidPassword } from '../lib/privateKey'
 import LockIcon from '../icons/Lock'
 import OnboardingLayout from './OnboardingLayout'
 import { useTranslation } from 'react-i18next'
@@ -34,10 +35,11 @@ export default function NeedsPassword({
   onRestore,
   onboarding = false,
 }: NeedsPasswordProps) {
-  const { wallet } = useContext(WalletContext)
+  const { wallet, updateWallet } = useContext(WalletContext)
   const [password, setPassword] = useState('')
   const [biometricFailed, setBiometricFailed] = useState(false)
   const [biometricError, setBiometricError] = useState('')
+  const [recovering, setRecovering] = useState(false)
   const {t} = useTranslation()
 
   // The biometric branches below used to render no error at all, so a failed
@@ -62,6 +64,35 @@ export default function NeedsPassword({
         setBiometricFailed(true)
       })
   }
+
+  // Recovery for a wallet that is locked under a passkey password but has lost
+  // `lockedByBiometrics`/`passkeyId` from its record — those wallets render the
+  // password branch below and would otherwise have no way in at all, since the
+  // password only ever existed inside the passkey.
+  //
+  // The recovered handle is checked against the stored secret BEFORE anything is
+  // written, so answering with an unrelated passkey reports a mismatch instead
+  // of marking the wallet biometric with a passkey that cannot open it.
+  const handlePasskeyRecovery = async () => {
+    setBiometricError('')
+    setRecovering(true)
+    try {
+      const { password: recovered, passkeyId } = await recoverPasskeyAuth()
+      if (!(await isValidPassword(recovered))) {
+        throw new Error(t('components.needsPass.passkeyMismatch'))
+      }
+      updateWallet((prev) => ({ ...prev, lockedByBiometrics: true, passkeyId }))
+      onPassword(recovered)
+    } catch (err) {
+      consoleError(err, 'Passkey recovery failed')
+      setBiometricError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setRecovering(false)
+    }
+  }
+
+  // Only worth offering where a passkey could exist at all.
+  const canTryPasskey = !wallet.lockedByBiometrics && isBiometricsSupported()
 
   const handleChange = (ev: any) => setPassword(ev.target.value)
   const handleClick = () => onPassword(password)
@@ -138,8 +169,17 @@ export default function NeedsPassword({
             onEnter={handleClick}
             placeholder={t('components.needsPass.pass')}
           />
-          <ErrorMessage text={error} error={Boolean(error)} />
+          <ErrorMessage text={shownError} error={Boolean(shownError)} />
           <Button onClick={handleClick} label={t('components.needsPass.unlock')} loading={loading} disabled={loading} />
+          {canTryPasskey ? (
+            <Button
+              onClick={handlePasskeyRecovery}
+              label={t('components.needsPass.unlockBio')}
+              secondary
+              loading={recovering}
+              disabled={loading || recovering}
+            />
+          ) : null}
           {restoreLink(t('components.needsPass.forgot'))}
         </FlexCol>
       </OnboardingLayout>
@@ -214,7 +254,7 @@ export default function NeedsPassword({
                 onEnter={handleClick}
                 placeholder={t('components.needsPass.pass')}
               />
-              <ErrorMessage text={error} error={Boolean(error)} />
+              <ErrorMessage text={shownError} error={Boolean(shownError)} />
               {onRestore ? (
                 <span
                   onClick={onRestore}
@@ -237,6 +277,15 @@ export default function NeedsPassword({
       </Content>
       <ButtonsOnBottom>
         <Button onClick={handleClick} label={t('components.needsPass.unlock')} loading={loading} disabled={loading} />
+        {canTryPasskey ? (
+          <Button
+            onClick={handlePasskeyRecovery}
+            label={t('components.needsPass.unlockBio')}
+            secondary
+            loading={recovering}
+            disabled={loading || recovering}
+          />
+        ) : null}
       </ButtonsOnBottom>
     </>
   )

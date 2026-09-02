@@ -163,7 +163,8 @@
     "passkeyNFText": "Passkey no encontrada",
     "pkText": "No se pudo encontrar tu passkey en este dispositivo. Necesitarás restaurar tu billetera usando tu frase secreta.",
     "welcome": "Bienvenido de nuevo",
-    "unlockPk": "Desbloquea con tu passkey para continuar"
+    "unlockPk": "Desbloquea con tu passkey para continuar",
+    "passkeyMismatch": "Esa clave de acceso no coincide con esta cartera."
   },
   "newPass": {
     "passwordMatch": "Las contraseñas deben coincidir",

@@ -163,7 +163,8 @@
     "passkeyNFText": "Passkey non trovata",
     "pkText": "La tua passkey non è stata trovata su questo dispositivo. Dovrai ripristinare il wallet utilizzando la tua frase segreta.",
     "welcome": "Bentornato",
-    "unlockPk": "Sblocca con la tua passkey per continuare"
+    "unlockPk": "Sblocca con la tua passkey per continuare",
+    "passkeyMismatch": "Questa passkey non corrisponde a questo portafoglio."
   },
   "newPass": {
     "passwordMatch": "Le password devono coincidere",

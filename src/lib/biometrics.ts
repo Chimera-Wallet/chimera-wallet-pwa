@@ -100,9 +100,35 @@ async function getAssertion(allowCredentials: PublicKeyCredentialDescriptor[]): 
   }
 }
 
+export interface BiometricAuth {
+  /** The wallet password — the passkey's user handle. */
+  password: string
+  /** Which credential answered, hex-encoded. Lets a caller repair a lost `passkeyId`. */
+  passkeyId: string
+}
+
+// Recovers the wallet password from a passkey when no `passkeyId` is stored.
+//
+// Needed because a wallet could end up encrypted under a passkey password while
+// `lockedByBiometrics`/`passkeyId` were lost from the wallet record (a stale
+// state write used to clobber them — see providers/wallet.tsx::initWallet).
+// Those wallets are otherwise unopenable: the password exists only inside the
+// passkey, and without an id there was no way to ask for it.
+//
+// registerUser sets residentKey 'required', so the credential is discoverable
+// and the empty-allowCredentials flow can find it. There is no stored id to
+// check the answer against, so we cannot tell a wrong passkey from the right
+// one here — the caller finds out when the returned handle fails to decrypt,
+// which is the same signal a wrong password gives.
+export async function recoverPasskeyAuth(): Promise<BiometricAuth> {
+  const assertion = await getAssertion([])
+  if (!assertion.userHandle) throw new Error('Passkey did not return a user handle')
+  return { password: assertion.userHandle, passkeyId: assertion.credentialId }
+}
+
 // Function to authenticate a user
 export async function authenticateUser(passkeyId: string | undefined): Promise<string> {
-  if (!passkeyId) throw new Error('Missing passkey id')
+  if (!passkeyId) return (await recoverPasskeyAuth()).password
 
   // The wallet password IS the passkey's user handle (see registerUser), so an
   // assertion that doesn't carry one is useless to us. WebAuthn allows the

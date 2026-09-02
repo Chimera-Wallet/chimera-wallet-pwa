@@ -163,7 +163,8 @@
     "passkeyNFText": "Clé d'accès introuvable",
     "pkText": "Votre clé d'accès n'a pas pu être trouvée sur cet appareil. Vous devrez restaurer votre portefeuille à l'aide de votre phrase secrète.",
     "welcome": "Bon retour",
-    "unlockPk": "Déverrouillez avec votre clé d'accès pour continuer"
+    "unlockPk": "Déverrouillez avec votre clé d'accès pour continuer",
+    "passkeyMismatch": "Cette clé d'accès ne correspond pas à ce portefeuille."
   },
   "newPass": {
     "passwordMatch": "Les mots de passe doivent correspondre",

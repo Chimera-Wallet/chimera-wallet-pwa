@@ -700,7 +700,15 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       delegatorUrl,
     })
     if (!didInit) return
-    updateWallet({ ...wallet, network, pubkey })
+    // Functional update, not `{ ...wallet, ... }`. This runs after awaits, so the
+    // `wallet` captured in this closure can be older than what is actually in
+    // state — spreading it wrote a stale snapshot over the top and, because
+    // updateWallet also persists, wiped the newer fields from storage too.
+    // That is how enabling biometrics used to lose `lockedByBiometrics` and
+    // `passkeyId`: InitBiometric set them, then unlockWallet -> initWallet
+    // landed here and overwrote them, leaving a wallet encrypted under the
+    // passkey password but with no record that a passkey existed.
+    updateWallet((prev) => ({ ...prev, network, pubkey }))
     setInitialized(true)
     // Booting the wallet means the caller held the real secret, so the session
     // is authenticated. InitConnect calls this directly rather than going

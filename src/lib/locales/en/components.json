@@ -163,7 +163,8 @@
         "passkeyNFText": "Passkey not found",
         "pkText": "Your passkey could not be found on this device. You will need to restore your wallet using your secret phrase.",
         "welcome": "Welcome back",
-        "unlockPk": "Unlock with your passkey to continue"
+        "unlockPk": "Unlock with your passkey to continue",
+        "passkeyMismatch": "That passkey does not match this wallet."
     },
     "newPass": {
         "passwordMatch": "Passwords must match",

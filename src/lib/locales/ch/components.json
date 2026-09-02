@@ -163,7 +163,8 @@
     "passkeyNFText": "未找到 Passkey",
     "pkText": "在此设备上找不到您的 Passkey。您需要使用助记词恢复钱包。",
     "welcome": "欢迎回来",
-    "unlockPk": "使用您的 Passkey 解锁以继续"
+    "unlockPk": "使用您的 Passkey 解锁以继续",
+    "passkeyMismatch": "Dieser Passkey passt nicht zu dieser Wallet."
   },
   "newPass": {
     "passwordMatch": "两次输入的密码必须一致",
