@@ -157,6 +157,7 @@
         "coinControl": "Coin Control", 
         "delegates": "Delegates",
         "contracts": "Contracts",
+        "solvers": "Solvers",
         "recoveryPhrase": "Recovery Phrase",
         "pk": "Private key",
         "backup": "Backup",

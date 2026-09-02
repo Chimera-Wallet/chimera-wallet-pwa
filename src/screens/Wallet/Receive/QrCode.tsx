@@ -44,6 +44,21 @@ import { EASE_OUT_QUINT } from '../../../lib/animations'
 import { ConfigContext } from '../../../providers/config'
 import { FiatContext } from '../../../providers/fiat'
 import { useTranslation } from 'react-i18next'
+import { LnReceiveContext } from '../../../providers/lnReceive'
+
+
+
+/**
+ * Decide which value the QR should encode. Honours an explicit copy-sheet
+ * selection, but only while that value is still one we currently offer — once
+ * the selected address is regenerated or removed (e.g. an amount
+ * change), fall back to the unified BIP21 URI. This stops async rebuilds from
+ * silently reverting the user's pick and copying the wrong thing.
+ */
+export const resolveQrValue = (selected: string, options: { bip21: string; btc: string; ark: string }): string => {
+  const candidates = [options.bip21, options.btc, options.ark].filter(Boolean)
+  return selected && candidates.includes(selected) ? selected : options.bip21
+}
 
 export default function ReceiveQRCode() {
   const { useFiat } = useContext(ConfigContext)
@@ -54,6 +69,7 @@ export default function ReceiveQRCode() {
   const { arkadeSwaps, swapsInitError, connected, createBtcToArkSwap, createReverseSwap } = useContext(SwapsContext)
   const { assetMetadataCache, svcWallet } = useContext(WalletContext)
   const { minSwapAllowed, validBtcToArk, validLnSwap, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
+  const { requestReceive } = useContext(LnReceiveContext)
 
   const { toast } = useToast()
 
@@ -89,6 +105,10 @@ export default function ReceiveQRCode() {
   const [qrCodeValue, setQrCodeValue] = useState('')
   const [bip21Uri, setBip21Uri] = useState('')
   const [invoice, setInvoice] = useState('')
+  const [lnReceiveError, setLnReceiveError] = useState('')
+  const [selectedValue, setSelectedValue] = useState('')
+
+
 
   const { t } = useTranslation()
 
@@ -115,6 +135,12 @@ export default function ReceiveQRCode() {
       })
   }, [svcWallet])
 
+  // Keep the local invoice mirror in sync with the negotiated value — this is
+  // what gates the "Lightning Invoice" row in the copy sheet.
+  useEffect(() => {
+    setInvoice(recvInfo.invoice ?? '')
+  }, [recvInfo.invoice])
+
   const lnurlSession = useContext(LnurlContext)
   const isAmountlessLnurl = !satoshis && !isAssetReceive && !!lnurlServerUrl && lnurlSession.active
 
@@ -134,104 +160,71 @@ export default function ReceiveQRCode() {
     })
   }
 
-  const createLightningInvoice = () => {
-    return new Promise((resolve, reject) => {
-      if (invoice) return reject()
-      if (!validLnSwap(satoshis)) return reject()
-      createReverseSwap(satoshis)
-        .then((pendingSwap) => {
-          if (!pendingSwap) throw new Error(t('errors.receive.general.pendingSwap'))
-          resolve(pendingSwap)
-        })
-        .catch((error) => {
-          consoleError(error, 'Error creating reverse swap:')
-          reject(error)
-        })
-    })
-  }
-
   const createBip21 = (): { ark: string; btc: string; bip21: string } => {
     const ark = vtxoTxsAllowed() ? recvInfo.offchainAddr : ''
-    const btc = utxoTxsAllowed() ? swapAddress || recvInfo.boardingAddr : ''
+    const btc = utxoTxsAllowed() ? recvInfo.boardingAddr : ''
     const bip21 = isAssetReceive
       ? encodeBip21Asset(ark, assetId, assetAmount, assetMeta?.metadata?.decimals)
-      : encodeBip21(btc, ark, invoice, satoshis, lnurlSession.lnurl)
+      : encodeBip21(btc, ark, recvInfo.invoice ?? '', satoshis, '')
 
     return { ark, btc, bip21 }
   }
 
-  // Create swaps when amount is set, then show QR code once ready
+  // Negotiate the hold invoice. `requestReceive` persists the swap with
+  // `RfqSwapManager` before returning it, so once this resolves the claim is
+  // already the manager's job — it drives it to completion on its own timer,
+  // independent of this screen's lifetime. The payment lands at the wallet's
+  // own address, so the VTXO listener below is what reports success.
   useEffect(() => {
-    if (isAssetReceive) return setShowQrCode(true)
-    if (!satoshis || !svcWallet) return
-    if (!addressesLoaded) return
-    if (received) return
+    if (!svcWallet || isAssetReceive || satoshis <= 0) return
+    if (recvInfo.pendingLnReceive?.expectedAmount === satoshis && recvInfo.invoice) return
 
-    const lnExpected = connected && !isAssetReceive
-
-    if (!arkadeSwaps) {
-      if (!lnExpected || swapsInitError) {
-        if (lnExpected && swapsInitError) {
-          consoleError(swapsInitError, 'Swaps unavailable, showing receive without swap options')
-          setSwapsTimedOut(true)
-        }
-        setShowQrCode(true)
-        return
-      }
-      const timeout = setTimeout(() => {
-        setSwapsTimedOut(true)
-        setShowQrCode(true)
-      }, 5_000)
-      return () => clearTimeout(timeout)
+    let abandoned = false
+    setLnReceiveError('')
+    // As of this writing, the only published card (BUNDLED_CARDS's
+    // beta-solver) disables its base (Arkade/receive) side — min/max base
+    // amount "0" — so this reliably throws until a solver publishes a
+    // receive-enabled card. See arkade-os/lightning-swap-service#64 and the
+    // same note in lib/lnSwap.ts. Lightning SEND is unaffected.
+    requestReceive(satoshis)
+      .then((pending) => {
+        if (abandoned) return
+        setLnReceiveError('')
+        setRecvInfo((prev) => ({ ...prev, invoice: pending.invoice, pendingLnReceive: pending }))
+      })
+      .catch((err) => {
+        if (abandoned) return
+        const error = extractError(err)
+        consoleError(error, 'error negotiating lightning receive')
+        setLnReceiveError(error)
+      })
+    // The amount changed under an in-flight negotiation, so its invoice would
+    // be for the wrong number. Nothing to cancel on the solver — an unpaid hold
+    // invoice simply expires.
+    return () => {
+      abandoned = true
     }
-
-    setSwapsTimedOut(false)
-
-    Promise.allSettled([createBtcAddress(), createLightningInvoice()]).then(([btc, lightning]) => {
-      if (btc.status === 'fulfilled') {
-        const pendingSwap = btc.value as BoltzChainSwap
-        const btcAddr = pendingSwap.response.lockupDetails.lockupAddress
-        setSwapAddress(btcAddr)
-        arkadeSwaps
-          .waitAndClaimArk(pendingSwap)
-          .then(() => {
-            setRecvInfo({ ...recvInfo, received: true, satoshis: pendingSwap.response.claimDetails.amount })
-            navigate(Pages.ReceiveSuccess)
-          })
-          .catch((error) => {
-            consoleError(error, 'Error claiming chain swap:')
-          })
-      }
-      if (lightning.status === 'fulfilled') {
-        const pendingSwap = lightning.value as BoltzReverseSwap
-        const inv = pendingSwap.response.invoice
-        setInvoice(inv)
-        arkadeSwaps
-          .waitAndClaim(pendingSwap)
-          .then(() => {
-            setRecvInfo({ ...recvInfo, received: true, satoshis: pendingSwap.response.onchainAmount ?? 0 })
-            navigate(Pages.ReceiveSuccess)
-          })
-          .catch((error) => {
-            consoleError(error, 'Error claiming reverse swap:')
-          })
-      }
-      setShowQrCode(true)
-    })
-  }, [satoshis, svcWallet, arkadeSwaps, swapsInitError, addressesLoaded])
+  }, [svcWallet, satoshis, isAssetReceive, requestReceive])
 
   // Build BIP21 URI
   useEffect(() => {
-    if (!addressesLoaded && !showQrCode) return
+    if (!addressesLoaded) return
 
     const { ark, btc, bip21 } = createBip21()
-    const hasLnurl = isAmountlessLnurl && lnurlSession.active
+    // LNURL can be present for both amountless and amounted flows; check the
+    // session LNURL or the bip21 value for a lightning param.
+    const hasLnurl = Boolean(lnurlSession.lnurl) || isAmountlessLnurl
 
-    setNoPaymentMethods(!ark && !btc && !invoice && !hasLnurl && !isAssetReceive)
+    // Consider invoice, pending swap address, LNURL, and on-chain addresses
+    // as valid payment methods. This prevents the UI from showing
+    // "No payments available" when a Lightning invoice or swap is available.
+    const hasInvoice = Boolean(recvInfo.invoice)
+    const hasSwapAddress = Boolean(swapAddress)
+    setNoPaymentMethods(!ark && !btc && !hasInvoice && !hasLnurl && !hasSwapAddress && !isAssetReceive)
     setArkAddress(ark)
     setBtcAddress(btc)
     setBip21Uri(bip21)
-    setQrCodeValue(bip21)
+    setQrCodeValue(resolveQrValue(selectedValue, { bip21, btc, ark }))
   }, [
     invoice,
     assetAmount,
@@ -242,6 +235,7 @@ export default function ReceiveQRCode() {
     recvInfo.offchainAddr,
     recvInfo.boardingAddr,
     recvInfo.satoshis,
+    recvInfo.invoice,
     swapAddress,
     showQrCode,
   ])
@@ -336,9 +330,10 @@ export default function ReceiveQRCode() {
       // if amount was changed, we need to reset invoice and swap address, since they are amount-specific
       // this will also trigger the useEffect to create new ones if needed
       if (sats !== recvInfo.satoshis) {
-        setInvoice('')
         setSwapAddress('')
         setShowQrCode(false)
+        setRecvInfo({ ...recvInfo, satoshis: sats, invoice: undefined, pendingLnReceive: undefined })
+        return
       }
       setRecvInfo({ ...recvInfo, satoshis: sats })
     }
@@ -394,7 +389,7 @@ export default function ReceiveQRCode() {
           ) : !addressesLoaded || (!qrCodeValue && !noPaymentMethods) ? (
             <LoadingLogo text={t('common.general.loading')} />
           ) : noPaymentMethods ? (
-            <div>{t('errors.receive.invalidAmount')}</div>
+            <div>{t('common.notifications.receive.invalidAmount')}</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 2rem)', gap: '1rem' }}>
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -438,6 +433,9 @@ export default function ReceiveQRCode() {
                   ) : null}
                   {swapsTimedOut && !invoice && !isAssetReceive ? (
                     <WarningBox text={t('errors.receive.lightning.tempUnavailable')} />
+                  ) : null}
+                  {lnReceiveError && !invoice && !isAssetReceive ? (
+                    <WarningBox text={lnReceiveError} />
                   ) : null}
                 </div>
               </div>

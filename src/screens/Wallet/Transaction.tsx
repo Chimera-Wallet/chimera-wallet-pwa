@@ -26,6 +26,7 @@ import { LimitsContext } from '../../providers/limits'
 import { getInputsToSettle } from '../../lib/asp'
 import { prettyAssetAmount } from '../../lib/assets'
 import {useTranslation} from 'react-i18next'
+import { useLnSendReceipt } from '../../hooks/useLnSendReceipt'
 
 export default function Transaction() {
   const { utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
@@ -44,6 +45,8 @@ export default function Transaction() {
   const unconfirmedBoardingTx = boardingTx && !tx?.createdAt
   const expiredBoardingTx =
     !tx?.settled && boardingTx && tx?.createdAt && Date.now() / 1000 - tx?.createdAt > boardingExitDelay
+  const lnSendReceipt = useLnSendReceipt(tx)
+
 
   const [buttonLabel, setButtonLabel] = useState(defaultButtonLabel)
   const [amountAboveDust, setAmountAboveDust] = useState(false)
@@ -111,6 +114,8 @@ export default function Transaction() {
   }
 
   if (!tx) return <></>
+  const txid = tx.boardingTxid || tx.redeemTxid || tx.roundTxid || ''
+
 
   const details: DetailsProps = {
     direction: issuanceTx ? 'Issuance' : burnTx ? 'Burn' : tx.type === 'sent' ? t('common.general.sent') : t('common.general.received'),
@@ -127,13 +132,19 @@ export default function Transaction() {
               ? t('networks.transactions.pendingBoarding')
               : t('networks.transactions.preconfirmed'),
     type: boardingTx ? t('networks.transactions.boarding') : t('networks.transactions.offchain'),
-    txid: tx.boardingTxid || tx.redeemTxid || '',
     isOffchainTx: !tx.boardingTxid && Boolean(tx.redeemTxid),
     assetId: tx.assets?.[0]?.assetId,
     wallet: wallet,
     satoshis: tx.type === 'sent' ? tx.amount - defaultFee : tx.amount,
     fees: tx.type === 'sent' ? defaultFee : 0,
     total: tx.amount,
+    // A Lightning send is two txs, so it gets the same pair of rows an
+        // asset swap does — funding, then the spend that ended it — in place
+        // of a lone "Transaction ID" that would name only the first and say
+        // nothing about whether the invoice was ever paid. Dropping txid is
+        // how the swap branch above expresses the same thing.
+    ...lnSendReceipt,
+    txid: lnSendReceipt ? undefined : txid,
   }
 
   const Body = () => (
