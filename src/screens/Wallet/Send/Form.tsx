@@ -792,8 +792,15 @@ export default function SendForm() {
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        <Button onClick={handleContinue} label={label} icon={<img src = {checkMarkIcon} alt = 'checkMark' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(-1)', marginLeft: '0.5rem'}} />} disabled={buttonDisabled}
-        style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '100%', height: '48px', borderRadius: '16px', color:'rgba(16,16,21,1)' ,backgroundColor : 'rgba(255,255,255,0.5)'}} />
+        {/* No backgroundColor/color here on purpose: an inline background beats the
+            `.button.dark` class, so hardcoding one painted this button a flat
+            translucent white in every state. Enabled and disabled then looked
+            identical — permanently greyed out — because the only thing
+            distinguishing them is `.button:disabled { opacity: 0.5 }` over the
+            variant's blue. Matches the Receive share button, which passes the
+            same style set without the colour overrides. */}
+        <Button onClick={handleContinue} label={label} icon={<img src = {checkMarkIcon} alt = 'checkMark' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(1)', marginLeft: '0.5rem'}} />} disabled={buttonDisabled}
+        style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '100%', height: '48px', borderRadius: '16px'}} />
       </ButtonsOnBottom>
     </>
   )

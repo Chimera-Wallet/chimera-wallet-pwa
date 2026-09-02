@@ -233,7 +233,11 @@ export default function StakingBanner({ variant }: StakingBannerProps) {
         <CoinStack />
         <div style={topContentStyle}>
           <span style={titleStyle}>{t(TITLE)}</span>
-          {parts ? <CountdownDisplay parts={parts} /> : <span style={descriptionStyle}>{t(DESCRIPTION)}</span>}
+          {/* No countdown configured (VITE_TGE_DATE unset or unparsable) means the
+              card is just title + button + coins. The description used to stand
+              in for the countdown here, but as a fallback it read as unrelated
+              filler rather than the missing timer, so render nothing instead. */}
+          {parts ? <CountdownDisplay parts={parts} /> : null}
         </div>
         <Button
           label={t('components.stakingBanner.joinComm')}
