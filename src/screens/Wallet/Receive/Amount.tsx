@@ -14,18 +14,19 @@ import FlexCol from '../../../components/FlexCol'
 import { WalletContext } from '../../../providers/wallet'
 import { callFaucet, pingFaucet } from '../../../lib/faucet'
 import Loading from '../../../components/Loading'
-import { prettyAmount, prettyNumber } from '../../../lib/format'
+import { prettyAmount } from '../../../lib/format'
 import Success from '../../../components/Success'
 import { consoleError } from '../../../lib/logs'
 import { AspContext } from '../../../providers/asp'
 import { LimitsContext } from '../../../providers/limits'
-import { SwapsContext } from '../../../providers/swaps'
 import { InfoLine } from '../../../components/Info'
 import QrCode from '../../../components/QrCode'
 import ExpandAddresses from '../../../components/ExpandAddresses'
 import { canBrowserShareData, shareData } from '../../../lib/share'
 import { NotificationsContext } from '../../../providers/notifications'
 import { encodeBip21 } from '../../../lib/bip21'
+import { LnReceiveContext } from '../../../providers/lnReceive'
+import WarningBox from '../../../components/Warning'
 import { ASSETS, getAssetConfig, requireAssetConfig, type AssetSymbol } from '../../../lib/assets'
 import { assetSupportsWrap, requireAssetChainOption, type SourceChainId } from '../../../lib/sourceChains'
 import AssetSelector from '../../../components/AssetSelector'
@@ -53,9 +54,9 @@ export default function ReceiveAmount() {
   const { recvInfo, setRecvInfo, setWrapRecvInfo } = useContext(FlowContext)
   const { navigate } = useContext(NavigationContext)
   const { notifyPaymentReceived } = useContext(NotificationsContext)
-  const { arkadeSwaps, createReverseSwap, calcReverseSwapFee } = useContext(SwapsContext)
-  const { validLnSwap, validUtxoTx, validVtxoTx, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
-  const { balance, svcWallet, wallet } = useContext(WalletContext)
+  const { validUtxoTx, validVtxoTx, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
+  const { balance, svcWallet } = useContext(WalletContext)
+  const { requestReceive } = useContext(LnReceiveContext)
 
   const [error, setError] = useState('')
   const [fauceting, setFauceting] = useState(false)
@@ -67,6 +68,7 @@ export default function ReceiveAmount() {
   const [qrValue, setQrValue] = useState('')
   const [bip21uri, setBip21uri] = useState('')
   const [showQrCode, setShowQrCode] = useState(false)
+  const [lnReceiveError, setLnReceiveError] = useState('')
   const { t } = useTranslation()
 
 
@@ -126,15 +128,20 @@ export default function ReceiveAmount() {
   const isLightningMethod = selectedMethod === TRANSFER_METHOD.lightning
   const allowUtxo = validUtxoTx(satoshis) && utxoTxsAllowed()
   const allowVtxo = validVtxoTx(satoshis) && vtxoTxsAllowed()
-  const allowLn = validLnSwap(satoshis)
 
   const address = selectedMethod === TRANSFER_METHOD.bitcoin ? (allowUtxo ? boardingAddr : '') : ''
   const arkAddress = selectedMethod === TRANSFER_METHOD.ark ? (allowVtxo ? offchainAddr : '') : ''
-  const useLightning = isLightningMethod ? allowLn : false
+  // Bounds now come from the solver's own rendezvous (checked inside the
+  // negotiation below), not from the old Boltz submarine-swap limits — so
+  // Lightning is always attempted, and out-of-bounds/no-solver surfaces as
+  // lnReceiveError instead of pre-emptively hiding the method.
+  const useLightning = isLightningMethod
   const noPaymentMethods = !address && !arkAddress && !useLightning
   const showFaucetButton = balance === 0 && faucetAvailable
-  const showLightningFees = satoshis && isLightningMethod
-  const reverseSwapFee = calcReverseSwapFee(satoshis)
+  const pendingLnReceive = recvInfo.pendingLnReceive
+  const lightningFee =
+    pendingLnReceive && pendingLnReceive.payAmount > satoshis ? pendingLnReceive.payAmount - satoshis : 0
+  const showLightningFees = isLightningMethod && lightningFee > 0
 
   // For Lightning, require amount before showing QR code
   const needsAmountInput = isLightningMethod && !satoshis
@@ -187,6 +194,7 @@ export default function ReceiveAmount() {
     if (!isLightningMethod) return
     setInvoice('')
     setShowQrCode(false)
+    setLnReceiveError('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [satoshis])
 
@@ -196,42 +204,41 @@ export default function ReceiveAmount() {
       return
     }
 
-    if (!(useLightning && wallet && svcWallet && arkadeSwaps)) {
+    if (!(useLightning && svcWallet && satoshis > 0)) {
       setShowQrCode(true)
       return
     }
 
-    // Debounce: wait until the user stops typing before hitting Boltz.
-    // Without this, each keystroke (1 ÔåÆ 10 ÔåÆ 100 ÔåÆ 10_000 ÔåÆ 100_000) fires a
-    // parallel createReverseSwap; the first one to succeed (at Boltz's min
-    // Ôëê10_000 sats) wins and the real amount is never requested.
+    // Debounce: wait until the user stops typing before hitting the solver.
+    // Without this, each keystroke (1 -> 10 -> 100 -> 10_000 -> 100_000) fires
+    // a parallel negotiation; the first one to reply wins and the real amount
+    // is never requested.
+    //
+    // `requestReceive` persists the swap with `RfqSwapManager` before
+    // returning it, so once this resolves the claim is already the manager's
+    // job — it drives it to completion on its own timer, independent of this
+    // screen's lifetime. The payment lands at the wallet's own address, so
+    // the VTXO listener below is what reports success.
     let cancelled = false
     const handle = setTimeout(() => {
-      createReverseSwap(satoshis)
-        .then((pendingSwap) => {
+      setLnReceiveError('')
+      // As of this writing, the only published card (BUNDLED_CARDS's
+      // beta-solver) disables its base (Arkade/receive) side — min/max
+      // base amount "0" — so this reliably throws until a solver
+      // publishes a receive-enabled card. See arkade-os/lightning-swap-service#64
+      // and the same note in lib/lnSwap.ts. Lightning SEND is unaffected.
+      requestReceive(satoshis)
+        .then((pending) => {
           if (cancelled) return
-          if (!pendingSwap) throw new Error(t('errors.receive.general.pendingSwap'))
-          const invoice = pendingSwap.response.invoice
-          setRecvInfo({ ...recvInfo, invoice })
-          setInvoice(invoice)
-          arkadeSwaps
-            .waitAndClaim(pendingSwap)
-            .then(() => {
-              if (cancelled) return
-              const onchainSats = pendingSwap.response.onchainAmount ?? satoshis
-              setRecvInfo({ ...recvInfo, satoshis: onchainSats })
-              notifyPaymentReceived(onchainSats)
-            })
-            .catch((error) => {
-              if (cancelled) return
-              setShowQrCode(true)
-              consoleError(error, 'Error claiming reverse swap:')
-            })
+          setRecvInfo({ ...recvInfo, invoice: pending.invoice, pendingLnReceive: pending })
+          setInvoice(pending.invoice)
         })
         .catch((error) => {
           if (cancelled) return
           setShowQrCode(true)
-          consoleError(error, 'Error creating reverse swap:')
+          const message = extractError(error)
+          consoleError(message, 'error negotiating lightning receive')
+          setLnReceiveError(message)
         })
     }, 700)
 
@@ -239,7 +246,7 @@ export default function ReceiveAmount() {
       cancelled = true
       clearTimeout(handle)
     }
-  }, [satoshis, arkadeSwaps, invoice, useLightning])
+  }, [satoshis, invoice, useLightning, svcWallet, requestReceive])
 
   useEffect(() => {
     if (!svcWallet) return
@@ -400,7 +407,7 @@ export default function ReceiveAmount() {
                   compact
                   color='orange'
                   icon={<FeesIcon />}
-                  text={t('common.notifications.receive.lightning.lightningFees', { amount: prettyAmount(reverseSwapFee) })}
+                  text={t('common.notifications.receive.lightning.lightningFees', { amount: prettyAmount(lightningFee) })}
                 />
               ) : null}
             </InfoContainer>
@@ -408,17 +415,21 @@ export default function ReceiveAmount() {
             {noPaymentMethods ? (
               <div>{t('common.notifications.receive.invalidAmount')}</div>
             ) : showQrCode ? (
-              <FlexCol centered>
-                {invoice ? <InfoLine centered color='orange' text={t('common.notifications.receive.lightning.tabOpen')} /> : null}
-                <QrCode value={qrValue} />
-                <ExpandAddresses
-                  bip21uri={bip21uri}
-                  boardingAddr={address}
-                  offchainAddr={arkAddress}
-                  invoice={invoice}
-                  onClick={setQrValue}
-                />
-              </FlexCol>
+              lnReceiveError && isLightningMethod && !invoice ? (
+                <WarningBox text={lnReceiveError} />
+              ) : (
+                <FlexCol centered>
+                  {invoice ? <InfoLine centered color='orange' text={t('common.notifications.receive.lightning.tabOpen')} /> : null}
+                  <QrCode value={qrValue} />
+                  <ExpandAddresses
+                    bip21uri={bip21uri}
+                    boardingAddr={address}
+                    offchainAddr={arkAddress}
+                    invoice={invoice}
+                    onClick={setQrValue}
+                  />
+                </FlexCol>
+              )
             ) : (
               <Loading text={t('common.notifications.receive.lightning.generateQR')} />
             )}

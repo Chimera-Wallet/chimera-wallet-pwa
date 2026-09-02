@@ -33,9 +33,12 @@ export interface DetailsProps {
   direction?: string
   expiry?: string
   fees?: number
+  fundedTxid?: string
   invoice?: string
   isOffchainTx?: boolean
   satoshis?: number
+  spendTxid?: string
+  spendLabel?: string
   status?: string
   swapId?: string
   total?: number
@@ -61,9 +64,12 @@ export default function Details({ details }: { details?: DetailsProps }) {
     destination,
     expiry,
     fees,
+    fundedTxid,
     invoice,
     isOffchainTx,
     satoshis,
+    spendTxid,
+    spendLabel,
     status,
     swapId,
     txid,
@@ -111,6 +117,8 @@ export default function Details({ details }: { details?: DetailsProps }) {
     [t('components.details.swapId'), swapId, <InfoIcon key='swap-id-icon' />],
     [t('components.details.dest'), destination, <TypeIcon key='destination-icon' />],
     [t('components.details.transId'), txid, <HashIcon key='txid-icon' />, showTxidLink ? txidOnClick : undefined],
+    [t('components.details.transId'), fundedTxid, <HashIcon key='funded-txid-icon' />],
+    [spendLabel ?? t('components.details.transId'), spendTxid, <HashIcon key='spend-txid-icon' />],
     [t('components.details.assId'), assetId, <InfoIcon key='asset-id-icon' />, assetIdOnClick],
     [t('components.details.dir'), direction, <DirectionIcon key='direction-icon' />],
     [t('components.details.ty'), type, <TypeIcon key='type-icon' />],

@@ -16,6 +16,9 @@ import { NudgeProvider } from './providers/nudge'
 import * as Sentry from '@sentry/react'
 import { SwapsProvider } from './providers/swaps'
 import { LnurlProvider } from './providers/lnurl'
+import { LnReceiveProvider } from './providers/lnReceive'
+import { AssetSwapsProvider } from './providers/assetSwaps'
+import { BackupProvider } from './providers/backup'
 import { init as initPlausible } from '@plausible-analytics/tracker'
 import { shouldInitializeSentry } from './lib/sentry'
 import { FeesProvider } from './providers/fees'
@@ -96,37 +99,43 @@ root.render(
     <DevModeProvider>
       <NavigationProvider>
         <ConfigProvider>
-          <AspProvider>
-            <NotificationsProvider>
-              <FiatProvider>
-                <FlowProvider>
-                  <WalletProvider>
-                    <SwapsProvider>
-                      <LnurlProvider>
-                        <LimitsProvider>
-                          <FeesProvider>
-                            <OptionsProvider>
-                              <NudgeProvider>
-                                <AnnouncementProvider>
-                                  <ToastProvider>
-                                    <TxResultProvider>
-                                      <ErrorBoundary>
-                                        <App />
-                                      </ErrorBoundary>
-                                    </TxResultProvider>
-                                  </ToastProvider>
-                                </AnnouncementProvider>
-                              </NudgeProvider>
-                            </OptionsProvider>
-                          </FeesProvider>
-                        </LimitsProvider>
-                      </LnurlProvider>
-                    </SwapsProvider>
-                  </WalletProvider>
-                </FlowProvider>
-              </FiatProvider>
-            </NotificationsProvider>
-          </AspProvider>
+          <BackupProvider>
+            <AspProvider>
+              <NotificationsProvider>
+                <FiatProvider>
+                  <FlowProvider>
+                    <WalletProvider>
+                      <AssetSwapsProvider>
+                        <SwapsProvider>
+                          <LnurlProvider>
+                            <LnReceiveProvider>
+                              <LimitsProvider>
+                                <FeesProvider>
+                                  <OptionsProvider>
+                                    <NudgeProvider>
+                                      <AnnouncementProvider>
+                                        <ToastProvider>
+                                          <TxResultProvider>
+                                            <ErrorBoundary>
+                                              <App />
+                                            </ErrorBoundary>
+                                          </TxResultProvider>
+                                        </ToastProvider>
+                                      </AnnouncementProvider>
+                                    </NudgeProvider>
+                                  </OptionsProvider>
+                                </FeesProvider>
+                              </LimitsProvider>
+                            </LnReceiveProvider>
+                          </LnurlProvider>
+                        </SwapsProvider>
+                      </AssetSwapsProvider>
+                    </WalletProvider>
+                  </FlowProvider>
+                </FiatProvider>
+              </NotificationsProvider>
+            </AspProvider>
+          </BackupProvider>
         </ConfigProvider>
       </NavigationProvider>
     </DevModeProvider>,

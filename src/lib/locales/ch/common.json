@@ -153,6 +153,7 @@
     "coinControl": "币控制",
     "delegates": "委托",
     "contracts": "合约",
+    "solvers": "解析器",
     "recoveryPhrase": "恢复短语",
     "pk": "私钥",
     "backup": "备份",
