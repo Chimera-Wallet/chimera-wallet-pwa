@@ -56,14 +56,18 @@ export type AssetSymbol = keyof typeof ASSETS
 // computed for them — so an asset is shown everywhere or nowhere.
 //
 // BTC uses the Ark/Lightning/Bitcoin flows; the others are bridged to/from
-// their native chains via the Arkade Wrap API. ETH, TRX and POL stay defined in
-// ASSETS above (so existing balances, transactions and price lookups still
-// resolve by symbol) but are deliberately absent here and therefore hidden.
-export const ASSET_LIST: AssetConfig[] = [ASSETS.BTC, ASSETS.USDT, ASSETS.CEXT]
+// their native chains via the Arkade Wrap API. USDT, ETH, TRX and POL stay
+// defined in ASSETS above (so existing balances, transactions and price
+// lookups still resolve by symbol) but are deliberately absent here and
+// therefore hidden — only BTC is live for now, with CEXT shown "Coming Soon"
+// on the home list (see AssetList.tsx). Add an asset back to this list to
+// launch it; getHomeAssetList()'s balance filter (below) then takes over for
+// deciding whether it shows up on the home list specifically.
+export const ASSET_LIST: AssetConfig[] = [ASSETS.BTC, ASSETS.CEXT]
 
 // Assets the fiat bank transfer (on/off-ramp) flow is offered for. Every other
 // asset can only be moved over Arkade or its native chain.
-const BANK_TRANSFER_SYMBOLS: AssetSymbol[] = ['BTC', 'USDT']
+const BANK_TRANSFER_SYMBOLS: AssetSymbol[] = ['BTC']
 
 /** Whether the bank transfer flow should be offered for an asset symbol. */
 export const assetSupportsBankTransfer = (symbol: string): boolean => {
@@ -74,6 +78,23 @@ export const assetSupportsBankTransfer = (symbol: string): boolean => {
 export const BANK_TRANSFER_ASSET_LIST: AssetConfig[] = ASSET_LIST.filter((asset) =>
   assetSupportsBankTransfer(asset.symbol),
 )
+
+// Assets that stay on the home list even with a zero balance: BTC (always
+// held/usable) and CEXT (shown "Coming Soon" regardless of balance). Every
+// other listed asset only appears on the home list once the wallet holds a
+// nonzero balance of it — send/receive asset pickers are unaffected and
+// always show the full ASSET_LIST (see AssetSelector).
+const ALWAYS_VISIBLE_HOME_SYMBOLS: AssetSymbol[] = ['BTC', 'CEXT']
+
+/**
+ * Home-list asset filter: always-visible symbols, plus anything else the
+ * wallet holds a nonzero balance of. `balances` maps symbol -> balance.
+ */
+export const getHomeAssetList = (balances: Partial<Record<AssetSymbol, number>>): AssetConfig[] =>
+  ASSET_LIST.filter((asset) => {
+    const symbol = asset.symbol as AssetSymbol
+    return ALWAYS_VISIBLE_HOME_SYMBOLS.includes(symbol) || (balances[symbol] ?? 0) > 0
+  })
 
 export const getAssetConfig = (symbol: string): AssetConfig | undefined => {
   return ASSETS[symbol.toUpperCase() as AssetSymbol]

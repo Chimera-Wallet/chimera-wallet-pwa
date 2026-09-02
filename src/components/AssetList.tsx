@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react'
 import AssetRow from './AssetRow'
-import { ASSET_LIST, getDisplayTicker, type AssetSymbol } from '../lib/assets'
+import { ASSET_LIST, getHomeAssetList, getDisplayTicker, type AssetSymbol } from '../lib/assets'
 import { CoinGeckoConversionService, type ConversionRateResult } from '../lib/coingecko/service'
 import { consoleError } from '../lib/logs'
 import { ConfigContext } from '../providers/config'
@@ -30,6 +30,11 @@ export default function AssetList({ balances = [], onAssetClick }: AssetListProp
 
   const [prices, setPrices] = useState<ConversionRateResult>({})
   const [loading, setLoading] = useState(true)
+
+  const balancesBySymbol = Object.fromEntries(balances.map((b) => [b.symbol, b.balance])) as Partial<
+    Record<AssetSymbol, number>
+  >
+  const homeAssetList = getHomeAssetList(balancesBySymbol)
 
   useEffect(() => {
     const fetchPrices = async () => {
@@ -128,7 +133,7 @@ export default function AssetList({ balances = [], onAssetClick }: AssetListProp
             Loading prices...
           </div>
         ) : (
-          ASSET_LIST.map((asset, index) => {
+          homeAssetList.map((asset, index) => {
             const symbol = asset.symbol as AssetSymbol
             const balance = getBalance(symbol)
             const priceData = getPriceData(asset.symbol)
@@ -146,7 +151,7 @@ export default function AssetList({ balances = [], onAssetClick }: AssetListProp
                 percentChange={priceData.change || 0}
                 badge={asset.comingSoon ? 'Coming Soon' : undefined}
                 onClick={!asset.comingSoon && onAssetClick ? () => onAssetClick(symbol) : undefined}
-                isLast={index === ASSET_LIST.length - 1}
+                isLast={index === homeAssetList.length - 1}
               />
             )
           })
