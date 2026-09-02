@@ -137,7 +137,11 @@ export default function AssetList({ balances = [], onAssetClick }: AssetListProp
             const symbol = asset.symbol as AssetSymbol
             const balance = getBalance(symbol)
             const priceData = getPriceData(asset.symbol)
-            const balanceFiat = balance * priceData.rate
+            // No defined price means no fiat figure. CEXT is currently mapped to
+            // bitcoin in lib/coingecko/mapping.ts as a placeholder, so converting
+            // here would price it at bitcoin's rate — better to show nothing
+            // until a real CEXT price source exists.
+            const balanceFiat = asset.noMarketData ? undefined : balance * priceData.rate
 
             return (
               <AssetRow
@@ -148,7 +152,7 @@ export default function AssetList({ balances = [], onAssetClick }: AssetListProp
                 balance={balance}
                 balanceFiat={balanceFiat}
                 currency={config.fiat}
-                percentChange={priceData.change || 0}
+                percentChange={asset.noMarketData ? undefined : priceData.change}
                 badge={asset.comingSoon ? 'Coming Soon' : undefined}
                 onClick={!asset.comingSoon && onAssetClick ? () => onAssetClick(symbol) : undefined}
                 isLast={index === homeAssetList.length - 1}

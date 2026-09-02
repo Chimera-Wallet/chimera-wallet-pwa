@@ -53,8 +53,11 @@ export default function AssetBalanceView({ symbol, balance }: AssetBalanceViewPr
         </div>
       </div>
 
-      {/* Price Chart */}
-      <PriceChart symbol={symbol} vsCurrency='usd' />
+      {/* Price Chart — omitted for assets with no defined price source. The
+          chart pulls from the same CoinGecko mapping as the fiat conversion, so
+          for CEXT (mapped to bitcoin as a placeholder) it would draw bitcoin's
+          history under a CEXT heading. */}
+      {config?.noMarketData ? null : <PriceChart symbol={symbol} vsCurrency='usd' />}
     </div>
   )
 }

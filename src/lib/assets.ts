@@ -7,6 +7,12 @@ export interface AssetConfig {
   color: string // CSS variable name (without var())
   precision: number
   comingSoon?: boolean
+  /**
+   * Proprietary token with no public market, so there is no 24h price movement
+   * to report. Suppresses the up/down indicator rather than letting a missing
+   * feed render as a flat "0.00%" rise.
+   */
+  noMarketData?: boolean
 }
 
 export const ASSETS = {
@@ -46,6 +52,7 @@ export const ASSETS = {
     color: 'asset-cext',
     precision: 18,
     comingSoon: true,
+    noMarketData: true,
   },
 } as const
 
@@ -136,13 +143,20 @@ export const getAssetSymbolByAssetId = (assetId: string): AssetSymbol | undefine
 }
 
 /**
- * Display ticker for a symbol: wrapped Arkade assets are shown as `<SYMBOL>-CX`
- * (e.g. ETH -> ETH-CX). Native assets (BTC) keep their plain symbol.
+ * Display ticker for a symbol — the plain symbol, for every asset.
+ *
+ * Wrapped Arkade assets used to be shown with a `-CX` suffix (ETH -> ETH-CX,
+ * CEXT -> CEXT-CX). That suffix is an internal settlement detail and is no
+ * longer surfaced anywhere in the UI, so this is now identity-plus-uppercase.
+ * Kept as the single seam every screen already calls, rather than inlining
+ * `.toUpperCase()` at each call site, so display naming stays changeable in
+ * one place.
+ *
+ * Note this is display only — the wire tickers sent to ramp-system
+ * (`USDT` -> `USDT-CX`, see providers/bankTransfer.ts) are a separate mapping
+ * and must keep their suffix.
  */
-export const getDisplayTicker = (symbol: string): string => {
-  const upper = symbol.toUpperCase()
-  return getWrappedAssetId(upper) ? `${upper}-CX` : upper
-}
+export const getDisplayTicker = (symbol: string): string => symbol.toUpperCase()
 
 import Decimal from 'decimal.js'
 
