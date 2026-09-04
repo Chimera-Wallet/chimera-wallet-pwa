@@ -242,6 +242,23 @@ body,
   background-color: var(--bg);
 }
 
+/* The document itself must never scroll — `.content` is the only scroller.
+   `.page` is absolutely positioned at `top: env(safe-area-inset-top)`, so it
+   moves with the document: when the iOS software keyboard opens, Safari scrolls
+   the *document* to reveal the focused field, which slides the whole shell —
+   header included — up under the notch / Dynamic Island. Whatever sits at the
+   top of the content then ends up behind the cutout, which on the Send screen
+   is the validation error ("Cannot send to yourself"), because reaching that
+   error means the address input is focused and the keyboard is up.
+
+   Locking the root scroller confines iOS to `.content`. Nothing relies on
+   document scrolling: `.page` is exactly viewport-height, and Refresher's
+   pull-to-refresh gate (`window.scrollY === 0`) only becomes more reliable. */
+html,
+body {
+  overflow: hidden;
+}
+
 body {
   margin: 0;
   background-color: var(--bg);
