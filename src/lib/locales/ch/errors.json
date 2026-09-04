@@ -46,7 +46,7 @@
       "lnurl": "LNURL 不支持 Ark 支付",
       "addressReceiveLnurl": "从 LNURL 收到的 Arkade 地址无效",
       "assets": "资产只能发送至 Arkade 地址",
-      "serverKeyMiss": "Ark 服务器密钥不匹配"
+      "serverKeyMiss": "此 Arkade 地址属于其他网络。请向收款方索取与您钱包网络相符的地址。"
     },
     "lightning": {
       "address": "所选方式需要 Lightning 发票地址",

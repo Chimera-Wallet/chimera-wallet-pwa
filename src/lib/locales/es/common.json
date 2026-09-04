@@ -10,8 +10,8 @@
     "send": {
       "invoiceDeets": "Detalles de la factura",
       "feesDeduction": "Las comisiones se deducirán del importe enviado",
-      "rollOverVTXO": "¿Querías <link>renovar tus VTXOs</link>?",
-      "lightningSwaps": "Habilita los <link>intercambios Lightning</link> para pagar"
+      "rollOverVTXO": "¿Querías <a>renovar tus VTXOs</a>?",
+      "lightningSwaps": "Habilita los <a>intercambios Lightning</a> para pagar"
     },
     "bank": {
       "submissionSuccess": "Retirada enviada",

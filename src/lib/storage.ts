@@ -1,18 +1,23 @@
 import { AssetDetails } from '@arkade-os/sdk'
 import { Config, LnSendActivity, Wallet } from '../lib/types'
 import { consoleError } from './logs'
+import { readLanguageFromStorage, saveLanguageToStorage } from './language'
 import { LocalCardInput, validateCard } from '@arkade-os/solver-discovery'
 
 
-// clear localStorage but persist config (with asset data reset)
+// clear localStorage but persist config (with asset data reset) and the chosen
+// UI language — like config, that's a display preference rather than wallet
+// data, and dropping it would flip the app back to English mid-reset.
 export async function clearStorage(): Promise<void> {
   const config = readConfigFromStorage()
+  const language = readLanguageFromStorage()
   localStorage.clear()
   if (config) {
     config.importedAssets = []
     config.apps.assets.enabled = false
     saveConfigToStorage(config)
   }
+  if (language) saveLanguageToStorage(language)
 }
 
 export const getStorageItem = <T>(key: string, fallback: T, parser: (val: string) => T): T => {

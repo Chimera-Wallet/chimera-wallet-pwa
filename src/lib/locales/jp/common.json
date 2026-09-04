@@ -10,8 +10,8 @@
     "send": {
       "invoiceDeets": "請求書の詳細",
       "feesDeduction": "手数料は送金額から差し引かれます",
-      "rollOverVTXO": "<link>VTXOをロールオーバー</link>するつもりでしたか？",
-      "lightningSwaps": "支払いを行うには<link>Lightningスワップ</link>を有効にしてください"
+      "rollOverVTXO": "<a>VTXOをロールオーバー</a>するつもりでしたか？",
+      "lightningSwaps": "支払いを行うには<a>Lightningスワップ</a>を有効にしてください"
     },
     "bank": {
       "submissionSuccess": "出金を送信しました",

@@ -10,8 +10,8 @@
     "send": {
       "invoiceDeets": "Détails de la facture",
       "feesDeduction": "Les frais seront déduits du montant envoyé",
-      "rollOverVTXO": "Vouliez-vous <link>renouveler vos VTXO</link> ?",
-      "lightningSwaps": "Activez les <link>swaps Lightning</link> pour payer"
+      "rollOverVTXO": "Vouliez-vous <a>renouveler vos VTXO</a> ?",
+      "lightningSwaps": "Activez les <a>swaps Lightning</a> pour payer"
     },
     "bank": {
       "submissionSuccess": "Retrait soumis",

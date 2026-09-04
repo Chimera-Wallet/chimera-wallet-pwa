@@ -87,7 +87,11 @@ export default function SendForm() {
   const [nudgeBoltz, setNudgeBoltz] = useState(false)
   const [proceed, setProceed] = useState(false)
   const [processing, setProcessing] = useState(false)
-  const [recipient, setRecipient] = useState('')
+  // Seeded from the flow rather than filled in by an effect on mount: the parse
+  // effect below clears the destination whenever it sees an empty recipient, so
+  // starting empty and back-filling would wipe an address carried in from
+  // elsewhere (address book, scanner, a return trip from SendDetails).
+  const [recipient, setRecipient] = useState(sendInfo.recipient ?? '')
   const [receivingAddresses, setReceivingAddresses] = useState<Addresses>()
   const [scan, setScan] = useState(false)
   const [tryingToSelfSend, setTryingToSelfSend] = useState(false)
@@ -126,12 +130,6 @@ export default function SendForm() {
       .catch(smartSetError)
   }, [])
 
-  // update form with existing send info
-  useEffect(() => {
-    const { recipient } = sendInfo
-    setRecipient(recipient ?? '')
-  }, [])
-
   // update available balance
   useEffect(() => {
     if (!svcWallet) return
@@ -148,7 +146,29 @@ export default function SendForm() {
       setNudgeBoltz(false)
       // Bank transfers are handled by a separate screen
       if (selectedMethod === TRANSFER_METHOD.bank) return
-      if (!recipient) return
+      if (!recipient) {
+        // Clearing the input has to drop whatever we parsed out of it too.
+        // The continue button is gated on sendInfo's destination fields, not on
+        // this input, so leaving them set kept an emptied form submittable with
+        // the previous recipient's address.
+        setState((prev) =>
+          prev.address || prev.arkAddress || prev.invoice || prev.lnUrl
+            ? {
+                ...prev,
+                address: '',
+                arkAddress: '',
+                invoice: '',
+                lnUrl: undefined,
+                pendingLnSend: undefined,
+                pendingSwap: undefined,
+                recipient: '',
+              }
+            : prev,
+        )
+        setAmountIsReadOnly(false)
+        setLnUrlLimits((prev) => (prev.min || prev.max ? { min: 0, max: 0 } : prev))
+        return
+      }
       const lowerCaseData = recipient.toLowerCase().replace(/^lightning:/, '')
       if (isURLWithLightningQueryString(recipient)) {
         const url = new URL(recipient)
@@ -302,7 +322,10 @@ export default function SendForm() {
       setTryingToSelfSend(true) // nudge user to rollover
       return setError(t('errors.send.chain.self'))
     }
-    // everything is ok, clean error
+    // everything is ok, clean error. The self-send flag has to be cleared too:
+    // it gates the continue button, so leaving it set kept the form blocked
+    // after the user replaced their own address with someone else's.
+    setTryingToSelfSend(false)
     setError('')
   }, [receivingAddresses, sendInfo.address, sendInfo.arkAddress, sendInfo.invoice])
 
@@ -767,12 +790,17 @@ export default function SendForm() {
             {tryingToSelfSend ? (
               <div style={{ width: '100%' }}>
                 <Text centered small>
+                  {/* The tag in the string must not be a void HTML element.
+                      These used to say <link>, which the Trans parser treats as
+                      void: it can't hold children, so the array form below
+                      printed the tag as literal text and the object form
+                      produced an empty <a> with the label outside it. */}
                   <Trans
-                  i18nKey="common.notifications.send.rollOverVTXO"
-                  components={[
-                    <a onClick={gotoRollover} />
-                  ]}
-                />
+                    i18nKey="common.notifications.send.rollOverVTXO"
+                    components={{
+                      a: <a onClick={gotoRollover} />
+                    }}
+                  />
                 </Text>
               </div>
             ) : null}
@@ -782,7 +810,7 @@ export default function SendForm() {
                   <Trans
                     i18nKey="common.notifications.send.lightningSwaps"
                     components={{
-                      link: <a onClick={gotoBoltzApp} />
+                      a: <a onClick={gotoBoltzApp} />
                     }}
                   />
                 </Text>

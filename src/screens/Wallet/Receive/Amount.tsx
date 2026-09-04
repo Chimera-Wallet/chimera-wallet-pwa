@@ -21,10 +21,9 @@ import { AspContext } from '../../../providers/asp'
 import { LimitsContext } from '../../../providers/limits'
 import { InfoLine } from '../../../components/Info'
 import QrCode from '../../../components/QrCode'
-import ExpandAddresses from '../../../components/ExpandAddresses'
+import CopyAddress from '../../../components/CopyAddress'
 import { canBrowserShareData, shareData } from '../../../lib/share'
 import { NotificationsContext } from '../../../providers/notifications'
-import { encodeBip21 } from '../../../lib/bip21'
 import { LnReceiveContext } from '../../../providers/lnReceive'
 import WarningBox from '../../../components/Warning'
 import { ASSETS, getAssetConfig, requireAssetConfig, type AssetSymbol } from '../../../lib/assets'
@@ -66,7 +65,6 @@ export default function ReceiveAmount() {
   const [sharing, setSharing] = useState(false)
   const [invoice, setInvoice] = useState(recvInfo.invoice ?? '')
   const [qrValue, setQrValue] = useState('')
-  const [bip21uri, setBip21uri] = useState('')
   const [showQrCode, setShowQrCode] = useState(false)
   const [lnReceiveError, setLnReceiveError] = useState('')
   const { t } = useTranslation()
@@ -176,8 +174,6 @@ export default function ReceiveAmount() {
 
   // set the QR code value to the plain address the first time
   useEffect(() => {
-    const nextBip21 = encodeBip21(address, arkAddress, invoice, satoshis)
-    setBip21uri(nextBip21)
     setQrValue(invoice || arkAddress || address)
     if (invoice) setShowQrCode(true)
   }, [invoice, address, arkAddress, satoshis])
@@ -421,13 +417,7 @@ export default function ReceiveAmount() {
                 <FlexCol centered>
                   {invoice ? <InfoLine centered color='orange' text={t('common.notifications.receive.lightning.tabOpen')} /> : null}
                   <QrCode value={qrValue} />
-                  <ExpandAddresses
-                    bip21uri={bip21uri}
-                    boardingAddr={address}
-                    offchainAddr={arkAddress}
-                    invoice={invoice}
-                    onClick={setQrValue}
-                  />
+                  <CopyAddress value={qrValue} />
                 </FlexCol>
               )
             ) : (

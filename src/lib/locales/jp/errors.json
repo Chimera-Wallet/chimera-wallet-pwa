@@ -46,7 +46,7 @@
       "lnurl": "LNURLはArk支払いをサポートしていません",
       "addressReceiveLnurl": "LNURLから受信したArkadeアドレスが無効です",
       "assets": "アセットはArkadeアドレスにのみ送信できます",
-      "serverKeyMiss": "Arkサーバーキーが一致しません"
+      "serverKeyMiss": "この Arkade アドレスは別のネットワークのものです。ウォレットと同じネットワークのアドレスを受取人にご確認ください。"
     },
     "lightning": {
       "address": "選択された方法にはLightning請求書アドレスが必要です",

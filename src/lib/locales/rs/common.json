@@ -10,8 +10,8 @@
     "send": {
       "invoiceDeets": "Детали счёта",
       "feesDeduction": "Комиссии будут вычтены из отправляемой суммы",
-      "rollOverVTXO": "Возможно, вы хотели <link>продлить свои VTXO</link>?",
-      "lightningSwaps": "Включите <link>Lightning-свопы</link> для оплаты"
+      "rollOverVTXO": "Возможно, вы хотели <a>продлить свои VTXO</a>?",
+      "lightningSwaps": "Включите <a>Lightning-свопы</a> для оплаты"
     },
     "bank": {
       "submissionSuccess": "Вывод средств отправлен",

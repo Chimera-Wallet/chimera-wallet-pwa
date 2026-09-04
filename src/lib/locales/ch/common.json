@@ -10,8 +10,8 @@
     "send": {
       "invoiceDeets": "发票详情",
       "feesDeduction": "费用将从发送金额中扣除",
-      "rollOverVTXO": "您是否想要<link>滚动续期您的 VTXO</link>？",
-      "lightningSwaps": "启用<link>Lightning 兑换</link>以进行支付"
+      "rollOverVTXO": "您是否想要<a>滚动续期您的 VTXO</a>？",
+      "lightningSwaps": "启用<a>Lightning 兑换</a>以进行支付"
     },
     "bank": {
       "submissionSuccess": "提现申请已提交",

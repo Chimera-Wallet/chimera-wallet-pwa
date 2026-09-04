@@ -5,6 +5,13 @@ export { toast }
 
 export const useToast = () => ({ toast })
 
+// Sonner anchors a top-positioned toaster at a flat `top: var(--offset-top)`
+// (24px desktop / 16px mobile), which on an iPhone puts it *under* the Dynamic
+// Island — the toast renders behind the cutout instead of below it. Offset by
+// the safe-area inset so the toast always clears the island/notch. Only `top`
+// is overridden; the other sides keep sonner's defaults.
+const SAFE_TOP_OFFSET = 'calc(env(safe-area-inset-top, 0px) + 16px)'
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <>
@@ -14,6 +21,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         className='arkade-toast-toaster'
         position='top-center'
         richColors
+        offset={{ top: SAFE_TOP_OFFSET }}
+        mobileOffset={{ top: SAFE_TOP_OFFSET }}
         toastOptions={{
           classNames: {
             content: 'arkade-toast-content',

@@ -11,8 +11,8 @@
         "send":{
             "invoiceDeets": "Invoice Details",
             "feesDeduction": "Fees will be deducted from the amount sent",
-            "rollOverVTXO":  "Did you mean <link>roll over your VTXOs</link>?",
-            "lightningSwaps": "Enable <link>Lightning swaps</link> to pay"
+            "rollOverVTXO":  "Did you mean <a>roll over your VTXOs</a>?",
+            "lightningSwaps": "Enable <a>Lightning swaps</a> to pay"
 
         },
         "bank": {
