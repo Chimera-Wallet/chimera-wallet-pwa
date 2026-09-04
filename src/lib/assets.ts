@@ -58,19 +58,70 @@ export const ASSETS = {
 
 export type AssetSymbol = keyof typeof ASSETS
 
+export interface EnabledAssets {
+  assets: AssetConfig[]
+  /** Symbols listed in the env var that aren't in ASSETS — a config typo. */
+  unknown: string[]
+}
+
+/**
+ * Parse `VITE_ENABLED_ASSETS` — a comma-separated list of asset symbols.
+ *
+ * Unknown symbols are reported rather than dropped: silently ignoring a typo
+ * would hide an asset the deployment meant to launch, with nothing to show for
+ * it. requiredConfig.ts turns that into a boot failure.
+ *
+ * The result is ordered by the ASSETS declaration order above, not by the order
+ * in the env var, so rewriting the variable can't reshuffle the home list or
+ * the asset pickers.
+ */
+export const parseEnabledAssets = (raw: string | undefined): EnabledAssets => {
+  const symbols = (raw ?? '')
+    .split(',')
+    .map((symbol) => symbol.trim().toUpperCase())
+    .filter(Boolean)
+
+  const known = Object.keys(ASSETS) as AssetSymbol[]
+  const isKnown = (symbol: string): symbol is AssetSymbol => (known as string[]).includes(symbol)
+
+  const unknown = symbols.filter((symbol) => !isKnown(symbol))
+  const enabled = new Set(symbols.filter(isKnown))
+
+  return {
+    assets: known.filter((symbol) => enabled.has(symbol)).map((symbol) => ASSETS[symbol] as AssetConfig),
+    unknown,
+  }
+}
+
+const enabledAssets = parseEnabledAssets(import.meta.env.VITE_ENABLED_ASSETS)
+
 // The single list of assets the wallet offers. Everything user-facing reads
 // from here — the home list, the send/receive asset pickers and the balances
 // computed for them — so an asset is shown everywhere or nowhere.
 //
 // BTC uses the Ark/Lightning/Bitcoin flows; the others are bridged to/from
-// their native chains via the Arkade Wrap API. USDT, ETH, TRX and POL stay
-// defined in ASSETS above (so existing balances, transactions and price
-// lookups still resolve by symbol) but are deliberately absent here and
-// therefore hidden — only BTC is live for now, with CEXT shown "Coming Soon"
-// on the home list (see AssetList.tsx). Add an asset back to this list to
-// launch it; getHomeAssetList()'s balance filter (below) then takes over for
-// deciding whether it shows up on the home list specifically.
-export const ASSET_LIST: AssetConfig[] = [ASSETS.BTC, ASSETS.CEXT]
+// their native chains via the Arkade Wrap API. Every asset stays defined in
+// ASSETS above (so existing balances, transactions and price lookups still
+// resolve by symbol) whether or not this build offers it.
+//
+// Which ones are offered is per-environment, via VITE_ENABLED_ASSETS: staging
+// runs the full set so the bridged assets can be exercised, while production
+// lists only what has actually launched. There is deliberately no default — a
+// silent fallback would let a misconfigured production build quietly expose
+// assets that aren't live yet — so a missing or empty value leaves this array
+// empty and requiredConfig.ts blocks the app at boot.
+//
+// Launching an asset is therefore a deployment change, not a code change: add
+// its symbol to the env var. `comingSoon` is a separate axis, set per asset in
+// ASSETS — an enabled asset that is still `comingSoon` shows on the home list
+// with a "Coming Soon" badge but can't be selected to send or receive (see
+// AssetList.tsx and AssetSelector.tsx). getHomeAssetList()'s balance filter
+// below then decides whether an enabled asset shows on the home list
+// specifically.
+export const ASSET_LIST: AssetConfig[] = enabledAssets.assets
+
+/** Symbols listed in VITE_ENABLED_ASSETS that this build doesn't recognise. */
+export const getUnknownEnabledAssetSymbols = (): string[] => enabledAssets.unknown
 
 // Assets the fiat bank transfer (on/off-ramp) flow is offered for. Every other
 // asset can only be moved over Arkade or its native chain.
@@ -144,13 +195,15 @@ const WRAPPED_ASSET_SYMBOLS = Object.keys(WRAPPED_ASSET_IDS) as AssetSymbol[]
  * The `VITE_ARKADE_*` env vars this build actually needs, derived from the
  * assets it offers rather than listed by hand.
  *
- * An asset that is hidden (absent from ASSET_LIST) or still `comingSoon` cannot
- * be held or moved, so its id is not needed to boot. Hardcoding all of them
- * meant production — where only BTC is live and CEXT is "Coming Soon" — failed
- * its startup check over ids for assets that are switched off.
+ * An asset this environment doesn't enable (absent from VITE_ENABLED_ASSETS) or
+ * one still `comingSoon` cannot be held or moved, so its id is not needed to
+ * boot. Hardcoding all of them meant production — where only BTC is live and
+ * CEXT is "Coming Soon" — failed its startup check over ids for assets that are
+ * switched off.
  *
- * Launching an asset is therefore still a one-line change: add it to
- * ASSET_LIST (and drop `comingSoon`), and its id becomes required automatically.
+ * Launching an asset stays a one-line change: add its symbol to
+ * VITE_ENABLED_ASSETS (and drop `comingSoon` if set), and its id becomes
+ * required for that environment automatically.
  */
 export const getRequiredAssetIdEnvVars = (): string[] =>
   ASSET_LIST.filter(

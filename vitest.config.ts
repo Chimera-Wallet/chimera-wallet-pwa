@@ -23,6 +23,8 @@ export default defineConfig({
       VITE_ARK_SERVER: 'https://signet.arkade.sh',
       VITE_DELEGATE_ENABLED: 'false',
       VITE_ARKADEWRAP_API: 'https://api.arkadewrap.test',
+      // Matches production's set, which is what the existing screen tests assume
+      VITE_ENABLED_ASSETS: 'BTC,CEXT',
       VITE_ARKADE_ETH: 'test-eth',
       VITE_ARKADE_USDT: 'test-usdt',
       VITE_ARKADE_TRX: 'test-trx',

@@ -12,18 +12,28 @@
 // only blocks deployments over config for a feature nobody can reach.
 
 import { consoleError } from './logs'
-import { getRequiredAssetIdEnvVars } from './assets'
+import { getRequiredAssetIdEnvVars, getUnknownEnabledAssetSymbols } from './assets'
 
 // Env vars that must be present and non-empty regardless of which assets are
 // enabled. The per-asset `VITE_ARKADE_*` ids are NOT listed here — they depend
 // on what this build actually offers and come from getRequiredAssetIdEnvVars().
-const REQUIRED_ENV_VARS = ['VITE_ARK_SERVER', 'VITE_ARKADEWRAP_API'] as const
+//
+// VITE_ENABLED_ASSETS has no default on purpose: defaulting it would let a
+// deployment that forgot to set it quietly ship the wrong set of assets, which
+// on production means exposing ones that haven't launched.
+const REQUIRED_ENV_VARS = ['VITE_ARK_SERVER', 'VITE_ARKADEWRAP_API', 'VITE_ENABLED_ASSETS'] as const
 
 /** Names of required configuration that is missing or empty. Empty when valid. */
 export const getMissingRequiredConfig = (): string[] => {
   const env = import.meta.env as Record<string, string | undefined>
   const required: string[] = [...REQUIRED_ENV_VARS, ...getRequiredAssetIdEnvVars()]
   const missing: string[] = required.filter((key) => !env[key] || env[key]!.trim() === '')
+  // A typo in VITE_ENABLED_ASSETS would otherwise just drop that asset, giving
+  // a build that looks fine but is missing something it was meant to offer.
+  const unknownAssets = getUnknownEnabledAssetSymbols()
+  if (unknownAssets.length) {
+    missing.push(`VITE_ENABLED_ASSETS (unknown asset symbol: ${unknownAssets.join(', ')})`)
+  }
   // Delegation must be explicitly enabled or disabled — no default is allowed.
   const delegate = env.VITE_DELEGATE_ENABLED
   if (delegate !== 'true' && delegate !== 'false') {

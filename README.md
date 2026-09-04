@@ -19,6 +19,28 @@ This project supports environment-specific configuration through `.env` files:
 | `VITE_KYC_API_URL`          | IDFlow KYC API URL                                                  | `VITE_KYC_API_URL=https://api.idflow.ch`          |
 | `VITE_KYC_WEBVIEW_URL`      | IDFlow KYC webview URL                                              | `VITE_KYC_WEBVIEW_URL=https://demo.idflow.ch/`    |
 
+### Enabled Assets
+
+Which assets the build offers is per-environment, not hardcoded.
+
+| Variable               | Description                                                              | Example Value                                       |
+| ---------------------- | ------------------------------------------------------------------------ | --------------------------------------------------- |
+| `VITE_ENABLED_ASSETS`  | **Required.** Comma-separated asset symbols this build offers            | `VITE_ENABLED_ASSETS=BTC,CEXT`                      |
+
+Known symbols: `BTC`, `USDT`, `ETH`, `TRX`, `POL`, `CEXT`. Staging runs the full
+set so the bridged assets can be exercised; production lists only what has
+launched.
+
+There is no default. A missing, empty, or misspelled value blocks the app at
+boot with a configuration error rather than guessing a set — defaulting it
+would let a deployment that forgot to set it quietly expose assets that aren't
+live. Every enabled asset that is bridged and not `comingSoon` also needs its
+`VITE_ARKADE_<SYMBOL>` id, which is enforced at boot for exactly that set.
+
+`comingSoon` is a separate, per-asset flag in `src/lib/assets.ts`: an enabled
+asset that still carries it appears on the home list with a "Coming Soon" badge
+but cannot be selected to send or receive.
+
 ### Third-Party Integrations
 
 | Variable                      | Description                                                         | Example Value                                                                        |
