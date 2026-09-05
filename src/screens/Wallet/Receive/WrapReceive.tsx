@@ -179,13 +179,6 @@ export default function WrapReceive() {
 
             {!quote ? (
               <>
-                <InfoContainer>
-                  <InfoLine
-                    compact
-                    color='orange'
-                    text={t('common.notifications.wrapService.addressSendFrom', {name: chain.name, ticker: wrapRecvInfo.ticker})}
-                  />
-                </InfoContainer>
                 <Input
                   label={t('common.notifications.wrapService.ownAddress', {name: chain.name})}
                   value={sender}

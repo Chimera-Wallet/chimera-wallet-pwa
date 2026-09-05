@@ -46,7 +46,7 @@
       "lnurl": "LNURL non supporta pagamenti Ark",
       "addressReceiveLnurl": "Indirizzo Arkade ricevuto da LNURL non valido",
       "assets": "Gli asset possono essere inviati solo a indirizzi Arkade",
-      "serverKeyMiss": "Chiave del server Ark non corrispondente"
+      "serverKeyMiss": "Questo indirizzo Arkade appartiene a un'altra rete. Chiedi al destinatario un indirizzo compatibile con la rete del tuo wallet."
     },
     "lightning": {
       "address": "Il metodo selezionato richiede una fattura Lightning",

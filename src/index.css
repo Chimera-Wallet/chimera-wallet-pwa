@@ -1,7 +1,6 @@
 /* UI-specific vars not covered by tokens.css */
 :root {
   --background-focused: var(--purple20);
-  --btn-shadow-color: rgba(0, 0, 0, 0.25);
   --sheet-bg: var(--bg);
   --toast-bg: #1a1a1a;
   --toast-color: #fafafa;
@@ -243,6 +242,23 @@ body,
   background-color: var(--bg);
 }
 
+/* The document itself must never scroll — `.content` is the only scroller.
+   `.page` is absolutely positioned at `top: env(safe-area-inset-top)`, so it
+   moves with the document: when the iOS software keyboard opens, Safari scrolls
+   the *document* to reveal the focused field, which slides the whole shell —
+   header included — up under the notch / Dynamic Island. Whatever sits at the
+   top of the content then ends up behind the cutout, which on the Send screen
+   is the validation error ("Cannot send to yourself"), because reaching that
+   error means the address input is focused and the keyboard is up.
+
+   Locking the root scroller confines iOS to `.content`. Nothing relies on
+   document scrolling: `.page` is exactly viewport-height, and Refresher's
+   pull-to-refresh gate (`window.scrollY === 0`) only becomes more reliable. */
+html,
+body {
+  overflow: hidden;
+}
+
 body {
   margin: 0;
   background-color: var(--bg);
@@ -303,7 +319,10 @@ iframe {
 .button {
   border: none;
   border-radius: 8px;
-  box-shadow: 0 4px 0 0 var(--btn-shadow-color);
+  /* No drop shadow. The 4px hard offset shadow the variants used to carry was
+     the old Arkade look; against the flat redesign it just reads as a black
+     bar under every button. The press affordance is the scale below. */
+  box-shadow: none;
   cursor: pointer;
   font-family: 'Geist Mono', monospace;
   font-size: 0.875rem;
@@ -313,9 +332,7 @@ iframe {
   padding: 0;
   text-transform: uppercase;
   transform: translateY(0);
-  transition:
-    transform 100ms cubic-bezier(0.165, 0.84, 0.44, 1),
-    box-shadow 100ms cubic-bezier(0.165, 0.84, 0.44, 1);
+  transition: transform 100ms cubic-bezier(0.165, 0.84, 0.44, 1);
   width: 100%;
   &:disabled {
     cursor: default;
@@ -323,8 +340,7 @@ iframe {
     pointer-events: none;
   }
   &.pressed {
-    transform: translateY(4px);
-    box-shadow: 0 0 0 0 var(--btn-shadow-color);
+    transform: scale(0.97);
   }
   &.clear {
     border: none;
@@ -350,13 +366,11 @@ iframe {
   }
   &.dark {
     background: var(--blue-primary);
-    box-shadow: 0 4px 0 0 var(--blue-dark);
     color: white;
   }
   &.outline {
     background: none;
     border-color: var(--neutral-500);
-    box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.1);
     color: var(--neutral-500);
   }
   &.pill-nav-btn {
@@ -365,17 +379,12 @@ iframe {
   &.red {
     background: var(--red);
     border-color: var(--red);
-    box-shadow: 0 4px 0 0 var(--red-800);
     color: white;
   }
   &.secondary {
     background: var(--neutral-200);
     border-color: var(--black);
-    box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.1);
     color: var(--black);
-  }
-  &.pressed.dark {
-    box-shadow: 0 0 0 0 #1a0b4a;
   }
   &[size='small'] {
     min-height: 16px;
@@ -861,14 +870,44 @@ iframe#chatwoot_live_chat_widget {
   padding-bottom: env(safe-area-inset-bottom, 0px) !important;
 }
 
-/* Intercom messenger safe area adjustments for iOS */
+/* ============================================================
+   Intercom messenger
+   Same story as Chatwoot above: Intercom only goes full-screen under its own
+   breakpoint, so elsewhere it opens as a floating panel — and the global
+   `iframe` rule (height: calc(100% - 50px)) shrinks the frame on top of that.
+   Support is a full-page experience here, so pin the messenger to the visible
+   viewport on every screen size and keep it clear of the notch / home
+   indicator with padding rather than a height cap. The previous 90dvh
+   max-height was itself why the widget never filled the page on iPhone.
+   ============================================================ */
+
 @supports (-webkit-touch-callout: none) {
   /* iOS only */
-  .intercom-messenger-frame,
+  .intercom-namespace .intercom-messenger-frame,
+  .intercom-messenger-frame {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    transform: none !important;
+    border-radius: 0 !important;
+    box-sizing: border-box !important;
+    padding-top: env(safe-area-inset-top, 0px) !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    z-index: 2147483000;
+  }
+
+  /* Undo the global `iframe` rule (height: calc(100% - 50px)) for the frame */
+  .intercom-messenger-frame iframe,
   iframe[name*='intercom-messenger'] {
-    transform: translateY(env(safe-area-inset-top, 0px)) !important;
-    height: calc(100% - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
-    max-height: calc(90dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    border: none !important;
   }
 
   #intercom-container,

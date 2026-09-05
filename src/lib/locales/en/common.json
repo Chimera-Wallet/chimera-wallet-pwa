@@ -11,8 +11,8 @@
         "send":{
             "invoiceDeets": "Invoice Details",
             "feesDeduction": "Fees will be deducted from the amount sent",
-            "rollOverVTXO":  "Did you mean <link>roll over your VTXOs</link>?",
-            "lightningSwaps": "Enable <link>Lightning swaps</link> to pay"
+            "rollOverVTXO":  "Did you mean <a>roll over your VTXOs</a>?",
+            "lightningSwaps": "Enable <a>Lightning swaps</a> to pay"
 
         },
         "bank": {
@@ -36,7 +36,6 @@
             "failedQuote": "Failed to create unwrap quote", 
             "sent": "Payout sent",
             "sendInfo": "{{value}} {{ticker}} sent on {{name}}",
-            "sendInfoExtended": "Enter the {{name}} address that will receive the payout. We reserve an Arkade deposit address; sending your wrapped {{ticker}} to it releases the funds on {{name}}.",
             "destination": "Destination {{name}} address",
             "timeSensitive": "Send your wrapped {{ticker}} on Arkade to the treasury address below before the quote expires.",
             "payout": "`Payout: {{amount}} {{ticker}}`",
@@ -48,7 +47,6 @@
             "arkRcv": "{{amount}} {{ticker}} received on Arkade",
             "wrappedRcv": "Your wrapped asset was received",
             "rcvViaChain": "Receive {{ticker}} via {{name}}",
-            "addressSendFrom": "Enter the {{name}} address you will send {{ticker}} from. We reserve a deposit address and mint the equivalent wrapped asset to your arkade wallet.",
             "ownAddress": "Your {{name}} address",
             "expiry": "Send {{ticker}} on {{name}} to the address below before the quote expires.",
             "depositDetected": "Deposit detected {{amount}} {{ticker}}",

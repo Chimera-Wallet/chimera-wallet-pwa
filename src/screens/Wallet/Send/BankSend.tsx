@@ -15,15 +15,19 @@ import Button from '../../../components/Button'
 import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import Shadow from '../../../components/Shadow'
 import ErrorMessage from '../../../components/Error'
-import Info from '../../../components/Info'
+import Info, { InfoLine } from '../../../components/Info'
+import InfoContainer from '../../../components/InfoContainer'
 import AssetSelector from '../../../components/AssetSelector'
 import NetworkSelector from '../../../components/NetworkSelector'
 import InlineAmountInput from '../../../components/InlineAmountInput'
 import BankTransferValidationMessages from '../../../components/BankTransferValidation'
 import WaitingForRound from '../../../components/WaitingForRound'
 import { BANK_TRANSFER_ASSET_LIST, type AssetSymbol } from '../../../lib/assets'
-import { TRANSFER_METHOD, type TransferMethod } from '../../../lib/transferMethods'
+import { TERMS_AND_CONDITIONS, TRANSFER_METHOD, type InfoItemIcon, type TransferMethod } from '../../../lib/transferMethods'
 import TransactionsIcon from '../../../icons/Transactions'
+import WhenIcon from '../../../icons/When'
+import FeesIcon from '../../../icons/Fees'
+import InfoIconSvg from '../../../icons/Info'
 import { BankCircuitSelector, BankCurrencySelector } from '../../../components/BankDetails'
 import { NavigationContext, Pages } from '../../../providers/navigation'
 import { FlowContext } from '../../../providers/flow'
@@ -49,6 +53,8 @@ import { getUserEmailForBankTransfer } from '../../../lib/kyc'
 import { AspContext } from '@/providers/asp'
 import rightIcon from '../../../../public/images/icons/ Right.png'
 import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
+import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
+import clockIcon from '../../../../public/images/icons/ Clock.svg'
 import {useTranslation} from 'react-i18next'
 
 
@@ -454,6 +460,27 @@ export default function BankSend() {
     }
   }
 
+  // Icon for a T&C line — same mapping the other send/receive screens use
+  const getIconComponent = (iconType?: InfoItemIcon) => {
+    switch (iconType) {
+      case 'time':
+        return <WhenIcon />
+      case 'fees':
+        return <FeesIcon />
+      case 'warning':
+      case 'instruction':
+        return undefined
+      case 'info':
+        return <img src={infoIcon} alt='info' style={{ width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)' }} />
+      case 'receipt':
+        return <img src={receiptIcon} alt='receipt' style={{ width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)' }} />
+      case 'clock':
+        return <img src={clockIcon} alt='clock' style={{ width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)' }} />
+      default:
+        return <InfoIconSvg />
+    }
+  }
+
   const canSubmit = validation.canProceed && (skipBankDetails || isBankDetailsComplete()) && !loading && !sending
 
   if (sending) {
@@ -525,6 +552,17 @@ export default function BankSend() {
               {/* Transfer Method */}
               <BankCircuitSelector currency={currency} selectedCircuit={circuit} onSelect={setCircuit} />
             </FlexCol>
+
+            {/* Bank Transfer Terms & Conditions — mirrors BankReceive, and the
+                other send methods, which all show them under the selectors */}
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100%' }}>
+              <InfoContainer>
+                {TERMS_AND_CONDITIONS.send.bank.map((item) => (
+                  <InfoLine key={item.text} compact color={item.color} icon={getIconComponent(item.icon)} text={t(item.text)} />
+                ))}
+              </InfoContainer>
+            </div>
+
             {/* SWIFT fee notice */}
             {circuit === 'swift' ? (
               <Info color='orange' icon = {<img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />} title={`SWIFT Transfer Fee: ${SWIFT_SEND_FEE} ${currency}`}>

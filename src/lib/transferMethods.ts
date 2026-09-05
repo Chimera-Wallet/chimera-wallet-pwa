@@ -80,12 +80,12 @@ export const TERMS_AND_CONDITIONS: MethodTermsAndConditions = {
     ],
     bank: [
       {
-        icon: 'info',
+        icon: 'clock',
         text: 'terms.send.bank.time',
       },
       {
         icon: 'receipt',
-        text: 'terms.send.lightning.fees',
+        text: 'terms.send.bank.fees',
       },
     ],
   },

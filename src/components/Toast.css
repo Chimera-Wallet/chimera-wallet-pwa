@@ -9,6 +9,25 @@
   transform: translateX(-50%);
 }
 
+/* Clear the notch / Dynamic Island.
+   Sonner anchors a top toaster at a flat `top: var(--offset-top)` — 24px on
+   desktop, 16px under its own max-width:600px rule — which on an iPhone lands
+   the toast *under* the cutout rather than below it.
+
+   This has to be plain CSS rather than sonner's `offset` prop, because that
+   prop can only deliver a value through the --offset-top / --mobile-offset-top
+   custom properties, and WebKit does not reliably resolve env() once it has
+   been routed through a custom property. Applying env() directly to `top` is
+   what the rest of this codebase does deliberately — see the
+   --bottom-anchor-gap note in tokens.css.
+
+   The extra class outweighs sonner's own [data-sonner-toaster][data-y-position]
+   rule on specificity; !important also wins over its max-width:600px variant,
+   so one declaration covers both breakpoints. */
+[data-sonner-toaster].arkade-toast-toaster[data-y-position='top'] {
+  top: calc(env(safe-area-inset-top, 0px) + 16px) !important;
+}
+
 [data-sonner-toaster].arkade-toast-toaster [data-sonner-toast][data-styled='true'] {
   right: auto;
   left: 50%;

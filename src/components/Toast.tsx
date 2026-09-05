@@ -5,6 +5,9 @@ export { toast }
 
 export const useToast = () => ({ toast })
 
+// The safe-area offset that keeps the toast clear of the notch / Dynamic
+// Island lives in Toast.css, NOT in sonner's `offset` prop — see the comment
+// there for why the prop can't carry it on iOS.
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <>

@@ -10,8 +10,8 @@
     "send": {
       "invoiceDeets": "发票详情",
       "feesDeduction": "费用将从发送金额中扣除",
-      "rollOverVTXO": "您是否想要<link>滚动续期您的 VTXO</link>？",
-      "lightningSwaps": "启用<link>Lightning 兑换</link>以进行支付"
+      "rollOverVTXO": "您是否想要<a>滚动续期您的 VTXO</a>？",
+      "lightningSwaps": "启用<a>Lightning 兑换</a>以进行支付"
     },
     "bank": {
       "submissionSuccess": "提现申请已提交",
@@ -34,7 +34,6 @@
       "failedQuote": "创建解封报价失败",
       "sent": "款项已发送",
       "sendInfo": "{{value}} {{ticker}} 已通过 {{name}} 发送",
-      "sendInfoExtended": "输入将接收款项的 {{name}} 地址。我们会预留一个 Arkade 存款地址；向该地址发送您的封装 {{ticker}} 后，资金将在 {{name}} 上释放。",
       "destination": "目标 {{name}} 地址",
       "timeSensitive": "请在报价过期前，将您在 Arkade 上的封装 {{ticker}} 发送至下方的资金库地址。",
       "payout": "`款项：{{amount}} {{ticker}}`",
@@ -46,7 +45,6 @@
       "arkRcv": "已在 Arkade 上收到 {{amount}} {{ticker}}",
       "wrappedRcv": "已收到您的封装资产",
       "rcvViaChain": "通过 {{name}} 接收 {{ticker}}",
-      "addressSendFrom": "输入您将从其发送 {{ticker}} 的 {{name}} 地址。我们会预留一个存款地址，并向您的 Arkade 钱包铸造等值的封装资产。",
       "ownAddress": "您的 {{name}} 地址",
       "expiry": "请在报价过期前，将 {{ticker}} 从 {{name}} 发送至下方地址。",
       "depositDetected": "检测到存款 {{amount}} {{ticker}}",

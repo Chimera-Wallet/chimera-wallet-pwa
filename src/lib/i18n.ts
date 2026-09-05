@@ -1,5 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next'
+import { DEFAULT_LANGUAGE, readLanguageFromStorage } from './language'
 
 import enTerms from './locales/en/terms.json'
 import enNetworks from './locales/en/networks.json'
@@ -83,8 +84,12 @@ import rsApps from './locales/rs/apps.json'
 import rsComponents from './locales/rs/components.json'
 import rsLib from './locales/rs/lib.json'
 
+// Restore the language the user picked last time. Without an explicit `lng`,
+// i18next starts on fallbackLng every launch, so the Settings choice silently
+// reverted to English on the next reload (a PWA relaunch included).
 i18n.use(initReactI18next).init({
   debug: import.meta.env.DEV,
+  lng: readLanguageFromStorage() ?? DEFAULT_LANGUAGE,
   fallbackLng: 'en',
   interpolation: {
     escapeValue: false,

@@ -180,13 +180,6 @@ export default function UnwrapSend() {
 
             {!quote ? (
               <>
-                <InfoContainer>
-                  <InfoLine
-                    compact
-                    color='orange'
-                    text={t('common.notifications.unwrapService.sendInfoExtended', {name:chain.name, ticker: unwrapSendInfo.ticker})}
-                  />
-                </InfoContainer>
                 <Input
                   label={t('common.notifications.unwrapService.destination', {name: chain.name})}
                   value={receiver}

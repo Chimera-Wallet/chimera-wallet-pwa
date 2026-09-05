@@ -10,8 +10,8 @@
     "send": {
       "invoiceDeets": "Detalles de la factura",
       "feesDeduction": "Las comisiones se deducirán del importe enviado",
-      "rollOverVTXO": "¿Querías <link>renovar tus VTXOs</link>?",
-      "lightningSwaps": "Habilita los <link>intercambios Lightning</link> para pagar"
+      "rollOverVTXO": "¿Querías <a>renovar tus VTXOs</a>?",
+      "lightningSwaps": "Habilita los <a>intercambios Lightning</a> para pagar"
     },
     "bank": {
       "submissionSuccess": "Retirada enviada",
@@ -34,7 +34,6 @@
       "failedQuote": "No se pudo crear la cotización de desenvoltura",
       "sent": "Pago enviado",
       "sendInfo": "{{value}} {{ticker}} enviados en {{name}}",
-      "sendInfoExtended": "Introduce la dirección de {{name}} que recibirá el pago. Reservamos una dirección de depósito de Arkade; al enviar tus {{ticker}} envueltos a ella, se liberarán los fondos en {{name}}.",
       "destination": "Dirección de destino de {{name}}",
       "timeSensitive": "Envía tus {{ticker}} envueltos en Arkade a la dirección de tesorería indicada abajo antes de que expire la cotización.",
       "payout": "Pago: {{amount}} {{ticker}}",
@@ -46,7 +45,6 @@
       "arkRcv": "{{amount}} {{ticker}} recibidos en Arkade",
       "wrappedRcv": "Tu activo envuelto ha sido recibido",
       "rcvViaChain": "Recibir {{ticker}} mediante {{name}}",
-      "addressSendFrom": "Introduce la dirección de {{name}} desde la que enviarás {{ticker}}. Reservaremos una dirección de depósito y acuñaremos el activo envuelto equivalente en tu cartera Arkade.",
       "ownAddress": "Tu dirección de {{name}}",
       "expiry": "Envía {{ticker}} en {{name}} a la dirección indicada abajo antes de que expire la cotización.",
       "depositDetected": "Depósito detectado: {{amount}} {{ticker}}",
