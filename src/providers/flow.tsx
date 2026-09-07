@@ -142,6 +142,11 @@ interface FlowContextProps {
   currentBankOrderType?: BankOrderType
   wrapRecvInfo: WrapRecvInfo | undefined
   unwrapSendInfo: UnwrapSendInfo | undefined
+  // One-shot pass-through: the asset to preselect as the "from" side when
+  // navigating into the asset swap screen (e.g. from an asset detail view).
+  // Consumed once by the swap screen, which clears it back to undefined.
+  assetSwapFromAssetId: string | undefined
+  setAssetSwapFromAssetId: (arg0: string | undefined) => void
   setInitInfo: (arg0: InitInfo) => void
   setKycAuthParams: (arg0: KycAuthParams | undefined) => void
   setNoteInfo: (arg0: NoteInfo) => void
@@ -221,6 +226,8 @@ export const FlowContext = createContext<FlowContextProps>({
   currentBankOrderType: undefined,
   wrapRecvInfo: undefined,
   unwrapSendInfo: undefined,
+  assetSwapFromAssetId: undefined,
+  setAssetSwapFromAssetId: () => {},
   setInitInfo: () => {},
   setKycAuthParams: () => {},
   setNoteInfo: () => {},
@@ -260,6 +267,7 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
   const [currentBankOrderType, setCurrentBankOrderType] = useState<BankOrderType | undefined>()
   const [wrapRecvInfo, setWrapRecvInfo] = useState<WrapRecvInfo | undefined>()
   const [unwrapSendInfo, setUnwrapSendInfo] = useState<UnwrapSendInfo | undefined>()
+  const [assetSwapFromAssetId, setAssetSwapFromAssetId] = useState<string | undefined>()
 
   return (
     <FlowContext.Provider
@@ -280,6 +288,8 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
         currentBankOrderType,
         wrapRecvInfo,
         unwrapSendInfo,
+        assetSwapFromAssetId,
+        setAssetSwapFromAssetId,
         setInitInfo,
         setKycAuthParams,
         setNoteInfo,
