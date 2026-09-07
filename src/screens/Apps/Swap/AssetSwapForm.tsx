@@ -164,8 +164,7 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
     setToSymbol(toOptions[0].symbol as AssetSymbol)
   }, [toOptions, toSymbol])
 
-  // One-shot preselection coming from an asset detail screen (an assetId,
-  // since that's what the rest of the wallet already keys balances on).
+
   useEffect(() => {
     if (!assetSwapFromAssetId || swappableAssets.length === 0) return
     const symbol =
@@ -174,7 +173,6 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
       setFromSymbol(symbol)
     }
     setAssetSwapFromAssetId(undefined)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assetSwapFromAssetId, swappableAssets])
 
   const pair = fromAsset && toAsset ? findMarket(markets, fromAsset.assetId, toAsset.assetId) : undefined
