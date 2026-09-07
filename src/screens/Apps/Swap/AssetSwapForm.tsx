@@ -7,7 +7,7 @@ import Content from '../../../components/Content'
 import Padded from '../../../components/Padded'
 import FlexCol from '../../../components/FlexCol'
 import FlexRow from '../../../components/FlexRow'
-import Text, { TextLabel, TextSecondary } from '../../../components/Text'
+import Text, { TextSecondary } from '../../../components/Text'
 import Button from '../../../components/Button'
 import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import Shadow from '../../../components/Shadow'
@@ -17,8 +17,9 @@ import ErrorMessage from '../../../components/Error'
 import SheetModal from '../../../components/SheetModal'
 import Table, { type TableData } from '../../../components/Table'
 import Success from '../../../components/Success'
-import AssetSelector from '../../../components/AssetSelector'
-import CurrencySwapIcon from '../../../icons/CurrencySwap'
+import SelectSheet from '../../../components/SelectSheet'
+import AssetIcon from '../../../icons/AssetIcon'
+import ChevronDown from '../../../icons/ChevronDown'
 import { SwapSuccessIcon } from '../../../icons/Swap'
 import { AssetSwapsContext } from '../../../providers/assetSwaps'
 import { AspContext } from '../../../providers/asp'
@@ -42,6 +43,7 @@ import { type AssetSwapQuoteSnapshot } from '../../../lib/swapRepository'
 import { extractError } from '../../../lib/error'
 import { hapticLight, hapticTap } from '../../../lib/haptics'
 import { toast } from '../../../components/Toast'
+import checkMarkIcon from '../../../../public/images/icons/ CheckCheckMark.png'
 
 interface SwapFormProps {
   onBack: () => void
@@ -126,6 +128,8 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
   const [fromSymbol, setFromSymbol] = useState<AssetSymbol | undefined>()
   const [toSymbol, setToSymbol] = useState<AssetSymbol | undefined>()
   const [amount, setAmount] = useState('')
+  const [fromPickerOpen, setFromPickerOpen] = useState(false)
+  const [toPickerOpen, setToPickerOpen] = useState(false)
   const [drawer, setDrawer] = useState<DrawerState>(null)
   const [confirming, setConfirming] = useState(false)
   const [confirmError, setConfirmError] = useState('')
@@ -380,79 +384,89 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
           <FlexCol gap='1.5rem'>
             <ErrorMessage error={Boolean(confirmError)} text={confirmError} />
 
-            <FlexCol gap='0.25rem'>
-              <AssetSelector
-                assets={swappableAssets}
-                label={t('apps.swap.selectFrom')}
-                selected={fromAsset.symbol}
-                onSelect={selectFromSymbol}
-                showValue
-              />
-              <TextSecondary>
-                {prettyAssetNumber(centsToUnits(fromAsset.balanceAtomic, fromAsset.decimals), fromAsset.decimals)}{' '}
-                {fromAsset.ticker} {t('apps.swap.available')}
-              </TextSecondary>
-            </FlexCol>
-
-            <FlexRow centered>
-              <FlipAssetsButton onClick={flipAssets} disabled={!toAsset} />
-            </FlexRow>
-
-            {toOptions.length > 0 && toAsset ? (
-              <AssetSelector
-                assets={toOptions}
-                label={t('apps.swap.selectTo')}
-                selected={toAsset.symbol}
-                onSelect={selectToSymbol}
-                showValue
-              />
-            ) : (
-              <FlexCol gap='0.5rem'>
-                <TextLabel>{t('apps.swap.selectTo')}</TextLabel>
-                <Shadow fat>
-                  <TextSecondary>{t('apps.swap.noMarket')}</TextSecondary>
-                </Shadow>
-              </FlexCol>
-            )}
-
-            <FlexCol gap='0.5rem'>
-              <TextLabel>
-                {t('common.general.amount')} ({fromAsset.ticker})
-              </TextLabel>
+            <div style={{ position: 'relative' }}>
               <Shadow fat>
-                <FlexRow between>
-                  <input
-                    type='text'
-                    inputMode='decimal'
-                    placeholder='0'
-                    value={amount}
-                    onChange={(ev) => changeAmount(ev.target.value)}
-                    style={{
-                      width: '100%',
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'var(--white)',
-                      fontSize: '1.25rem',
-                      fontWeight: 'bold',
-                      outline: 'none',
-                    }}
+                <FlexCol gap='0'>
+                  <SwapAssetRow
+                    icon={<AssetIcon symbol={fromAsset.symbol} size={32} />}
+                    name={swappableAssets.find((cfg) => cfg.symbol === fromAsset.symbol)?.name ?? fromAsset.ticker}
+                    onClick={() => setFromPickerOpen(true)}
+                    sublabelClickable
+                    onSublabelClick={useMaxBalance}
+                    sublabel={`${prettyAssetNumber(centsToUnits(fromAsset.balanceAtomic, fromAsset.decimals), fromAsset.decimals)} ${fromAsset.ticker} ${t('apps.swap.available')}`}
+                    amount={
+                      <FlexRow>
+                      
+                        <input
+                          type='text'
+                          inputMode='decimal'
+                          placeholder='0'
+                          value={amount}
+                          onChange={(ev) => changeAmount(ev.target.value)}
+                          data-testid='asset-swap-amount'
+                          style={{
+                            width: '100%',
+                            minWidth: '2ch',
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--white)',
+                            fontSize: '2rem',
+                            fontWeight: 'bold',
+                            outline: 'none',
+                            textAlign: 'right',
+                          }}
+                        />
+                      </FlexRow>
+                    }
+                    tickerLabel={fromAsset.ticker}
                   />
-                  <p
-                    role='button'
-                    onClick={useMaxBalance}
-                    data-testid='asset-swap-max'
-                    style={{ color: 'var(--purpletext)', cursor: 'pointer', fontWeight: 600 }}
-                  >
-                    {t('apps.swap.max')}
-                  </p>
-                </FlexRow>
+
+                  <div style={{ borderTop: '1px solid var(--dark10)', margin: '0.75rem 0' }} />
+
+                  <SwapAssetRow
+                    icon={toAsset ? <AssetIcon symbol={toAsset.symbol} size={32} /> : undefined}
+                    name={
+                      toAsset
+                        ? (swappableAssets.find((cfg) => cfg.symbol === toAsset.symbol)?.name ?? toAsset.ticker)
+                        : t('apps.swap.selectTo')
+                    }
+                    onClick={toOptions.length > 0 ? () => setToPickerOpen(true) : undefined}
+                    sublabel={toAsset ? toAsset.ticker : t('apps.swap.noMarket')}
+                    amount={
+                      <Text bigger bold color='white50'>
+                        {toAsset && currentPlan ? prettyAssetNumber(currentPlan.receive.display, toAsset.decimals) : '0'}
+                      </Text>
+                    }
+                    tickerLabel={toAsset?.ticker}
+                  />
+                </FlexCol>
               </Shadow>
-              {fromAsset.assetId === BTC_ASSET_ID && hasPositiveAmount ? (
-                <TextSecondary>
-                  {prettyAssetNumber(toFiat(Number(unitsToCents(amount, 8))), 2)} {config.fiat}
-                </TextSecondary>
-              ) : null}
-            </FlexCol>
+
+              <FlipAssetsButton onClick={flipAssets} disabled={!toAsset} />
+            </div>
+
+            <SelectSheet
+              isOpen={fromPickerOpen}
+              onClose={() => setFromPickerOpen(false)}
+              onSelect={(id) => selectFromSymbol(id as AssetSymbol)}
+              options={swapSheetOptions(swappableAssets)}
+              selected={fromAsset.symbol}
+              title={t('apps.swap.selectFrom')}
+            />
+            <SelectSheet
+              isOpen={toPickerOpen}
+              onClose={() => setToPickerOpen(false)}
+              onSelect={(id) => selectToSymbol(id as AssetSymbol)}
+              options={swapSheetOptions(toOptions)}
+              selected={toAsset?.symbol}
+              title={t('apps.swap.selectTo')}
+            />
+
+            {fromAsset.assetId === BTC_ASSET_ID && hasPositiveAmount ? (
+              <TextSecondary centered>
+                {prettyAssetNumber(toFiat(Number(unitsToCents(amount, 8))), 2)} {config.fiat}
+              </TextSecondary>
+            ) : null}
 
             {currentPlan && toAsset ? (
               <Shadow lighter>
@@ -473,7 +487,8 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
 
             <Button
               onClick={openReview}
-              label={quoteLoading ? t('common.general.loading') : t('apps.swap.reviewSwap')}
+              label={quoteLoading ? t('common.general.loading') : t('common.general.confirm')}
+              icon={<img src={checkMarkIcon} alt='checkMark' style={{ width: '16px', height: '16px', filter: 'brightness(0) invert(1)' }} />}
               disabled={!canContinue || quoteLoading}
             />
           </FlexCol>
@@ -483,7 +498,7 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
       <SheetModal isOpen={drawer === 'review'} onClose={() => setDrawer(null)}>
         <FlexCol gap='1rem'>
           <Text bold large>
-            {t('apps.swap.reviewSwap')}
+            {t('common.general.confirm')}
           </Text>
           <Table data={reviewData} />
           <ErrorMessage error={Boolean(confirmError)} text={confirmError} />
@@ -499,6 +514,80 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
   )
 }
 
+const swapSheetOptions = (list: AssetConfig[]) =>
+  list.map((cfg) => ({
+    id: cfg.symbol,
+    label: cfg.name,
+    description: getDisplayTicker(cfg.symbol),
+    icon: <AssetIcon symbol={cfg.symbol} size={32} />,
+  }))
+
+function SwapAssetRow({
+  icon,
+  name,
+  onClick,
+  sublabel,
+  sublabelClickable,
+  onSublabelClick,
+  amount,
+  tickerLabel,
+}: {
+  icon?: React.ReactNode
+  name: string
+  onClick?: () => void
+  sublabel: string
+  sublabelClickable?: boolean
+  onSublabelClick?: () => void
+  amount: React.ReactNode
+  tickerLabel?: string
+}) {
+  return (
+    <FlexRow between>
+      <FlexRow gap='0.75rem'>
+        <div
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: 'var(--dark10)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          {icon}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+          <div onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined}>
+            <FlexRow gap='0.25rem'>
+              <Text bold>{name}</Text>
+              {onClick ? <ChevronDown /> : null}
+            </FlexRow>
+          </div>
+          <div
+            onClick={sublabelClickable ? onSublabelClick : undefined}
+            data-testid={sublabelClickable ? 'asset-swap-max' : undefined}
+            style={sublabelClickable ? { cursor: 'pointer' } : undefined}
+          >
+            <Text smaller color='neutral-500' wrap>
+              {sublabel}
+            </Text>
+          </div>
+        </div>
+      </FlexRow>
+      <FlexCol gap='0' end>
+        {amount}
+        {tickerLabel ? (
+          <Text smaller color='neutral-500'>
+            {tickerLabel}
+          </Text>
+        ) : null}
+      </FlexCol>
+    </FlexRow>
+  )
+}
+
 function FlipAssetsButton({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
   return (
     <button
@@ -507,11 +596,15 @@ function FlipAssetsButton({ onClick, disabled }: { onClick: () => void; disabled
       aria-label='Flip assets'
       disabled={disabled}
       style={{
-        background: 'var(--dark10)',
-        border: 'none',
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        background: 'var(--blue-primary)',
+        border: '3px solid var(--surface, var(--dark10))',
         borderRadius: '50%',
-        width: '36px',
-        height: '36px',
+        width: '32px',
+        height: '32px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -520,7 +613,7 @@ function FlipAssetsButton({ onClick, disabled }: { onClick: () => void; disabled
         color: 'var(--white)',
       }}
     >
-      <CurrencySwapIcon />
+      <ChevronDown />
     </button>
   )
 }
