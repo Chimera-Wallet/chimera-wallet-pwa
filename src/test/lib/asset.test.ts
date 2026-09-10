@@ -46,7 +46,7 @@ describe('asset utilities', () => {
     it('accepts non-negative integers up to 18', () => {
       expect(isValidDecimals(0)).toBe(true)
       expect(isValidDecimals(8)).toBe(true)
-      expect(isValidDecimals(18)).toBe(false)
+      expect(isValidDecimals(18)).toBe(true)
     })
 
     it('rejects values above 18', () => {
@@ -108,6 +108,7 @@ describe('asset utilities', () => {
     it('should support arbitrary integer decimals', () => {
       expect(unitsToCents('2', 2)).toBe(BigInt(200))
       expect(unitsToCents('2', 8)).toBe(BigInt(200_000_000))
+      expect(unitsToCents('0.00000000997', 18)).toBe(BigInt(9_970_000_000))
     })
 
     it('should preserve sign for negative units', () => {
@@ -146,6 +147,10 @@ describe('asset utilities', () => {
 
     it('should preserve sign for negative cents', () => {
       expect(centsToUnits(BigInt(-200_000_000), 8)).toBe('-2')
+    })
+
+    it('converts 18-decimal amounts without precision loss', () => {
+      expect(centsToUnits(BigInt(9_970_000_000), 18)).toBe('0.00000000997')
     })
 
     // ---- bad-decimals fallback: returns cents unchanged (no throw) ----
@@ -223,6 +228,7 @@ describe('asset utilities', () => {
     it('renders smallest representable unit with leading zeros', () => {
       expect(prettyAssetAmount(BigInt(1), 8)).toBe('0.00000001')
       expect(prettyAssetAmount(BigInt(10), 8)).toBe('0.0000001')
+      expect(prettyAssetAmount(BigInt(9_970_000_000), 18)).toBe('0.00000000997')
     })
 
     it('strips trailing zeros from the fractional part', () => {
