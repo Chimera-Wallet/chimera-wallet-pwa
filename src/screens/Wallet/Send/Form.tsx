@@ -31,17 +31,23 @@ import { getReceivingAddresses } from '../../../lib/asp'
 import { OptionsContext } from '../../../providers/options'
 import { ConfigContext } from '../../../providers/config'
 import { FiatContext } from '../../../providers/fiat'
-import { ArkNote, AssetDetails, isValidArkAddress, type NetworkName } from '@arkade-os/sdk'
+import { ArkNote, type NetworkName } from '@arkade-os/sdk'
 import { LimitsContext } from '../../../providers/limits'
 import { checkLnUrlConditions, fetchInvoice, fetchArkAddress, isValidLnUrl } from '../../../lib/lnurl'
 import { extractError } from '../../../lib/error'
-import { getInvoiceSatoshis } from '@arkade-os/boltz-swap'
 import { SwapsContext } from '../../../providers/swaps'
 import { decodeBip21, isBip21 } from '../../../lib/bip21'
 import { FeesContext } from '../../../providers/fees'
 import { InfoLine } from '../../../components/Info'
 import { getNetworkConfig } from '../../../lib/networks'
-import { getAssetConfig, requireAssetConfig, type AssetSymbol, unitsToCents } from '../../../lib/assets'
+import {
+  getAssetSymbolByAssetId,
+  getWrappedAssetId,
+  centsToUnits,
+  requireAssetConfig,
+  type AssetSymbol,
+  unitsToCents,
+} from '../../../lib/assets'
 import { assetSupportsWrap, requireAssetChainOption, type SourceChainId } from '../../../lib/sourceChains'
 import AssetSelector from '../../../components/AssetSelector'
 import NetworkSelector from '../../../components/NetworkSelector'
@@ -59,24 +65,35 @@ import {useTranslation, Trans} from 'react-i18next'
 import { decodeInvoice } from '../../../lib/bolt11'
 import { lnSendRendezvous, requestLnSend } from '../../../lib/lnSwap'
 import { withRfqTransport } from '../../../lib/nostrRfq'
-import { getEmulatorPubkeyForNetwork, testDomains } from '../../../lib/constants'
+import { getEmulatorPubkeyForNetwork } from '../../../lib/constants'
 import { discoverMarkets } from '../../../lib/swapMarkets'
 
 
 
 export default function SendForm() {
   const { aspInfo } = useContext(AspContext)
-  const { config, useFiat } = useContext(ConfigContext)
+  const { useFiat } = useContext(ConfigContext)
   const { calcOnchainOutputFee } = useContext(FeesContext)
-  const { fromFiat, toFiat } = useContext(FiatContext)
+  const { toFiat } = useContext(FiatContext)
   const { sendInfo, setNoteInfo, setSendInfo, setUnwrapSendInfo } = useContext(FlowContext)
   const { createSubmarineSwap, connected, calcSubmarineSwapFee, getApiUrl } = useContext(SwapsContext)
   const { amountIsAboveMaxLimit, amountIsBelowMinLimit, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
   const { setOption } = useContext(OptionsContext)
   const { navigate } = useContext(NavigationContext)
-  const { balance, svcWallet } = useContext(WalletContext)
+  const { assetBalances, assetMetadataCache, balance, svcWallet } = useContext(WalletContext)
 
-  const [amount, setAmount] = useState<number>()
+  const seededAssetId = sendInfo.assets?.[0]?.assetId
+  const seededAssetSymbol = seededAssetId ? getAssetSymbolByAssetId(seededAssetId) : undefined
+  const isAssetSend = Boolean(seededAssetId)
+  const selectedAssetId = isAssetSend ? seededAssetId : undefined
+  const selectedAssetMetadata = selectedAssetId ? assetMetadataCache.get(selectedAssetId)?.metadata : undefined
+  const selectedAssetBalance = selectedAssetId
+    ? (assetBalances.find((asset) => asset.assetId === selectedAssetId)?.amount ?? BigInt(0))
+    : BigInt(0)
+  const selectedAssetDecimals = selectedAssetMetadata?.decimals ?? (seededAssetSymbol ? requireAssetConfig(seededAssetSymbol).precision : 8)
+  const assetAmount = sendInfo.assets?.[0]?.amount ?? BigInt(0)
+
+  const [amount, setAmount] = useState<number>(() => Number(isAssetSend ? assetAmount : sendInfo.satoshis ?? 0))
   const [amountIsReadOnly, setAmountIsReadOnly] = useState(false)
   const [availableBalance, setAvailableBalance] = useState(0)
   const [deductFromAmount, setDeductFromAmount] = useState(false)
@@ -98,8 +115,9 @@ export default function SendForm() {
   const { t } = useTranslation()
 
   // Asset and network can be changed, initialized from wallet flow or defaults
-  const [selectedAsset, setSelectedAsset] = useState<AssetSymbol>('BTC')
-  const selectedMethod: TransferMethod = sendInfo.method ?? TRANSFER_METHOD.bitcoin
+  const [selectedAsset, setSelectedAsset] = useState<AssetSymbol>(seededAssetSymbol ?? 'BTC')
+  const assetTicker = selectedAssetMetadata?.ticker ?? selectedAsset
+  const selectedMethod: TransferMethod = sendInfo.method ?? (isAssetSend ? TRANSFER_METHOD.ark : TRANSFER_METHOD.bitcoin)
 
   // Onchain sends deduct this fee from the amount (see SendDetails). If the
   // amount doesn't cover it, the send can't produce a positive output, so we
@@ -445,15 +463,55 @@ export default function SendForm() {
     setProcessing(false)
   }
 
-  const handleAmountChange = (sats: number) => {
-    setState({ ...sendInfo, satoshis: sats })
-    setAmount(sats)
+  const handleAmountChange = (value: number) => {
+    setState({ ...sendInfo, satoshis: value })
+    setAmount(value)
+  }
+
+  const handleAssetAmountChange = (assetAmount: bigint) => {
+    if (!selectedAssetId) return
+    setState({ ...sendInfo, assets: [{ assetId: selectedAssetId, amount: assetAmount }], satoshis: 0 })
+    setAmount(Number(assetAmount))
   }
 
   const handlePercentage = (percent: number) => {
-    const amountInSats = Math.floor(availableBalance * (percent / 100))
-    setState({ ...sendInfo, satoshis: amountInSats })
-    setAmount(amountInSats)
+    if (isAssetSend && selectedAssetId) {
+      const amount = (selectedAssetBalance * BigInt(percent)) / BigInt(100)
+      setState({ ...sendInfo, assets: [{ assetId: selectedAssetId, amount }], satoshis: 0 })
+      setAmount(Number(amount))
+      return
+    }
+    const amount = Math.floor(availableBalance * (percent / 100))
+    setState({ ...sendInfo, satoshis: amount })
+    setAmount(amount)
+  }
+
+  const handleAssetSelect = (symbol: AssetSymbol) => {
+    setSelectedAsset(symbol)
+    setAmount(0)
+    if (symbol === 'BTC') {
+      setState({ ...sendInfo, assets: undefined, satoshis: 0 })
+      return
+    }
+    const assetId = getWrappedAssetId(symbol)
+    if (!assetId) {
+      setError(`Asset ${symbol} is not configured`)
+      return
+    }
+    setRecipient('')
+    setState({
+      ...sendInfo,
+      assets: [{ assetId, amount: BigInt(0) }],
+      satoshis: 0,
+      method: TRANSFER_METHOD.ark,
+      address: '',
+      arkAddress: '',
+      invoice: '',
+      lnUrl: undefined,
+      pendingSwap: undefined,
+      pendingLnSend: undefined,
+      recipient: '',
+    })
   }
 
   const handleRecipientChange = (recipient: string) => {
@@ -466,6 +524,19 @@ export default function SendForm() {
     try {
       if (selectedMethod === TRANSFER_METHOD.bank) {
         handleError(t('errors.send.bank.transfer'))
+        return
+      }
+      if (isAssetSend) {
+        if (!selectedAssetId || !assetAmount) {
+          handleError(t('errors.general.missingAsset'))
+          return
+        }
+        if (assetAmount > selectedAssetBalance) {
+          handleError(t('errors.funds.insufficient'))
+          return
+        }
+        setState({ ...sendInfo, assets: [{ assetId: selectedAssetId, amount: assetAmount }], satoshis: 0 })
+        setProceed(true)
         return
       }
       if (sendInfo.lnUrl) {
@@ -558,7 +629,9 @@ export default function SendForm() {
     }
   }
 
-  const buttonDisabled =
+  const assetSendDisabled =
+    !arkAddress || selectedMethod !== TRANSFER_METHOD.ark || !assetAmount || assetAmount > selectedAssetBalance
+  const bitcoinSendDisabled =
     selectedMethod === TRANSFER_METHOD.bank ||
     !((address || arkAddress || lnUrl || invoice) && satoshis && satoshis > 0) ||
     (lnUrlLimits.max && satoshis > lnUrlLimits.max) ||
@@ -572,6 +645,7 @@ export default function SendForm() {
     Boolean(error) ||
     satoshis < 1 ||
     processing
+  const buttonDisabled = isAssetSend ? assetSendDisabled || aspInfo.unreachable || tryingToSelfSend || Boolean(error) || processing : bitcoinSendDisabled
 
   if (scan) {
     return (
@@ -579,6 +653,7 @@ export default function SendForm() {
     )
   }
 
+  const inputBalance = isAssetSend ? Number(selectedAssetBalance) : availableBalance
   const selectedAssetBalanceSats = selectedAsset === 'BTC' ? availableBalance : undefined
 
   return (
@@ -596,25 +671,32 @@ export default function SendForm() {
                   value={amount || 0}
                   onChange={(newAmount) => handleAmountChange(newAmount)}
                   asset={selectedAsset}
+                  allowFiat={!isAssetSend}
+                  onAssetAmountChange={isAssetSend ? handleAssetAmountChange : undefined}
+                  precision={isAssetSend ? selectedAssetDecimals : undefined}
+                  ticker={isAssetSend ? assetTicker : undefined}
+                  displayValue={isAssetSend ? centsToUnits(assetAmount, selectedAssetDecimals) : undefined}
                   disabled={amountIsReadOnly}
                 />
                 <div style={{ display: 'flex', justifyContent: 'center' , width: '100%', marginTop: '-1rem' }}>
                   <div style={{ width: '200px' }}>
-                   <AssetSelector label='' selected={selectedAsset} onSelect={setSelectedAsset} selectedBalance = {selectedAssetBalanceSats}
-                     style = {{
-                     justifyContent: 'center',
+                   {!isAssetSend || seededAssetSymbol ? (
+                     <AssetSelector label='' selected={selectedAsset} onSelect={handleAssetSelect} selectedBalance = {selectedAssetBalanceSats}
+                      style = {{
+                      justifyContent: 'center',
                      width: '235px',
                      height: '36px',
                      borderRadius : '2.5rem',
                      fontSize: '14px',
                      fontWeight: '600',
-                     padding: '1.3rem',
-                     }} />
+                      padding: '1.3rem',
+                      }} />
+                   ) : null}
                   </div>
                 </div>
 
                 {/* Percentage Buttons */}
-                {!amountIsReadOnly && availableBalance > 0 ? (
+                {!amountIsReadOnly && inputBalance > 0 ? (
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginTop: '-1rem' }}>
                     <FlexRow centered gap='0.7rem'>
                       {[25, 50, 75, 100].map((percent) => (
@@ -676,7 +758,9 @@ export default function SendForm() {
               </div>
             ) : null}
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100', gap:'1rem'}}>
-            {assetSupportsWrap(requireAssetConfig(selectedAsset).symbol) ? (
+             {isAssetSend && !seededAssetSymbol ? (
+               <Text centered>Arkade</Text>
+             ) : assetSupportsWrap(requireAssetConfig(selectedAsset).symbol) ? (
               <AssetNetworkSelector
                 assetSymbol={requireAssetConfig(selectedAsset).symbol}
                 mode='send'
