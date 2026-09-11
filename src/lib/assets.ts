@@ -260,11 +260,15 @@ export function unitsToCents(units: string, decimals = DEFAULT_DECIMALS): bigint
 
 export function centsToUnits(cents: bigint, decimals = DEFAULT_DECIMALS): string {
   if (!isValidDecimals(decimals)) return cents.toString()
-  if (cents < BigInt(Number.MAX_SAFE_INTEGER) && cents > BigInt(Number.MIN_SAFE_INTEGER)) {
-    const str = Decimal.div(cents, Decimal.pow(10, decimals)).toFixed(decimals)
-    return str.includes('.') ? str.replace(/\.?0+$/, '') : str // remove trailing zeros and optional dot
-  }
-  return (cents / BigInt(10) ** BigInt(decimals)).toString() // TODO: prevent truncation
+  if (cents === BigInt(0)) return '0'
+
+  const negative = cents < BigInt(0)
+  const digits = (negative ? -cents : cents).toString()
+  if (decimals === 0) return `${negative ? '-' : ''}${digits}`
+  const paddedDigits = digits.padStart(decimals + 1, '0')
+  const integer = paddedDigits.slice(0, -decimals) || '0'
+  const fraction = paddedDigits.slice(-decimals).replace(/0+$/, '')
+  return `${negative ? '-' : ''}${integer}${fraction ? `.${fraction}` : ''}`
 }
 
 export const truncatedAssetId = (id: string): string => {
@@ -275,7 +279,7 @@ export const truncatedAssetId = (id: string): string => {
 const hideDots = (value: bigint): string => {
   const str = value.toString()
   const length = str.length * 2 > 6 ? str.length * 2 : 6
-  return '-�'.repeat(length)
+  return '·'.repeat(length)
 }
 
 export const prettyAssetAmountHide = (value: bigint, suffix: string): string => {
