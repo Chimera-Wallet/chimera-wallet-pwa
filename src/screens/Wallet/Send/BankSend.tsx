@@ -35,6 +35,7 @@ import { WalletContext } from '../../../providers/wallet'
 import { FiatContext } from '../../../providers/fiat'
 import { TxResultContext } from '../../../providers/txResult'
 import { sendOffChain } from '../../../lib/asp'
+import { decodeArkAddress } from '../../../lib/address'
 import { prettyNumber, fromSatoshis } from '../../../lib/format'
 import { createBankWithdraw } from '../../../providers/bankTransfer'
 import { addOrderToHistory } from '../../../lib/bankOrderHistory'
@@ -58,7 +59,8 @@ import clockIcon from '../../../../public/images/icons/ Clock.svg'
 import {useTranslation} from 'react-i18next'
 
 
-// Company Ark wallet address from environment — set VITE_BANK_WITHDRAW_WALLET in .env files
+// Legacy Chimera withdrawals use this shared funding wallet. Ramp orders return
+// a unique deposit address which must be funded instead.
 const COMPANY_WALLET = import.meta.env.VITE_BANK_WITHDRAW_WALLET as string
 
 export default function BankSend() {
@@ -227,15 +229,10 @@ export default function BankSend() {
         return
       }
 
-      if (!COMPANY_WALLET) {
-        setError(t('errors.send.wallet.notConfigured'))
-        return
-      }
-
       const email = getUserEmailForBankTransfer()
 
       // Register the withdrawal order with the backend
-      const { order } = await createBankWithdraw({
+      const { order, depositCryptoAddress } = await createBankWithdraw({
         asset: 'BTC',
         fiatCurrency: currency,
         email,
@@ -243,6 +240,18 @@ export default function BankSend() {
         circuit,
         bankData,
       })
+
+      const fundingAddress = depositCryptoAddress ?? COMPANY_WALLET
+      if (!fundingAddress) {
+        setError(t('errors.send.wallet.notConfigured'))
+        return
+      }
+      if (depositCryptoAddress) {
+        const { serverPubKey } = decodeArkAddress(depositCryptoAddress)
+        if (serverPubKey !== aspInfo.signerPubkey.slice(-64).toLowerCase()) {
+          throw new Error('Ramp returned a deposit address for a different Ark server')
+        }
+      }
 
       setBankSendInfo({
         currency,
@@ -254,10 +263,10 @@ export default function BankSend() {
       setCurrentBankOrderType('send')
       addOrderToHistory(order, 'send')
 
-      // Send BTC-ARK to the company wallet to fund the withdrawal
-      const companyWallet = COMPANY_WALLET
+      // Ramp supplies an order-specific address; the legacy provider uses its
+      // configured shared funding wallet.
       setSending(true)
-      await sendOffChain(svcWallet, requiredSats, companyWallet)
+      await sendOffChain(svcWallet, requiredSats, fundingAddress)
 
       // Success popup, then land on the order-status screen to track the payout
       notifyResult(true, t('common.notifications.bank.submissionSuccess')).then(() => navigate(Pages.BankOrderStatus))
