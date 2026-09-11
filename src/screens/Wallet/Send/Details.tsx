@@ -28,6 +28,7 @@ import { type LnSendRequest } from '../../../lib/lnSwap'
 import { saveTransactionActivityMetadata } from '../../../lib/storage'
 import type { LnSendActivity } from '../../../lib/types'
 import { TRANSFER_METHOD } from '../../../lib/transferMethods'
+import { calculateCollaborativeExitOutput } from '../../../lib/collaborativeExit'
 
 
 export default function SendDetails() {
@@ -73,6 +74,7 @@ export default function SendDetails() {
       return
     }
     if (!satoshis) return setError(t('errors.general.missingAmount'))
+    setError('')
     const destination =
       method === TRANSFER_METHOD.ark
         ? arkAddress && vtxoTxsAllowed() ? arkAddress : ''
@@ -87,6 +89,7 @@ export default function SendDetails() {
                 : address && utxoTxsAllowed()
                   ? address
                   : ''
+    const isCollaborativeExit = destination === address && !pendingSwap
     const direction =
       destination === arkAddress
         ? t('common.directions.arkade')
@@ -106,7 +109,17 @@ export default function SendDetails() {
       : pendingLnSend
         ? pendingLnSend.fundAmount
         : satoshis
-    const amount = direction === t('common.general.directions.mainnetPay') ? satoshis - calcOnchainOutputFee() : satoshis
+    let amount = satoshis
+    if (isCollaborativeExit) {
+      try {
+        amount = calculateCollaborativeExitOutput(satoshis, calcOnchainOutputFee())
+      } catch (err) {
+        setDetails(undefined)
+        setButtonLabel(t('errors.network.tooLow'))
+        setError(extractError(err))
+        return
+      }
+    }
     const fees = total - amount > 0 ? total - amount : 0
     const swapId = pendingSwap?.id ?? pendingLnSend?.rfqId
     setDetails({
