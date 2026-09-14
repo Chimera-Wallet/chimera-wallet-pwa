@@ -10,6 +10,7 @@ import {
   DelegateContractHandler,
   IVtxoManager,
   Asset,
+  sdkVersion,
 } from '@arkade-os/sdk'
 import { Addresses, Tx, Vtxo } from './types'
 import { AspInfo } from '../providers/asp'
@@ -81,13 +82,7 @@ export const collaborativeExit = async (wallet: IWallet, amount: number, address
   try {
     return await wallet.settle({ inputs: selectedVtxos, outputs })
   } catch (error) {
-    await captureSettleError(error, wallet, 'collaborativeExit', {
-      amount,
-      address,
-      selectedAmount,
-      changeAmount,
-      selectedVtxos: serializeForSentry(selectedVtxos),
-    })
+    reportSettlementFailure('collaborativeExit')
     throw error
   }
 }
@@ -127,14 +122,7 @@ export const collaborativeExitWithFees = async (
   try {
     return await wallet.settle({ inputs: selectedVtxos, outputs })
   } catch (error) {
-    await captureSettleError(error, wallet, 'collaborativeExitWithFees', {
-      inputAmount,
-      outputAmount,
-      address,
-      selectedAmount,
-      changeAmount,
-      selectedVtxos: serializeForSentry(selectedVtxos),
-    })
+    reportSettlementFailure('collaborativeExitWithFees')
     throw error
   }
 }
@@ -230,12 +218,7 @@ export const redeemNotes = async (wallet: IWallet, notes: string[]): Promise<voi
       outputs: [{ address: offchainAddr, amount }],
     })
   } catch (error) {
-    await captureSettleError(error, wallet, 'redeemNotes', {
-      notesCount: notes.length,
-      amount: amount.toString(),
-      offchainAddr,
-      inputs: serializeForSentry(inputs),
-    })
+    reportSettlementFailure('redeemNotes')
     throw error
   }
 }
@@ -283,12 +266,7 @@ export const settleVtxos = async (
   try {
     await wallet.settle({ inputs, outputs }, console.log)
   } catch (error) {
-    await captureSettleError(error, wallet, 'settleVtxos', {
-      amount: amount.toString(),
-      dustAmount: dustAmount.toString(),
-      thresholdMs,
-      inputs: serializeForSentry(inputs),
-    })
+    reportSettlementFailure('settleVtxos')
     throw error
   }
 }
@@ -332,25 +310,11 @@ export const delegateVtxos = async (wallet: ServiceWorkerWallet): Promise<void> 
   }
 }
 
-const serializeForSentry = (value: any): string => {
-  return JSON.stringify(value, (key, val) => (typeof val === 'bigint' ? val.toString() : val))
-}
+export const createSettlementTelemetry = (operation: string, correlationId: string = crypto.randomUUID()) => ({
+  tags: { operation, sdkVersion },
+  contexts: { settlement: { category: 'settlement_failure', correlationId } },
+})
 
-const captureSettleError = async (
-  error: unknown,
-  wallet: IWallet,
-  functionName: string,
-  baseContext: Record<string, any>,
-): Promise<void> => {
-  const settleContext: Record<string, any> = { ...baseContext }
-  try {
-    settleContext.walletAddress = await wallet.getAddress()
-  } catch {
-    // Ignore if getAddress fails
-  }
-  Sentry.captureException(error, {
-    tags: { function: functionName },
-    contexts: { settle: settleContext },
-  })
-  throw error
+const reportSettlementFailure = (operation: string): void => {
+  Sentry.captureMessage('Settlement failed', createSettlementTelemetry(operation))
 }

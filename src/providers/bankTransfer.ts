@@ -20,6 +20,7 @@ import type { ChimeraOrder } from './chimera'
 import * as ramp from './ramp'
 import type { RampOrder, RampBankDetails, RampOrderDirection, RampDestinationType } from './ramp'
 import type { BankCircuit, BankCurrency, BankData } from '../lib/bankTransferConfig'
+import { isArkAddress } from '../lib/address'
 
 export type { RampOrder as BankOrder, RampBankDetails as BankDetails }
 
@@ -177,6 +178,7 @@ export interface CreateWithdrawInput {
 
 export interface CreateWithdrawResult {
   order: RampOrder
+  depositCryptoAddress?: string
 }
 
 const cryptoAmountToDecimalString = (sats: number, decimals = 8): string => (sats / 10 ** decimals).toString()
@@ -195,17 +197,17 @@ export const createBankWithdraw = async ({
 
     if (circuit === 'sepa') {
       const d = bankData?.circuit === 'sepa' ? bankData : undefined
-      const { order } = await ramp.createOffRampOrder({
+      const { order, deposit_crypto_address } = await ramp.createOffRampOrder({
         ...base,
         destination_type: 'sepa',
         destination_bank_address: d?.destinationBankAddress,
         destination_bank_name: d?.accountHolderName,
       })
-      return { order }
+      return { order, depositCryptoAddress: getRampDepositAddress(deposit_crypto_address) }
     }
     if (circuit === 'swift') {
       if (!bankData || bankData.circuit !== 'swift') throw new Error('Please complete the SWIFT bank details form')
-      const { order } = await ramp.createOffRampOrder({
+      const { order, deposit_crypto_address } = await ramp.createOffRampOrder({
         ...base,
         destination_type: 'swift',
         destination_bank_address: bankData.destinationBankAddress,
@@ -217,17 +219,17 @@ export const createBankWithdraw = async ({
         destination_town_name: bankData.townName,
         destination_post_code: bankData.postCode,
       })
-      return { order }
+      return { order, depositCryptoAddress: getRampDepositAddress(deposit_crypto_address) }
     }
     if (!bankData || bankData.circuit !== 'us') throw new Error('Please complete the bank details form')
-    const { order } = await ramp.createOffRampOrder({
+    const { order, deposit_crypto_address } = await ramp.createOffRampOrder({
       ...base,
       destination_type: 'us',
       destination_bank_account_number: bankData.accountNumber,
       destination_bank_routing_number: bankData.routingNumber,
       destination_bank_name: bankData.accountHolderName,
     })
-    return { order }
+    return { order, depositCryptoAddress: getRampDepositAddress(deposit_crypto_address) }
   }
 
   const response = await chimera.createBankWithdraw({
@@ -239,6 +241,13 @@ export const createBankWithdraw = async ({
     bankData,
   })
   return { order: chimeraToBankOrder(response.order, 'offramp') }
+}
+
+const getRampDepositAddress = (address: string | null): string => {
+  if (!address || !isArkAddress(address)) {
+    throw new Error('Ramp returned an invalid withdrawal deposit address')
+  }
+  return address
 }
 
 // ─── Order status ───────────────────────────────────────────────────────────

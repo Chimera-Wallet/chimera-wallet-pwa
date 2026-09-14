@@ -314,9 +314,33 @@ export const fetchKycStatus = async (providedAccessToken?: string): Promise<KycS
 
     saveKycStatus(status)
     return { status, message: data.message }
-  } catch (error) {
+  } catch {
     const storedStatus = getStoredKycStatus()
     return { status: storedStatus, message: 'Unable to fetch current status' }
+  }
+}
+
+/**
+ * Fetches a status that is suitable for authorizing client-side bank-transfer
+ * UI. Unlike `fetchKycStatus`, this never falls back to browser storage.
+ */
+export const fetchAuthoritativeKycStatus = async (): Promise<KycStatus | null> => {
+  const accessToken = await getValidAccessToken()
+  if (!accessToken) return null
+
+  try {
+    const response = await fetch(`${getKycApiUrl()}/api/Registration/status`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    if (!response.ok) return null
+    const data = await response.json()
+    return mapVerificationStatus(data.status)
+  } catch {
+    return null
   }
 }
 

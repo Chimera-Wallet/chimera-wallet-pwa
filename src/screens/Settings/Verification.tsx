@@ -34,6 +34,7 @@ import {
   clearKycLastView,
 } from '../../lib/kyc'
 import { isIOS } from '../../lib/browser'
+import { getKycOrigin, isKycMessage } from '../../lib/kycMessage'
 import {useTranslation, Trans} from 'react-i18next'
 
 type ViewState = 'loading' | 'email' | 'consent' | 'magic-link-sent' | 'registered' | 'webview' | 'status' | 'error'
@@ -69,7 +70,6 @@ export default function Verification() {
   const [isSendingLink, setIsSendingLink] = useState(false)
   const [sendError, setSendError] = useState('')
 
-  const [sessionId, setSessionId] = useState('')
   const [pollingTimedOut, setPollingTimedOut] = useState(false)
   const [resendCount, setResendCount] = useState(0)
   const [resendCooldown, setResendCooldown] = useState(0)
@@ -201,7 +201,6 @@ export default function Verification() {
             setWebviewUrl(savedWebviewUrl)
             setViewState('webview')
           } else if (view === 'magic-link-sent' && savedSessionId) {
-            setSessionId(savedSessionId)
             startPolling(savedEmail, savedSessionId)
             setViewState('magic-link-sent')
           } else {
@@ -231,7 +230,8 @@ export default function Verification() {
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (!event.origin.includes('idflow.ch') && !event.origin.includes('azurewebsites.net')) return
+      const expectedOrigin = getKycOrigin(webviewUrl || getKycWebviewUrl())
+      if (event.origin !== expectedOrigin || event.source !== iframeRef.current?.contentWindow || !isKycMessage(event.data)) return
       if (!iframeLoaded) {
         setIframeLoaded(true)
         setShowIosFallback(false)
@@ -240,26 +240,25 @@ export default function Verification() {
           loadTimeoutRef.current = null
         }
       }
-      if (event.data?.type === 'kyc-ready' || event.data?.type === 'kyc-loaded') {
+      if (event.data.type === 'kyc-ready' || event.data.type === 'kyc-loaded') {
         setIframeLoaded(true)
         setShowIosFallback(false)
       }
-      if (event.data?.type === 'kyc-fonts-failed' || event.data?.type === 'kyc-text-not-rendering') {
+      if (event.data.type === 'kyc-fonts-failed' || event.data.type === 'kyc-text-not-rendering') {
         if (isIOS()) setShowIosFallback(true)
       }
-      if (event.data?.type === 'kyc-tokens') {
+      if (event.data.type === 'kyc-tokens') {
         const { accessToken, refreshToken, expiresIn, userId } = event.data
-        if (accessToken && refreshToken && userId)
-          saveKycTokens({ accessToken, refreshToken, expiresIn: expiresIn || 3600 }, userId)
+        saveKycTokens({ accessToken, refreshToken, expiresIn: expiresIn ?? 3600 }, userId)
       }
-      if (event.data?.type === 'kyc-status') {
-        const status = event.data.status as KycStatus
+      if (event.data.type === 'kyc-status') {
+        const { status } = event.data
         saveKycStatus(status)
         setKycStatus(status)
         if (status === 'confirmed' || status === 'pending' || status === 'rejected') setViewState('status')
         if (status === 'incomplete' || status === 'more_info_needed') { /* stay in webview */ }
       }
-      if (event.data?.type === 'kyc-complete') {
+      if (event.data.type === 'kyc-complete') {
         saveKycStatus('pending')
         setKycStatus('pending')
         setViewState('status')
@@ -267,7 +266,7 @@ export default function Verification() {
     }
     window.addEventListener('message', handleMessage)
     return () => window.removeEventListener('message', handleMessage)
-  }, [iframeLoaded])
+  }, [iframeLoaded, webviewUrl])
 
   const validateEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 
@@ -291,7 +290,6 @@ export default function Verification() {
     setIsSendingLink(true)
     try {
       const newSessionId = crypto.randomUUID()
-      setSessionId(newSessionId)
       await requestMagicLink(email, newSessionId)
       setResendCount(0)
       startCooldown()
@@ -312,7 +310,6 @@ export default function Verification() {
     setIsSendingLink(true)
     try {
       const newSessionId = crypto.randomUUID()
-      setSessionId(newSessionId)
       await requestMagicLink(email, newSessionId)
       setResendCount((c) => c + 1)
       startCooldown()
