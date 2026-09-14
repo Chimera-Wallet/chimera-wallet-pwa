@@ -251,6 +251,35 @@ describe('Transaction screen', () => {
     expect(screen.queryByText('Sent')).not.toBeInTheDocument()
   })
 
+  it('applies 18-decimal metadata to wrapped asset amounts', () => {
+    const assetId = mockIssuanceTxInfo.assets[0].assetId
+    const txInfo = {
+      ...mockIssuanceTxInfo,
+      type: 'received',
+      assets: [{ assetId, amount: BigInt(9_970_000_000) }],
+    }
+    const assetMetadataCache = new Map([
+      [assetId, { metadata: { ticker: 'ETH-CX', name: 'Ethereum', decimals: 18 }, cachedAt: Date.now() }],
+    ])
+
+    render(
+      <NavigationContext.Provider value={mockNavigationContextValue}>
+        <AspContext.Provider value={mockAspContextValue}>
+          <FlowContext.Provider value={{ ...mockFlowContextValue, txInfo }}>
+            <WalletContext.Provider value={{ ...mockWalletContextValue, assetMetadataCache, txs: [txInfo] } as any}>
+              <LimitsContext.Provider value={mockLimitsContextValue}>
+                <Transaction />
+              </LimitsContext.Provider>
+            </WalletContext.Provider>
+          </FlowContext.Provider>
+        </AspContext.Provider>
+      </NavigationContext.Provider>,
+    )
+
+    expect(screen.getByText('0.00000000997 ETH-CX')).toBeInTheDocument()
+    expect(screen.queryByText('9,970,000,000 ETH-CX')).not.toBeInTheDocument()
+  })
+
   it('renders burn transaction with correct direction', async () => {
     const mockBurnTxInfo = {
       ...mockIssuanceTxInfo,
