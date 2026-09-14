@@ -7,7 +7,7 @@
  * - Integration with existing KYC system
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   getBankTransferConfig,
   getBankTransferConfigSync,
@@ -19,7 +19,7 @@ import {
   type BankCircuit,
   type BankCurrency,
 } from '../lib/bankTransferConfig'
-import { getKycEmail, type KycStatus } from '../lib/kyc'
+import { fetchAuthoritativeKycStatus, type KycStatus } from '../lib/kyc'
 
 export interface BankTransferValidation {
   /** Whether the amount meets minimum requirements */
@@ -60,7 +60,8 @@ export function useBankTransferValidation({
   circuit,
 }: UseBankTransferValidationParams): BankTransferValidation {
   const [config, setConfig] = useState<BankTransferConfig>(getBankTransferConfigSync())
-  // Refresh counter triggers re-read of email from localStorage
+  const [kycStatus, setKycStatus] = useState<KycStatus>('not_started')
+  // Refresh counter triggers a server-side KYC status check.
   const [refreshCount, setRefreshCount] = useState(0)
 
   // Load config on mount
@@ -68,17 +69,22 @@ export function useBankTransferValidation({
     getBankTransferConfig().then(setConfig)
   }, [])
 
-  // Refresh KYC status (re-reads email from localStorage)
+  // Refresh KYC status from the provider rather than treating local data as proof.
   const refreshKycStatus = useCallback(() => {
     setRefreshCount((c) => c + 1)
   }, [])
 
-  // Email presence is the source of truth for KYC verification
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const kycEmail = useMemo(() => getKycEmail(), [refreshCount])
-  const kycVerified = !!kycEmail
-  // Derive kycStatus for interface compatibility
-  const kycStatus: KycStatus = kycVerified ? 'confirmed' : 'not_started'
+  useEffect(() => {
+    let cancelled = false
+    fetchAuthoritativeKycStatus().then((status) => {
+      if (!cancelled) setKycStatus(status ?? 'not_started')
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [refreshCount])
+
+  const kycVerified = kycStatus === 'confirmed'
 
   // Calculate validation state
   const minimumAmount = getMinimumOrderValue(circuit)
