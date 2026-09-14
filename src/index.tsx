@@ -27,6 +27,7 @@ import { ToastProvider } from './components/Toast'
 import ErrorBoundary from './components/ErrorBoundary'
 import { DevModeProvider } from './providers/devMode'
 import { TxResultProvider } from './providers/txResult'
+import { WirexProvider } from './providers/wirex'
 import i18n from './lib/i18n'
 import { I18nextProvider } from 'react-i18next'
 
@@ -114,13 +115,15 @@ root.render(
                                   <OptionsProvider>
                                     <NudgeProvider>
                                       <AnnouncementProvider>
-                                        <ToastProvider>
-                                          <TxResultProvider>
-                                            <ErrorBoundary>
-                                              <App />
-                                            </ErrorBoundary>
-                                          </TxResultProvider>
-                                        </ToastProvider>
+                                        <WirexProvider>
+                                          <ToastProvider>
+                                            <TxResultProvider>
+                                              <ErrorBoundary>
+                                                <App />
+                                              </ErrorBoundary>
+                                            </TxResultProvider>
+                                          </ToastProvider>
+                                        </WirexProvider>
                                       </AnnouncementProvider>
                                     </NudgeProvider>
                                   </OptionsProvider>

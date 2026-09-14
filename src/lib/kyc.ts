@@ -488,7 +488,7 @@ interface IdFlowWallet {
   address: string
 }
 
-interface IdFlowUserProfile {
+export interface IdFlowUserProfile {
   firstName?: string
   lastName?: string
   email?: string
@@ -517,7 +517,7 @@ const fetchKycWallets = async (accessToken: string): Promise<IdFlowWallet[]> => 
 /**
  * Fetch the user's IDFlow profile (name etc.)
  */
-const fetchKycUserProfile = async (accessToken: string): Promise<IdFlowUserProfile> => {
+export const fetchKycUserProfile = async (accessToken: string): Promise<IdFlowUserProfile> => {
   const apiUrl = getKycApiUrl()
   const response = await fetch(`${apiUrl}/api/Entity/me`, {
     method: 'GET',

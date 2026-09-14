@@ -39,6 +39,12 @@ interface ImportMetaEnv {
   readonly VITE_LENDASWAP_IFRAME_URL?: string
   // TGE countdown (StakingBanner) — ISO date string; countdown is hidden if unset/invalid
   readonly VITE_TGE_DATE?: string
+  // Wirex card/wallet integration feature flag ('true'|'false', no default)
+  readonly VITE_WIREX_ENABLED?: string
+  // @wirexapp/wpay-baas-sdk config — required only when VITE_WIREX_ENABLED is 'true'.
+  // Client-visible (unlike WIREX_CLIENT_ID/SECRET, which are server-only — see api/wirex/).
+  readonly VITE_WIREX_SDK_ENV?: string
+  readonly VITE_WIREX_COMPANY_ID?: string
 }
 
 interface ImportMeta {
