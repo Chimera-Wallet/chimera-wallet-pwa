@@ -559,7 +559,7 @@ export default function SendForm() {
           }
           setState({ ...sendInfo, arkAddress: arkResponse.address, invoice: undefined })
         } else if (selectedMethod === TRANSFER_METHOD.lightning) {
-          const invoice = await fetchInvoice(sendInfo.lnUrl, sendInfo.satoshis ?? 0, '')
+          const invoice = await fetchInvoice(sendInfo.lnUrl, sendInfo.satoshis ?? 0, '', aspInfo.network as NetworkName)
           setState((prev) => ({
             ...prev,
             arkAddress: undefined,
