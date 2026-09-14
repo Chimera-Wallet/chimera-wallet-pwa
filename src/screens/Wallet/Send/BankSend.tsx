@@ -37,8 +37,13 @@ import { TxResultContext } from '../../../providers/txResult'
 import { sendOffChain } from '../../../lib/asp'
 import { decodeArkAddress } from '../../../lib/address'
 import { prettyNumber, fromSatoshis } from '../../../lib/format'
-import { createBankWithdraw } from '../../../providers/bankTransfer'
+import { createBankWithdraw, getBankOrderStatus } from '../../../providers/bankTransfer'
 import { addOrderToHistory } from '../../../lib/bankOrderHistory'
+import {
+  clearPendingBankWithdrawal,
+  getPendingBankWithdrawal,
+  savePendingBankWithdrawal,
+} from '../../../lib/bankWithdrawalAttempt'
 import { useBankTransferValidation } from '../../../hooks/useBankTransferValidation'
 import {
   getBankTransferConfigSync,
@@ -188,7 +193,44 @@ export default function BankSend() {
     }
   }
 
+  const resumePendingWithdrawal = async (): Promise<boolean> => {
+    const pending = getPendingBankWithdrawal()
+    if (!pending) return false
+
+    const order = await getBankOrderStatus(pending.order.id, 'offramp')
+    setBankSendInfo({ ...bankSendInfo, order })
+    setCurrentBankOrderType('send')
+
+    if (['COMPLETED', 'FAILED', 'REJECTED', 'EXPIRED', 'REFUNDED'].includes(order.status)) {
+      clearPendingBankWithdrawal()
+      return false
+    }
+
+    if (order.status !== 'WAITING_FOR_DEPOSIT') {
+      clearPendingBankWithdrawal()
+      navigate(Pages.BankOrderStatus)
+      return true
+    }
+
+    throw new Error(
+      pending.fundingState === 'funded'
+        ? 'Your withdrawal payment is awaiting confirmation. Please check the order status before starting another withdrawal.'
+        : 'Your previous withdrawal payment may still be processing. Please check the order status before trying again.',
+    )
+  }
+
   const handleCreateWithdraw = async () => {
+    try {
+      setLoading(true)
+      setError('')
+      if (await resumePendingWithdrawal()) return
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('errors.send.bank.failedWithdrawal'))
+      return
+    } finally {
+      setLoading(false)
+    }
+
     if (!validation.canProceed) {
       if (!validation.kycVerified && validation.kycRequired) {
         navigate(Pages.SettingsKYC)
@@ -265,8 +307,20 @@ export default function BankSend() {
 
       // Ramp supplies an order-specific address; the legacy provider uses its
       // configured shared funding wallet.
+      savePendingBankWithdrawal({
+        order,
+        fundingAddress,
+        amountSats: requiredSats,
+        fundingState: 'funding',
+      })
       setSending(true)
       await sendOffChain(svcWallet, requiredSats, fundingAddress)
+      savePendingBankWithdrawal({
+        order,
+        fundingAddress,
+        amountSats: requiredSats,
+        fundingState: 'funded',
+      })
 
       // Success popup, then land on the order-status screen to track the payout
       notifyResult(true, t('common.notifications.bank.submissionSuccess')).then(() => navigate(Pages.BankOrderStatus))
