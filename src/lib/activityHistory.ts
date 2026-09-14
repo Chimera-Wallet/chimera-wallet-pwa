@@ -11,10 +11,10 @@ const swapIdOf = (activity: Activity): string | undefined =>
     ? (activity.intent.metadata?.swapId as string | undefined)
     : undefined
 
-/** `Activity[]` -> the `Tx[]` the UI already reads. Pure and synchronous.
+/** `Activity[]` -> the `Tx[]` the UI already reads.
  *
  * Only a swap group is collapsed into one row; everything else emits one row
- * per member tx, so an untagged activity cannot change the row count. */
+ * per member tx. */
 export const activitiesToTxs = (activities: Activity[], swaps: WalletAssetSwap[]): Tx[] => {
   const rows: Tx[] = []
   for (const activity of activities) {

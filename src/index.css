@@ -155,12 +155,6 @@ html.palette-dark {
     -webkit-mask-image: none;
     mask-image: none;
   }
-  /* The pill navbar floats as an overlay sibling of the page content (see
-     PillNavbarOverlay in App.tsx), not a flex sibling that reserves its own
-     row — so a footer button sitting at the natural bottom of the page, like
-     ButtonsOnBottom, ends up in the exact same screen region and renders
-     underneath it unless it borrows this clearance the same way .content
-     already does. */
   & .buttons-on-bottom {
     padding-bottom: calc(var(--pill-navbar-footer-clearance) + env(safe-area-inset-bottom, 0px));
   }

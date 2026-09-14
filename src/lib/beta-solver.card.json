@@ -1,9 +1,15 @@
 {
   "version": 0,
-  "name": "solver-714cf60d",
+  "name": "beta-solver",
+  "discovery_pubkey": "66422c952f8dcb96e4d0c3f049cd1e265b8461b916d9913c65c2494b64b4e3ce",
+  "transports": {
+    "nostr": {
+      "relays": ["wss://nostr.arkade.sh"]
+    }
+  },
   "markets": [
     {
-      "pair": "BTC/USDT-CX",
+      "pair": "BTC/lightning:BTC",
       "base_asset": {
         "id": "btc",
         "name": "Bitcoin",
@@ -11,74 +17,18 @@
         "decimals": 8
       },
       "quote_asset": {
-        "id": "bcb248f812b7bd0da03f5dbcdf2dbe796babd948c5aef9ba80e84eb28040852d0000",
-        "name": "Tether",
-        "ticker": "USDT-CX",
-        "decimals": 6
-      },
-      "price_feed": "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT",
-      "price_feed_schema": {
-        "type": "json",
-        "price_path": "/price"
-      },
-      "price_decimals": 2,
-      "fee_bps": 100,
-      "min_base_amount": "1000",
-      "max_base_amount": "1300000",
-      "min_quote_amount": "1000000",
-      "max_quote_amount": "100000000"
-    },
-    {
-      "pair": "ETH-CX/BTC",
-      "base_asset": {
-        "id": "9364ce4c058b42e30f0e7dfa3d6b1ce8988adb9501cd30d56534ec93eef2541b0000",
-        "name": "Ether",
-        "ticker": "ETH-CX",
-        "decimals": 18
-      },
-      "quote_asset": {
         "id": "btc",
         "name": "Bitcoin",
         "ticker": "BTC",
         "decimals": 8
       },
-      "price_feed": "https://api.binance.com/api/v3/ticker/price?symbol=ETHBTC",
-      "price_feed_schema": {
-        "type": "json",
-        "price_path": "/price"
-      },
-      "price_decimals": 10,
-      "fee_bps": 100,
-      "min_base_amount": "1000",
-      "max_base_amount": "1000000000000000000",
-      "min_quote_amount": "1000",
-      "max_quote_amount": "100000000"
-    },
-    {
-      "pair": "ETH-CX/USDT-CX",
-      "base_asset": {
-        "id": "9364ce4c058b42e30f0e7dfa3d6b1ce8988adb9501cd30d56534ec93eef2541b0000",
-        "name": "Ether",
-        "ticker": "ETH-CX",
-        "decimals": 18
-      },
-      "quote_asset": {
-        "id": "bcb248f812b7bd0da03f5dbcdf2dbe796babd948c5aef9ba80e84eb28040852d0000",
-        "name": "Tether",
-        "ticker": "USDT-CX",
-        "decimals": 6
-      },
-      "price_feed": "https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT",
-      "price_feed_schema": {
-        "type": "json",
-        "price_path": "/price"
-      },
-      "price_decimals": 12,
-      "fee_bps": 100,
-      "min_base_amount": "1000",
-      "max_base_amount": "1000000000000000000",
-      "min_quote_amount": "1000000",
-      "max_quote_amount": "100000000"
+      "quote_corridor": "lightning",
+      "fee_bps": 30,
+      "min_base_amount": "0",
+      "max_base_amount": "0",
+      "min_quote_amount": "500",
+      "max_quote_amount": "50000"
     }
-  ]
+  ],
+  "sig": "d46becad2e325adf6e87b53e271e7faf21c0a49ba9dd249b4c0f6865f42f55fa93035fc953003578810f89af54f0d913382df26556ec9e616d7d606669b36e1f"
 }
