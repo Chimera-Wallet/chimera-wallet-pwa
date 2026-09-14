@@ -6,7 +6,7 @@
  *
  */
 
-import { ReactNode, createContext, useContext, useEffect, useState } from 'react'
+import { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react'
 import { getKycEmail, fetchKycUserProfile, getValidAccessToken, getStoredKycStatus } from '../lib/kyc'
 import {
   ensureWirexUser,
@@ -21,6 +21,19 @@ import { deployWirexKernelAccount } from '../lib/wirexWallet'
 
 export const isWirexEnabled = (): boolean => import.meta.env.VITE_WIREX_ENABLED === 'true'
 
+// Wirex deploys the smart wallet on-chain synchronously, but only indexes it
+// (making GET /api/v1/wallet start returning it) asynchronously afterward —
+// see ../lib/wirex.ts's Wallet section. There's no webhook-backed status
+// endpoint to poll instead (no Azure Storage exists anywhere in this repo to
+// back one, and BankOrderStatus.tsx's existing "wait for an async external
+// status" flow already solves this the simple way: poll the live status
+// endpoint directly). Mirrors that screen's POLL_INTERVAL/cleanup shape, but
+// bounded — a wallet deploy is a one-time bootstrap step, not a screen a user
+// might leave open indefinitely, so it needs a ceiling rather than polling
+// forever if Wirex's indexer stalls.
+const WALLET_INDEXING_POLL_INTERVAL_MS = 30_000
+const WALLET_INDEXING_MAX_ATTEMPTS = 10
+
 type WirexContextProps = {
   wirexUser: WirexUser | null
   wirexUserLoading: boolean
@@ -30,7 +43,16 @@ type WirexContextProps = {
   wirexWallet: WirexWallet | null
   wirexWalletLoading: boolean
   wirexWalletError: string | null
-  /** Deploy (or re-check) this user's Wirex wallet. Throws until wirexWallet.ts's on-chain piece is implemented. */
+  /** True while polling for the deployed wallet to finish Wirex-side indexing (see deployWirexWallet). */
+  wirexWalletDeployPending: boolean
+  /** True once polling gave up after WALLET_INDEXING_MAX_ATTEMPTS without the wallet appearing. */
+  wirexWalletDeployTimedOut: boolean
+  /**
+   * Deploy this user's Wirex wallet, then poll until Wirex finishes indexing
+   * it (or the poll times out — see wirexWalletDeployTimedOut). Throws if the
+   * on-chain deploy itself fails; a poll timeout does not throw, it just sets
+   * wirexWalletDeployTimedOut so the caller can offer a manual retry/refresh.
+   */
   deployWirexWallet: (password: string) => Promise<void>
   wirexCards: WirexCard[]
   wirexCardsLoading: boolean
@@ -48,6 +70,8 @@ export const WirexContext = createContext<WirexContextProps>({
   wirexWallet: null,
   wirexWalletLoading: false,
   wirexWalletError: null,
+  wirexWalletDeployPending: false,
+  wirexWalletDeployTimedOut: false,
   deployWirexWallet: async () => {},
   wirexCards: [],
   wirexCardsLoading: false,
@@ -65,6 +89,11 @@ export const WirexProvider = ({ children }: { children: ReactNode }) => {
   const [wirexWallet, setWirexWallet] = useState<WirexWallet | null>(null)
   const [wirexWalletLoading, setWirexWalletLoading] = useState(false)
   const [wirexWalletError, setWirexWalletError] = useState<string | null>(null)
+  const [wirexWalletDeployPending, setWirexWalletDeployPending] = useState(false)
+  const [wirexWalletDeployTimedOut, setWirexWalletDeployTimedOut] = useState(false)
+  // Ref (not state) so a new deploy attempt can synchronously cancel a
+  // still-running poll from a previous one without waiting on a re-render.
+  const walletIndexingPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const [wirexCards, setWirexCards] = useState<WirexCard[]>([])
   const [wirexCardsLoading, setWirexCardsLoading] = useState(false)
@@ -132,7 +161,13 @@ export const WirexProvider = ({ children }: { children: ReactNode }) => {
     setWirexWalletLoading(true)
     setWirexWalletError(null)
 
-    getWirexWallet(wirexUser.email)
+    const run = async () => {
+      const kycAccessToken = await getValidAccessToken()
+      if (!kycAccessToken) throw new Error('No active KYC session')
+      return getWirexWallet(wirexUser.email, kycAccessToken)
+    }
+
+    run()
       .then((wallet) => {
         if (!cancelled) setWirexWallet(wallet)
       })
@@ -148,25 +183,72 @@ export const WirexProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [wirexUser])
 
+  // Stop any poll from a previous deployWirexWallet call still running —
+  // called both on unmount and when a new deploy attempt supersedes an old one.
+  const stopWalletIndexingPoll = () => {
+    if (walletIndexingPollRef.current !== null) {
+      clearInterval(walletIndexingPollRef.current)
+      walletIndexingPollRef.current = null
+    }
+  }
+
+  useEffect(() => stopWalletIndexingPoll, [])
+
   const deployWirexWallet = async (password: string): Promise<void> => {
     if (!wirexUser) throw new Error('No Wirex user to deploy a wallet for')
 
+    stopWalletIndexingPoll()
     setWirexWalletLoading(true)
     setWirexWalletError(null)
+    setWirexWalletDeployTimedOut(false)
     try {
       await deployWirexKernelAccount(password)
+      const kycAccessToken = await getValidAccessToken()
+      if (!kycAccessToken) throw new Error('No active KYC session')
+
       // Wirex registers the deployed wallet on-chain itself
       // (createUserAccountWithWallet) and indexes it asynchronously — there's
       // no REST call to push the address to Wirex directly (see
-      // ../lib/wirex.ts's Wallet section), so just re-fetch once deployment
-      // confirms.
-      const wallet = await getWirexWallet(wirexUser.email)
+      // ../lib/wirex.ts's Wallet section), so poll GET /api/v1/wallet (same
+      // interval/cleanup shape as BankOrderStatus.tsx) until it appears or we
+      // give up.
+      setWirexWalletDeployPending(true)
+      const wallet = await new Promise<WirexWallet | null>((resolve, reject) => {
+        let attempts = 0
+
+        const poll = async () => {
+          attempts += 1
+          try {
+            const result = await getWirexWallet(wirexUser.email, kycAccessToken)
+            if (result) {
+              stopWalletIndexingPoll()
+              resolve(result)
+              return
+            }
+          } catch (err) {
+            stopWalletIndexingPoll()
+            reject(err)
+            return
+          }
+
+          if (attempts >= WALLET_INDEXING_MAX_ATTEMPTS) {
+            stopWalletIndexingPoll()
+            resolve(null)
+          }
+        }
+
+        walletIndexingPollRef.current = setInterval(poll, WALLET_INDEXING_POLL_INTERVAL_MS)
+        poll()
+      })
+
       setWirexWallet(wallet)
+      setWirexWalletDeployTimedOut(wallet === null)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to deploy Wirex wallet'
       setWirexWalletError(message)
       throw err
     } finally {
+      setWirexWalletDeployPending(false)
       setWirexWalletLoading(false)
     }
   }
@@ -182,7 +264,13 @@ export const WirexProvider = ({ children }: { children: ReactNode }) => {
     setWirexCardsLoading(true)
     setWirexCardsError(null)
 
-    getWirexCards(wirexUser.email)
+    const run = async () => {
+      const kycAccessToken = await getValidAccessToken()
+      if (!kycAccessToken) throw new Error('No active KYC session')
+      return getWirexCards(wirexUser.email, kycAccessToken)
+    }
+
+    run()
       .then((result) => {
         if (!cancelled) setWirexCards(result?.data ?? [])
       })
@@ -206,9 +294,11 @@ export const WirexProvider = ({ children }: { children: ReactNode }) => {
     setWirexCardsLoading(true)
     setWirexCardsError(null)
     try {
+      const kycAccessToken = await getValidAccessToken()
+      if (!kycAccessToken) throw new Error('No active KYC session')
       // Issuance only returns the new card's id, not its full record — refresh
       // the list to pick up the newly issued card's full details.
-      await issueVirtualCard({ email: wirexUser.email })
+      await issueVirtualCard({ email: wirexUser.email, kycAccessToken })
       refreshWirexCards()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to issue Wirex card'
@@ -229,6 +319,8 @@ export const WirexProvider = ({ children }: { children: ReactNode }) => {
         wirexWallet,
         wirexWalletLoading,
         wirexWalletError,
+        wirexWalletDeployPending,
+        wirexWalletDeployTimedOut,
         deployWirexWallet,
         wirexCards,
         wirexCardsLoading,

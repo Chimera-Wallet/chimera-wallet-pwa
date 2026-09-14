@@ -10,8 +10,7 @@
 //     partner token issuance runs through a separate Auth0 tenant.
 //  2. User token ("Login as User"): takes no body, just the partner token
 //     plus a header identifying which user to issue a token for
-//     (X-User-Email / X-User-Wallet / UserId), at
-//     POST {WIREX_API_BASE}/api/v1/user/authorize.
+//     (X-User-Email / UserId), at POST {WIREX_API_BASE}/api/v1/user/authorize.
 //
 // Neither token is ever returned to the browser — proxy.ts calls these
 // helpers server-side and attaches whichever token an upstream call needs.
@@ -57,7 +56,6 @@ async function getPartnerToken() {
 }
 const USER_IDENTIFIER_HEADER = {
     email: 'X-User-Email',
-    wallet: 'X-User-Wallet',
     userId: 'UserId',
 };
 // User tokens are not cached here: they're minted per-proxied-request from the

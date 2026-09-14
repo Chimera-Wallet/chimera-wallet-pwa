@@ -23,6 +23,20 @@
 
 const WIREX_PROXY_BASE = '/api/wirex'
 
+/**
+ * Headers for a call that runs "as" a Wirex user. api/wirex/proxy.ts won't
+ * mint a user-scoped token from X-Wirex-User-Email alone — it also requires
+ * this IDFlow access token (see ../providers/kyc.ts::getValidAccessToken) and
+ * verifies it maps to the same email server-side, so an anonymous caller
+ * can't claim an arbitrary user's email. This is temporary until proper 
+ * session management can be discussed and put in place (as well as proper 
+ * testing needing to be performed).
+ */
+const userAuthHeaders = (email: string, kycAccessToken: string): Record<string, string> => ({
+  'X-Wirex-User-Email': email,
+  'X-Kyc-Access-Token': kycAccessToken,
+})
+
 // Mirrors ramp.ts's AbortController-with-timeout pattern: these calls sit
 // behind onboarding UI, so a bounded wait beats an indefinite spinner.
 const REQUEST_TIMEOUT_MS = 30_000
@@ -117,7 +131,7 @@ export const ensureWirexUser = async (payload: CreateWirexUserPayload): Promise<
 // There is no REST endpoint to register a wallet by POSTing its address —
 // per docs.wirexapp.com/docs/retail-onchain-registration, registration
 // happens by calling createUserAccountWithWallet() on-chain (via Wirex's SDK
-// or a direct UserOperation, see ../lib/wirexWallet.ts::deployWirexKernelAccount),
+// or a direct UserOperation,
 // and Wirex notifies our backend afterward via a webhook
 // (POST /v2/webhooks/wallets — see ./webhook.ts, currently log-only). So
 // there's no registerWirexWallet call here: once the on-chain deploy
@@ -136,8 +150,8 @@ export interface WirexWallet {
 }
 
 /** Look up the Wirex wallet already registered for this user, if any. */
-export const getWirexWallet = (email: string): Promise<WirexWallet | null> =>
-  request<WirexWallet>('/api/v1/wallet', { method: 'GET', headers: { 'X-Wirex-User-Email': email } })
+export const getWirexWallet = (email: string, kycAccessToken: string): Promise<WirexWallet | null> =>
+  request<WirexWallet>('/api/v1/wallet', { method: 'GET', headers: userAuthHeaders(email, kycAccessToken) })
 
 // Cards 
 //
@@ -148,11 +162,8 @@ export const getWirexWallet = (email: string): Promise<WirexWallet | null> =>
 // PAN/expiry/CVV/PIN are deliberately NOT modeled here: Wirex's PCI-compliant
 // SDK is meant to render those directly inside its own iframe so that data
 // never touches our server or client code (keeping PCI scope off this app).
-// That SDK isn't integrated yet — see the plan's "Card UI" section — so this
-// client only covers card metadata, limits, and push-to-card, none of which
-// carry cardholder data.
 
-// Confirmed against docs.wirexapp.com/reference/get_api-v1-cards.
+
 export interface WirexCard {
   id: string
   status: 'Requested' | 'NotActivated' | 'Active' | 'Closed' | 'Blocked'
@@ -178,9 +189,9 @@ export interface GetWirexCardsOptions {
   sort?: 'name' | 'usage'
 }
 
-/** List this user's cards. Path and response shape confirmed against Wirex's API reference. */
 export const getWirexCards = (
   email: string,
+  kycAccessToken: string,
   options: GetWirexCardsOptions = {},
 ): Promise<{ data: WirexCard[] } | null> => {
   const params = new URLSearchParams()
@@ -191,12 +202,13 @@ export const getWirexCards = (
 
   return request<{ data: WirexCard[] }>(`/api/v1/cards${query ? `?${query}` : ''}`, {
     method: 'GET',
-    headers: { 'X-Wirex-User-Email': email },
+    headers: userAuthHeaders(email, kycAccessToken),
   })
 }
 
 export interface IssueVirtualCardPayload {
   email: string
+  kycAccessToken: string
   cardName?: string
   nameOnCard?: string
   /** Required only when order/delivery fees apply. */
@@ -207,7 +219,7 @@ export interface IssueVirtualCardPayload {
 export const issueVirtualCard = (payload: IssueVirtualCardPayload): Promise<{ id: string } | null> =>
   request<{ id: string }>('/api/v1/cards/virtual', {
     method: 'POST',
-    headers: { 'X-Wirex-User-Email': payload.email },
+    headers: userAuthHeaders(payload.email, payload.kycAccessToken),
     body: JSON.stringify({
       ...(payload.cardName ? { card_name: payload.cardName } : {}),
       ...(payload.nameOnCard ? { name_on_card: payload.nameOnCard } : {}),
@@ -222,29 +234,63 @@ export const issueVirtualCard = (payload: IssueVirtualCardPayload): Promise<{ id
 // on our side. No physical/plastic-card issuance endpoint was found in
 // Wirex's reference, so that format may not be self-serve via this API.
 
+// Confirmed against docs.wirexapp.com/docs/retail-managing-card-limits. Unlike
+// wallet/card-list/issue/transfer above, these two run under the partner
+// token with X-User-Wallet identifying the card's owner (same pattern as
+// X-User-Email on the user lookup/creation calls further up — forwarded
+// verbatim, not exchanged for a user-scoped token), so no X-Wirex-User-Email/
+// X-Kyc-Access-Token is needed here.
+//
+// -1 disables a given limit; 0 blocks all spending on it; a positive number
+// is a hard cap. lifetime_limit/lifetime_usage are read-only — Wirex returns
+// them but PUT .../limit does not accept lifetime_limit.
 export interface WirexCardLimits {
-  daily?: string
-  monthly?: string
-  perTransaction?: string
+  daily_limit?: number
+  daily_usage?: number
+  monthly_limit?: number
+  monthly_usage?: number
+  lifetime_limit?: number
+  lifetime_usage?: number
+  currency?: string
 }
 
-/** `/api/v1/cards/{cardId}/limits` is a placeholder path — confirm against Wirex's API reference. */
-export const getWirexCardLimits = (email: string, cardId: string): Promise<WirexCardLimits | null> =>
-  request<WirexCardLimits>(`/api/v1/cards/${encodeURIComponent(cardId)}/limits`, {
-    method: 'GET',
-    headers: { 'X-Wirex-User-Email': email },
-  })
+interface WirexCardWithLimits {
+  id: string
+  status: WirexCard['status']
+  limit: WirexCardLimits
+}
 
-export const setWirexCardLimits = (
-  email: string,
-  cardId: string,
-  limits: WirexCardLimits,
-): Promise<WirexCardLimits | null> =>
-  request<WirexCardLimits>(`/api/v1/cards/${encodeURIComponent(cardId)}/limits`, {
-    method: 'PUT',
-    headers: { 'X-Wirex-User-Email': email },
-    body: JSON.stringify(limits),
+/** Limits are part of the card resource itself — GET /api/v1/cards/{cardId}, not a dedicated .../limits endpoint. */
+export const getWirexCardLimits = async (walletAddress: string, cardId: string): Promise<WirexCardLimits | null> => {
+  const card = await request<WirexCardWithLimits>(`/api/v1/cards/${encodeURIComponent(cardId)}`, {
+    method: 'GET',
+    headers: { 'X-User-Wallet': walletAddress },
   })
+  return card?.limit ?? null
+}
+
+export interface SetWirexCardLimitsPayload {
+  dailyLimit?: number
+  monthlyLimit?: number
+  transactionLimit?: number
+}
+
+/** PUT /api/v1/cards/{cardId}/limit. */
+export const setWirexCardLimits = async (
+  walletAddress: string,
+  cardId: string,
+  limits: SetWirexCardLimitsPayload,
+): Promise<void> => {
+  await request<unknown>(`/api/v1/cards/${encodeURIComponent(cardId)}/limit`, {
+    method: 'PUT',
+    headers: { 'X-User-Wallet': walletAddress },
+    body: JSON.stringify({
+      ...(limits.dailyLimit !== undefined ? { daily_limit: limits.dailyLimit } : {}),
+      ...(limits.monthlyLimit !== undefined ? { monthly_limit: limits.monthlyLimit } : {}),
+      ...(limits.transactionLimit !== undefined ? { transaction_limit: limits.transactionLimit } : {}),
+    }),
+  })
+}
 
 // Push-to-card
 //
@@ -264,6 +310,7 @@ export const setWirexCardLimits = (
 
 export interface EstimateCardTransferPayload {
   email: string
+  kycAccessToken: string
   cardId: string
   amount: string
   currency?: string
@@ -285,7 +332,7 @@ export interface CardTransferEstimate {
 export const estimateCardTransfer = (payload: EstimateCardTransferPayload): Promise<CardTransferEstimate | null> =>
   request<CardTransferEstimate>('/api/v1/cards/transfer/estimate', {
     method: 'POST',
-    headers: { 'X-Wirex-User-Email': payload.email },
+    headers: userAuthHeaders(payload.email, payload.kycAccessToken),
     body: JSON.stringify({
       amount: Number(payload.amount),
       ...(payload.currency ? { currency: payload.currency } : {}),
@@ -296,6 +343,7 @@ export const estimateCardTransfer = (payload: EstimateCardTransferPayload): Prom
 
 export interface TransferToCardPayload {
   email: string
+  kycAccessToken: string
   /** From a prior estimateCardTransfer() call. */
   estimationId: string
   /** Which of the estimate's tokens to actually move to the card's balance. */
@@ -305,6 +353,6 @@ export interface TransferToCardPayload {
 export const transferToCard = (payload: TransferToCardPayload): Promise<{ id: string } | null> =>
   request<{ id: string }>('/api/v1/cards/transfer', {
     method: 'POST',
-    headers: { 'X-Wirex-User-Email': payload.email },
+    headers: userAuthHeaders(payload.email, payload.kycAccessToken),
     body: JSON.stringify({ estimation_id: payload.estimationId, token_address: payload.tokenAddress }),
   })
