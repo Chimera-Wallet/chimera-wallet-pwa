@@ -13,9 +13,12 @@ import FlexCol from '../../components/FlexCol'
 import Button from '../../components/Button'
 import SendIcon from '../../icons/Send'
 import ReceiveIcon from '../../icons/Receive'
+import SwapIcon from '../../icons/Swap'
 import FlexRow from '../../components/FlexRow'
 import { emptyRecvInfo, emptySendInfo, FlowContext } from '../../providers/flow'
 import { NavigationContext, Pages } from '../../providers/navigation'
+import { AssetSwapsContext } from '../../providers/assetSwaps'
+import { BTC_ASSET_ID } from '@arkade-os/swap'
 import { NudgeContext } from '../../providers/nudge'
 import { pwaCanInstall, usePwaInstalled, canPromptInstall, promptPwaInstall } from '../../lib/pwa'
 import { isIOS, isAndroid, getIOSBrowser } from '../../lib/browser'
@@ -49,10 +52,11 @@ export default function Wallet() {
   const { aspInfo } = useContext(AspContext)
   const { announcement } = useContext(AnnouncementContext)
   const { config, updateConfig } = useContext(ConfigContext)
-  const { setRecvInfo, setSendInfo, setWrapRecvInfo, setUnwrapSendInfo } = useContext(FlowContext)
+  const { setRecvInfo, setSendInfo, setWrapRecvInfo, setUnwrapSendInfo, setAssetSwapFromAssetId } = useContext(FlowContext)
   const { isInitialLoad, navigate, navigationCount, screen } = useContext(NavigationContext)
   const { balance, dataReady, txs, assetBalances } = useContext(WalletContext)
   const { nudge, nudgeVisible, nudgeCheckComplete } = useContext(NudgeContext)
+  const { swapAvailable } = useContext(AssetSwapsContext)
 
   const pwaInstalled = usePwaInstalled()
   const dismissed = (config?.dismissedBanners ?? []).includes('pwa-install')
