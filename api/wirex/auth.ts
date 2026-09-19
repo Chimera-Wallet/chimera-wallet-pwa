@@ -3,11 +3,6 @@
 // proxied request's claimed user identity against IDFlow before minting a
 // Wirex "Login as User" token for it (see proxy.ts's header comment for why
 // that verification exists).
-//
-// Deliberately free of any @azure/functions import — everything here takes
-// plain strings/Headers rather than HttpRequest, so it can be unit-tested
-// with the repo's existing (root) vitest setup without adding test tooling
-// to this workspace.
 import { timingSafeEqual } from 'crypto'
 import { getPartnerToken, getUserToken } from './token'
 
@@ -15,8 +10,7 @@ export const USER_EMAIL_HEADER = 'x-wirex-user-email'
 export const KYC_TOKEN_HEADER = 'x-kyc-access-token'
 
 // Stripped from the outgoing request when proxying to Wirex: standard
-// hop-by-hop headers, plus our own two auth headers, which are consumed here
-// and must never be forwarded upstream.
+// hop-by-hop headers, plus our own two auth headers, which are consumed here.
 export const HOP_BY_HOP_REQUEST_HEADERS = new Set([
   'host',
   'connection',

@@ -106,6 +106,12 @@ export const deployWirexKernelAccount = async (password: string): Promise<WirexK
   const sdk = await createSDK({
     env: getWirexSdkEnv(),
     companyId: getWirexCompanyId(),
+    // Wirex's own RPC nodes (e.g. node-base.wirexapp.tech) send no CORS
+    // headers for our origin, so the SDK's on-chain reads fail if it fetches
+    // its remote config directly. Route that fetch (and the RPC calls it
+    // configures) through our backend instead — see api/wirex/config.ts and
+    // api/wirex/rpcProxy.ts.
+    configUrl: '/api/wirex-config',
     getMainWalletClient: () => ({
       address: account.address,
       getEthereumProvider: async () => buildEip1193Provider(account),

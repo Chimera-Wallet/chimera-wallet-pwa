@@ -2,23 +2,13 @@
  * Wirex BaaS API client.
  *
  * All calls go through the same-origin `/api/wirex/*` proxy (api/wirex/proxy.ts)
- * — the browser never holds a Wirex client_secret or bearer token. User-lookup
- * and user-creation calls run under the partner token by forwarding Wirex's
- * own `X-User-Email` header verbatim; that's a different header from the
- * proxy's own `X-Wirex-User-Email` (used to mint a user-scoped token for
- * "act as this user" calls), so the two never collide.
+ * so the browser never holds a Wirex client_secret or bearer token.
  *
- * KYC: this app does not use Wirex's own hosted verification — users are
- * already verified through IDFlow (see ./kyc.ts). Wirex's "API-based" user
- * creation mode accepts already-verified identity data at creation time
- * instead of running its own KYC flow. createWirexUser below only sends what
- * IDFlow's profile exposes today (name, email) — this is a skeleton to build
- * on, not a finished KYC handoff. Before relying on this for real users,
- * confirm with Wirex the full field set their compliance team needs to
- * accept this as equivalent to their own KYC (date of birth, nationality,
- * address, document type/number are typical requirements this does not yet
- * send), and whether IDFlow needs to expose more of its profile to supply
- * them.
+ * User lookup/creation (GET/POST /api/v2/user) run under the partner token,
+ * identified by `X-User-Wallet`.
+ *
+ * KYC is yet to be fully implemented as details still need to be worked out 
+ * so user creation and all subsequent operations aren't FULLY implemented.
  */
 
 const WIREX_PROXY_BASE = '/api/wirex'
@@ -41,7 +31,15 @@ const userAuthHeaders = (email: string, kycAccessToken: string): Record<string, 
 // behind onboarding UI, so a bounded wait beats an indefinite spinner.
 const REQUEST_TIMEOUT_MS = 30_000
 
-async function request<T>(path: string, init?: RequestInit): Promise<T | null> {
+interface RequestOptions {
+  /**
+   * Treat a "not found" response as a null result rather than an error.
+   * Only correct for a lookup GET.
+   */
+  notFoundIsNull?: boolean
+}
+
+async function request<T>(path: string, init?: RequestInit, opts: RequestOptions = {}): Promise<T | null> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
 
@@ -65,11 +63,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T | null> {
     clearTimeout(timer)
   }
 
-  // A 404 here means "no Wirex user for this email yet" — not an error as it's 
-  // the expected result if a user hasn't been created yet. 
+  // A 404 here means is the expected result
+  // when e.g. a user hasn't been created yet.
   if (res.status === 404) return null
 
   const body = await res.json().catch(() => ({}))
+
+  if (opts.notFoundIsNull && body?.error_reason === 'ErrorNotFound') return null
 
   if (!res.ok) {
     const message = typeof body.error === 'string' ? body.error : JSON.stringify(body.error ?? body)
@@ -89,30 +89,104 @@ export interface WirexUser {
   lastName?: string
 }
 
-/**
- * Look up an existing Wirex user by email — this doubles as the
- * "does this user already have an account" check (e.g. after an
- * uninstall/reinstall).
- */
-export const getWirexUserByEmail = (email: string): Promise<WirexUser | null> =>
-  request<WirexUser>('/api/v2/user', { method: 'GET', headers: { 'X-User-Email': email } })
-
-export interface CreateWirexUserPayload {
-  email: string
-  firstName?: string
-  lastName?: string
+// GET/POST /api/v2/user's actual response shape (confirmed live) — email and
+// name live under `profile`, not top-level, unlike the flat WirexUser this
+// app works with elsewhere. Only the fields toWirexUser reads are modeled;
+// the response also carries `id`, `owner`, `residence_address`,
+// `verification` and `capabilities`, unused here.
+interface WirexUserApiResponse {
+  user_id: string
+  user_address: string
+  chain_id: number
+  profile: {
+    email: string
+    first_name?: string
+    last_name?: string
+    status?: string
+  }
 }
 
-export const createWirexUser = (payload: CreateWirexUserPayload): Promise<WirexUser | null> =>
-  request<WirexUser>('/api/v2/user', {
-    method: 'POST',
-    headers: { 'X-User-Email': payload.email },
-    body: JSON.stringify(payload),
-  })
+const toWirexUser = (raw: WirexUserApiResponse): WirexUser => ({
+  user_id: raw.user_id,
+  user_address: raw.user_address,
+  chain_id: raw.chain_id,
+  status: raw.profile.status,
+  email: raw.profile.email,
+  firstName: raw.profile.first_name,
+  lastName: raw.profile.last_name,
+})
 
-/** Look up the Wirex user for this email, creating one if none exists yet. */
+/**
+ * Look up an existing Wirex user by their EVM signer address — this doubles
+ * as the "does this user already have an account" check (e.g. after an
+ * uninstall/reinstall, since the address re-derives deterministically from
+ * the same mnemonic+password).
+ */
+export const getWirexUserByAddress = async (userAddress: string): Promise<WirexUser | null> => {
+  const raw = await request<WirexUserApiResponse>(
+    '/api/v2/user',
+    { method: 'GET', headers: { 'X-User-Wallet': userAddress } },
+    { notFoundIsNull: true },
+  )
+  return raw && toWirexUser(raw)
+}
+
+export interface WirexResidenceAddress {
+  line1: string
+  city: string
+  postCode: string
+  country: string
+  line2?: string
+  state?: string
+}
+
+export interface CreateWirexUserPayload {
+  /** This wallet's EVM signer address.*/
+  userAddress: string
+  email: string
+  firstName: string
+  lastName: string
+  /** YYYY-MM-DD. */
+  dateOfBirth: string
+  phoneNumber: string
+  /** ISO 3166-1 alpha-2. */
+  nationality: string
+  residenceAddress: WirexResidenceAddress
+  isPep: boolean
+}
+
+export const createWirexUser = async (payload: CreateWirexUserPayload): Promise<WirexUser | null> => {
+  const raw = await request<WirexUserApiResponse>('/api/v2/user', {
+    method: 'POST',
+    body: JSON.stringify({
+      user_address: payload.userAddress,
+      initial_data: {
+        is_pep: payload.isPep,
+        profile: {
+          first_name: payload.firstName,
+          last_name: payload.lastName,
+          email: payload.email,
+          date_of_birth: payload.dateOfBirth,
+          phone_number: payload.phoneNumber,
+          nationality: payload.nationality,
+        },
+        residence_address: {
+          line1: payload.residenceAddress.line1,
+          city: payload.residenceAddress.city,
+          post_code: payload.residenceAddress.postCode,
+          country: payload.residenceAddress.country,
+          ...(payload.residenceAddress.line2 ? { line2: payload.residenceAddress.line2 } : {}),
+          ...(payload.residenceAddress.state ? { state: payload.residenceAddress.state } : {}),
+        },
+      },
+    }),
+  })
+  return raw && toWirexUser(raw)
+}
+
+/** Look up the Wirex user for this EVM address, creating one if none exists yet. */
 export const ensureWirexUser = async (payload: CreateWirexUserPayload): Promise<WirexUser | null> => {
-  const existing = await getWirexUserByEmail(payload.email)
+  const existing = await getWirexUserByAddress(payload.userAddress)
   if (existing) return existing
   return createWirexUser(payload)
 }
@@ -123,20 +197,7 @@ export const ensureWirexUser = async (payload: CreateWirexUserPayload): Promise<
 // by Wirex's own X-User-Email header), wallet calls run "as" the Wirex user
 // they belong to: setting the proxy's internal X-Wirex-User-Email header
 // makes api/wirex/proxy.ts mint a user-scoped token (via token.ts's
-// "Login as User" flow) before forwarding — that user token alone is enough
-// to auth GET /api/v1/wallet per Wirex's reference
-// (docs.wirexapp.com/reference/get_api-v1-wallet), so no extra X-User-Wallet
-// header is needed here. `/api/v2/wallet` (the old path below) doesn't exist.
-//
-// There is no REST endpoint to register a wallet by POSTing its address —
-// per docs.wirexapp.com/docs/retail-onchain-registration, registration
-// happens by calling createUserAccountWithWallet() on-chain (via Wirex's SDK
-// or a direct UserOperation,
-// and Wirex notifies our backend afterward via a webhook
-// (POST /v2/webhooks/wallets — see ./webhook.ts, currently log-only). So
-// there's no registerWirexWallet call here: once the on-chain deploy
-// confirms, the caller just re-fetches via getWirexWallet below once Wirex's
-// indexer has picked up the on-chain event.
+// "Login as User" flow) before forwarding..
 
 export interface WirexWallet {
   wallet_address: string
@@ -155,9 +216,7 @@ export const getWirexWallet = (email: string, kycAccessToken: string): Promise<W
 
 // Cards 
 //
-// Card calls run "as" the Wirex user (same X-Wirex-User-Email proxy header as
-// wallet calls above) — a card belongs to a specific user, not the partner
-// account broadly.
+// Card calls run "as" the Wirex user so a card belongs to a specific user, 
 //
 // PAN/expiry/CVV/PIN are deliberately NOT modeled here: Wirex's PCI-compliant
 // SDK is meant to render those directly inside its own iframe so that data
@@ -234,12 +293,6 @@ export const issueVirtualCard = (payload: IssueVirtualCardPayload): Promise<{ id
 // on our side. No physical/plastic-card issuance endpoint was found in
 // Wirex's reference, so that format may not be self-serve via this API.
 
-// Confirmed against docs.wirexapp.com/docs/retail-managing-card-limits. Unlike
-// wallet/card-list/issue/transfer above, these two run under the partner
-// token with X-User-Wallet identifying the card's owner (same pattern as
-// X-User-Email on the user lookup/creation calls further up — forwarded
-// verbatim, not exchanged for a user-scoped token), so no X-Wirex-User-Email/
-// X-Kyc-Access-Token is needed here.
 //
 // -1 disables a given limit; 0 blocks all spending on it; a positive number
 // is a hard cap. lifetime_limit/lifetime_usage are read-only — Wirex returns
@@ -262,10 +315,11 @@ interface WirexCardWithLimits {
 
 /** Limits are part of the card resource itself — GET /api/v1/cards/{cardId}, not a dedicated .../limits endpoint. */
 export const getWirexCardLimits = async (walletAddress: string, cardId: string): Promise<WirexCardLimits | null> => {
-  const card = await request<WirexCardWithLimits>(`/api/v1/cards/${encodeURIComponent(cardId)}`, {
-    method: 'GET',
-    headers: { 'X-User-Wallet': walletAddress },
-  })
+  const card = await request<WirexCardWithLimits>(
+    `/api/v1/cards/${encodeURIComponent(cardId)}`,
+    { method: 'GET', headers: { 'X-User-Wallet': walletAddress } },
+    { notFoundIsNull: true },
+  )
   return card?.limit ?? null
 }
 
@@ -293,20 +347,6 @@ export const setWirexCardLimits = async (
 }
 
 // Push-to-card
-//
-// Wirex's push-to-external-card withdrawal (POST /api/v1/cards/{cardId}/
-// withdraw/estimate and .../withdraw/execute) is deprecated with no stated
-// replacement per Wirex's reference docs — it's been removed here rather than
-// kept as dead code against a sunset API. If a "cash out to another card"
-// flow is needed later, check Wirex's reference for a current equivalent.
-//
-// Transfer below is a different, still-current operation: moving a specific
-// on-chain token (token_address) to the card's own balance, confirmed against
-// docs.wirexapp.com/reference/post_api-v1-cards-transfer-estimate and
-// .../post_api-v1-cards-transfer. It's a two-step estimate-then-execute flow
-// like withdrawal was, but execute takes no cardId: the card is fixed as
-// external_card_id during the estimate step, and execute only needs the
-// resulting estimation_id plus the token being moved.
 
 export interface EstimateCardTransferPayload {
   email: string

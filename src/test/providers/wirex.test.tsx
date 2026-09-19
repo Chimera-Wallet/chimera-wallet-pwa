@@ -1,20 +1,12 @@
-// Tests for WirexProvider's wallet-deploy poll loop: after
-// deployWirexKernelAccount() finishes the on-chain step, GET /api/v1/wallet
-// (getWirexWallet) doesn't return the wallet until Wirex's indexer catches
-// up, so deployWirexWallet() polls it rather than fetching once. See
-// ../../providers/wirex.tsx's WALLET_INDEXING_* constants for why: mirrors
-// BankOrderStatus.tsx's poll/cleanup shape, but bounded since this runs from
-// a provider rather than a screen the user might leave open.
-import { act, renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { WirexProvider, useWirex } from '../../providers/wirex'
-import { getStoredKycStatus, getKycEmail, fetchKycUserProfile, getValidAccessToken } from '../../lib/kyc'
+import { WirexProvider, useWirex, WirexOnboardingInput } from '../../providers/wirex'
+import { getStoredKycStatus, fetchKycUserProfile, getValidAccessToken } from '../../lib/kyc'
 import { ensureWirexUser, getWirexCards, getWirexWallet } from '../../lib/wirex'
-import { deployWirexKernelAccount } from '../../lib/wirexWallet'
+import { deployWirexKernelAccount, getWirexEvmAddress } from '../../lib/wirexWallet'
 
 vi.mock('../../lib/kyc', () => ({
   getStoredKycStatus: vi.fn(),
-  getKycEmail: vi.fn(),
   fetchKycUserProfile: vi.fn(),
   getValidAccessToken: vi.fn(),
 }))
@@ -28,11 +20,20 @@ vi.mock('../../lib/wirex', () => ({
 
 vi.mock('../../lib/wirexWallet', () => ({
   deployWirexKernelAccount: vi.fn(),
+  getWirexEvmAddress: vi.fn(),
 }))
 
 const POLL_INTERVAL_MS = 30_000
 const MAX_ATTEMPTS = 10
 const testPassword = 'testpassword'
+
+const testOnboarding: WirexOnboardingInput = {
+  dateOfBirth: '1990-01-15',
+  phoneNumber: '+14155551234',
+  nationality: 'US',
+  residenceAddress: { line1: '123 Main St', city: 'San Francisco', postCode: '94105', country: 'US' },
+  isPep: false,
+}
 
 const testWallet = { wallet_address: '0xWallet', wallet_status: 'Active' }
 
@@ -41,9 +42,13 @@ describe('WirexProvider deployWirexWallet', () => {
     vi.clearAllMocks()
     vi.stubEnv('VITE_WIREX_ENABLED', 'true')
     vi.mocked(getStoredKycStatus).mockReturnValue('confirmed')
-    vi.mocked(getKycEmail).mockReturnValue('user@test.com')
     vi.mocked(getValidAccessToken).mockResolvedValue('kyc-access-token')
-    vi.mocked(fetchKycUserProfile).mockResolvedValue({ firstName: 'Ada', lastName: 'Lovelace' })
+    vi.mocked(fetchKycUserProfile).mockResolvedValue({
+      email: 'user@test.com',
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+    })
+    vi.mocked(getWirexEvmAddress).mockResolvedValue('0xUser')
     vi.mocked(ensureWirexUser).mockResolvedValue({
       user_id: 'u1',
       user_address: '0xUser',
@@ -59,17 +64,36 @@ describe('WirexProvider deployWirexWallet', () => {
     vi.unstubAllEnvs()
   })
 
-  // Renders the provider and waits (real timers) for the auto-provisioning
-  // effect to resolve a Wirex user, so deployWirexWallet has one to act on.
+ 
   const setup = async () => {
     const { result } = renderHook(() => useWirex(), { wrapper: WirexProvider })
-    await waitFor(() => expect(result.current.wirexUser).not.toBeNull())
+    vi.mocked(getWirexWallet).mockResolvedValueOnce(testWallet)
+    await act(async () => {
+      await result.current.deployWirexWallet(testPassword, testOnboarding)
+    })
+    vi.mocked(getWirexWallet).mockClear()
+    vi.mocked(deployWirexKernelAccount).mockClear()
+    vi.mocked(ensureWirexUser).mockClear()
+    vi.mocked(getWirexEvmAddress).mockClear()
     return result
   }
 
+
+  it('deploys the on-chain wallet before creating the Wirex user', async () => {
+    const { result } = renderHook(() => useWirex(), { wrapper: WirexProvider })
+    vi.mocked(getWirexWallet).mockResolvedValueOnce(testWallet)
+
+    await act(async () => {
+      await result.current.deployWirexWallet(testPassword, testOnboarding)
+    })
+
+    const deployOrder = vi.mocked(deployWirexKernelAccount).mock.invocationCallOrder[0]
+    const ensureUserOrder = vi.mocked(ensureWirexUser).mock.invocationCallOrder[0]
+    expect(deployOrder).toBeLessThan(ensureUserOrder)
+  })
+
   it('polls until the wallet appears, then stops', async () => {
     const result = await setup()
-    vi.mocked(getWirexWallet).mockClear() // drop the call made by the wallet-lookup effect during setup()
     vi.mocked(getWirexWallet).mockResolvedValueOnce(null).mockResolvedValueOnce(null).mockResolvedValueOnce(testWallet)
 
     vi.useFakeTimers()

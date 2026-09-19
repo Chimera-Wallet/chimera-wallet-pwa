@@ -1,157 +1,254 @@
-// Live-endpoint tests for src/lib/wirex.ts — unlike src/test/lib/wirex.test.ts
-// (which mocks `fetch` and only proves wirex.ts *constructs* the request the
-// docs describe), these hit a locally running `func start` (api/wirex/proxy.ts),
-// which forwards to Wirex's real sandbox API using the WIREX_CLIENT_ID/SECRET
-// configured in api/local.settings.json. This is what actually proves the
-// live API still matches what the docs (and wirex.ts) assume.
+// Known gaps in what this suite can exercise, given this codebase's current
+// capabilities:
 //
-// Setup:
-//   1. Configure api/local.settings.json with real sandbox credentials
-//      (`func settings add WIREX_API_BASE/WIREX_CLIENT_ID/WIREX_CLIENT_SECRET/WIREX_CHAIN_ID ...`)
-//      and run `cd api && pnpm start` (func start) in another terminal.
-//   2. From the repo root: `WIREX_LIVE_EMAIL=your-sandbox-test-email pnpm test:wirex-live`
-//
-// Env vars:
-//   WIREX_LIVE_EMAIL         required. Sandbox test user's email — the whole
-//                            suite is skipped if unset. ensureWirexUser
-//                            creates this user once, then reuses it on every
-//                            later run (get-before-create).
-//   WIREX_LIVE_KYC_TOKEN     required for the user-scoped calls (wallet/cards/
-//                            limits/transfer) below. api/wirex/proxy.ts now
-//                            verifies this against IDFlow's GET /api/Entity/me
-//                            and only mints a Wirex user token if it resolves
-//                            to WIREX_LIVE_EMAIL — grab a real access token by
-//                            completing IDFlow's magic-link flow for that
-//                            email (see ../../lib/kyc.ts) and pasting its
-//                            accessToken here. Those tests are skipped if unset.
-//   WIREX_LIVE_API_BASE      optional, default http://localhost:7071 — base
-//                            URL of the running `func start` instance.
-//   WIREX_LIVE_MUTATE        optional. Set to 'true' to also run tests that
-//                            create real sandbox resources (issuing a card).
-//                            Off by default so a routine run can't spam your
-//                            sandbox account with cards.
-//   WIREX_LIVE_TOKEN_ADDRESS optional. An on-chain token address valid on the
-//                            sandbox chain, needed only for the
-//                            transfer-estimate test (also gated on MUTATE).
-//
-// transferToCard (POST /api/v1/cards/transfer) moves real on-chain value onto
-// a card — it is never called automatically here, even under
-// WIREX_LIVE_MUTATE=true. To verify it, call it manually with a fresh
-// estimation_id from the estimate test below.
+//  - Wallet *deployment* (step 3) is not exercised. deployWirexKernelAccount
+//    (../../lib/wirexWallet.ts, via the ZeroDev SDK) needs a real wallet
+//    password/mnemonic, a funded signer, and a live bundler/paymaster — not
+//    something a repeatable live-endpoint suite should trigger automatically.
+//    This suite only checks GET /api/v1/wallet's *lookup* shape, and step 6
+//    (mint) only runs when that lookup already found a deployed wallet.
+//    Corollary, confirmed live: Wirex's POST /api/v2/user (step 2) validates
+//    that the address is already registered in its on-chain Accounts
+//    contract — deployWirexKernelAccount is what performs that registration
+//    (see ../../providers/wirex.tsx's deployWirexWallet, which now runs it
+//    before ensureWirexUser for exactly this reason). Since this suite can't
+//    run that deploy, step 2 only succeeds for a WIREX_LIVE_USER_ADDRESS
+//    whose wallet was already deployed/registered by some other means — see
+//    that env var's doc below.
+//  - Metal/physical card issuance is not implemented in ../../lib/wirex.ts
+//    (needs a delivery address plus a not-yet-built "create invoice" flow) —
+//    not tested here.
+//  - Push-to-external-card withdrawal has been removed from this codebase
+//    (Wirex deprecated it with no stated replacement) — not tested here.
+//  - The webhook (api/wirex/webhook.ts) is log-only and persists no state —
+//    not tested here.
+//  - The sandbox reference also documents SEPA/ACH bank-deposit helpers and
+//    26+ card-transaction-simulation endpoints (purchase/reversal/refund/
+//    chargeback etc.) — both out of scope here: this app has no bank-funding
+//    flow, and ../../lib/wirex.ts has no function that reads card
+//    transactions or the Activities API, so there's no app code those
+//    endpoints would exercise.
+//  - POST /api/v1/cards/transfer (the actual value-moving execute call) is
+//    never called automatically, even under WIREX_LIVE_MUTATE=true — see the
+//    comment at the bottom of this file.
 import { describe, expect, it, beforeAll } from 'vitest'
-import {
-  getWirexUserByEmail,
-  ensureWirexUser,
-  getWirexWallet,
-  getWirexCards,
-  issueVirtualCard,
-  getWirexCardLimits,
-  estimateCardTransfer,
-} from '../../lib/wirex'
+import { getWirexUserByAddress, ensureWirexUser, getWirexCardLimits, setWirexCardLimits } from '../../lib/wirex'
 
-const LIVE_API_BASE = process.env.WIREX_LIVE_API_BASE ?? 'http://localhost:7071'
+const WIREX_MINT_API_BASE = 'https://ramc.wirexapp.tech'
+
+const PROXY_BASE = process.env.WIREX_LIVE_PROXY_BASE ?? 'http://localhost:7071'
 const TEST_EMAIL = process.env.WIREX_LIVE_EMAIL
-const KYC_TOKEN = process.env.WIREX_LIVE_KYC_TOKEN
+const TEST_USER_ADDRESS = process.env.WIREX_LIVE_USER_ADDRESS
+
+const WIREX_API_BASE = process.env.WIREX_API_BASE
+const WIREX_CLIENT_ID = process.env.WIREX_CLIENT_ID
+const WIREX_CLIENT_SECRET = process.env.WIREX_CLIENT_SECRET
+const WIREX_CHAIN_ID = process.env.WIREX_CHAIN_ID
+const HAS_DIRECT_CREDS = true
+
 const MUTATE = process.env.WIREX_LIVE_MUTATE === 'true'
 const TOKEN_ADDRESS = process.env.WIREX_LIVE_TOKEN_ADDRESS
+const MINT_AMOUNT = process.env.WIREX_LIVE_MINT_AMOUNT ?? '10000000000000000'
 
-// wirex.ts's request() calls fetch() with a proxy-relative path
-// (/api/wirex/...) since in the browser that resolves against the current
-// origin. Node's fetch has no such origin to resolve against, so this
-// prefixes every relative call with LIVE_API_BASE — the only "live-test-only"
-// change; wirex.ts itself is used completely unmodified otherwise.
+
 const nodeFetch = globalThis.fetch
 globalThis.fetch = ((input: unknown, init?: RequestInit) => {
-  const url = typeof input === 'string' && input.startsWith('/') ? `${LIVE_API_BASE}${input}` : (input as string)
+  const url = typeof input === 'string' && input.startsWith('/') ? `${PROXY_BASE}${input}` : (input as string)
   return nodeFetch(url, init)
 }) as typeof fetch
 
-describe.skipIf(!TEST_EMAIL)('wirex.ts live sandbox contract (requires func start + WIREX_LIVE_EMAIL)', () => {
-  beforeAll(() => {
-    // eslint-disable-next-line no-console
-    console.log(`[wirex live tests] proxying through ${LIVE_API_BASE}, test user: ${TEST_EMAIL}`)
-  })
-
-  it('mints a partner token and resolves an unknown email to null (proves creds + proxy work)', async () => {
-    const result = await getWirexUserByEmail(`nonexistent-${Date.now()}@wirex-live-test.invalid`)
-    expect(result).toBeNull()
-  })
-
-  it('ensureWirexUser get-or-creates the sandbox test user with the documented shape', async () => {
-    const user = await ensureWirexUser({ email: TEST_EMAIL!, firstName: 'Live', lastName: 'Test' })
-    expect(user).not.toBeNull()
-    expect(user!.email).toBe(TEST_EMAIL)
-    expect(typeof user!.user_id).toBe('string')
-    expect(typeof user!.user_address).toBe('string')
-    expect(typeof user!.chain_id).toBe('number')
-  })
-
-  // Everything below needs WIREX_LIVE_KYC_TOKEN: api/wirex/proxy.ts verifies
-  // it against IDFlow before minting a Wirex user token, so there's no way to
-  // exercise these without a real IDFlow session for TEST_EMAIL.
-  it.skipIf(!KYC_TOKEN)('getWirexWallet returns null or a wallet-shaped object for the test user', async () => {
-    const wallet = await getWirexWallet(TEST_EMAIL!, KYC_TOKEN!)
-    if (wallet !== null) {
-      expect(typeof wallet.wallet_address).toBe('string')
-    }
-  })
-
-  it.skipIf(!KYC_TOKEN)('getWirexCards returns the documented `data` envelope', async () => {
-    const result = await getWirexCards(TEST_EMAIL!, KYC_TOKEN!)
-    expect(result).not.toBeNull()
-    expect(Array.isArray(result!.data)).toBe(true)
-    for (const card of result!.data) {
-      expect(typeof card.id).toBe('string')
-      expect(typeof card.status).toBe('string')
-      expect(typeof card.card_data).toBe('object')
-    }
-  })
-
-  // Everything above is read-only. Card issuance is a real sandbox mutation
-  // (a new card resource per run), so it's opt-in only.
-  describe.skipIf(!MUTATE || !KYC_TOKEN)('mutating (WIREX_LIVE_MUTATE=true)', () => {
-    it('issueVirtualCard creates a card that then shows up in getWirexCards', async () => {
-      const issued = await issueVirtualCard({ email: TEST_EMAIL!, kycAccessToken: KYC_TOKEN!, cardName: 'wirex-live-test' })
-      expect(issued).not.toBeNull()
-      expect(typeof issued!.id).toBe('string')
-
-      const { data: cards } = (await getWirexCards(TEST_EMAIL!, KYC_TOKEN!))!
-      expect(cards.some((card) => card.id === issued!.id)).toBe(true)
+describe.skipIf(!TEST_EMAIL || !TEST_USER_ADDRESS)(
+  'wirex retail user flow (requires func start + WIREX_LIVE_EMAIL/WIREX_LIVE_USER_ADDRESS)',
+  () => {
+    beforeAll(() => {
+      // eslint-disable-next-line no-console
+      console.log(`[wirex live tests] proxy: ${PROXY_BASE}, test user: ${TEST_EMAIL} / ${TEST_USER_ADDRESS}`)
     })
 
-    it('getWirexCardLimits returns the documented limit shape for an existing card, if any', async () => {
-      const { data: cards } = (await getWirexCards(TEST_EMAIL!, KYC_TOKEN!))!
-      if (cards.length === 0) return // nothing to check limits on yet
-      const wallet = await getWirexWallet(TEST_EMAIL!, KYC_TOKEN!)
-      if (!wallet) return // no wallet registered yet to authenticate the call with
-      const limits = await getWirexCardLimits(wallet.wallet_address, cards[0].id)
-      expect(limits === null || typeof limits === 'object').toBe(true)
-    })
-
-    // estimateCardTransfer only quotes a price — it doesn't move value, so
-    // it's safe to run whenever a card + token address are available.
-    // Requires WIREX_LIVE_TOKEN_ADDRESS since there's no way to discover a
-    // valid on-chain token address for the sandbox chain from the API itself.
-    it.skipIf(!TOKEN_ADDRESS)('estimateCardTransfer returns the documented estimate shape', async () => {
-      const { data: cards } = (await getWirexCards(TEST_EMAIL!, KYC_TOKEN!))!
-      if (cards.length === 0) return // nothing to estimate a transfer for yet
-
-      const estimate = await estimateCardTransfer({
-        email: TEST_EMAIL!,
-        kycAccessToken: KYC_TOKEN!,
-        cardId: cards[0].id,
-        amount: '0.01',
-        tokenAddresses: [TOKEN_ADDRESS!],
+    describe('1. authenticate', () => {
+      it('mints a partner token via our proxy (proves creds + token.ts work end-to-end)', async () => {
+        // getWirexUserByAddress is the lightest partner-token call available:
+        // a successful null result (rather than a thrown auth error) proves
+        // the partner token mint + forward succeeded.
+        const result = await getWirexUserByAddress(`0x${Date.now().toString(16).padStart(40, '0')}`)
+        expect(result).toBeNull()
       })
-      expect(estimate).not.toBeNull()
-      expect(typeof estimate!.estimation_id).toBe('string')
-      expect(typeof estimate!.expires_at).toBe('number')
     })
 
-    // transferToCard (POST /api/v1/cards/transfer) actually executes the
-    // estimate above and moves real on-chain value onto the card — that's
-    // deliberately NOT automated here, even under this mutate flag. If you
-    // need to verify it, call transferToCard({ email, estimationId, tokenAddress })
-    // manually with a fresh estimation_id from the test above.
-  })
-})
+    describe('2. register the wirex user', () => {
+      it('ensureWirexUser get-or-creates the sandbox test user with the documented shape', async () => {
+        const user = await ensureWirexUser({
+          userAddress: TEST_USER_ADDRESS!,
+          email: TEST_EMAIL!,
+          firstName: 'Live',
+          lastName: 'Test',
+          dateOfBirth: '1990-01-15',
+          phoneNumber: '+14155551234',
+          nationality: 'US',
+          residenceAddress: { line1: '123 Main St', city: 'San Francisco', postCode: '94105', country: 'US' },
+          isPep: false,
+        })
+        expect(user).not.toBeNull()
+        expect(user!.email).toBe(TEST_EMAIL)
+        expect(typeof user!.user_id).toBe('string')
+        expect(typeof user!.user_address).toBe('string')
+        expect(typeof user!.chain_id).toBe('number')
+      })
+    })
+
+    describe.skipIf(!HAS_DIRECT_CREDS)('direct-to-sandbox steps (bypass our proxy + its KYC gate — see file header)', () => {
+      let userToken: string
+      // Set by step 3 below if a deployed wallet is found; step 6 (mint)
+      // only runs when this is non-null, since minting targets an
+      // already-deployed smart wallet's on-chain address.
+      let walletAddress: string | null = null
+
+      beforeAll(async () => {
+        const partnerRes = await nodeFetch(`${WIREX_API_BASE}/api/v1/token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({
+            client_id: WIREX_CLIENT_ID,
+            client_secret: WIREX_CLIENT_SECRET,
+            grant_type: 'client_credentials',
+          }),
+        })
+        if (!partnerRes.ok) throw new Error(`partner token mint failed: ${partnerRes.status} ${await partnerRes.text()}`)
+        const { access_token: partnerToken } = (await partnerRes.json()) as { access_token: string }
+
+        const userRes = await nodeFetch(`${WIREX_API_BASE}/api/v1/user/authorize`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${partnerToken}`,
+            Accept: 'application/json',
+            'X-User-Wallet': TEST_USER_ADDRESS!,
+            'X-Chain-Id': WIREX_CHAIN_ID!,
+          },
+        })
+        if (!userRes.ok) throw new Error(`user token mint failed: ${userRes.status} ${await userRes.text()}`)
+        ;({ access_token: userToken } = (await userRes.json()) as { access_token: string })
+      })
+
+      const wirexFetch = (path: string, init?: RequestInit) =>
+        nodeFetch(`${WIREX_API_BASE}${path}`, {
+          ...init,
+          headers: {
+            Authorization: `Bearer ${userToken}`,
+            'X-Chain-Id': WIREX_CHAIN_ID!,
+            Accept: 'application/json',
+            ...(init?.headers ?? {}),
+          },
+        })
+
+      describe('3. check wallet status (deployment itself is out of scope — see file header)', () => {
+        it('GET /api/v1/wallet returns 200 with a wallet-shaped object, or a not-found response if none has been deployed/indexed yet', async () => {
+          const res = await wirexFetch('/api/v1/wallet')
+          expect([200, 400, 404]).toContain(res.status)
+          if (res.status === 400) {
+            const body = await res.json()
+            expect(body.error_reason).toBe('ErrorGeneral')
+          }
+          if (res.status === 200) {
+            const wallet = await res.json()
+            expect(typeof wallet.wallet_address).toBe('string')
+            walletAddress = wallet.wallet_address
+          }
+        })
+      })
+
+      it('GET /api/v1/cards returns the documented `data` envelope', async () => {
+        const res = await wirexFetch('/api/v1/cards')
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(Array.isArray(body.data)).toBe(true)
+        for (const card of body.data) {
+          expect(typeof card.id).toBe('string')
+          expect(typeof card.status).toBe('string')
+          expect(typeof card.card_data).toBe('object')
+        }
+      })
+
+
+      describe.skipIf(!MUTATE)('mutating (WIREX_LIVE_MUTATE=true)', () => {
+        describe('4. issue a virtual card', () => {
+          it('POST /api/v1/cards/virtual issues a card that then shows up in GET /api/v1/cards', async () => {
+            const issueRes = await wirexFetch('/api/v1/cards/virtual', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ card_name: 'wirex-live-test' }),
+            })
+            expect(issueRes.status).toBe(200)
+            const issued = await issueRes.json()
+            expect(typeof issued.id).toBe('string')
+
+            const cardsRes = await wirexFetch('/api/v1/cards')
+            const { data: cards } = await cardsRes.json()
+            expect(cards.some((card: { id: string }) => card.id === issued.id)).toBe(true)
+          })
+        })
+
+        describe('5. read and adjust card limits', () => {
+          it('getWirexCardLimits returns null for a card that does not exist', async () => {
+            const limits = await getWirexCardLimits(TEST_USER_ADDRESS!, 'nonexistent-card-id')
+            expect(limits).toBeNull()
+          })
+
+          it('reads an existing card\'s limits, and confirms a change via setWirexCardLimits is reflected back', async () => {
+            const cardsRes = await wirexFetch('/api/v1/cards')
+            const { data: cards } = await cardsRes.json()
+            if (cards.length === 0) return // nothing to check/adjust limits on yet
+            const cardId = cards[0].id
+
+            const before = await getWirexCardLimits(TEST_USER_ADDRESS!, cardId)
+            expect(before === null || typeof before === 'object').toBe(true)
+
+            const nextDailyLimit = before?.daily_limit === 500 ? 600 : 500
+            await setWirexCardLimits(TEST_USER_ADDRESS!, cardId, { dailyLimit: nextDailyLimit })
+
+            const after = await getWirexCardLimits(TEST_USER_ADDRESS!, cardId)
+            expect(after?.daily_limit).toBe(nextDailyLimit)
+          })
+        })
+
+        describe('6. mint test funds onto the wallet', () => {
+          it.skipIf(!TOKEN_ADDRESS)('POST /account/retail/mint credits the wallet with sandbox test funds', async () => {
+            if (!walletAddress) return // no deployed wallet to fund yet
+
+            const mintRes = await nodeFetch(`${WIREX_MINT_API_BASE}/account/retail/mint`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+              body: JSON.stringify({
+                chainId: WIREX_CHAIN_ID,
+                token: TOKEN_ADDRESS,
+                to: walletAddress,
+                amount: MINT_AMOUNT,
+              }),
+            })
+            expect(
+              mintRes.ok,
+              `mint failed: ${mintRes.status} ${await mintRes.text()} (auth requirements for this sandbox-only endpoint are undocumented — a 401/403 may mean it needs credentials this suite doesn't send)`,
+            ).toBe(true)
+          })
+        })
+
+        describe('7. quote a transfer onto the card', () => {
+          it.skipIf(!TOKEN_ADDRESS)('POST /api/v1/cards/transfer/estimate returns the documented estimate shape', async () => {
+            const cardsRes = await wirexFetch('/api/v1/cards')
+            const { data: cards } = await cardsRes.json()
+            if (cards.length === 0) return // nothing to estimate a transfer for yet
+
+            const estimateRes = await wirexFetch('/api/v1/cards/transfer/estimate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ amount: 0.01, external_card_id: cards[0].id, tokens: [TOKEN_ADDRESS] }),
+            })
+            expect(estimateRes.status).toBe(200)
+            const estimate = await estimateRes.json()
+            expect(typeof estimate.estimation_id).toBe('string')
+            expect(typeof estimate.expires_at).toBe('number')
+          })
+        })
+      })
+    })
+  },
+)

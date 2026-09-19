@@ -1,12 +1,6 @@
-// Contract tests for src/lib/wirex.ts against Wirex's documented REST shapes
-// (docs.wirexapp.com/reference/*). These assert the exact path, method,
-// headers and JSON body each call sends, and how each response shape is
-// read back — the class of bug found when this file was last reviewed
-// (wrong path, wrong body field, wrong response envelope) is exactly what
-// these catch, without needing a live Wirex sandbox.
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import {
-  getWirexUserByEmail,
+  getWirexUserByAddress,
   createWirexUser,
   ensureWirexUser,
   getWirexWallet,
@@ -21,13 +15,6 @@ import {
   type WirexCard,
 } from '../../lib/wirex'
 
-// vitest-fetch-mock isn't used here: its internal Request normalization
-// rejects jsdom's AbortSignal ("Expected signal to be an instance of
-// AbortSignal") since wirex.ts's request() passes an AbortController signal
-// for its request-timeout handling — a jsdom/node cross-realm class identity
-// mismatch, unrelated to wirex.ts itself. Stubbing `fetch` directly sidesteps
-// it: we only need the raw (url, init) args wirex.ts passes, never a real
-// Request/Response round-trip.
 const fetchSpy = vi.fn<(input: string, init?: RequestInit) => Promise<Response>>()
 vi.stubGlobal('fetch', fetchSpy)
 
@@ -44,11 +31,24 @@ const fetchMocker = {
 const PROXY_BASE = '/api/wirex'
 const KYC_ACCESS_TOKEN = 'kyc-access-token-1'
 
+// GET/POST /api/v2/user's actual response shape (confirmed live): email and
+// name live under `profile`, not top-level. wirex.ts's toWirexUser()
+// normalizes this into the flat WirexUser the rest of the app uses.
+const sampleUserApiResponse = {
+  user_id: 'user-1',
+  user_address: '0xabc',
+  chain_id: 8453,
+  profile: { email: 'alice@example.com', first_name: 'Alice', last_name: 'Smith', status: 'Active' },
+}
+
 const sampleUser: WirexUser = {
   user_id: 'user-1',
   user_address: '0xabc',
   chain_id: 8453,
+  status: 'Active',
   email: 'alice@example.com',
+  firstName: 'Alice',
+  lastName: 'Smith',
 }
 
 const sampleWallet: WirexWallet = {
@@ -78,45 +78,83 @@ describe('wirex.ts REST client', () => {
     fetchMocker.resetMocks()
   })
 
-  describe('user lookup/creation — docs.wirexapp.com/docs/retail-authentication', () => {
-    it('looks up a user via GET /api/v2/user with X-User-Email', async () => {
-      fetchMocker.mockResponseOnce(JSON.stringify(sampleUser))
-      const result = await getWirexUserByEmail('alice@example.com')
+  const samplePayload = {
+    userAddress: '0xabc',
+    email: 'alice@example.com',
+    firstName: 'Alice',
+    lastName: 'Smith',
+    dateOfBirth: '1990-01-15',
+    phoneNumber: '+14155551234',
+    nationality: 'US',
+    residenceAddress: { line1: '123 Main St', city: 'San Francisco', postCode: '94105', country: 'US' },
+    isPep: false,
+  }
+
+  describe('user lookup/creation — docs.wirexapp.com/reference/get_api-v2-user and post_api-v2-user', () => {
+    it('looks up a user via GET /api/v2/user with X-User-Wallet (partner-token flow)', async () => {
+      fetchMocker.mockResponseOnce(JSON.stringify(sampleUserApiResponse))
+      const result = await getWirexUserByAddress('0xabc')
       expect(result).toEqual(sampleUser)
       const [url, init] = lastCall()
       expect(url).toBe(`${PROXY_BASE}/api/v2/user`)
       expect(init?.method).toBe('GET')
-      expect(lastCallHeaders().get('X-User-Email')).toBe('alice@example.com')
+      expect(lastCallHeaders().get('X-User-Wallet')).toBe('0xabc')
     })
 
     it('returns null when no user exists yet (404)', async () => {
       fetchMocker.mockResponseOnce('', { status: 404 })
-      const result = await getWirexUserByEmail('nobody@example.com')
+      const result = await getWirexUserByAddress('0xnobody')
       expect(result).toBeNull()
     })
 
-    it('creates a user via POST /api/v2/user with X-User-Email and the payload as body', async () => {
-      fetchMocker.mockResponseOnce(JSON.stringify(sampleUser))
-      const result = await createWirexUser({ email: 'alice@example.com', firstName: 'Alice' })
+    it('returns null when no user exists yet (400 ErrorNotFound)', async () => {
+      fetchMocker.mockResponseOnce(
+        JSON.stringify({
+          error_reason: 'ErrorNotFound',
+          error_description: 'Requested user was not found',
+          error_category: { category: 'CategoryValidationFailure', http_status_code: 400 },
+        }),
+        { status: 400 },
+      )
+      const result = await getWirexUserByAddress('0xnobody')
+      expect(result).toBeNull()
+    })
+
+    it('creates a user via POST /api/v2/user with the documented initial_data schema', async () => {
+      fetchMocker.mockResponseOnce(JSON.stringify(sampleUserApiResponse))
+      const result = await createWirexUser(samplePayload)
       expect(result).toEqual(sampleUser)
       const [url, init] = lastCall()
       expect(url).toBe(`${PROXY_BASE}/api/v2/user`)
       expect(init?.method).toBe('POST')
-      expect(lastCallHeaders().get('X-User-Email')).toBe('alice@example.com')
-      expect(lastCallBody()).toEqual({ email: 'alice@example.com', firstName: 'Alice' })
+      expect(lastCallBody()).toEqual({
+        user_address: '0xabc',
+        initial_data: {
+          is_pep: false,
+          profile: {
+            first_name: 'Alice',
+            last_name: 'Smith',
+            email: 'alice@example.com',
+            date_of_birth: '1990-01-15',
+            phone_number: '+14155551234',
+            nationality: 'US',
+          },
+          residence_address: { line1: '123 Main St', city: 'San Francisco', post_code: '94105', country: 'US' },
+        },
+      })
     })
 
     it('ensureWirexUser returns the existing user without creating one', async () => {
-      fetchMocker.mockResponseOnce(JSON.stringify(sampleUser))
-      const result = await ensureWirexUser({ email: 'alice@example.com' })
+      fetchMocker.mockResponseOnce(JSON.stringify(sampleUserApiResponse))
+      const result = await ensureWirexUser(samplePayload)
       expect(result).toEqual(sampleUser)
       expect(fetchMocker.mock.calls.length).toBe(1)
     })
 
     it('ensureWirexUser creates a user when none exists yet', async () => {
       fetchMocker.mockResponseOnce('', { status: 404 })
-      fetchMocker.mockResponseOnce(JSON.stringify(sampleUser))
-      const result = await ensureWirexUser({ email: 'alice@example.com' })
+      fetchMocker.mockResponseOnce(JSON.stringify(sampleUserApiResponse))
+      const result = await ensureWirexUser(samplePayload)
       expect(result).toEqual(sampleUser)
       expect(fetchMocker.mock.calls.length).toBe(2)
       expect(fetchMocker.mock.calls[1][1]?.method).toBe('POST')
@@ -304,13 +342,13 @@ describe('wirex.ts REST client', () => {
 
   describe('request() error/timeout handling shared by every call above', () => {
     it('throws the body.error message on a non-2xx response', async () => {
-      fetchMocker.mockResponseOnce(JSON.stringify({ error: 'Invalid email' }), { status: 400 })
-      await expect(getWirexUserByEmail('bad')).rejects.toThrow('Invalid email')
+      fetchMocker.mockResponseOnce(JSON.stringify({ error: 'Invalid wallet address' }), { status: 400 })
+      await expect(getWirexUserByAddress('bad')).rejects.toThrow('Invalid wallet address')
     })
 
     it('stringifies the response body when it has no `error` string', async () => {
       fetchMocker.mockResponseOnce(JSON.stringify({ foo: 'bar' }), { status: 500 })
-      await expect(getWirexUserByEmail('alice@example.com')).rejects.toThrow('{"foo":"bar"}')
+      await expect(getWirexUserByAddress('0xabc')).rejects.toThrow('{"foo":"bar"}')
     })
 
     // NOTE: `Request failed: ${status}` is meant as the fallback when the response body carries
@@ -319,10 +357,10 @@ describe('wirex.ts REST client', () => {
     // reachable when the body's `error` field is present but an empty string.
     it('only reaches the generic status fallback when `error` is an empty string', async () => {
       fetchMocker.mockResponseOnce('not json', { status: 500 })
-      await expect(getWirexUserByEmail('alice@example.com')).rejects.toThrow('{}')
+      await expect(getWirexUserByAddress('0xabc')).rejects.toThrow('{}')
 
       fetchMocker.mockResponseOnce(JSON.stringify({ error: '' }), { status: 500 })
-      await expect(getWirexUserByEmail('alice@example.com')).rejects.toThrow('Request failed: 500')
+      await expect(getWirexUserByAddress('0xabc')).rejects.toThrow('Request failed: 500')
     })
 
     it('always sends Content-Type/Accept: application/json', async () => {
