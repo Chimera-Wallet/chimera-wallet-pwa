@@ -44,6 +44,7 @@ import { ConfigContext } from './config'
 import { defaultPassword, getDelegateUrl, isDelegationEnabled, maxPercentage } from '../lib/constants'
 import { setLoadingStatus } from '../lib/loadingStatus'
 import { assetSwapRepository, type WalletAssetSwap } from '../lib/swapRepository'
+import { assetSwapResolver } from '../lib/activity/assetSwapResolver'
 
 
 // Thrown by initWallet when we refuse to boot the service worker because the
@@ -428,7 +429,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.fetchCoins'))
       const vtxos = await getVtxos(swWallet)
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.fetchTrans'))
-      const txs = await getTxHistory(swWallet)
+      const txs = await getTxHistory(swWallet, assetSwaps)
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.updBal'))
       const { total, assets } = await getBalance(swWallet)
       // prefetch asset metadata before triggering re-renders
@@ -464,6 +465,14 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       }
     }
   }
+
+  const assetSwapsRef = useRef(assetSwaps)
+  useEffect(() => {
+    if (assetSwapsRef.current === assetSwaps) return
+    assetSwapsRef.current = assetSwaps
+    if (dataReady) reloadWallet().catch((err) => consoleError(err, 'Error reloading wallet after swap update'))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assetSwaps])
 
   const dismissLoadError = () => {
     setLoadError(null)
@@ -534,6 +543,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         },
         settlementConfig: { vtxoThreshold: wallet.thresholdMs ? Math.floor(wallet.thresholdMs / 1000) : 1 },
       })
+
+      svcWallet.activity.use(assetSwapResolver())
 
       if (!skipMigration) {
         setLoadingStatus(t('lib.wallet.migrateData'))

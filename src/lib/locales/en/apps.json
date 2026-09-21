@@ -211,8 +211,28 @@
         "complKyc": "Complete KYC",
         "kycVerReq": "KYC Verification Required",
         "transReq": "Transactions over {{thresh}}} EUR require identity verification.",
-        "amountsReq": "Amounts over {{thresh}} EUR require KYC verification"
+        "amountsReq": "Amounts over {{thresh}} EUR require KYC verification",
 
+        "unavailable": "Swap unavailable",
+        "unavailableText": "No swap markets are available right now. Please try again later.",
+        "selectFrom": "You pay",
+        "selectTo": "You receive",
+        "changeAsset": "Change",
+        "max": "Max",
+        "rate": "Rate",
+        "fee": "Fee",
+        "reviewSwap": "Review swap",
+        "confirmSwap": "Confirm swap",
+        "confirming": "Confirming...",
+        "swapCompleted": "Swap completed",
+        "swapCompletedText": "You received {{amount}} {{ticker}}.",
+        "insufficientBalance": "Insufficient balance",
+        "noMarket": "No market available for this pair",
+        "quoteUnavailable": "Quote unavailable, try a different amount",
+        "belowMin": "Amount is below the minimum for this pair",
+        "aboveMax": "Amount is above the maximum for this pair",
+        "belowDust": "Amount is below the dust limit",
+        "available": "available"
     },
     "card": {
         "card": "Card Reservation"
