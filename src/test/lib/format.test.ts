@@ -7,6 +7,7 @@ import {
   prettyFiatHide,
   prettyHide,
   fromSatoshis,
+  formatBaseUnits,
   toSatoshis,
   prettyDelta,
   prettyLongText,
@@ -33,6 +34,20 @@ describe('format utilities', () => {
       expect(toSatoshis(0.000001)).toBe(100)
       expect(toSatoshis(0.00000999)).toBe(999)
       expect(toSatoshis(1)).toBe(100_000_000)
+    })
+  })
+
+  describe('formatBaseUnits', () => {
+    it('formats small token amounts without scientific notation', () => {
+      expect(formatBaseUnits('10000000000', 18)).toBe('0.00000001')
+      expect(formatBaseUnits('30000000', 18)).toBe('0.00000000003')
+      expect(formatBaseUnits('1', 18)).toBe('0.000000000000000001')
+    })
+
+    it('trims fractional trailing zeros without changing whole numbers', () => {
+      expect(formatBaseUnits('1230000', 6)).toBe('1.23')
+      expect(formatBaseUnits('1000000', 6)).toBe('1')
+      expect(formatBaseUnits('100', 0)).toBe('100')
     })
   })
 

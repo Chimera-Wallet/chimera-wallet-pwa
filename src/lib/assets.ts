@@ -241,7 +241,8 @@ export const wrappedAmountToNumber = (amount: bigint, decimals: number): number 
   return new Decimal(amount.toString()).div(Decimal.pow(10, decimals)).toNumber()
 }
 
-export const MAX_DECIMALS = 8 // Arbitrary value to allow at least 1 sat/asset
+const DEFAULT_DECIMALS = 8
+export const MAX_DECIMALS = 18
 
 export function isValidAssetId(id: string) {
   return /^[0-9a-fA-F]{68}$/.test(id)
@@ -249,7 +250,7 @@ export function isValidAssetId(id: string) {
 
 export const isValidDecimals = (d: number): boolean => Number.isInteger(d) && d >= 0 && d <= MAX_DECIMALS
 
-export function unitsToCents(units: string, decimals = MAX_DECIMALS): bigint {
+export function unitsToCents(units: string, decimals = DEFAULT_DECIMALS): bigint {
   if (!units || units === '') return BigInt(0)
   if (!isValidDecimals(decimals)) return BigInt(units)
   const [integer, fraction = ''] = units.split('.')
@@ -257,7 +258,7 @@ export function unitsToCents(units: string, decimals = MAX_DECIMALS): bigint {
   return BigInt(integer + paddedFraction) // string + string
 }
 
-export function centsToUnits(cents: bigint, decimals = MAX_DECIMALS): string {
+export function centsToUnits(cents: bigint, decimals = DEFAULT_DECIMALS): string {
   if (!isValidDecimals(decimals)) return cents.toString()
   if (cents < BigInt(Number.MAX_SAFE_INTEGER) && cents > BigInt(Number.MIN_SAFE_INTEGER)) {
     const str = Decimal.div(cents, Decimal.pow(10, decimals)).toFixed(decimals)
@@ -283,14 +284,14 @@ export const prettyAssetAmountHide = (value: bigint, suffix: string): string => 
   return suffix ? `${dots} ${suffix}` : dots
 }
 
-export const prettyAssetNumber = (num?: string | number, maximumFractionDigits = MAX_DECIMALS): string => {
+export const prettyAssetNumber = (num?: string | number, maximumFractionDigits = DEFAULT_DECIMALS): string => {
   if (num === undefined || num === null) return '0'
   if (typeof num === 'number') num = num.toString()
   let [integer, fraction = ''] = num.split('.')
   integer = integer.replace(/[^0-9-]+/g, '') // remove non-digit and non-negative sign characters
   const negative = integer === '-0'
   const paddedFraction = fraction
-    .padEnd(MAX_DECIMALS, '0') // fill with zeros to ensure consistent formatting
+    .padEnd(maximumFractionDigits, '0') // fill with zeros to ensure consistent formatting
     .slice(0, maximumFractionDigits) // slice to the desired number of decimals
     .replace(/0+$/, '') // remove trailing zeros
     .replace(/\.$/, '') // if the number ends with a dot, remove it
