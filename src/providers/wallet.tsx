@@ -64,6 +64,7 @@ import { IndexedDBStorageAdapter } from '@arkade-os/sdk/adapters/indexedDB'
 import { Indexer } from '../lib/indexer'
 import { IndexedDbSwapRepository, migrateToSwapRepository, Network } from '@arkade-os/boltz-swap'
 import { useTranslation } from 'react-i18next'
+import { createRequestGeneration } from '../lib/requestGeneration'
 
 const SERVICE_WORKER_ACTIVATION_TIMEOUT_MS = 5_000
 const MESSAGE_BUS_INIT_TIMEOUT_MS = 30_000
@@ -200,6 +201,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const verifiedAssetsFetched = useRef(false)
   const statusPingInterval = useRef<ReturnType<typeof setInterval>>()
   const reloadTimerRef = useRef<ReturnType<typeof setTimeout>>()
+  const reloadGenerationRef = useRef(createRequestGeneration())
   const swMessageHandlerRef = useRef<(event: MessageEvent) => void>()
   const reinitInProgress = useRef(false)
   const initAbortRef = useRef<AbortController | null>(null)
@@ -423,26 +425,34 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
   const reloadWallet = async (swWallet = svcWallet) => {
     if (!swWallet) return
+    const generation = reloadGenerationRef.current.begin()
     const isFirstLoad = !hasLoadedOnce.current
     if (isFirstLoad) setLoadError(null)
     try {
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.fetchCoins'))
-      const vtxos = await getVtxos(swWallet)
+      const [vtxos, txs, { total, assets }] = await Promise.all([
+        getVtxos(swWallet),
+        getTxHistory(swWallet),
+        getBalance(swWallet),
+      ])
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.fetchTrans'))
       const txs = await getTxHistory(swWallet, assetSwaps)
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.updBal'))
-      const { total, assets } = await getBalance(swWallet)
       // prefetch asset metadata before triggering re-renders
       if (isFirstLoad && assets.length > 0) setLoadingStatus(t('lib.wallet.loadingMeta'))
-      for (const ab of assets) {
+      const metadata = await Promise.all(assets.map(async (ab) => {
         const cached = assetMetadataCache.current.get(ab.assetId)
-        if (cached && Date.now() - cached.cachedAt < ASSET_METADATA_TTL_MS) continue
+        if (cached && Date.now() - cached.cachedAt < ASSET_METADATA_TTL_MS) return
         try {
-          const meta = await swWallet.assetManager.getAssetDetails(ab.assetId)
-          if (meta) setCacheEntry(ab.assetId, meta)
+          return await swWallet.assetManager.getAssetDetails(ab.assetId)
         } catch (err) {
           consoleError(err, `error prefetching metadata for ${ab.assetId}`)
         }
+      }))
+      if (!reloadGenerationRef.current.isCurrent(generation)) return
+      for (let index = 0; index < metadata.length; index++) {
+        const details = metadata[index]
+        if (details) setCacheEntry(assets[index].assetId, details)
       }
       setBalance(total)
       setAssetBalances(assets)
@@ -450,15 +460,13 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         updateConfig({ ...config, apps: { ...config.apps, assets: { enabled: true } } })
       }
       setVtxos(vtxos)
-      // Only replace existing transactions if we received data back.
-      // During an ARK round the indexer can briefly return an empty list
-      // while processing, causing transactions to flicker off then back on.
-      setTxs((prev) => (txs.length > 0 ? txs : prev))
+      setTxs(txs)
       if (!hasLoadedOnce.current) {
         hasLoadedOnce.current = true
         setDataReady(true)
       }
     } catch (err) {
+      if (!reloadGenerationRef.current.isCurrent(generation)) return
       consoleError(err, 'Error reloading wallet')
       if (!hasLoadedOnce.current) {
         setLoadError(t('lib.wallet.unableLoadWall'))
@@ -583,6 +591,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         return false
       }
 
+      // Prevent an in-flight reload for the previous wallet from committing.
+      reloadGenerationRef.current.begin()
       setSvcWallet(svcWallet)
       setVtxoManager(vtxoMgr)
       setInitialized(walletInitialized)

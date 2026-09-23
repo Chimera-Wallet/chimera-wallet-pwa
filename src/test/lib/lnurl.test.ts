@@ -1,7 +1,9 @@
 import fixtures from '../fixtures.json'
 import createFetchMock from 'vitest-fetch-mock'
 import { describe, expect, it, vi } from 'vitest'
-import { checkLnUrlConditions, fetchInvoice, getCallbackUrl, isValidLnUrl } from '../../lib/lnurl'
+import { checkLnUrlConditions, getCallbackUrl, isValidLnUrl, validateLnUrlInvoice } from '../../lib/lnurl'
+import { sha256 } from '@noble/hashes/sha2.js'
+import { hex, utf8 } from '@scure/base'
 
 const fetchMocker = createFetchMock(vi)
 
@@ -31,12 +33,47 @@ describe('lnurl utilities', () => {
     }
   })
 
-  it('should fetch lightning invoice', async () => {
-    for (const test of fixtures.lib.lnurl) {
-      const localMockResponse = { ...mockLNURLResponse, callback: test.callback }
-      fetchMocker.mockResponseOnce(JSON.stringify(localMockResponse))
-      fetchMocker.mockResponseOnce(JSON.stringify({ pr: 'lnbc1234567890' }))
-      expect(await fetchInvoice(test.lnUrlOrAddress, 21, '')).toBe('lnbc1234567890')
-    }
+  it('accepts an invoice bound to the LNURL metadata and requested payment', () => {
+    const metadata = 'mock-metadata'
+    expect(() =>
+      validateLnUrlInvoice(
+        {
+          amountMsats: 21_000,
+          amountSats: 21,
+          descriptionHash: hex.encode(sha256(utf8.decode(metadata))),
+          expiry: 3_600,
+          expiresAt: Math.floor(Date.now() / 1000) + 3_600,
+          network: 'bcrt',
+          note: '',
+          paymentHash: 'a'.repeat(64),
+          timestamp: Math.floor(Date.now() / 1000),
+        },
+        21_000,
+        metadata,
+        'regtest',
+      ),
+    ).not.toThrow()
+  })
+
+  it('rejects a callback invoice for a different amount', () => {
+    const metadata = 'mock-metadata'
+    expect(() =>
+      validateLnUrlInvoice(
+        {
+          amountMsats: 22_000,
+          amountSats: 22,
+          descriptionHash: hex.encode(sha256(utf8.decode(metadata))),
+          expiry: 3_600,
+          expiresAt: Math.floor(Date.now() / 1000) + 3_600,
+          network: 'bcrt',
+          note: '',
+          paymentHash: 'a'.repeat(64),
+          timestamp: Math.floor(Date.now() / 1000),
+        },
+        21_000,
+        metadata,
+        'regtest',
+      ),
+    ).toThrow('different amount')
   })
 })

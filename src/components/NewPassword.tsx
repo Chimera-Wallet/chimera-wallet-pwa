@@ -10,6 +10,9 @@ interface NewPasswordProps {
   onNewPassword: (password: string | null) => void
 }
 
+export const isValidNewPassword = (password: string): boolean =>
+  password.length > 7 && /\d/.test(password) && /\W/.test(password)
+
 export default function NewPassword({ onNewPassword, setLabel }: NewPasswordProps) {
   const [confirm, setConfirm] = useState('')
   const [focus, setFocus] = useState('password')
@@ -18,8 +21,9 @@ export default function NewPassword({ onNewPassword, setLabel }: NewPasswordProp
   const {t} = useTranslation()
 
   useEffect(() => {
-    onNewPassword(password === confirm ? password : null)
+    onNewPassword(password === confirm && isValidNewPassword(password) ? password : null)
     if (!password || password !== confirm) return setLabel(t('components.newPass.passwordMatch'))
+    if (!isValidNewPassword(password)) return setLabel(t('components.newPass.passwordMatch'))
     setLabel(t('components.newPass.save'))
   }, [password, confirm])
 
