@@ -436,7 +436,6 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         getBalance(swWallet),
       ])
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.fetchTrans'))
-      const txs = await getTxHistory(swWallet, assetSwaps)
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.updBal'))
       // prefetch asset metadata before triggering re-renders
       if (isFirstLoad && assets.length > 0) setLoadingStatus(t('lib.wallet.loadingMeta'))
