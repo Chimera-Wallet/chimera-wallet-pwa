@@ -432,7 +432,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.fetchCoins'))
       const [vtxos, txs, { total, assets }] = await Promise.all([
         getVtxos(swWallet),
-        getTxHistory(swWallet),
+        getTxHistory(swWallet, assetSwaps),
         getBalance(swWallet),
       ])
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.fetchTrans'))
