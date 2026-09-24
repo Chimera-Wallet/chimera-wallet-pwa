@@ -11,8 +11,14 @@ exports.getUserToken = getUserToken;
 //     Wirex BaaS call, not a separate Auth0 tenant (the docs' own example
 //     body is just client_id/client_secret/grant_type; no audience).
 //  2. User token ("Login as User"): takes no body, just the partner token
-//     plus a header identifying which user to issue a token for
-//     (X-User-Email / UserId), at POST {WIREX_API_BASE}/api/v1/user/authorize.
+//     plus a header identifying which user to issue a token for — exactly
+//     one of X-User-Wallet / X-User-Email / X-User-Id — and X-Chain-Id, at
+//     POST {WIREX_API_BASE}/api/v1/user/authorize. We identify by wallet
+//     (the EOA/user_address, not the Smart Wallet address) since that's the
+//     one guaranteed to be linked the moment the on-chain account exists —
+//     authorizing by email returned "No wallets found for user" against the
+//     sandbox even for a fully-registered user, presumably because Wirex
+//     hadn't yet linked that wallet to the email lookup path.
 //
 // Neither token is ever returned to the browser — proxy.ts calls these
 // helpers server-side and attaches whichever token an upstream call needs.
@@ -49,11 +55,10 @@ async function getPartnerToken() {
     }
     const body = (await res.json());
     partnerTokenCache = { accessToken: body.access_token, expiresAt: now + body.expires_at * 1000 };
-    // eslint-disable-next-line no-console -- TEMPORARY debug aid, remove before commit
-    console.log('[wirex] partner token:', partnerTokenCache.accessToken);
     return partnerTokenCache.accessToken;
 }
 const USER_IDENTIFIER_HEADER = {
+    wallet: 'X-User-Wallet',
     email: 'X-User-Email',
     userId: 'UserId',
 };
@@ -61,7 +66,7 @@ const USER_IDENTIFIER_HEADER = {
 // already-cached partner token, which keeps this module free of a growing
 // per-user cache to invalidate. Revisit if per-user call volume makes that
 // wasteful.
-async function getUserToken(identifier) {
+async function getUserToken(identifier, chainId) {
     const apiBase = requireEnv('WIREX_API_BASE');
     const partnerToken = await getPartnerToken();
     const headerName = USER_IDENTIFIER_HEADER[identifier.type];
@@ -70,6 +75,7 @@ async function getUserToken(identifier) {
         headers: {
             Authorization: `Bearer ${partnerToken}`,
             Accept: 'application/json',
+            'X-Chain-Id': chainId,
             [headerName]: identifier.value,
         },
     });
@@ -77,7 +83,5 @@ async function getUserToken(identifier) {
         throw new Error(`Wirex user token issuance failed: ${res.status} ${await res.text()}`);
     }
     const body = (await res.json());
-    // eslint-disable-next-line no-console -- TEMPORARY debug aid, remove before commit
-    console.log('[wirex] user token:', body.access_token);
     return body.access_token;
 }

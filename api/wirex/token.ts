@@ -7,8 +7,7 @@
 //     Wirex BaaS call, not a separate Auth0 tenant (the docs' own example
 //     body is just client_id/client_secret/grant_type; no audience).
 //  2. User token ("Login as User"): takes no body, just the partner token
-//     plus a header identifying which user to issue a token for
-//     (X-User-Email / UserId), at POST {WIREX_API_BASE}/api/v1/user/authorize.
+//     plus a header identifying which user to issue a token for.
 //
 // Neither token is ever returned to the browser — proxy.ts calls these
 // helpers server-side and attaches whichever token an upstream call needs.
@@ -31,10 +30,6 @@ let partnerTokenCache: CachedToken | null = null
 
 interface WirexTokenResponse {
   access_token: string
-  // Confirmed against docs.wirexapp.com/docs/retail-authentication: the field
-  // is named expires_at, not the OAuth2-conventional expires_in — but it
-  // still holds a duration in seconds, not an absolute timestamp (the docs'
-  // own example: "48 hours (172800 seconds)").
   expires_at: number // seconds
 }
 
@@ -68,9 +63,13 @@ export async function getPartnerToken(): Promise<string> {
   return partnerTokenCache.accessToken
 }
 
-export type WirexUserIdentifier = { type: 'email'; value: string } | { type: 'userId'; value: string }
+export type WirexUserIdentifier =
+  | { type: 'wallet'; value: string }
+  | { type: 'email'; value: string }
+  | { type: 'userId'; value: string }
 
 const USER_IDENTIFIER_HEADER: Record<WirexUserIdentifier['type'], string> = {
+  wallet: 'X-User-Wallet',
   email: 'X-User-Email',
   userId: 'UserId',
 }
@@ -79,7 +78,7 @@ const USER_IDENTIFIER_HEADER: Record<WirexUserIdentifier['type'], string> = {
 // already-cached partner token, which keeps this module free of a growing
 // per-user cache to invalidate. Revisit if per-user call volume makes that
 // wasteful.
-export async function getUserToken(identifier: WirexUserIdentifier): Promise<string> {
+export async function getUserToken(identifier: WirexUserIdentifier, chainId: string): Promise<string> {
   const apiBase = requireEnv('WIREX_API_BASE')
   const partnerToken = await getPartnerToken()
   const headerName = USER_IDENTIFIER_HEADER[identifier.type]
@@ -89,6 +88,7 @@ export async function getUserToken(identifier: WirexUserIdentifier): Promise<str
     headers: {
       Authorization: `Bearer ${partnerToken}`,
       Accept: 'application/json',
+      'X-Chain-Id': chainId,
       [headerName]: identifier.value,
     },
   })
@@ -98,7 +98,5 @@ export async function getUserToken(identifier: WirexUserIdentifier): Promise<str
   }
 
   const body = (await res.json()) as WirexTokenResponse
-  // eslint-disable-next-line no-console -- TEMPORARY debug aid, remove before commit
-  console.log('[wirex] user token:', body.access_token)
   return body.access_token
 }

@@ -4,12 +4,14 @@ import {
   createWirexUser,
   ensureWirexUser,
   getWirexWallet,
+  getWirexVerificationLink,
   getWirexCards,
   issueVirtualCard,
   getWirexCardLimits,
   setWirexCardLimits,
   estimateCardTransfer,
   transferToCard,
+  canIssueVirtualCard,
   type WirexUser,
   type WirexWallet,
   type WirexCard,
@@ -29,7 +31,6 @@ const fetchMocker = {
 }
 
 const PROXY_BASE = '/api/wirex'
-const KYC_ACCESS_TOKEN = 'kyc-access-token-1'
 
 // GET/POST /api/v2/user's actual response shape (confirmed live): email and
 // name live under `profile`, not top-level. wirex.ts's toWirexUser()
@@ -83,11 +84,6 @@ describe('wirex.ts REST client', () => {
     email: 'alice@example.com',
     firstName: 'Alice',
     lastName: 'Smith',
-    dateOfBirth: '1990-01-15',
-    phoneNumber: '+14155551234',
-    nationality: 'US',
-    residenceAddress: { line1: '123 Main St', city: 'San Francisco', postCode: '94105', country: 'US' },
-    isPep: false,
   }
 
   describe('user lookup/creation — docs.wirexapp.com/reference/get_api-v2-user and post_api-v2-user', () => {
@@ -99,6 +95,19 @@ describe('wirex.ts REST client', () => {
       expect(url).toBe(`${PROXY_BASE}/api/v2/user`)
       expect(init?.method).toBe('GET')
       expect(lastCallHeaders().get('X-User-Wallet')).toBe('0xabc')
+    })
+
+    it('maps verification_status onto the flat WirexUser as verificationStatus', async () => {
+      fetchMocker.mockResponseOnce(JSON.stringify({ ...sampleUserApiResponse, verification_status: 'Approved' }))
+      const result = await getWirexUserByAddress('0xabc')
+      expect(result?.verificationStatus).toBe('Approved')
+    })
+
+    it('passes the capabilities array through onto the flat WirexUser', async () => {
+      const capabilities = [{ type: 'VisaVirtualCard', status: 'Active' as const }]
+      fetchMocker.mockResponseOnce(JSON.stringify({ ...sampleUserApiResponse, capabilities }))
+      const result = await getWirexUserByAddress('0xabc')
+      expect(result?.capabilities).toEqual(capabilities)
     })
 
     it('returns null when no user exists yet (404)', async () => {
@@ -130,16 +139,11 @@ describe('wirex.ts REST client', () => {
       expect(lastCallBody()).toEqual({
         user_address: '0xabc',
         initial_data: {
-          is_pep: false,
           profile: {
             first_name: 'Alice',
             last_name: 'Smith',
             email: 'alice@example.com',
-            date_of_birth: '1990-01-15',
-            phone_number: '+14155551234',
-            nationality: 'US',
           },
-          residence_address: { line1: '123 Main St', city: 'San Francisco', post_code: '94105', country: 'US' },
         },
       })
     })
@@ -162,40 +166,55 @@ describe('wirex.ts REST client', () => {
   })
 
   describe('wallet — docs.wirexapp.com/reference/get_api-v1-wallet', () => {
-    it('looks up the wallet via GET /api/v1/wallet with X-Wirex-User-Email and X-Kyc-Access-Token', async () => {
+    it('looks up the wallet via GET /api/v1/wallet with X-Wirex-User-Wallet', async () => {
       fetchMocker.mockResponseOnce(JSON.stringify(sampleWallet))
-      const result = await getWirexWallet('alice@example.com', KYC_ACCESS_TOKEN)
+      const result = await getWirexWallet('0xabc')
       expect(result).toEqual(sampleWallet)
       const [url, init] = lastCall()
       expect(url).toBe(`${PROXY_BASE}/api/v1/wallet`)
       expect(init?.method).toBe('GET')
-      expect(lastCallHeaders().get('X-Wirex-User-Email')).toBe('alice@example.com')
-      expect(lastCallHeaders().get('X-Kyc-Access-Token')).toBe(KYC_ACCESS_TOKEN)
+      expect(lastCallHeaders().get('X-Wirex-User-Wallet')).toBe('0xabc')
+    })
+  })
+
+  describe('verification link — docs.wirexapp.com/docs/retail-kyc-hosted', () => {
+    it('fetches a hosted verification link via POST /api/v1/user/verification-link', async () => {
+      fetchMocker.mockResponseOnce(JSON.stringify({ url: 'https://verify.sumsub.com/abc' }))
+      const result = await getWirexVerificationLink('0xabc')
+      expect(result).toBe('https://verify.sumsub.com/abc')
+      const [url, init] = lastCall()
+      expect(url).toBe(`${PROXY_BASE}/api/v1/user/verification-link`)
+      expect(init?.method).toBe('POST')
+      expect(lastCallHeaders().get('X-Wirex-User-Wallet')).toBe('0xabc')
+    })
+
+    it('throws when Wirex does not return a url', async () => {
+      fetchMocker.mockResponseOnce(JSON.stringify({}))
+      await expect(getWirexVerificationLink('0xabc')).rejects.toThrow('Wirex did not return a verification link')
     })
   })
 
   describe('cards list — docs.wirexapp.com/reference/get_api-v1-cards', () => {
     it('lists cards via GET /api/v1/cards and reads the `data` envelope', async () => {
       fetchMocker.mockResponseOnce(JSON.stringify({ data: [sampleCard] }))
-      const result = await getWirexCards('alice@example.com', KYC_ACCESS_TOKEN)
+      const result = await getWirexCards('0xabc')
       expect(result).toEqual({ data: [sampleCard] })
       const [url, init] = lastCall()
       expect(url).toBe(`${PROXY_BASE}/api/v1/cards`)
       expect(init?.method).toBe('GET')
-      expect(lastCallHeaders().get('X-Wirex-User-Email')).toBe('alice@example.com')
-      expect(lastCallHeaders().get('X-Kyc-Access-Token')).toBe(KYC_ACCESS_TOKEN)
+      expect(lastCallHeaders().get('X-Wirex-User-Wallet')).toBe('0xabc')
     })
 
     it('encodes page_number/page_size/sort as query params', async () => {
       fetchMocker.mockResponseOnce(JSON.stringify({ data: [] }))
-      await getWirexCards('alice@example.com', KYC_ACCESS_TOKEN, { pageNumber: 2, pageSize: 10, sort: 'usage' })
+      await getWirexCards('0xabc', { pageNumber: 2, pageSize: 10, sort: 'usage' })
       const [url] = lastCall()
       expect(url).toBe(`${PROXY_BASE}/api/v1/cards?page_number=2&page_size=10&sort=usage`)
     })
 
     it('omits the query string entirely when no options are given', async () => {
       fetchMocker.mockResponseOnce(JSON.stringify({ data: [] }))
-      await getWirexCards('alice@example.com', KYC_ACCESS_TOKEN, {})
+      await getWirexCards('0xabc', {})
       const [url] = lastCall()
       expect(url).toBe(`${PROXY_BASE}/api/v1/cards`)
     })
@@ -204,26 +223,25 @@ describe('wirex.ts REST client', () => {
   describe('virtual card issuance — docs.wirexapp.com/reference/post_api-v1-cards-virtual', () => {
     it('issues a virtual card via POST /api/v1/cards/virtual with only the fields given', async () => {
       fetchMocker.mockResponseOnce(JSON.stringify({ id: 'card-1' }))
-      const result = await issueVirtualCard({ email: 'alice@example.com', kycAccessToken: KYC_ACCESS_TOKEN, cardName: 'My Card' })
+      const result = await issueVirtualCard({ userAddress: '0xabc', cardName: 'My Card' })
       expect(result).toEqual({ id: 'card-1' })
       const [url, init] = lastCall()
       expect(url).toBe(`${PROXY_BASE}/api/v1/cards/virtual`)
       expect(init?.method).toBe('POST')
-      expect(lastCallHeaders().get('X-Wirex-User-Email')).toBe('alice@example.com')
+      expect(lastCallHeaders().get('X-Wirex-User-Wallet')).toBe('0xabc')
       expect(lastCallBody()).toEqual({ card_name: 'My Card' })
     })
 
     it('sends an empty body when no optional fields are given', async () => {
       fetchMocker.mockResponseOnce(JSON.stringify({ id: 'card-1' }))
-      await issueVirtualCard({ email: 'alice@example.com', kycAccessToken: KYC_ACCESS_TOKEN })
+      await issueVirtualCard({ userAddress: '0xabc' })
       expect(lastCallBody()).toEqual({})
     })
 
     it('translates all optional fields to their documented snake_case names', async () => {
       fetchMocker.mockResponseOnce(JSON.stringify({ id: 'card-1' }))
       await issueVirtualCard({
-        email: 'alice@example.com',
-        kycAccessToken: KYC_ACCESS_TOKEN,
+        userAddress: '0xabc',
         cardName: 'My Card',
         nameOnCard: 'ALICE SMITH',
         paymentTransactionHash: '0xdeadbeef',
@@ -290,8 +308,7 @@ describe('wirex.ts REST client', () => {
       }
       fetchMocker.mockResponseOnce(JSON.stringify(estimateResponse))
       const result = await estimateCardTransfer({
-        email: 'alice@example.com',
-        kycAccessToken: KYC_ACCESS_TOKEN,
+        userAddress: '0xabc',
         cardId: 'card-1',
         amount: '100',
         currency: 'USD',
@@ -301,7 +318,7 @@ describe('wirex.ts REST client', () => {
       const [url, init] = lastCall()
       expect(url).toBe(`${PROXY_BASE}/api/v1/cards/transfer/estimate`)
       expect(init?.method).toBe('POST')
-      expect(lastCallHeaders().get('X-Wirex-User-Email')).toBe('alice@example.com')
+      expect(lastCallHeaders().get('X-Wirex-User-Wallet')).toBe('0xabc')
       expect(lastCallBody()).toEqual({
         amount: 100,
         currency: 'USD',
@@ -315,8 +332,7 @@ describe('wirex.ts REST client', () => {
         JSON.stringify({ amount: 1, currency: 'USD', estimation_id: 'e', expires_at: 1, fee_amount: 0, estimated_amounts: [] }),
       )
       await estimateCardTransfer({
-        email: 'alice@example.com',
-        kycAccessToken: KYC_ACCESS_TOKEN,
+        userAddress: '0xabc',
         cardId: 'card-1',
         amount: '1',
         tokenAddresses: ['0xtoken1'],
@@ -327,8 +343,7 @@ describe('wirex.ts REST client', () => {
     it('does NOT put cardId in the /api/v1/cards/transfer execute path (unlike the deprecated withdrawal flow)', async () => {
       fetchMocker.mockResponseOnce(JSON.stringify({ id: 'tx-1' }))
       const result = await transferToCard({
-        email: 'alice@example.com',
-        kycAccessToken: KYC_ACCESS_TOKEN,
+        userAddress: '0xabc',
         estimationId: 'est-1',
         tokenAddress: '0xtoken1',
       })
@@ -365,10 +380,31 @@ describe('wirex.ts REST client', () => {
 
     it('always sends Content-Type/Accept: application/json', async () => {
       fetchMocker.mockResponseOnce(JSON.stringify(sampleWallet))
-      await getWirexWallet('alice@example.com', KYC_ACCESS_TOKEN)
+      await getWirexWallet('0xabc')
       const headers = lastCallHeaders()
       expect(headers.get('Content-Type')).toBe('application/json')
       expect(headers.get('Accept')).toBe('application/json')
     })
+  })
+})
+
+describe('canIssueVirtualCard — docs.wirexapp.com/docs/retail-capabilities and retail-card-issuance', () => {
+  it('returns true when the VisaVirtualCard capability is Active', () => {
+    const user = { ...sampleUser, capabilities: [{ type: 'VisaVirtualCard', status: 'Active' as const }] }
+    expect(canIssueVirtualCard(user)).toBe(true)
+  })
+
+  it('returns false when the VisaVirtualCard capability is not Active', () => {
+    const user = { ...sampleUser, capabilities: [{ type: 'VisaVirtualCard', status: 'NotFulfilled' as const }] }
+    expect(canIssueVirtualCard(user)).toBe(false)
+  })
+
+  it('returns false when the capability is missing from the array', () => {
+    const user = { ...sampleUser, capabilities: [{ type: 'VisaPlasticCard', status: 'Active' as const }] }
+    expect(canIssueVirtualCard(user)).toBe(false)
+  })
+
+  it('returns false when the user has no capabilities array at all', () => {
+    expect(canIssueVirtualCard(sampleUser)).toBe(false)
   })
 })

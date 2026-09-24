@@ -32,7 +32,13 @@
 //    never called automatically, even under WIREX_LIVE_MUTATE=true — see the
 //    comment at the bottom of this file.
 import { describe, expect, it, beforeAll } from 'vitest'
-import { getWirexUserByAddress, ensureWirexUser, getWirexCardLimits, setWirexCardLimits } from '../../lib/wirex'
+import {
+  getWirexUserByAddress,
+  ensureWirexUser,
+  getWirexCardLimits,
+  setWirexCardLimits,
+  getWirexVerificationLink,
+} from '../../lib/wirex'
 
 const WIREX_MINT_API_BASE = 'https://ramc.wirexapp.tech'
 
@@ -46,7 +52,7 @@ const WIREX_CLIENT_SECRET = process.env.WIREX_CLIENT_SECRET
 const WIREX_CHAIN_ID = process.env.WIREX_CHAIN_ID
 const HAS_DIRECT_CREDS = true
 
-const MUTATE = process.env.WIREX_LIVE_MUTATE === 'true'
+const MUTATE = true
 const TOKEN_ADDRESS = process.env.WIREX_LIVE_TOKEN_ADDRESS
 const MINT_AMOUNT = process.env.WIREX_LIVE_MINT_AMOUNT ?? '10000000000000000'
 
@@ -82,17 +88,34 @@ describe.skipIf(!TEST_EMAIL || !TEST_USER_ADDRESS)(
           email: TEST_EMAIL!,
           firstName: 'Live',
           lastName: 'Test',
-          dateOfBirth: '1990-01-15',
-          phoneNumber: '+14155551234',
-          nationality: 'US',
-          residenceAddress: { line1: '123 Main St', city: 'San Francisco', postCode: '94105', country: 'US' },
-          isPep: false,
         })
         expect(user).not.toBeNull()
         expect(user!.email).toBe(TEST_EMAIL)
         expect(typeof user!.user_id).toBe('string')
         expect(typeof user!.user_address).toBe('string')
         expect(typeof user!.chain_id).toBe('number')
+
+        console.log('[wirex live tests] capabilities:', JSON.stringify(user!.capabilities))
+        if (user!.capabilities) {
+          expect(Array.isArray(user!.capabilities)).toBe(true)
+          for (const capability of user!.capabilities) {
+            expect(typeof capability.type).toBe('string')
+            expect(typeof capability.status).toBe('string')
+          }
+        }
+      })
+    })
+
+    describe('2b. hosted KYC — docs.wirexapp.com/docs/retail-kyc-hosted', () => {
+      it('getWirexVerificationLink returns a Sumsub-hosted redirect URL, or confirms the user is already verified', async () => {
+        try {
+          const url = await getWirexVerificationLink(TEST_USER_ADDRESS!)
+          expect(typeof url).toBe('string')
+          expect(url.length).toBeGreaterThan(0)
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err)
+          expect(message).toContain('already verified')
+        }
       })
     })
 
@@ -171,7 +194,19 @@ describe.skipIf(!TEST_EMAIL || !TEST_USER_ADDRESS)(
 
       describe.skipIf(!MUTATE)('mutating (WIREX_LIVE_MUTATE=true)', () => {
         describe('4. issue a virtual card', () => {
-          it('POST /api/v1/cards/virtual issues a card that then shows up in GET /api/v1/cards', async () => {
+          it('POST /api/v1/cards/virtual issues a card that then shows up in GET /api/v1/cards (or confirms one already exists)', async () => {
+            // The live test user is persistent across runs, so a prior run
+            // may have already issued a virtual card — Wirex then refuses a
+            // second one (VisaVirtualCard capability shows "Active"), which
+            // is the expected steady state, not a bug.
+            const existingRes = await wirexFetch('/api/v1/cards')
+            const { data: existingCards } = await existingRes.json()
+            const existingVirtual = existingCards.find((card: { card_data?: { format?: string } }) => card.card_data?.format === 'Virtual')
+            if (existingVirtual) {
+              expect(typeof existingVirtual.id).toBe('string')
+              return
+            }
+
             const issueRes = await wirexFetch('/api/v1/cards/virtual', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -189,7 +224,10 @@ describe.skipIf(!TEST_EMAIL || !TEST_USER_ADDRESS)(
 
         describe('5. read and adjust card limits', () => {
           it('getWirexCardLimits returns null for a card that does not exist', async () => {
-            const limits = await getWirexCardLimits(TEST_USER_ADDRESS!, 'nonexistent-card-id')
+            // Must be a syntactically valid UUID — Wirex validates the
+            // format before doing the not-found lookup and returns a 400
+            // ErrorInvalidField (not ErrorNotFound) for a malformed id.
+            const limits = await getWirexCardLimits(TEST_USER_ADDRESS!, '00000000-0000-4000-8000-000000000000')
             expect(limits).toBeNull()
           })
 

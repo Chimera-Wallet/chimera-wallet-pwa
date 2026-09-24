@@ -1,21 +1,26 @@
 /**
  * Wirex card/wallet onboarding state.
  *
- * KYC tbd. Currently it acts as if we will use IDFlow but there may be 
- * complications as wirex needs to do a "full audit"
- *
+ * KYC is Wirex's own hosted flow (see docs.wirexapp.com/docs/retail-kyc-hosted):
+ * a user is registered with minimal data (see WirexProfileInput below),
+ * startWirexVerification() opens a Sumsub-hosted redirect for them to
+ * complete verification, and refreshWirexUser()/wirexVerificationStatus
+ * reflect Wirex's own KYC state once they return.
  */
 
 import { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react'
-import { fetchKycUserProfile, getValidAccessToken, getStoredKycStatus } from '../lib/kyc'
 import {
+  canIssueVirtualCard as checkCanIssueVirtualCard,
   ensureWirexUser,
   getWirexCards,
+  getWirexUserByAddress,
+  getWirexVerificationLink,
   getWirexWallet,
   issueVirtualCard,
+  VIRTUAL_CARD_CAPABILITY,
   WirexCard,
-  WirexResidenceAddress,
   WirexUser,
+  WirexVerificationStatus,
   WirexWallet,
 } from '../lib/wirex'
 import { deployWirexKernelAccount, getWirexEvmAddress } from '../lib/wirexWallet'
@@ -25,24 +30,19 @@ export const isWirexEnabled = (): boolean => import.meta.env.VITE_WIREX_ENABLED 
 const WALLET_INDEXING_POLL_INTERVAL_MS = 30_000
 const WALLET_INDEXING_MAX_ATTEMPTS = 10
 
-/**
- * Compliance fields Wirex's POST /api/v2/user requires (see ../lib/wirex.ts's
- * CreateWirexUserPayload) that IDFlow's profile does not expose today. The
- * caller must collect these itself until IDFlow exposes them or Wirex
- * confirms a reduced set is acceptable — see ../lib/wirex.ts's file comment.
- */
-export interface WirexOnboardingInput {
-  dateOfBirth: string
-  phoneNumber: string
-  nationality: string
-  residenceAddress: WirexResidenceAddress
-  isPep: boolean
+/** Minimal contact info to register a Wirex user — collected directly (not sourced from any other session), right before starting Wirex's hosted KYC. */
+export interface WirexProfileInput {
+  email: string
+  firstName: string
+  lastName: string
 }
 
 type WirexContextProps = {
   wirexUser: WirexUser | null
   wirexUserLoading: boolean
   wirexUserError: string | null
+  /** Wirex's own KYC verification status for this user, if known. */
+  wirexVerificationStatus: WirexVerificationStatus | undefined
   wirexWallet: WirexWallet | null
   wirexWalletLoading: boolean
   wirexWalletError: string | null
@@ -50,12 +50,18 @@ type WirexContextProps = {
   wirexWalletDeployPending: boolean
   /** True once polling gave up after WALLET_INDEXING_MAX_ATTEMPTS without the wallet appearing. */
   wirexWalletDeployTimedOut: boolean
-  deployWirexWallet: (password: string, onboarding?: WirexOnboardingInput) => Promise<void>
+  deployWirexWallet: (password: string, profile?: WirexProfileInput) => Promise<void>
+  /** Opens Wirex's hosted (Sumsub) KYC page for this user in a new tab. */
+  startWirexVerification: () => Promise<void>
+  /** Re-fetches this user's record (e.g. after returning from hosted KYC) to pick up an updated verification status. */
+  refreshWirexUser: () => Promise<void>
   wirexCards: WirexCard[]
   wirexCardsLoading: boolean
   wirexCardsError: string | null
   refreshWirexCards: () => void
-  /** Only virtual card issuance is implemented **/
+  /** Whether the current Wirex user's VisaVirtualCard capability is Active — see canIssueVirtualCard in ../lib/wirex.ts. */
+  canIssueVirtualCard: boolean
+  /** Only virtual card issuance is implemented — physical/metal is planned for next year, see ../lib/wirex.ts. */
   issueWirexCard: () => Promise<void>
 }
 
@@ -63,16 +69,20 @@ export const WirexContext = createContext<WirexContextProps>({
   wirexUser: null,
   wirexUserLoading: false,
   wirexUserError: null,
+  wirexVerificationStatus: undefined,
   wirexWallet: null,
   wirexWalletLoading: false,
   wirexWalletError: null,
   wirexWalletDeployPending: false,
   wirexWalletDeployTimedOut: false,
   deployWirexWallet: async () => {},
+  startWirexVerification: async () => {},
+  refreshWirexUser: async () => {},
   wirexCards: [],
   wirexCardsLoading: false,
   wirexCardsError: null,
   refreshWirexCards: () => {},
+  canIssueVirtualCard: false,
   issueWirexCard: async () => {},
 })
 
@@ -106,13 +116,7 @@ export const WirexProvider = ({ children }: { children: ReactNode }) => {
     setWirexWalletLoading(true)
     setWirexWalletError(null)
 
-    const run = async () => {
-      const kycAccessToken = await getValidAccessToken()
-      if (!kycAccessToken) throw new Error('No active KYC session')
-      return getWirexWallet(wirexUser.email, kycAccessToken)
-    }
-
-    run()
+    getWirexWallet(wirexUser.user_address)
       .then((wallet) => {
         if (!cancelled) setWirexWallet(wallet)
       })
@@ -139,9 +143,8 @@ export const WirexProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => stopWalletIndexingPoll, [])
 
-  const deployWirexWallet = async (password: string, onboarding?: WirexOnboardingInput): Promise<void> => {
+  const deployWirexWallet = async (password: string, profile?: WirexProfileInput): Promise<void> => {
     if (!isWirexEnabled()) throw new Error('Wirex is not enabled')
-    if (getStoredKycStatus() !== 'confirmed') throw new Error('KYC has not been confirmed yet')
 
     stopWalletIndexingPoll()
     setWirexWalletLoading(true)
@@ -154,25 +157,13 @@ export const WirexProvider = ({ children }: { children: ReactNode }) => {
         setWirexUserLoading(true)
         setWirexUserError(null)
         try {
+          if (!profile) throw new Error('Missing profile info required to create a Wirex user')
           const userAddress = await getWirexEvmAddress(password)
-          const accessToken = await getValidAccessToken()
-          if (!accessToken) throw new Error('No active KYC session')
-          const profile = await fetchKycUserProfile(accessToken)
-          if (!profile.email || !profile.firstName || !profile.lastName) {
-            throw new Error('IDFlow profile is missing required name/email fields')
-          }
-          if (!onboarding) throw new Error('Missing compliance data required to create a Wirex user')
-
           user = await ensureWirexUser({
             userAddress,
             email: profile.email,
             firstName: profile.firstName,
             lastName: profile.lastName,
-            dateOfBirth: onboarding.dateOfBirth,
-            phoneNumber: onboarding.phoneNumber,
-            nationality: onboarding.nationality,
-            residenceAddress: onboarding.residenceAddress,
-            isPep: onboarding.isPep,
           })
           setWirexUser(user)
         } catch (err) {
@@ -184,9 +175,7 @@ export const WirexProvider = ({ children }: { children: ReactNode }) => {
       }
       if (!user) throw new Error('No Wirex user to deploy a wallet for')
 
-      const kycAccessToken = await getValidAccessToken()
-      if (!kycAccessToken) throw new Error('No active KYC session')
-      const userEmail = user.email
+      const userAddress = user.user_address
       setWirexWalletDeployPending(true)
       const wallet = await new Promise<WirexWallet | null>((resolve, reject) => {
         let attempts = 0
@@ -194,7 +183,7 @@ export const WirexProvider = ({ children }: { children: ReactNode }) => {
         const poll = async () => {
           attempts += 1
           try {
-            const result = await getWirexWallet(userEmail, kycAccessToken)
+            const result = await getWirexWallet(userAddress)
             if (result) {
               stopWalletIndexingPoll()
               resolve(result)
@@ -228,6 +217,27 @@ export const WirexProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  const startWirexVerification = async (): Promise<void> => {
+    if (!wirexUser) throw new Error('No Wirex user to verify')
+    const url = await getWirexVerificationLink(wirexUser.user_address)
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
+  const refreshWirexUser = async (): Promise<void> => {
+    if (!wirexUser) return
+    setWirexUserLoading(true)
+    setWirexUserError(null)
+    try {
+      const user = await getWirexUserByAddress(wirexUser.user_address)
+      setWirexUser(user)
+    } catch (err) {
+      setWirexUserError(err instanceof Error ? err.message : 'Failed to refresh Wirex user')
+      throw err
+    } finally {
+      setWirexUserLoading(false)
+    }
+  }
+
   // Card list lookup runs once a Wirex user exists, same as wallet lookup.
   useEffect(() => {
     if (!wirexUser) {
@@ -239,13 +249,7 @@ export const WirexProvider = ({ children }: { children: ReactNode }) => {
     setWirexCardsLoading(true)
     setWirexCardsError(null)
 
-    const run = async () => {
-      const kycAccessToken = await getValidAccessToken()
-      if (!kycAccessToken) throw new Error('No active KYC session')
-      return getWirexCards(wirexUser.email, kycAccessToken)
-    }
-
-    run()
+    getWirexCards(wirexUser.user_address)
       .then((result) => {
         if (!cancelled) setWirexCards(result?.data ?? [])
       })
@@ -269,11 +273,13 @@ export const WirexProvider = ({ children }: { children: ReactNode }) => {
     setWirexCardsLoading(true)
     setWirexCardsError(null)
     try {
-      const kycAccessToken = await getValidAccessToken()
-      if (!kycAccessToken) throw new Error('No active KYC session')
-      // Issuance only returns the new card's id, not its full record — refresh
-      // the list to pick up the newly issued card's full details.
-      await issueVirtualCard({ email: wirexUser.email, kycAccessToken })
+      if (!checkCanIssueVirtualCard(wirexUser)) {
+        const reason = wirexUser.capabilities?.find((c) => c.type === VIRTUAL_CARD_CAPABILITY)?.status_reason
+        throw new Error(reason ?? 'Virtual card issuance is not available for this account yet')
+      }
+
+  
+      await issueVirtualCard({ userAddress: wirexUser.user_address })
       refreshWirexCards()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to issue Wirex card'
@@ -290,16 +296,20 @@ export const WirexProvider = ({ children }: { children: ReactNode }) => {
         wirexUser,
         wirexUserLoading,
         wirexUserError,
+        wirexVerificationStatus: wirexUser?.verificationStatus,
         wirexWallet,
         wirexWalletLoading,
         wirexWalletError,
         wirexWalletDeployPending,
         wirexWalletDeployTimedOut,
         deployWirexWallet,
+        startWirexVerification,
+        refreshWirexUser,
         wirexCards,
         wirexCardsLoading,
         wirexCardsError,
         refreshWirexCards,
+        canIssueVirtualCard: wirexUser ? checkCanIssueVirtualCard(wirexUser) : false,
         issueWirexCard,
       }}
     >

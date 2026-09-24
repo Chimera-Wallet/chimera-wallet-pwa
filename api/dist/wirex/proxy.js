@@ -5,20 +5,17 @@
 // holds a Wirex client_secret or bearer token itself.
 //
 // The SPA calls /api/wirex/<wirex path>, optionally sending
-// X-Wirex-User-Email to indicate "act as this user" (Wirex's "Login as
-// User" flow, see token.ts::getUserToken) — that header is consumed here and
-// never forwarded upstream. Without it, calls run under the partner token
-// (e.g. user lookup/creation, which precede a user having any token of
-// their own).
+// X-Wirex-User-Wallet (the EOA/user_address) to indicate "act as this user"
+// (Wirex's "Login as User" flow, see token.ts::getUserToken) — that header is
+// consumed here and never forwarded upstream. Without it, calls run under the
+// partner token (e.g. user lookup/creation, which precede a user having any
+// token of their own).
 //
-// X-Wirex-User-Email is a claim, not proof — a caller could otherwise ask us
-// to mint a "Login as User" token for any email. Since this function has no
-// session of its own, the caller must also send X-Kyc-Access-Token, the
-// IDFlow bearer token the SPA already holds (see ../../src/lib/kyc.ts). We
-// verify it against IDFlow's own GET /api/Entity/me and only mint the Wirex
-// token if the email IDFlow returns matches the claimed one — see
-// ./auth.ts::resolveBearerToken (shared with webhook.ts's auth check, and
-// kept free of @azure/functions so it's unit-testable on its own).
+// X-Wirex-User-Wallet is trusted as a claim, not verified proof of ownership
+// — the app no longer has a KYC session of its own to check it against (see
+// ./auth.ts::resolveBearerToken, shared with webhook.ts's auth check, and
+// kept free of @azure/functions so it's unit-testable on its own). This is a
+// deliberately reduced trust model; revisit if a stronger guarantee is needed.
 //
 // Route note: this is registered on the wildcard `wirex/{*restOfPath}` while
 // webhook.ts registers the more specific `wirex/webhook/{secret}`. Azure
@@ -38,7 +35,7 @@ async function wirexProxy(request, context) {
     }
     let token;
     try {
-        token = await (0, auth_1.resolveBearerToken)(request.headers.get(auth_1.USER_EMAIL_HEADER), request.headers.get(auth_1.KYC_TOKEN_HEADER), process.env.IDFLOW_API_URL);
+        token = await (0, auth_1.resolveBearerToken)(request.headers.get(auth_1.USER_WALLET_HEADER), chainId);
     }
     catch (err) {
         if (err instanceof auth_1.ProxyAuthError) {

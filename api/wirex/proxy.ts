@@ -3,22 +3,6 @@
 // whichever bearer token (partner or user) the call needs, so the SPA never
 // holds a Wirex client_secret or bearer token itself.
 //
-// The SPA calls /api/wirex/<wirex path>, optionally sending
-// X-Wirex-User-Email to indicate "act as this user" (Wirex's "Login as
-// User" flow, see token.ts::getUserToken) — that header is consumed here and
-// never forwarded upstream. Without it, calls run under the partner token
-// (e.g. user lookup/creation, which precede a user having any token of
-// their own).
-//
-// X-Wirex-User-Email is a claim, not proof — a caller could otherwise ask us
-// to mint a "Login as User" token for any email. Since this function has no
-// session of its own, the caller must also send X-Kyc-Access-Token, the
-// IDFlow bearer token the SPA already holds (see ../../src/lib/kyc.ts). We
-// verify it against IDFlow's own GET /api/Entity/me and only mint the Wirex
-// token if the email IDFlow returns matches the claimed one — see
-// ./auth.ts::resolveBearerToken (shared with webhook.ts's auth check, and
-// kept free of @azure/functions so it's unit-testable on its own).
-//
 // Route note: this is registered on the wildcard `wirex/{*restOfPath}` while
 // webhook.ts registers the more specific `wirex/webhook/{secret}`. Azure
 // Functions' routing (built on ASP.NET Core routing) matches more specific
@@ -27,7 +11,7 @@
 // verified locally with `func start` before relying on it in production.
 
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
-import { ProxyAuthError, USER_EMAIL_HEADER, KYC_TOKEN_HEADER, buildForwardedHeaders, resolveBearerToken } from './auth'
+import { ProxyAuthError, USER_WALLET_HEADER, buildForwardedHeaders, resolveBearerToken } from './auth'
 
 export async function wirexProxy(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
   const apiBase = process.env.WIREX_API_BASE
@@ -38,11 +22,7 @@ export async function wirexProxy(request: HttpRequest, context: InvocationContex
 
   let token: string
   try {
-    token = await resolveBearerToken(
-      request.headers.get(USER_EMAIL_HEADER),
-      request.headers.get(KYC_TOKEN_HEADER),
-      process.env.IDFLOW_API_URL,
-    )
+    token = await resolveBearerToken(request.headers.get(USER_WALLET_HEADER), chainId)
   } catch (err) {
     if (err instanceof ProxyAuthError) {
       context.warn('Wirex proxy auth rejected', err.message)

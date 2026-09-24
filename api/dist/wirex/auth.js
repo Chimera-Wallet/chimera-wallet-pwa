@@ -1,34 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ProxyAuthError = exports.HOP_BY_HOP_REQUEST_HEADERS = exports.KYC_TOKEN_HEADER = exports.USER_EMAIL_HEADER = void 0;
-exports.verifyKycEmail = verifyKycEmail;
+exports.ProxyAuthError = exports.HOP_BY_HOP_REQUEST_HEADERS = exports.USER_WALLET_HEADER = void 0;
 exports.resolveBearerToken = resolveBearerToken;
 exports.buildForwardedHeaders = buildForwardedHeaders;
 exports.isValidWebhookSecret = isValidWebhookSecret;
 // Shared authentication logic for the Wirex integration's two HTTP endpoints
-// (proxy.ts, webhook.ts): verifying an inbound Wirex webhook, and verifying a
-// proxied request's claimed user identity against IDFlow before minting a
-// Wirex "Login as User" token for it (see proxy.ts's header comment for why
-// that verification exists).
-//
-// Deliberately free of any @azure/functions import — everything here takes
-// plain strings/Headers rather than HttpRequest, so it can be unit-tested
-// with the repo's existing (root) vitest setup without adding test tooling
-// to this workspace.
+// (proxy.ts, webhook.ts): verifying an inbound Wirex webhook, and resolving
+// which Wirex bearer token (partner or "Login as User") a proxied request
+// should run under.
 const crypto_1 = require("crypto");
 const token_1 = require("./token");
-exports.USER_EMAIL_HEADER = 'x-wirex-user-email';
-exports.KYC_TOKEN_HEADER = 'x-kyc-access-token';
+exports.USER_WALLET_HEADER = 'x-wirex-user-wallet';
 // Stripped from the outgoing request when proxying to Wirex: standard
-// hop-by-hop headers, plus our own two auth headers, which are consumed here
-// and must never be forwarded upstream.
-exports.HOP_BY_HOP_REQUEST_HEADERS = new Set([
-    'host',
-    'connection',
-    'content-length',
-    exports.USER_EMAIL_HEADER,
-    exports.KYC_TOKEN_HEADER,
-]);
+// hop-by-hop headers, plus our own auth header, which is consumed here.
+exports.HOP_BY_HOP_REQUEST_HEADERS = new Set(['host', 'connection', 'content-length', exports.USER_WALLET_HEADER]);
 /** Thrown for caller-facing auth failures, as opposed to upstream/Wirex errors. */
 class ProxyAuthError extends Error {
     status;
@@ -38,38 +23,23 @@ class ProxyAuthError extends Error {
     }
 }
 exports.ProxyAuthError = ProxyAuthError;
-/** Resolve the IDFlow-verified email for a caller-supplied IDFlow access token. */
-async function verifyKycEmail(accessToken, idflowApiUrl) {
-    if (!idflowApiUrl)
-        throw new Error('Missing IDFLOW_API_URL configuration');
-    const res = await fetch(`${idflowApiUrl}/api/Entity/me`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
-    });
-    if (!res.ok)
-        throw new ProxyAuthError(401, 'Invalid or expired KYC session');
-    const profile = (await res.json());
-    if (!profile.email)
-        throw new ProxyAuthError(401, 'IDFlow session has no verified email');
-    return profile.email;
-}
 /**
  * Resolve which bearer token a proxied Wirex call should run under.
- * `claimedEmail`/`kycAccessToken` come from the proxy's USER_EMAIL_HEADER /
- * KYC_TOKEN_HEADER. With no claimed email, the call runs under the partner
- * token; with one, it must be backed by a KYC token that verifies (via
- * IDFlow) to that same email before a user-scoped token is minted.
+ * `claimedWallet` (the EOA/user_address) comes from the proxy's
+ * USER_WALLET_HEADER. With no claimed wallet, the call runs under the
+ * partner token; with one, a user-scoped "Login as User" token is minted
+ * directly for it, identified by wallet rather than email — see token.ts's
+ * header comment for why.
+ *
+ * `claimedWallet` is trusted as-is, not verified against any prior session —
+ * the app's KYC flow no longer runs through a provider we can check a wallet
+ * address against here, so this is a deliberately reduced trust model versus
+ * verifying ownership first. Revisit if a stronger guarantee is needed.
  */
-async function resolveBearerToken(claimedEmail, kycAccessToken, idflowApiUrl) {
-    if (!claimedEmail)
+async function resolveBearerToken(claimedWallet, chainId) {
+    if (!claimedWallet)
         return (0, token_1.getPartnerToken)();
-    if (!kycAccessToken)
-        throw new ProxyAuthError(401, 'Missing KYC session for user-scoped request');
-    const verifiedEmail = await verifyKycEmail(kycAccessToken, idflowApiUrl);
-    if (verifiedEmail.toLowerCase() !== claimedEmail.toLowerCase()) {
-        throw new ProxyAuthError(403, 'Requested user does not match authenticated KYC session');
-    }
-    return (0, token_1.getUserToken)({ type: 'email', value: verifiedEmail });
+    return (0, token_1.getUserToken)({ type: 'wallet', value: claimedWallet }, chainId);
 }
 /** Build the headers to send upstream to Wirex: caller headers minus the hop-by-hop set, plus auth/chain headers. */
 function buildForwardedHeaders(requestHeaders, token, chainId) {

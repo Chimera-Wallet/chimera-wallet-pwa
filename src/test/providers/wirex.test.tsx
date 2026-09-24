@@ -1,22 +1,29 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { WirexProvider, useWirex, WirexOnboardingInput } from '../../providers/wirex'
-import { getStoredKycStatus, fetchKycUserProfile, getValidAccessToken } from '../../lib/kyc'
-import { ensureWirexUser, getWirexCards, getWirexWallet } from '../../lib/wirex'
+import { WirexProvider, useWirex, WirexProfileInput } from '../../providers/wirex'
+import {
+  ensureWirexUser,
+  getWirexCards,
+  getWirexUserByAddress,
+  getWirexVerificationLink,
+  getWirexWallet,
+  issueVirtualCard,
+  WirexUser,
+} from '../../lib/wirex'
 import { deployWirexKernelAccount, getWirexEvmAddress } from '../../lib/wirexWallet'
 
-vi.mock('../../lib/kyc', () => ({
-  getStoredKycStatus: vi.fn(),
-  fetchKycUserProfile: vi.fn(),
-  getValidAccessToken: vi.fn(),
-}))
-
-vi.mock('../../lib/wirex', () => ({
-  ensureWirexUser: vi.fn(),
-  getWirexCards: vi.fn(),
-  getWirexWallet: vi.fn(),
-  issueVirtualCard: vi.fn(),
-}))
+vi.mock('../../lib/wirex', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../lib/wirex')>()
+  return {
+    ...actual,
+    ensureWirexUser: vi.fn(),
+    getWirexCards: vi.fn(),
+    getWirexWallet: vi.fn(),
+    getWirexUserByAddress: vi.fn(),
+    getWirexVerificationLink: vi.fn(),
+    issueVirtualCard: vi.fn(),
+  }
+})
 
 vi.mock('../../lib/wirexWallet', () => ({
   deployWirexKernelAccount: vi.fn(),
@@ -27,12 +34,10 @@ const POLL_INTERVAL_MS = 30_000
 const MAX_ATTEMPTS = 10
 const testPassword = 'testpassword'
 
-const testOnboarding: WirexOnboardingInput = {
-  dateOfBirth: '1990-01-15',
-  phoneNumber: '+14155551234',
-  nationality: 'US',
-  residenceAddress: { line1: '123 Main St', city: 'San Francisco', postCode: '94105', country: 'US' },
-  isPep: false,
+const testProfile: WirexProfileInput = {
+  email: 'user@test.com',
+  firstName: 'Ada',
+  lastName: 'Lovelace',
 }
 
 const testWallet = { wallet_address: '0xWallet', wallet_status: 'Active' }
@@ -41,13 +46,6 @@ describe('WirexProvider deployWirexWallet', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.stubEnv('VITE_WIREX_ENABLED', 'true')
-    vi.mocked(getStoredKycStatus).mockReturnValue('confirmed')
-    vi.mocked(getValidAccessToken).mockResolvedValue('kyc-access-token')
-    vi.mocked(fetchKycUserProfile).mockResolvedValue({
-      email: 'user@test.com',
-      firstName: 'Ada',
-      lastName: 'Lovelace',
-    })
     vi.mocked(getWirexEvmAddress).mockResolvedValue('0xUser')
     vi.mocked(ensureWirexUser).mockResolvedValue({
       user_id: 'u1',
@@ -56,6 +54,7 @@ describe('WirexProvider deployWirexWallet', () => {
       email: 'user@test.com',
     })
     vi.mocked(getWirexCards).mockResolvedValue({ data: [] })
+    vi.mocked(getWirexWallet).mockResolvedValue(null)
     vi.mocked(deployWirexKernelAccount).mockResolvedValue({ walletAddress: '0xUser', transactionHash: null })
   })
 
@@ -64,12 +63,11 @@ describe('WirexProvider deployWirexWallet', () => {
     vi.unstubAllEnvs()
   })
 
- 
   const setup = async () => {
     const { result } = renderHook(() => useWirex(), { wrapper: WirexProvider })
     vi.mocked(getWirexWallet).mockResolvedValueOnce(testWallet)
     await act(async () => {
-      await result.current.deployWirexWallet(testPassword, testOnboarding)
+      await result.current.deployWirexWallet(testPassword, testProfile)
     })
     vi.mocked(getWirexWallet).mockClear()
     vi.mocked(deployWirexKernelAccount).mockClear()
@@ -78,18 +76,25 @@ describe('WirexProvider deployWirexWallet', () => {
     return result
   }
 
-
   it('deploys the on-chain wallet before creating the Wirex user', async () => {
     const { result } = renderHook(() => useWirex(), { wrapper: WirexProvider })
     vi.mocked(getWirexWallet).mockResolvedValueOnce(testWallet)
 
     await act(async () => {
-      await result.current.deployWirexWallet(testPassword, testOnboarding)
+      await result.current.deployWirexWallet(testPassword, testProfile)
     })
 
     const deployOrder = vi.mocked(deployWirexKernelAccount).mock.invocationCallOrder[0]
     const ensureUserOrder = vi.mocked(ensureWirexUser).mock.invocationCallOrder[0]
     expect(deployOrder).toBeLessThan(ensureUserOrder)
+  })
+
+  it('throws when no Wirex user exists yet and no profile is given', async () => {
+    const { result } = renderHook(() => useWirex(), { wrapper: WirexProvider })
+    await expect(result.current.deployWirexWallet(testPassword)).rejects.toThrow(
+      'Missing profile info required to create a Wirex user',
+    )
+    expect(ensureWirexUser).not.toHaveBeenCalled()
   })
 
   it('polls until the wallet appears, then stops', async () => {
@@ -191,5 +196,151 @@ describe('WirexProvider deployWirexWallet', () => {
       await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS * 3)
     })
     expect(getWirexWallet).toHaveBeenCalledTimes(callsAfterSecondDeploy)
+  })
+})
+
+describe('WirexProvider Wirex-hosted KYC', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.stubEnv('VITE_WIREX_ENABLED', 'true')
+    vi.mocked(getWirexEvmAddress).mockResolvedValue('0xUser')
+    vi.mocked(getWirexCards).mockResolvedValue({ data: [] })
+    vi.mocked(getWirexWallet).mockResolvedValue(null)
+    vi.mocked(deployWirexKernelAccount).mockResolvedValue({ walletAddress: '0xUser', transactionHash: null })
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  const setupWithUser = async () => {
+    vi.mocked(ensureWirexUser).mockResolvedValue({
+      user_id: 'u1',
+      user_address: '0xUser',
+      chain_id: 1,
+      email: 'user@test.com',
+      verificationStatus: 'None',
+    })
+    vi.mocked(getWirexWallet).mockResolvedValueOnce(testWallet)
+    const { result } = renderHook(() => useWirex(), { wrapper: WirexProvider })
+    await act(async () => {
+      await result.current.deployWirexWallet(testPassword, testProfile)
+    })
+    return result
+  }
+
+  it('exposes wirexVerificationStatus from the current Wirex user', async () => {
+    const result = await setupWithUser()
+    expect(result.current.wirexVerificationStatus).toBe('None')
+  })
+
+  it('startWirexVerification opens the hosted Sumsub link for this user', async () => {
+    const result = await setupWithUser()
+    vi.mocked(getWirexVerificationLink).mockResolvedValue('https://verify.sumsub.com/xyz')
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
+
+    await act(async () => {
+      await result.current.startWirexVerification()
+    })
+
+    expect(getWirexVerificationLink).toHaveBeenCalledWith('0xUser')
+    expect(openSpy).toHaveBeenCalledWith('https://verify.sumsub.com/xyz', '_blank', 'noopener,noreferrer')
+  })
+
+  it('refreshWirexUser re-fetches the user and updates the verification status', async () => {
+    const result = await setupWithUser()
+    vi.mocked(getWirexUserByAddress).mockResolvedValue({
+      user_id: 'u1',
+      user_address: '0xUser',
+      chain_id: 1,
+      email: 'user@test.com',
+      verificationStatus: 'Approved',
+    })
+
+    await act(async () => {
+      await result.current.refreshWirexUser()
+    })
+
+    expect(getWirexUserByAddress).toHaveBeenCalledWith('0xUser')
+    expect(result.current.wirexVerificationStatus).toBe('Approved')
+  })
+})
+
+describe('WirexProvider virtual card issuance eligibility', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.stubEnv('VITE_WIREX_ENABLED', 'true')
+    vi.mocked(getWirexEvmAddress).mockResolvedValue('0xUser')
+    vi.mocked(getWirexCards).mockResolvedValue({ data: [] })
+    vi.mocked(getWirexWallet).mockResolvedValue(null)
+    vi.mocked(deployWirexKernelAccount).mockResolvedValue({ walletAddress: '0xUser', transactionHash: null })
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  const setupWithUser = async (user: WirexUser) => {
+    vi.mocked(ensureWirexUser).mockResolvedValue(user)
+    vi.mocked(getWirexWallet).mockResolvedValueOnce(testWallet)
+    const { result } = renderHook(() => useWirex(), { wrapper: WirexProvider })
+    await act(async () => {
+      await result.current.deployWirexWallet(testPassword, testProfile)
+    })
+    return result
+  }
+
+  const eligibleUser: WirexUser = {
+    user_id: 'u1',
+    user_address: '0xUser',
+    chain_id: 1,
+    email: 'user@test.com',
+    capabilities: [{ type: 'VisaVirtualCard', status: 'Active' }],
+  }
+
+  const ineligibleUser: WirexUser = {
+    user_id: 'u1',
+    user_address: '0xUser',
+    chain_id: 1,
+    email: 'user@test.com',
+    capabilities: [{ type: 'VisaVirtualCard', status: 'NotFulfilled', status_reason: 'SDD verification required' }],
+  }
+
+  it('exposes canIssueVirtualCard as true when the capability is Active', async () => {
+    const result = await setupWithUser(eligibleUser)
+    expect(result.current.canIssueVirtualCard).toBe(true)
+  })
+
+  it('exposes canIssueVirtualCard as false when the capability is not Active', async () => {
+    const result = await setupWithUser(ineligibleUser)
+    expect(result.current.canIssueVirtualCard).toBe(false)
+  })
+
+  it('issueWirexCard succeeds and calls issueVirtualCard when eligible', async () => {
+    const result = await setupWithUser(eligibleUser)
+    vi.mocked(issueVirtualCard).mockResolvedValue({ id: 'card-1' })
+
+    await act(async () => {
+      await result.current.issueWirexCard()
+    })
+
+    expect(issueVirtualCard).toHaveBeenCalledWith({ userAddress: '0xUser' })
+  })
+
+  it('issueWirexCard throws surfacing status_reason and never calls issueVirtualCard when ineligible', async () => {
+    const result = await setupWithUser(ineligibleUser)
+
+    await expect(result.current.issueWirexCard()).rejects.toThrow('SDD verification required')
+    expect(issueVirtualCard).not.toHaveBeenCalled()
+  })
+
+  it('issueWirexCard throws a generic message when ineligible with no status_reason', async () => {
+    const result = await setupWithUser({
+      ...ineligibleUser,
+      capabilities: [{ type: 'VisaVirtualCard', status: 'NotFulfilled' }],
+    })
+
+    await expect(result.current.issueWirexCard()).rejects.toThrow('Virtual card issuance is not available for this account yet')
+    expect(issueVirtualCard).not.toHaveBeenCalled()
   })
 })

@@ -1,15 +1,8 @@
-// Unit tests for api/wirex/auth.ts — the shared auth logic behind
-// proxy.ts (KYC-verified "act as user" token minting, header forwarding)
-// and webhook.ts (URL-secret check). Kept free of @azure/functions so these
-// run under the repo's existing (root) vitest setup with no test tooling
-// added to this workspace.
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import {
   ProxyAuthError,
-  USER_EMAIL_HEADER,
-  KYC_TOKEN_HEADER,
+  USER_WALLET_HEADER,
   HOP_BY_HOP_REQUEST_HEADERS,
-  verifyKycEmail,
   resolveBearerToken,
   buildForwardedHeaders,
   isValidWebhookSecret,
@@ -20,86 +13,26 @@ vi.mock('../../../api/wirex/token', () => ({
   getUserToken: vi.fn(async (identifier: { type: string; value: string }) => `user-token-for-${identifier.value}`),
 }))
 
-const IDFLOW_API_URL = 'https://idflow.test'
-
-describe('verifyKycEmail', () => {
-  const fetchSpy = vi.fn()
-  beforeEach(() => {
-    fetchSpy.mockReset()
-    vi.stubGlobal('fetch', fetchSpy)
-  })
-
-  it('throws when IDFLOW_API_URL is not configured', async () => {
-    await expect(verifyKycEmail('token', undefined)).rejects.toThrow('Missing IDFLOW_API_URL configuration')
-    expect(fetchSpy).not.toHaveBeenCalled()
-  })
-
-  it('calls GET /api/Entity/me with the bearer token and returns the email', async () => {
-    fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify({ email: 'alice@example.com' }), { status: 200 }))
-    const email = await verifyKycEmail('kyc-token', IDFLOW_API_URL)
-    expect(email).toBe('alice@example.com')
-    const [url, init] = fetchSpy.mock.calls[0]
-    expect(url).toBe(`${IDFLOW_API_URL}/api/Entity/me`)
-    expect(new Headers(init.headers).get('Authorization')).toBe('Bearer kyc-token')
-  })
-
-  it('throws a 401 ProxyAuthError when IDFlow rejects the token', async () => {
-    fetchSpy.mockResolvedValueOnce(new Response('', { status: 401 }))
-    await expect(verifyKycEmail('bad-token', IDFLOW_API_URL)).rejects.toMatchObject({
-      status: 401,
-      message: 'Invalid or expired KYC session',
-    })
-  })
-
-  it('throws a 401 ProxyAuthError when IDFlow returns no email', async () => {
-    fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify({}), { status: 200 }))
-    await expect(verifyKycEmail('token', IDFLOW_API_URL)).rejects.toMatchObject({
-      status: 401,
-      message: 'IDFlow session has no verified email',
-    })
-  })
-})
-
 describe('resolveBearerToken', () => {
-  const fetchSpy = vi.fn()
   beforeEach(() => {
-    fetchSpy.mockReset()
-    vi.stubGlobal('fetch', fetchSpy)
+    vi.clearAllMocks()
   })
 
-  it('returns the partner token when no email is claimed', async () => {
-    const token = await resolveBearerToken(null, null, IDFLOW_API_URL)
+  it('returns the partner token when no wallet is claimed', async () => {
+    const token = await resolveBearerToken(null, '8453')
     expect(token).toBe('partner-token')
-    expect(fetchSpy).not.toHaveBeenCalled()
   })
 
-  it('rejects with 401 when an email is claimed but no KYC token is sent', async () => {
-    await expect(resolveBearerToken('alice@example.com', null, IDFLOW_API_URL)).rejects.toMatchObject({
-      status: 401,
-      message: 'Missing KYC session for user-scoped request',
-    })
-  })
-
-  it('rejects with 403 when the KYC token verifies to a different email than claimed', async () => {
-    fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify({ email: 'mallory@example.com' }), { status: 200 }))
-    await expect(resolveBearerToken('alice@example.com', 'kyc-token', IDFLOW_API_URL)).rejects.toMatchObject({
-      status: 403,
-      message: 'Requested user does not match authenticated KYC session',
-    })
-  })
-
-  it('mints a user-scoped token for the IDFlow-verified email when it matches the claim', async () => {
-    fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify({ email: 'Alice@Example.com' }), { status: 200 }))
-    const token = await resolveBearerToken('alice@example.com', 'kyc-token', IDFLOW_API_URL)
-    expect(token).toBe('user-token-for-Alice@Example.com')
+  it('mints a user-scoped token for the claimed wallet address, trusted as-is', async () => {
+    const token = await resolveBearerToken('0xabc', '8453')
+    expect(token).toBe('user-token-for-0xabc')
   })
 })
 
 describe('buildForwardedHeaders', () => {
   it('drops hop-by-hop and internal auth headers, forwards the rest', () => {
     const requestHeaders = new Headers({
-      [USER_EMAIL_HEADER]: 'alice@example.com',
-      [KYC_TOKEN_HEADER]: 'kyc-token',
+      [USER_WALLET_HEADER]: '0xabc',
       Host: 'app.example.com',
       Connection: 'keep-alive',
       'Content-Length': '123',

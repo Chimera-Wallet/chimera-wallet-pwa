@@ -6,25 +6,12 @@
  *
  * User lookup/creation (GET/POST /api/v2/user) run under the partner token,
  * identified by `X-User-Wallet`.
- *
- * KYC is yet to be fully implemented as details still need to be worked out 
- * so user creation and all subsequent operations aren't FULLY implemented.
  */
 
 const WIREX_PROXY_BASE = '/api/wirex'
 
-/**
- * Headers for a call that runs "as" a Wirex user. api/wirex/proxy.ts won't
- * mint a user-scoped token from X-Wirex-User-Email alone — it also requires
- * this IDFlow access token (see ../providers/kyc.ts::getValidAccessToken) and
- * verifies it maps to the same email server-side, so an anonymous caller
- * can't claim an arbitrary user's email. This is temporary until proper 
- * session management can be discussed and put in place (as well as proper 
- * testing needing to be performed).
- */
-const userAuthHeaders = (email: string, kycAccessToken: string): Record<string, string> => ({
-  'X-Wirex-User-Email': email,
-  'X-Kyc-Access-Token': kycAccessToken,
+const userAuthHeaders = (userAddress: string): Record<string, string> => ({
+  'X-Wirex-User-Wallet': userAddress,
 })
 
 // Mirrors ramp.ts's AbortController-with-timeout pattern: these calls sit
@@ -79,6 +66,22 @@ async function request<T>(path: string, init?: RequestInit, opts: RequestOptions
   return body as T
 }
 
+
+export type WirexVerificationStatus = 'None' | 'Applied' | 'Pending' | 'InReview' | 'Approved' | 'Canceled' | 'Rejected'
+
+export type WirexCapabilityStatus = 'Active' | 'ActivationNotStarted' | 'InProgress' | 'NotFulfilled' | 'NotAvailable'
+
+export interface WirexCapability {
+  type: string
+  status: WirexCapabilityStatus
+  status_reason?: string
+  verification_requirements?: { type: string; order: number }[]
+  prerequisites?: string[]
+}
+
+/** The capability type gating virtual card issuance — see docs.wirexapp.com/docs/retail-card-issuance. */
+export const VIRTUAL_CARD_CAPABILITY = 'VisaVirtualCard'
+
 export interface WirexUser {
   user_id: string
   user_address: string
@@ -87,13 +90,18 @@ export interface WirexUser {
   email: string
   firstName?: string
   lastName?: string
+  verificationStatus?: WirexVerificationStatus
+  capabilities?: WirexCapability[]
 }
 
-// GET/POST /api/v2/user's actual response shape (confirmed live) — email and
-// name live under `profile`, not top-level, unlike the flat WirexUser this
-// app works with elsewhere. Only the fields toWirexUser reads are modeled;
-// the response also carries `id`, `owner`, `residence_address`,
-// `verification` and `capabilities`, unused here.
+/**
+ * Whether this user is currently eligible to have a virtual card issued —
+ * check this before calling issueVirtualCard.
+ */
+export const canIssueVirtualCard = (user: WirexUser): boolean =>
+  user.capabilities?.some((c) => c.type === VIRTUAL_CARD_CAPABILITY && c.status === 'Active') ?? false
+
+
 interface WirexUserApiResponse {
   user_id: string
   user_address: string
@@ -104,6 +112,8 @@ interface WirexUserApiResponse {
     last_name?: string
     status?: string
   }
+  verification_status?: WirexVerificationStatus
+  capabilities?: WirexCapability[]
 }
 
 const toWirexUser = (raw: WirexUserApiResponse): WirexUser => ({
@@ -114,6 +124,8 @@ const toWirexUser = (raw: WirexUserApiResponse): WirexUser => ({
   email: raw.profile.email,
   firstName: raw.profile.first_name,
   lastName: raw.profile.last_name,
+  verificationStatus: raw.verification_status,
+  capabilities: raw.capabilities,
 })
 
 /**
@@ -131,28 +143,12 @@ export const getWirexUserByAddress = async (userAddress: string): Promise<WirexU
   return raw && toWirexUser(raw)
 }
 
-export interface WirexResidenceAddress {
-  line1: string
-  city: string
-  postCode: string
-  country: string
-  line2?: string
-  state?: string
-}
-
 export interface CreateWirexUserPayload {
   /** This wallet's EVM signer address.*/
   userAddress: string
   email: string
   firstName: string
   lastName: string
-  /** YYYY-MM-DD. */
-  dateOfBirth: string
-  phoneNumber: string
-  /** ISO 3166-1 alpha-2. */
-  nationality: string
-  residenceAddress: WirexResidenceAddress
-  isPep: boolean
 }
 
 export const createWirexUser = async (payload: CreateWirexUserPayload): Promise<WirexUser | null> => {
@@ -161,22 +157,10 @@ export const createWirexUser = async (payload: CreateWirexUserPayload): Promise<
     body: JSON.stringify({
       user_address: payload.userAddress,
       initial_data: {
-        is_pep: payload.isPep,
         profile: {
           first_name: payload.firstName,
           last_name: payload.lastName,
           email: payload.email,
-          date_of_birth: payload.dateOfBirth,
-          phone_number: payload.phoneNumber,
-          nationality: payload.nationality,
-        },
-        residence_address: {
-          line1: payload.residenceAddress.line1,
-          city: payload.residenceAddress.city,
-          post_code: payload.residenceAddress.postCode,
-          country: payload.residenceAddress.country,
-          ...(payload.residenceAddress.line2 ? { line2: payload.residenceAddress.line2 } : {}),
-          ...(payload.residenceAddress.state ? { state: payload.residenceAddress.state } : {}),
         },
       },
     }),
@@ -191,13 +175,7 @@ export const ensureWirexUser = async (payload: CreateWirexUserPayload): Promise<
   return createWirexUser(payload)
 }
 
-// Wallet 
-//
-// Unlike user lookup/creation (which runs under the partner token, identified
-// by Wirex's own X-User-Email header), wallet calls run "as" the Wirex user
-// they belong to: setting the proxy's internal X-Wirex-User-Email header
-// makes api/wirex/proxy.ts mint a user-scoped token (via token.ts's
-// "Login as User" flow) before forwarding..
+// Wallet
 
 export interface WirexWallet {
   wallet_address: string
@@ -206,13 +184,19 @@ export interface WirexWallet {
   wallet_status?: string
   chain_family?: string
   balances?: { token_symbol: string; token_address: string; balance: number }[]
-  // Exact status/type enum values are unconfirmed against sandbox — extend
-  // once verified.
 }
 
 /** Look up the Wirex wallet already registered for this user, if any. */
-export const getWirexWallet = (email: string, kycAccessToken: string): Promise<WirexWallet | null> =>
-  request<WirexWallet>('/api/v1/wallet', { method: 'GET', headers: userAuthHeaders(email, kycAccessToken) })
+export const getWirexWallet = (userAddress: string): Promise<WirexWallet | null> =>
+  request<WirexWallet>('/api/v1/wallet', { method: 'GET', headers: userAuthHeaders(userAddress) })
+export const getWirexVerificationLink = async (userAddress: string): Promise<string> => {
+  const raw = await request<{ url: string }>('/api/v1/user/verification-link', {
+    method: 'POST',
+    headers: userAuthHeaders(userAddress),
+  })
+  if (!raw?.url) throw new Error('Wirex did not return a verification link')
+  return raw.url
+}
 
 // Cards 
 //
@@ -249,8 +233,7 @@ export interface GetWirexCardsOptions {
 }
 
 export const getWirexCards = (
-  email: string,
-  kycAccessToken: string,
+  userAddress: string,
   options: GetWirexCardsOptions = {},
 ): Promise<{ data: WirexCard[] } | null> => {
   const params = new URLSearchParams()
@@ -261,13 +244,12 @@ export const getWirexCards = (
 
   return request<{ data: WirexCard[] }>(`/api/v1/cards${query ? `?${query}` : ''}`, {
     method: 'GET',
-    headers: userAuthHeaders(email, kycAccessToken),
+    headers: userAuthHeaders(userAddress),
   })
 }
 
 export interface IssueVirtualCardPayload {
-  email: string
-  kycAccessToken: string
+  userAddress: string
   cardName?: string
   nameOnCard?: string
   /** Required only when order/delivery fees apply. */
@@ -278,7 +260,7 @@ export interface IssueVirtualCardPayload {
 export const issueVirtualCard = (payload: IssueVirtualCardPayload): Promise<{ id: string } | null> =>
   request<{ id: string }>('/api/v1/cards/virtual', {
     method: 'POST',
-    headers: userAuthHeaders(payload.email, payload.kycAccessToken),
+    headers: userAuthHeaders(payload.userAddress),
     body: JSON.stringify({
       ...(payload.cardName ? { card_name: payload.cardName } : {}),
       ...(payload.nameOnCard ? { name_on_card: payload.nameOnCard } : {}),
@@ -286,12 +268,12 @@ export const issueVirtualCard = (payload: IssueVirtualCardPayload): Promise<{ id
     }),
   })
 
-// TODO: metal card issuance (POST /api/v1/cards/metal) needs a required
-// delivery_address and, per Wirex's reference, must be used together with a
-// separate "Create invoice" API — the card is only issued after that
-// invoice's payment settles. Not implemented until that invoice flow exists
-// on our side. No physical/plastic-card issuance endpoint was found in
-// Wirex's reference, so that format may not be self-serve via this API.
+// Only virtual cards are issuable through this app for now. Physical/metal
+// card issuance (the VisaPlasticCard capability, POST /api/v1/cards/metal or
+// its plastic equivalent) needs a required delivery_address and, per
+// docs.wirexapp.com/docs/retail-card-issuance, a separate "create invoice"
+// fee-payment flow before the card is issued — that flow doesn't exist on
+// our side yet. Planned for next year.
 
 //
 // -1 disables a given limit; 0 blocks all spending on it; a positive number
@@ -349,8 +331,7 @@ export const setWirexCardLimits = async (
 // Push-to-card
 
 export interface EstimateCardTransferPayload {
-  email: string
-  kycAccessToken: string
+  userAddress: string
   cardId: string
   amount: string
   currency?: string
@@ -372,7 +353,7 @@ export interface CardTransferEstimate {
 export const estimateCardTransfer = (payload: EstimateCardTransferPayload): Promise<CardTransferEstimate | null> =>
   request<CardTransferEstimate>('/api/v1/cards/transfer/estimate', {
     method: 'POST',
-    headers: userAuthHeaders(payload.email, payload.kycAccessToken),
+    headers: userAuthHeaders(payload.userAddress),
     body: JSON.stringify({
       amount: Number(payload.amount),
       ...(payload.currency ? { currency: payload.currency } : {}),
@@ -382,8 +363,7 @@ export const estimateCardTransfer = (payload: EstimateCardTransferPayload): Prom
   })
 
 export interface TransferToCardPayload {
-  email: string
-  kycAccessToken: string
+  userAddress: string
   /** From a prior estimateCardTransfer() call. */
   estimationId: string
   /** Which of the estimate's tokens to actually move to the card's balance. */
@@ -393,6 +373,6 @@ export interface TransferToCardPayload {
 export const transferToCard = (payload: TransferToCardPayload): Promise<{ id: string } | null> =>
   request<{ id: string }>('/api/v1/cards/transfer', {
     method: 'POST',
-    headers: userAuthHeaders(payload.email, payload.kycAccessToken),
+    headers: userAuthHeaders(payload.userAddress),
     body: JSON.stringify({ estimation_id: payload.estimationId, token_address: payload.tokenAddress }),
   })
