@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import Button from '../../../components/Button'
 import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import Content from '../../../components/Content'
@@ -22,6 +22,7 @@ import type { AssetDetails, IssuanceParams, KnownMetadata } from '@arkade-os/sdk
 import Input from '../../../components/Input'
 import AssetCard from '../../../components/AssetCard'
 import { MAX_DECIMALS, unitsToCents } from '../../../lib/assets'
+import { waitForIssuedAsset } from '../../../lib/assetIssuance'
 import {useTranslation} from 'react-i18next'
 
 interface KnownAssetOption {
@@ -54,7 +55,6 @@ export default function AppAssetMint() {
   const [ctrlAmount, setCtrlAmount] = useState(1)
   const [mintingText, setMintingText] = useState('Minting asset...')
   const [mintDone, setMintDone] = useState(false)
-  const pendingNav = useRef<() => void>()
    
   const {t} = useTranslation()
 
@@ -89,6 +89,10 @@ export default function AppAssetMint() {
     const cents = unitsToCents(amountTextValue, decimals)
     setAmount(cents)
   }, [amountTextValue, decimals])
+
+  useEffect(() => {
+    if (mintDone) navigate(Pages.AppAssetMintSuccess)
+  }, [mintDone, navigate])
 
   const handleMint = async () => {
     if (!svcWallet) return
@@ -127,18 +131,14 @@ export default function AppAssetMint() {
           metadata: ctrlMeta,
         })
         resolvedControlAssetId = ctrlResult.assetId
+        setMintingText('Waiting for control asset...')
+        await waitForIssuedAsset(svcWallet, resolvedControlAssetId)
         iconApprovalManager.approve(resolvedControlAssetId)
 
         setCacheEntry(ctrlResult.assetId, {
           assetId: ctrlResult.assetId,
           supply: ctrlRawAmount,
           metadata: ctrlMeta,
-        })
-        await new Promise<boolean>((resolve) => {
-          const listenNewVtxos = (event: MessageEvent) => {
-            if (event.data && event.data.type === 'VTXO_UPDATE') resolve(true)
-          }
-          navigator.serviceWorker.addEventListener('message', listenNewVtxos)
         })
       }
 
@@ -167,7 +167,6 @@ export default function AppAssetMint() {
       }
       setCacheEntry(newAssetId, assetDetails)
       setAssetInfo(assetDetails)
-      pendingNav.current = () => navigate(Pages.AppAssetMintSuccess)
       setMintDone(true)
     } catch (err) {
       consoleError(err, 'error minting asset')
@@ -198,12 +197,8 @@ export default function AppAssetMint() {
                     ? t('apps.assets.controlAssPos')
                     : ''
 
-  const handleExitComplete = useCallback(() => {
-    pendingNav.current?.()
-  }, [])
-
   if (minting || mintDone)
-    return <LoadingLogo text={mintingText} done={mintDone} exitMode='fly-up' onExitComplete={handleExitComplete} />
+    return <LoadingLogo text={mintingText} />
 
   return (
     <>

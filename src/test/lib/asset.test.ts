@@ -153,6 +153,15 @@ describe('asset utilities', () => {
       expect(centsToUnits(BigInt(9_970_000_000), 18)).toBe('0.00000000997')
     })
 
+    it('preserves fractional components above Number.MAX_SAFE_INTEGER', () => {
+      expect(centsToUnits(BigInt('1500000000000000000'), 18)).toBe('1.5')
+      expect(centsToUnits(BigInt('-1500000000000000000'), 18)).toBe('-1.5')
+    })
+
+    it('formats large sub-unit values without truncation', () => {
+      expect(centsToUnits(BigInt('999999999999999999'), 18)).toBe('0.999999999999999999')
+    })
+
     // ---- bad-decimals fallback: returns cents unchanged (no throw) ----
 
     it('returns cents unchanged for negative decimals', () => {
@@ -243,11 +252,11 @@ describe('asset utilities', () => {
 
     it('preserves precision beyond Number.MAX_SAFE_INTEGER', () => {
       // 9_007_199_254_740_993 is 2^53 + 1 — not representable as a Number.
-      expect(prettyAssetAmount(BigInt(9_007_199_254_740_993), 8)).toBe('90,071,992')
+      expect(prettyAssetAmount(BigInt('9007199254740993'), 8)).toBe('90,071,992.54740993')
     })
 
     it('formats when tidy=false (default)', () => {
-      expect(prettyAssetAmount(BigInt(9_007_199_254_740_993), 8, false)).toBe('90,071,992')
+      expect(prettyAssetAmount(BigInt('9007199254740993'), 8, false)).toBe('90,071,992.54740993')
       expect(prettyAssetAmount(BigInt(150_000_000), 8, false)).toBe('1.5')
       expect(prettyAssetAmount(BigInt(1_234_567), 0, false)).toBe('1,234,567')
     })

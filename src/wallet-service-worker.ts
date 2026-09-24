@@ -6,6 +6,7 @@ import {
   WalletMessageHandler,
 } from '@arkade-os/sdk'
 import { gitCommit } from './_gitCommit'
+import { isWalletCache, WALLET_CACHE_PREFIX } from './lib/serviceWorkerCache'
 
 // Health-check ping: responds via MessageChannel so the main thread can
 // detect if this worker is alive before attempting full initialization.
@@ -34,9 +35,9 @@ const worker = new MessageBus(walletRepository, contractRepository, {
 })
 worker.start().catch(console.error)
 
-// Use build timestamp to ensure cache invalidation on each deployment
-const CACHE_VERSION = '__BUILD_TIME__' // Will be replaced during build
-const CACHE_NAME = `chimera-wallet-cache-${CACHE_VERSION}`
+// Vite replaces this build-time identifier with a deployment-specific value.
+declare const __BUILD_TIME__: string
+const CACHE_NAME = `${WALLET_CACHE_PREFIX}${__BUILD_TIME__}`
 declare const self: ServiceWorkerGlobalScope
 
 // The first event a service worker gets is install.
@@ -65,7 +66,7 @@ self.addEventListener('activate', (event: ExtendableEvent) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName === CACHE_NAME) return
+          if (!isWalletCache(cacheName) || cacheName === CACHE_NAME) return
           return caches.delete(cacheName)
         }),
       )

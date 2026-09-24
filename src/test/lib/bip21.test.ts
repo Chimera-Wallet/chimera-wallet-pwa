@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import fixtures from '../fixtures.json'
-import { decodeBip21, encodeBip21 } from '../../lib/bip21'
+import { decodeBip21, encodeBip21, encodeBip21Asset } from '../../lib/bip21'
 import { toSatoshis } from '../../lib/format'
 
 describe('bip21 utilities', () => {
@@ -53,6 +53,12 @@ describe('bip21 utilities', () => {
       const { address, bip21, invoice, satoshis } = fixtures.lib.bip21
       const bip21WithoutArk = bip21.replace(/([?&])ark=[^&]+(&|$)/i, '$1').replace(/&$/, '')
       expect(encodeBip21(address!, '', invoice!, satoshis!)).toEqual(bip21WithoutArk)
+    })
+  })
+
+  describe('encodeBip21Asset', () => {
+    it('preserves large fractional asset amounts', () => {
+      expect(encodeBip21Asset('tark1example', 'asset-id', BigInt('1500000000000000000'), 18)).toContain('amount=1.5')
     })
   })
 

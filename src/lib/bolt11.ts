@@ -4,7 +4,9 @@ import { NetworkName } from '@arkade-os/sdk/'
 
 export interface DecodedInvoice {
   note: string
+  descriptionHash: string
   expiry: number
+  amountMsats: number
   amountSats: number
   paymentHash: string
   /** Invoice creation time, in unix seconds. */
@@ -49,6 +51,9 @@ export const decodeInvoice = (invoice: string): DecodedInvoice => {
     expiresAt: timestamp + expiry,
     network: networkSection && 'value' in networkSection ? (networkSection.value?.bech32 ?? '') : '',
     note: extractNote(description),
+    descriptionHash:
+      ((decoded.sections as { name: string; value?: string }[]).find((section) => section.name === 'description_hash')?.value ?? ''),
+    amountMsats: millisats,
     amountSats: Math.floor(millisats / 1000),
     paymentHash: decoded.sections.find((s) => s.name === 'payment_hash')?.value ?? '',
   }
@@ -77,4 +82,3 @@ export const isInvoiceExpired = (invoice: DecodedInvoice, nowSeconds = Math.floo
 /** True when the invoice was issued for the given Ark network. */
 export const invoiceMatchesNetwork = (invoice: DecodedInvoice, network: NetworkName): boolean =>
   invoice.network === NETWORK_PREFIXES[network]
-
