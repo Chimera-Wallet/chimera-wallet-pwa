@@ -432,11 +432,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.fetchCoins'))
       const [vtxos, txs, { total, assets }] = await Promise.all([
         getVtxos(swWallet),
-        getTxHistory(swWallet),
+        getTxHistory(swWallet, assetSwaps),
         getBalance(swWallet),
       ])
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.fetchTrans'))
-      const txs = await getTxHistory(swWallet, assetSwaps)
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.updBal'))
       // prefetch asset metadata before triggering re-renders
       if (isFirstLoad && assets.length > 0) setLoadingStatus(t('lib.wallet.loadingMeta'))
