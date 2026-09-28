@@ -101,6 +101,8 @@ const EMULATOR_PUBKEY: Record<NetworkName, string | null> = {
   testnet: null,
 }
 
+const COMPRESSED_PUBKEY_HEX = /^0[23][0-9a-f]{64}$/
+
 /** The configured co-signer key as configured — compressed hex for every pin
  * above, which is the shape `@arkade-os/swap` takes as its override. Since
  * 0.0.3 the package resolves the key from its own per-network pin, so this is
@@ -124,4 +126,9 @@ export const getEmulatorPubkeyForNetwork = (network: NetworkName): Uint8Array | 
   } catch {
     return undefined
   }
+}
+
+export const getEmulatorPubkeyOverrideForNetwork = (network: NetworkName): string | undefined => {
+  const configured = getEmulatorPubkeyHexForNetwork(network)
+  return configured && COMPRESSED_PUBKEY_HEX.test(configured) ? configured : undefined
 }

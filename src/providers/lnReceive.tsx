@@ -9,6 +9,13 @@
  * for why that matters here specifically: unlike a Lightning send, a receive
  * has no "fund and forget" step, and an unclaimed lockup is lost to the
  * solver's refund, not returned to this wallet.
+ *
+ * Which is also why only ONE tab may drive it. The records live in shared
+ * IndexedDB, so every open tab would otherwise restore every swap and race
+ * the others to claim it — two `pushClaim`s over the same VTXOs, one landing,
+ * the other failing as a double-spend. The manager's own guards are
+ * per-instance and say nothing about a second one, so the coordination below
+ * is a Web Lock.
  */
 import { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react'
 import { RestArkProvider, type NetworkName } from '@arkade-os/sdk'
@@ -26,11 +33,31 @@ import {
   buildLightningReceiveSwap,
   buildLightningReceiveOrigin,
   claimLightningReceive,
+  LnReceiveHeldElsewhere,
   type LnReceiveRequest,
 } from '../lib/lnReceive'
 import { prettyNumber } from '../lib/format'
 import { consoleError } from '../lib/logs'
-import { discover } from '@arkade-os/solver-discovery'
+
+/** One name per origin, so two tabs of this wallet contend and a tab of an
+ * unrelated origin cannot. */
+const MANAGER_LOCK = 'lnreceive-manager'
+
+/**
+ * How long `requestReceive` gives THIS tab's own lock request before it
+ * concludes the holder is someone else.
+ *
+ * Pending on the lock says nothing on its own about who holds it: this tab's
+ * request is pending too in the moments before it is granted, and "another
+ * tab is handling Lightning receives" would be a lie told to the only tab
+ * open. The window that can actually bite is a remount — `svcWallet` changes
+ * identity on reinit and unlock — where the request queues behind this same
+ * tab's previous drive while it stops its manager. A grant that is coming
+ * lands well inside this; one that is not was never ours to wait for. It does
+ * NOT bound how long `manager.start()` itself may take — once granted, the
+ * caller awaits that promise directly, however long it takes.
+ */
+const LOCK_GRACE_MS = 500
 
 /** What a receive screen needs to show — the manager owns everything else
  * (secrets, the covenant script, claim state) from here on. */
@@ -61,7 +88,8 @@ export const LnReceiveProvider = ({ children }: { children: ReactNode }) => {
   const { svcWallet } = useContext(WalletContext)
 
   const [ready, setReady] = useState(false)
-  const managerRef = useRef<RfqSwapManager>()
+  const managerRef = useRef<Promise<RfqSwapManager>>()
+  const grantedRef = useRef<Promise<void>>()
 
   // Rebuilt on every wallet/network change, like `assetSwaps.tsx`'s watcher:
   // the manager's deps (the indexer, the contract manager) are bound to one
@@ -71,48 +99,80 @@ export const LnReceiveProvider = ({ children }: { children: ReactNode }) => {
     managerRef.current = undefined
     if (!svcWallet || !aspInfo.url || !aspInfo.network) return
 
-    let cancelled = false
+    let stopped = false
     const ark = new RestArkProvider(aspInfo.url)
     const indexer = new Indexer(aspInfo).provider
 
-    const setup = async () => {
-      const contracts = await svcWallet.getContractManager()
-      if (cancelled) return
-      const manager = new RfqSwapManager({ indexer, contracts, repository: assetSwapRepository })
-      const callbacks: AvailableRfqSwapManagerCallbacks = {
-        claimLockup: claimLightningReceive(svcWallet, ark, assetSwapRepository),
-        // Required by the type — it is generic over every RfqSwap kind — but
-        // this manager only ever monitors `lightning_receive` swaps, which
-        // have no trader-side refund leaf at all, so the manager never calls
-        // this in practice.
-        refundArkade: async () => {
-          throw new Error('refundArkade is unreachable: this manager only monitors lightning_receive swaps')
-        },
-      }
-      manager.setCallbacks(callbacks)
-      await manager.restoreFromRepository()
-      if (cancelled) return
-      await manager.start()
-      if (cancelled) {
-        manager.stop().catch((err) => consoleError(err, 'failed to stop abandoned lightning receive manager'))
-        return
-      }
-      managerRef.current = manager
-      setReady(true)
+    let release = () => {}
+    const held = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    let grant = () => {}
+    grantedRef.current = new Promise<void>((resolve) => {
+      grant = resolve
+    })
+    const controller = new AbortController()
+
+    const drive = async () => {
+      if (stopped) return
+
+      const started = (async () => {
+        const contracts = await svcWallet.getContractManager()
+        const manager = new RfqSwapManager({ indexer, contracts, repository: assetSwapRepository })
+        const callbacks: AvailableRfqSwapManagerCallbacks = {
+          claimLockup: claimLightningReceive(svcWallet, ark, assetSwapRepository),
+          refundArkade: async () => {
+            throw new Error('refundArkade is unreachable: this manager only monitors lightning_receive swaps')
+          },
+        }
+        manager.setCallbacks(callbacks)
+        await manager.restoreFromRepository()
+        await manager.start()
+        return manager
+      })()
+
+      managerRef.current = started
+      grant()
+      started
+        .then(() => {
+          if (!stopped) setReady(true)
+        })
+        .catch((err) => consoleError(err, 'failed to start lightning receive manager'))
+
+      await held
+      await started.then((manager) => manager.stop()).catch((err) => consoleError(err, 'failed to stop lightning receive manager'))
     }
-    setup().catch((err) => consoleError(err, 'failed to start lightning receive manager'))
+
+    if (navigator.locks) {
+      navigator.locks.request(MANAGER_LOCK, { signal: controller.signal }, drive).catch((err) => {
+        if ((err as Error)?.name === 'AbortError') return
+        consoleError(err, 'error acquiring the lightning receive lock')
+      })
+    } else {
+      drive().catch((err) => consoleError(err, 'error driving lightning receives'))
+    }
 
     return () => {
-      cancelled = true
-      managerRef.current?.stop().catch((err) => consoleError(err, 'failed to stop lightning receive manager'))
+      stopped = true
       managerRef.current = undefined
+      grantedRef.current = undefined
       setReady(false)
+      controller.abort()
+      release()
     }
   }, [svcWallet, aspInfo.url, aspInfo.network])
 
   const requestReceive = async (amountSats: number): Promise<LnReceiveInvoice> => {
-    const manager = managerRef.current
-    if (!svcWallet || !manager) throw new Error('lightning receive service unavailable')
+    let pending = managerRef.current
+    if (!pending && grantedRef.current) {
+      await Promise.race([grantedRef.current, new Promise((resolve) => setTimeout(resolve, LOCK_GRACE_MS))])
+      pending = managerRef.current
+    }
+    if (!svcWallet || !pending) {
+      if (grantedRef.current) throw new LnReceiveHeldElsewhere()
+      throw new Error('lightning receive service unavailable')
+    }
+    const manager = await pending
     const network = aspInfo.network as NetworkName
     const rendezvous = lnReceiveRendezvous(await discoverMarkets(network), getEmulatorPubkeyForNetwork(network))
     if (!rendezvous) throw new Error('No Lightning solver available')

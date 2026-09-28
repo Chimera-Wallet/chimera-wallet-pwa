@@ -21,10 +21,12 @@ import { assetSwapRepository } from './swapRepository'
 /**
  * Solver cards shipped with the wallet.
  *
- * The Arkade Labs Lightning solver is the counterparty for the RFQ send leg
- * (`arkade:BTC -> lightning:BTC`) and is not published in the solver registry
- * yet, so without this the corridor simply does not exist and Lightning send
- * is unavailable. Bundled rather than configured because the card carries its
+ * One card, one solver, multiple markets: the Arkade Labs solver behind
+ * `discovery_pubkey`/`transports.nostr.relays` here serves both the asset-swap
+ * corridors (`BTC/USDT-CX`, `ETH-CX/BTC`, `ETH-CX/USDT-CX`) and the Lightning
+ * RFQ send leg (`arkade:BTC -> lightning:BTC`). None of it is published in the
+ * solver registry yet, so without this bundle none of these corridors exist
+ * for this wallet. Bundled rather than configured because the card carries its
  * own rendezvous (pubkey + nostr relays) — there is no URL to point at.
  *
  * The card is the solver's own `cli card` output, signature included — it

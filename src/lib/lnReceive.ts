@@ -23,7 +23,7 @@ import {
   contractPreimage,
   type NetworkName,
   type RestArkProvider,
-  type RestIndexerProvider,
+  type IContractManager,
   type ProvisionedClaimSecret,
 } from '@arkade-os/sdk'
 import {
@@ -43,6 +43,7 @@ import {
   type ClaimArkProvider,
 } from '@arkade-os/swap'
 import { secp256k1 } from '@noble/curves/secp256k1.js'
+import { getEmulatorPubkeyOverrideForNetwork } from './constants'
 import { toInvoiceFacts, type LnSendRendezvous } from './lnSwap'
 
 /**
@@ -67,6 +68,23 @@ import { toInvoiceFacts, type LnSendRendezvous } from './lnSwap'
  * wire format does not change.
  */
 export const sealingKey = (): Uint8Array => secp256k1.getPublicKey(secp256k1.utils.randomSecretKey(), true)
+
+/**
+ * Thrown by `requestReceive` when another open tab holds the Web Lock that
+ * gates the Lightning-receive manager (`providers/lnReceive.tsx`).
+ *
+ * Named rather than generic because the screen has to say something true
+ * about it. "Lightning unavailable" is what a missing solver or an
+ * out-of-bounds amount means, and neither is the case here as nothing is
+ * unavailable, another tab owns it, and closing that tab is the one thing
+ * that resolves it.
+ */
+export class LnReceiveHeldElsewhere extends Error {
+  constructor() {
+    super('another tab is handling Lightning receives')
+    this.name = 'LnReceiveHeldElsewhere'
+  }
+}
 
 /**
  * A negotiated receive, everything the caller must keep until it is claimed.
@@ -120,6 +138,7 @@ export const requestLnReceive = async (args: {
   const result = await requestLightningReceive(args.wallet, args.arkServerUrl, args.transport, {
     amount: args.amountSats,
     amountSide: 'to',
+    emulatorPubkey: getEmulatorPubkeyOverrideForNetwork(args.network),
     covclaimdPubkey: sealingKey(),
     // The wallet's own decoder, applied to the SOLVER's invoice inside the
     // package's own gate (ts-sdk#728 reinstated the parameter): it throws
@@ -135,7 +154,7 @@ export const requestLnReceive = async (args: {
     // The quote's `to_amount` IS the expected amount: the arkade side of a
     // corridor the wallet asked for `amountSide: 'to'` on. Read once, here,
     // rather than at claim time — see the interface's note.
-    expectedAmount: result.quote.to_amount,
+    expectedAmount: Number(result.quote.to_amount),
     // Whichever comes first genuinely ends the window: paying after the quote
     // lapses buys a lockup the solver no longer owes, and the invoice's own
     // expiry needs no explanation.
@@ -163,7 +182,7 @@ export const requestLnReceive = async (args: {
 export const claimLnReceive = async (
   args: {
     wallet: Parameters<typeof requestLightningReceive>[0]
-    indexer: Pick<RestIndexerProvider, 'getVtxos'>
+    contracts: Pick<IContractManager, 'getContractsWithVtxos'>
     ark: Pick<RestArkProvider, 'getInfo' | 'submitTx' | 'finalizeTx'>
     request: LnReceiveRequest
   },
@@ -177,7 +196,7 @@ export const claimLnReceive = async (
   // Spelled out rather than via `claimReceiveLockup`, whose input type demands
   // the `vtxos` its own wait produces (@arkade-os/swap, claim.ts) — passing a
   // placeholder to satisfy that would read as if it meant something.
-  const vtxos = await awaitLockupFunding(args.indexer, request.swapPkScript, options)
+  const vtxos = await awaitLockupFunding(args.contracts, request.swapPkScript, options)
   // Checked here AND passed to `pushClaim` (ts-sdk#728 reinstated the
   // parameter). This is the one check standing between a dust-funded lockup
   // and a published preimage that settles the payer's HTLC in full: the claim

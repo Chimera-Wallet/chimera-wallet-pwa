@@ -218,11 +218,6 @@ export default function ReceiveAmount() {
     let cancelled = false
     const handle = setTimeout(() => {
       setLnReceiveError('')
-      // As of this writing, the only published card (BUNDLED_CARDS's
-      // beta-solver) disables its base (Arkade/receive) side — min/max
-      // base amount "0" — so this reliably throws until a solver
-      // publishes a receive-enabled card. See arkade-os/lightning-swap-service#64
-      // and the same note in lib/lnSwap.ts. Lightning SEND is unaffected.
       requestReceive(satoshis)
         .then((pending) => {
           if (cancelled) return
