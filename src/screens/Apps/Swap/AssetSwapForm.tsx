@@ -18,6 +18,7 @@ import SheetModal from '../../../components/SheetModal'
 import Table, { type TableData } from '../../../components/Table'
 import Success from '../../../components/Success'
 import SelectSheet from '../../../components/SelectSheet'
+import WarningBox from '../../../components/Warning'
 import AssetIcon from '../../../icons/AssetIcon'
 import ChevronDown from '../../../icons/ChevronDown'
 import { SwapSuccessIcon } from '../../../icons/Swap'
@@ -30,9 +31,10 @@ import { ConfigContext } from '../../../providers/config'
 import {
   ASSET_LIST,
   centsToUnits,
-  getAssetSymbolByAssetId,
+  getAssetSymbolBySwapAssetId,
   getDisplayTicker,
-  getWrappedAssetId,
+  getSwapAssetId,
+  hasSwapOnlyAssetId,
   prettyAssetNumber,
   unitsToCents,
   type AssetConfig,
@@ -68,7 +70,7 @@ interface CompletedSwap {
 const DEBOUNCE_MS = 600
 
 const assetIdForSymbol = (symbol: AssetSymbol): string | undefined =>
-  symbol === 'BTC' ? BTC_ASSET_ID : getWrappedAssetId(symbol)
+  symbol === 'BTC' ? BTC_ASSET_ID : getSwapAssetId(symbol)
 
 export default function AssetSwapForm({ onBack }: SwapFormProps) {
   const { t } = useTranslation()
@@ -149,6 +151,10 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
 
   const toAsset = resolveAsset(toSymbol)
 
+  // A selected asset whose swap token differs from the one the wallet holds
+  // (staging USDT) gets a note, since its swap balance won't match the Wallet tab.
+  const swapOnlyTicker = [fromAsset, toAsset].find((asset) => asset && hasSwapOnlyAssetId(asset.symbol))?.ticker
+
   // Default (and re-default, if the current pick drops out of the list) the
   // "from" asset once the swappable universe is known.
   useEffect(() => {
@@ -172,7 +178,7 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
   useEffect(() => {
     if (!assetSwapFromAssetId || swappableAssets.length === 0) return
     const symbol =
-      assetSwapFromAssetId === BTC_ASSET_ID ? 'BTC' : getAssetSymbolByAssetId(assetSwapFromAssetId)
+      assetSwapFromAssetId === BTC_ASSET_ID ? 'BTC' : getAssetSymbolBySwapAssetId(assetSwapFromAssetId)
     if (symbol && swappableAssets.some((asset) => asset.symbol === symbol)) {
       setFromSymbol(symbol)
     }
@@ -483,6 +489,10 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
                   </FlexRow>
                 </FlexCol>
               </Shadow>
+            ) : null}
+
+            {swapOnlyTicker ? (
+              <WarningBox text={t('apps.swap.swapOnlyAssetNote', { ticker: swapOnlyTicker })} />
             ) : null}
 
             <Button

@@ -232,7 +232,8 @@
         "belowMin": "Amount is below the minimum for this pair",
         "aboveMax": "Amount is above the maximum for this pair",
         "belowDust": "Amount is below the dust limit",
-        "available": "available"
+        "available": "available",
+        "swapOnlyAssetNote": "Swaps use a separate {{ticker}} token from the {{ticker}} on your Wallet tab. Wallet {{ticker}} can't be swapped here."
     },
     "card": {
         "card": "Card Reservation"
