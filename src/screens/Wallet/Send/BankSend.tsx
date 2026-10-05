@@ -10,63 +10,47 @@ import Content from '../../../components/Content'
 import FlexCol from '../../../components/FlexCol'
 import Header from '../../../components/Header'
 import Padded from '../../../components/Padded'
-import Text, { TextSecondary } from '../../../components/Text'
 import Button from '../../../components/Button'
 import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
-import Shadow from '../../../components/Shadow'
 import ErrorMessage from '../../../components/Error'
-import Info, { InfoLine } from '../../../components/Info'
-import InfoContainer from '../../../components/InfoContainer'
+import TermsInfo from '../../../components/TermsInfo'
 import AssetSelector from '../../../components/AssetSelector'
 import NetworkSelector from '../../../components/NetworkSelector'
 import InlineAmountInput from '../../../components/InlineAmountInput'
 import BankTransferValidationMessages from '../../../components/BankTransferValidation'
 import WaitingForRound from '../../../components/WaitingForRound'
 import { BANK_TRANSFER_ASSET_LIST, type AssetSymbol } from '../../../lib/assets'
-import { TERMS_AND_CONDITIONS, TRANSFER_METHOD, type InfoItemIcon, type TransferMethod } from '../../../lib/transferMethods'
+import { TERMS_AND_CONDITIONS, TRANSFER_METHOD, type TransferMethod } from '../../../lib/transferMethods'
 import TransactionsIcon from '../../../icons/Transactions'
-import WhenIcon from '../../../icons/When'
-import FeesIcon from '../../../icons/Fees'
-import InfoIconSvg from '../../../icons/Info'
-import { BankCircuitSelector, BankCurrencySelector } from '../../../components/BankDetails'
+import { BankCircuitSelector, BankCurrencySelector, BankDataForm, SwiftSendFeeNotice } from '../../../components/BankDetails'
 import { NavigationContext, Pages } from '../../../providers/navigation'
 import { FlowContext } from '../../../providers/flow'
 import { WalletContext } from '../../../providers/wallet'
 import { FiatContext } from '../../../providers/fiat'
 import { TxResultContext } from '../../../providers/txResult'
-import { sendOffChain } from '../../../lib/asp'
-import { decodeArkAddress } from '../../../lib/address'
 import { prettyNumber, fromSatoshis } from '../../../lib/format'
-import { createBankWithdraw, getBankOrderStatus } from '../../../providers/bankTransfer'
-import { addOrderToHistory } from '../../../lib/bankOrderHistory'
 import {
-  clearPendingBankWithdrawal,
-  getPendingBankWithdrawal,
-  savePendingBankWithdrawal,
-} from '../../../lib/bankWithdrawalAttempt'
+  fundBankWithdrawal,
+  resolvePendingBankWithdrawal,
+  WithdrawalWalletNotConfiguredError,
+} from '../../../lib/bankWithdrawalFlow'
 import { useBankTransferValidation } from '../../../hooks/useBankTransferValidation'
 import {
+  emptyBankDetailsFields,
   getBankTransferConfigSync,
   getDefaultCircuit,
   getSupportedCircuits,
   getSupportedSendCurrencies,
-  SWIFT_SEND_FEE,
+  toBankData,
   type BankCircuit,
   type BankCurrency,
   type BankData,
+  type BankDetailsFields,
 } from '../../../lib/bankTransferConfig'
 import { getUserEmailForBankTransfer } from '../../../lib/kyc'
 import { AspContext } from '@/providers/asp'
 import rightIcon from '../../../../public/images/icons/ Right.png'
-import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
-import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
-import clockIcon from '../../../../public/images/icons/ Clock.svg'
 import {useTranslation} from 'react-i18next'
-
-
-// Legacy Chimera withdrawals use this shared funding wallet. Ramp orders return
-// a unique deposit address which must be funded instead.
-const COMPANY_WALLET = import.meta.env.VITE_BANK_WITHDRAW_WALLET as string
 
 export default function BankSend() {
   const { navigate, goBack } = useContext(NavigationContext)
@@ -86,19 +70,10 @@ export default function BankSend() {
   const [circuit, setCircuit] = useState<BankCircuit>(bankSendInfo.circuit || getDefaultCircuit(currency))
   const [amount, setAmount] = useState<number>(bankSendInfo.amount || 0)
 
-  // Bank details form state
-  const [iban, setIban] = useState<string>('')
-  const [bic, setBic] = useState<string>('')
-  const [accountHolderName, setAccountHolderName] = useState<string>('')
-  const [accountNumber, setAccountNumber] = useState<string>('')
-  const [routingNumber, setRoutingNumber] = useState<string>('')
-  // SWIFT structured beneficiary address — required by IBSettle's
-  // international payment rail (see bankTransferConfig.ts::BankDataSwift)
-  const [country, setCountry] = useState<string>('')
-  const [streetName, setStreetName] = useState<string>('')
-  const [buildingNumber, setBuildingNumber] = useState<string>('')
-  const [townName, setTownName] = useState<string>('')
-  const [postCode, setPostCode] = useState<string>('')
+  // Bank details form state. SWIFT includes the structured beneficiary
+  // address required by IBSettle's international payment rail
+  // (see bankTransferConfig.ts::BankDataSwift)
+  const [bankFields, setBankFields] = useState<BankDetailsFields>(emptyBankDetailsFields)
 
   // API state
   const [loading, setLoading] = useState(false)
@@ -146,68 +121,34 @@ export default function BankSend() {
   const skipBankDetails = validation.kycVerified && circuit === 'sepa'
 
   const validateBankDetails = (): BankData | null => {
+    const bankData = toBankData(circuit, bankFields)
+    if (bankData) return bankData
     switch (circuit) {
       case 'sepa':
-        if (!iban || !accountHolderName) {
-          setError(t('errors.send.bank.ibanName'))
-          return null
-        }
-        return {
-          circuit: 'sepa',
-          destinationBankAddress: iban,
-          accountHolderName,
-        }
-
+        setError(t('errors.send.bank.ibanName'))
+        break
       case 'swift':
-        if (!iban || !bic || !accountHolderName || !country || !streetName || !buildingNumber || !townName || !postCode) {
-          setError('Please fill in all SWIFT transfer fields, including your address')
-          return null
-        }
-        return {
-          circuit: 'swift',
-          destinationBankAddress: iban,
-          bic,
-          accountHolderName,
-          country,
-          streetName,
-          buildingNumber,
-          townName,
-          postCode,
-        }
-
+        setError('Please fill in all SWIFT transfer fields, including your address')
+        break
       case 'us':
-        if (!accountNumber || !routingNumber || !accountHolderName) {
-          setError('Please enter your account holder name, account number, and routing number')
-          return null
-        }
-        return {
-          circuit: 'us',
-          accountNumber,
-          routingNumber,
-          accountHolderName,
-        }
-
+        setError('Please enter your account holder name, account number, and routing number')
+        break
       default:
         setError(t('errors.send.bank.invalidTransfer'))
-        return null
     }
+    return null
   }
 
   const resumePendingWithdrawal = async (): Promise<boolean> => {
-    const pending = getPendingBankWithdrawal()
-    if (!pending) return false
+    const pending = await resolvePendingBankWithdrawal()
+    if (pending.kind === 'none') return false
 
-    const order = await getBankOrderStatus(pending.order.id, 'offramp')
-    setBankSendInfo({ ...bankSendInfo, order })
+    setBankSendInfo({ ...bankSendInfo, order: pending.order })
     setCurrentBankOrderType('send')
 
-    if (['COMPLETED', 'FAILED', 'REJECTED', 'EXPIRED', 'REFUNDED'].includes(order.status)) {
-      clearPendingBankWithdrawal()
-      return false
-    }
+    if (pending.kind === 'settled') return false
 
-    if (order.status !== 'WAITING_FOR_DEPOSIT') {
-      clearPendingBankWithdrawal()
+    if (pending.kind === 'progressed') {
       navigate(Pages.BankOrderStatus)
       return true
     }
@@ -271,60 +212,36 @@ export default function BankSend() {
         return
       }
 
-      const email = getUserEmailForBankTransfer()
-
-      // Register the withdrawal order with the backend
-      const { order, depositCryptoAddress } = await createBankWithdraw({
+      // Register the withdrawal order with the backend, then fund it
+      await fundBankWithdrawal({
+        svcWallet,
+        signerPubkey: aspInfo.signerPubkey,
         asset: 'BTC',
-        fiatCurrency: currency,
-        email,
-        cryptoAmountSats: requiredSats,
-        circuit,
-        bankData,
-      })
-
-      const fundingAddress = depositCryptoAddress ?? COMPANY_WALLET
-      if (!fundingAddress) {
-        setError(t('errors.send.wallet.notConfigured'))
-        return
-      }
-      if (depositCryptoAddress) {
-        const { serverPubKey } = decodeArkAddress(depositCryptoAddress)
-        if (serverPubKey !== aspInfo.signerPubkey.slice(-64).toLowerCase()) {
-          throw new Error('Ramp returned a deposit address for a different Ark server')
-        }
-      }
-
-      setBankSendInfo({
         currency,
         circuit,
-        amount: numAmount,
         bankData,
-        order,
-      })
-      setCurrentBankOrderType('send')
-      addOrderToHistory(order, 'send')
-
-      // Ramp supplies an order-specific address; the legacy provider uses its
-      // configured shared funding wallet.
-      savePendingBankWithdrawal({
-        order,
-        fundingAddress,
         amountSats: requiredSats,
-        fundingState: 'funding',
-      })
-      setSending(true)
-      await sendOffChain(svcWallet, requiredSats, fundingAddress)
-      savePendingBankWithdrawal({
-        order,
-        fundingAddress,
-        amountSats: requiredSats,
-        fundingState: 'funded',
+        email: getUserEmailForBankTransfer(),
+        onOrderCreated: (order) => {
+          setBankSendInfo({
+            currency,
+            circuit,
+            amount: numAmount,
+            bankData,
+            order,
+          })
+          setCurrentBankOrderType('send')
+        },
+        onFunding: () => setSending(true),
       })
 
       // Success popup, then land on the order-status screen to track the payout
       notifyResult(true, t('common.notifications.bank.submissionSuccess')).then(() => navigate(Pages.BankOrderStatus))
     } catch (err) {
+      if (err instanceof WithdrawalWalletNotConfiguredError) {
+        setError(t('errors.send.wallet.notConfigured'))
+        return
+      }
       setError(err instanceof Error ? err.message : t('errors.send.bank.failedWithdrawal'))
       setSending(false)
       notifyResult(false, t('common.notifications.bank.submissionFailed'))
@@ -333,218 +250,8 @@ export default function BankSend() {
     }
   }
 
-  // Render bank detail inputs based on circuit
-  const renderBankInputs = () => {
-    switch (circuit) {
-      case 'sepa':
-        return (
-          <>
-            <FlexCol gap='0.5rem'>
-              <Shadow input>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
-                  <Text tiny color='neutral-500'>
-                    IBAN
-                  </Text>
-
-                <input
-                  type='text'
-                  value={iban}
-                  onChange={(e) => setIban(e.target.value.toUpperCase())}
-                  placeholder='DE89 3704 0044 0532 0130 00'
-                  style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--white)',
-                    fontSize: '1rem',
-                    outline: 'none',
-                  }}
-                />
-              </div>
-              </Shadow>
-            </FlexCol>
-            <FlexCol gap='0.5rem'>
-              <Shadow input>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
-                  <Text tiny color='neutral-500'>
-                    {t('common.accountName')}
-                  </Text>
-                <input
-                  type='text'
-                  value={accountHolderName}
-                  onChange={(e) => setAccountHolderName(e.target.value)}
-                  placeholder='John Doe'
-                  style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--white)',
-                    fontSize: '1rem',
-                    outline: 'none',
-                  }}
-                />
-                </div>
-              </Shadow>
-            </FlexCol>
-          </>
-        )
-
-      case 'swift':
-        return (
-          <>
-            {([
-              ['IBAN', iban, setIban, 'DE89 3704 0044 0532 0130 00', true],
-              ['BIC/SWIFT', bic, setBic, 'DEUTDEFF', true],
-              ['Account Holder Name', accountHolderName, setAccountHolderName, 'John Doe', false],
-              ['Country (ISO code)', country, setCountry, 'DE', true],
-              ['Street Name', streetName, setStreetName, 'Musterstrasse', false],
-              ['Building Number', buildingNumber, setBuildingNumber, '1', false],
-              ['Town', townName, setTownName, 'Frankfurt', false],
-              ['Postal Code', postCode, setPostCode, '60306', false],
-            ] as [string, string, (v: string) => void, string, boolean][]).map(([label, value, setValue, placeholder, upper]) => (
-              <FlexCol gap='0.5rem' key={label}>
-                <Shadow input>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
-                    <Text tiny color='neutral-500'>
-                      {label}
-                    </Text>
-                    <input
-                      type='text'
-                      value={value}
-                      onChange={(e) => setValue(upper ? e.target.value.toUpperCase() : e.target.value)}
-                      placeholder={placeholder}
-                      style={{
-                        width: '100%',
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--white)',
-                        fontSize: '1rem',
-                        outline: 'none',
-                      }}
-                    />
-                  </div>
-                </Shadow>
-              </FlexCol>
-            ))}
-          </>
-        )
-
-      case 'us':
-        return (
-          <>
-            <FlexCol gap='0.5rem'>
-              <Shadow input>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
-                  <Text tiny color='neutral-500'>
-                    {t('common.accountName')}
-                  </Text>
-                  <input
-                    type='text'
-                    value={accountHolderName}
-                    onChange={(e) => setAccountHolderName(e.target.value)}
-                    placeholder='John Doe'
-                    style={{
-                      width: '100%',
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'var(--white)',
-                      fontSize: '1rem',
-                      outline: 'none',
-                    }}
-                  />
-                </div>
-              </Shadow>
-            </FlexCol>
-            <FlexCol gap='0.5rem'>
-              <Shadow input>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
-                  <Text tiny color='neutral-500'>
-                    {t('common.accountNumber')}
-                  </Text>
-                <input
-                  type='text'
-                  value={accountNumber}
-                  onChange={(e) => setAccountNumber(e.target.value)}
-                  placeholder='123456789'
-                  style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--white)',
-                    fontSize: '1rem',
-                    outline: 'none',
-                  }}
-                />
-                </div>
-              </Shadow>
-            </FlexCol>
-            <FlexCol gap='0.5rem'>
-              <Shadow input>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
-                  <Text tiny color='neutral-500'>
-                    {t('common.routingNumber')}
-                  </Text>
-                <input
-                  type='text'
-                  value={routingNumber}
-                  onChange={(e) => setRoutingNumber(e.target.value)}
-                  placeholder='021000021'
-                  style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--white)',
-                    fontSize: '1rem',
-                    outline: 'none',
-                  }}
-                />
-                </div>
-              </Shadow>
-            </FlexCol>
-          </>
-        )
-
-      default:
-        return null
-    }
-  }
-
-  // Check if bank details are complete
-  const isBankDetailsComplete = (): boolean => {
-    switch (circuit) {
-      case 'sepa':
-        return Boolean(iban && accountHolderName)
-      case 'swift':
-        return Boolean(iban && bic && accountHolderName && country && streetName && buildingNumber && townName && postCode)
-      case 'us':
-        return Boolean(accountNumber && routingNumber && accountHolderName)
-      default:
-        return false
-    }
-  }
-
-  // Icon for a T&C line — same mapping the other send/receive screens use
-  const getIconComponent = (iconType?: InfoItemIcon) => {
-    switch (iconType) {
-      case 'time':
-        return <WhenIcon />
-      case 'fees':
-        return <FeesIcon />
-      case 'warning':
-      case 'instruction':
-        return undefined
-      case 'info':
-        return <img src={infoIcon} alt='info' style={{ width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)' }} />
-      case 'receipt':
-        return <img src={receiptIcon} alt='receipt' style={{ width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)' }} />
-      case 'clock':
-        return <img src={clockIcon} alt='clock' style={{ width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)' }} />
-      default:
-        return <InfoIconSvg />
-    }
-  }
-
-  const canSubmit = validation.canProceed && (skipBankDetails || isBankDetailsComplete()) && !loading && !sending
+  const canSubmit =
+    validation.canProceed && (skipBankDetails || toBankData(circuit, bankFields) !== null) && !loading && !sending
 
   if (sending) {
     return (
@@ -619,29 +326,16 @@ export default function BankSend() {
             {/* Bank Transfer Terms & Conditions — mirrors BankReceive, and the
                 other send methods, which all show them under the selectors */}
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100%' }}>
-              <InfoContainer>
-                {TERMS_AND_CONDITIONS.send.bank.map((item) => (
-                  <InfoLine key={item.text} compact color={item.color} icon={getIconComponent(item.icon)} text={t(item.text)} />
-                ))}
-              </InfoContainer>
+              <TermsInfo items={TERMS_AND_CONDITIONS.send.bank} />
             </div>
 
             {/* SWIFT fee notice */}
-            {circuit === 'swift' ? (
-              <Info color='orange' icon = {<img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />} title={`SWIFT Transfer Fee: ${SWIFT_SEND_FEE} ${currency}`}>
-                <TextSecondary>
-                  {t('common.notifications.bank.swiftFee', {
-                    fee: SWIFT_SEND_FEE,
-                    currency,
-                  })}
-                </TextSecondary>
-              </Info>
-            ) : null}
+            {circuit === 'swift' ? <SwiftSendFeeNotice currency={currency} /> : null}
 
             {/* Bank Details Section - hidden when KYC email bypasses requirement */}
             {!skipBankDetails && (
               <FlexCol gap='1rem'>
-                {renderBankInputs()}
+                <BankDataForm circuit={circuit} value={bankFields} onChange={setBankFields} />
               </FlexCol>
             )}
             </div>

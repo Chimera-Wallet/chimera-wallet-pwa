@@ -1,5 +1,5 @@
 import { Tx } from './types'
-import { fromSatoshis, prettyDate, prettyNumber } from './format'
+import { fromSatoshis, prettyDate } from './format'
 import { ASSETS } from './assets'
 
 export type StatementData = {
@@ -39,6 +39,97 @@ export const filterTransactionsByDateRange = (txs: Tx[], startDate: Date, endDat
     .sort((a, b) => b.timestamp - a.timestamp)
 }
 
+export type TablePdfParams = {
+  title: string
+  /** Lines under the title, e.g. the period covered. */
+  subtitle?: string
+  /** Bold lines above the table, e.g. the current balance or totals. */
+  summary?: string[]
+  head: string[]
+  rows: string[][]
+  /** Per-column jspdf-autotable styles, keyed by column index. */
+  columnStyles?: Record<number, Record<string, unknown>>
+  filename: string
+  /** Open the system print dialog instead of downloading the file. */
+  print?: boolean
+}
+
+/** e.g. "October 5, 2026" — the date style used on statements and exports. */
+export const formatLongDate = (date: Date): string =>
+  date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
+
+/**
+ * Render a titled table as a PDF and download it (or print it). Shared by the
+ * account statement and the POS payment exports/receipts.
+ */
+export const generateTablePdf = async ({
+  title,
+  subtitle,
+  summary = [],
+  head,
+  rows,
+  columnStyles,
+  filename,
+  print = false,
+}: TablePdfParams): Promise<void> => {
+  // Dynamically import jsPDF
+  const { default: jsPDF } = await import('jspdf')
+  await import('jspdf-autotable')
+
+  const doc = new jsPDF()
+  const pageWidth = doc.internal.pageSize.getWidth()
+
+  // Title
+  doc.setFontSize(20)
+  doc.setFont('helvetica', 'bold')
+  doc.text(title, pageWidth / 2, 20, { align: 'center' })
+
+  // Subtitle (e.g. date range)
+  if (subtitle) {
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'normal')
+    doc.text(subtitle, pageWidth / 2, 30, { align: 'center' })
+  }
+
+  // Summary lines (e.g. current balance)
+  doc.setFontSize(12)
+  doc.setFont('helvetica', 'bold')
+  summary.forEach((line, i) => doc.text(line, 14, 45 + i * 7))
+
+  // Use autoTable plugin
+  ;(doc as any).autoTable({
+    head: [head],
+    body: rows,
+    startY: 55 + Math.max(0, summary.length - 1) * 7,
+    theme: 'grid',
+    headStyles: {
+      fillColor: [41, 128, 185],
+      textColor: 255,
+      fontStyle: 'bold',
+    },
+    styles: {
+      fontSize: 9,
+      cellPadding: 3,
+    },
+    columnStyles,
+  })
+
+  // Footer
+  const pageHeight = doc.internal.pageSize.getHeight()
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'italic')
+  doc.text(`Generated on ${formatLongDate(new Date())}`, pageWidth / 2, pageHeight - 10, { align: 'center' })
+
+  if (print) {
+    doc.autoPrint()
+    const url = doc.output('bloburl')
+    if (!window.open(url, '_blank')) doc.save(filename) // popup blocked — fall back to a download
+    return
+  }
+
+  doc.save(filename)
+}
+
 type GeneratePdfParams = {
   startingOn: string
   endingOn: string
@@ -48,52 +139,18 @@ type GeneratePdfParams = {
 
 export const generatePdf = async ({ startingOn, endingOn, data, balance }: GeneratePdfParams): Promise<void> => {
   try {
-    // Dynamically import jsPDF
-    const { default: jsPDF } = await import('jspdf')
-    await import('jspdf-autotable')
-
-    const doc = new jsPDF()
-    const pageWidth = doc.internal.pageSize.getWidth()
-
-    // Title
-    doc.setFontSize(20)
-    doc.setFont('helvetica', 'bold')
-    doc.text('Account Statement', pageWidth / 2, 20, { align: 'center' })
-
-    // Date range
-    doc.setFontSize(11)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`Period: ${startingOn} to ${endingOn}`, pageWidth / 2, 30, { align: 'center' })
-
-    // Current balance
-    doc.setFontSize(12)
-    doc.setFont('helvetica', 'bold')
-    doc.text(`Current Balance: ${balance}`, 14, 45)
-
-    // Transactions table
-    const tableData = data.map((item) => [
-      item.date,
-      item.type,
-      item.assetTicker,
-      item.amount,
-      item.txHash.substring(0, 16) + '...',
-    ])
-
-    // Use autoTable plugin
-    ;(doc as any).autoTable({
-      head: [['Date', 'Type', 'Asset', 'Amount', 'Transaction Hash']],
-      body: tableData,
-      startY: 55,
-      theme: 'grid',
-      headStyles: {
-        fillColor: [41, 128, 185],
-        textColor: 255,
-        fontStyle: 'bold',
-      },
-      styles: {
-        fontSize: 9,
-        cellPadding: 3,
-      },
+    await generateTablePdf({
+      title: 'Account Statement',
+      subtitle: `Period: ${startingOn} to ${endingOn}`,
+      summary: [`Current Balance: ${balance}`],
+      head: ['Date', 'Type', 'Asset', 'Amount', 'Transaction Hash'],
+      rows: data.map((item) => [
+        item.date,
+        item.type,
+        item.assetTicker,
+        item.amount,
+        item.txHash.substring(0, 16) + '...',
+      ]),
       columnStyles: {
         0: { cellWidth: 35 },
         1: { cellWidth: 25 },
@@ -101,26 +158,8 @@ export const generatePdf = async ({ startingOn, endingOn, data, balance }: Gener
         3: { cellWidth: 25, halign: 'right' },
         4: { cellWidth: 'auto' },
       },
+      filename: `statement_${startingOn.replace(/\s/g, '_')}_to_${endingOn.replace(/\s/g, '_')}.pdf`,
     })
-
-    // Footer
-    const pageHeight = doc.internal.pageSize.getHeight()
-    doc.setFontSize(8)
-    doc.setFont('helvetica', 'italic')
-    doc.text(
-      `Generated on ${new Date().toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })}`,
-      pageWidth / 2,
-      pageHeight - 10,
-      { align: 'center' },
-    )
-
-    // Save the PDF
-    const filename = `statement_${startingOn.replace(/\s/g, '_')}_to_${endingOn.replace(/\s/g, '_')}.pdf`
-    doc.save(filename)
   } catch (error) {
     console.error('Error generating PDF:', error)
     throw error
