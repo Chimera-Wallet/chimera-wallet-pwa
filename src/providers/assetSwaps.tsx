@@ -1,30 +1,52 @@
-import { ReactNode, createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { hex } from '@scure/base'
-import { asset, RestIndexerProvider, type NetworkName } from '@arkade-os/sdk'
+import { ReactNode, createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { base64, hex } from '@scure/base'
+import {
+  asset,
+  RestIndexerProvider,
+  Transaction,
+  toXOnlySignerHex,
+  type NetworkName,
+  type VirtualCoin,
+} from '@arkade-os/sdk'
 import {
   addAssetSwap,
   BTC_ASSET_ID,
   cancelOffer,
+  classifyDepositSpend,
   createOffer,
   decodeOffer,
   findMarket,
   getAssetSwaps,
-  restoreAssetSwaps,
+  isRfqMarket,
+  restoreAssetSwapRepository,
+  retireSettledOfferContracts,
+  spendTxidsOf,
+  spendUpdate,
   updateAssetSwap,
   watchOfferSwaps,
   type AssetSwap,
   type OfferSwapWatcher,
+  type SpendKind,
 } from '@arkade-os/swap'
 import { DiscoveredMarket, OfferPlan } from '@arkade-os/solver-discovery'
 import { AspContext } from './asp'
 import { WalletContext } from './wallet'
 import { discoverMarkets } from '../lib/swapMarkets'
 import { assetSwapRepository, type AssetSwapQuoteSnapshot, type WalletAssetSwap } from '../lib/swapRepository'
-import { isCancelSpend } from '../lib/swapSpend'
-import { getTxHistory } from '../lib/asp'
 import { getEmulatorPubkeyForNetwork, getEmulatorPubkeyHexForNetwork } from '../lib/constants'
 import { consoleError } from '../lib/logs'
 import { toast } from '../components/Toast'
+
+/** The deposit as the indexer reports it: its outpoint, and the txids that
+ * spent it. `spentBy` is the checkpoint and `arkTxId` the ark tx; a spend
+ * through a checkpoint carries the covenant leaf in the former. */
+type SpentDeposit = Pick<VirtualCoin, 'txid' | 'vout' | 'spentBy' | 'arkTxId'>
+
+/** The server key as the covenants were funded against it: x-only. The info
+ * endpoint serves it compressed today; this accepts either form and throws on
+ * anything else, where a bare slice of an x-only key would silently yield one
+ * of the wrong length and every classification would come back indeterminate. */
+const xOnlyServerKey = (signerPubkey: string): Uint8Array => hex.decode(toXOnlySignerHex(signerPubkey))
 
 interface AssetSwapsContextProps {
   /** Markets from the network's solver registry. */
@@ -76,10 +98,40 @@ export const AssetSwapsProvider = ({ children }: { children: ReactNode }) => {
     return next
   }
 
+  /**
+   * One notice per swap outcome.
+   *
+   * Multiple paths can write the same terminal status — the watcher event,
+   * the unseen-spend pass, the restore scan and `cancelSwap` — and any two can
+   * resolve the same spend at once. The record write is idempotent through
+   * `spendUpdate`; a toast is not, so the outcome is what gets deduplicated
+   * rather than the write.
+   *
+   * Keyed by outcome, not by swap, so a record that legitimately moves twice
+   * (`cancelling` reverted, then cancelled for real) is still announced.
+   */
+  const announced = useRef(new Set<string>())
+  const announceOutcome = (swap: Pick<AssetSwap, 'id' | 'status' | 'toAsset'>) => {
+    const key = `${swap.id}:${swap.status}`
+    if (announced.current.has(key)) return
+    announced.current.add(key)
+    if (swap.status === 'fulfilled') toast.success(`Swap completed, ${tickerFor(swap.toAsset)} received`)
+    else if (swap.status === 'cancelled') toast.success('Swap cancelled, funds returned')
+  }
+
+  /** A swap the chain has not reported an outcome for. `pending` is the absence
+   * of an answer and `cancelling` is a cancel whose spend has not landed; every
+   * other status is one. Both reconciliation passes below ask this, so they
+   * cannot disagree about which records are still theirs to resolve. */
+  const isOpen = (swap: AssetSwap) => swap.status === 'pending' || swap.status === 'cancelling'
+
   // The store is async now, so the list arrives after the first render rather
   // than with it. Re-read on every dataReady transition: a wallet reset clears
   // the repository, and the emptied list has to reach the UI.
   useEffect(() => {
+    // a reset empties the store and a restore rebuilds the same ids, so what
+    // has been announced cannot outlive the records it was announced for
+    announced.current.clear()
     readSwaps()
       .then(applySwaps)
       .catch((err) => consoleError(err, 'failed to read asset swaps'))
@@ -109,7 +161,7 @@ export const AssetSwapsProvider = ({ children }: { children: ReactNode }) => {
       // tradeable here: this provider builds offers, and a corridor is
       // negotiated with a solver instead. Keeping them would let one Lightning
       // card turn the whole swap surface on with nothing behind it.
-      .then((all) => setMarkets(all.filter((m) => !m.quote_corridor)))
+      .then((all) => setMarkets(all.filter((m) => !isRfqMarket(m))))
       .catch((err) => consoleError(err, 'solver discovery failed'))
     setEmulatorPubkey(getEmulatorPubkeyForNetwork(network))
   }
@@ -123,59 +175,88 @@ export const AssetSwapsProvider = ({ children }: { children: ReactNode }) => {
   // After a restore the swap store is empty while the funding/fill txs are
   // back in history, so swaps would show as bare sent/received rows. Scan the
   // sent virtual txs for offer packets and rebuild the lost records by
-  // binding each funding vtxo to the tx that spent it (fill or cancel). The
-  // scan is incremental — answered txids persist, so late-synced history is
-  // picked up by later runs and nothing is fetched twice.
+  // binding each funding vtxo to the tx that spent it (fill or cancel).
+  //
+  // The scan is incremental but not one-shot: answered txids persist, so
+  // late-synced history is picked up by later runs and nothing is fetched
+  // twice. Coverage restoration also re-registers rebuilt covenants so later
+  // spends reach the live watcher below.
   const scanningRef = useRef(false)
+  const rescanRef = useRef(false)
+  // Bumped to re-enter the effect when a queued rescan has to start, since no
+  // dependency of its own has changed by then.
+  const [scanTick, setScanTick] = useState(0)
+  // Read inside the scan so a re-run sees the history that arrived mid-flight.
+  // Committed values only, or a discarded render marks txids that never landed.
+  const txsRef = useRef(txs)
+  useLayoutEffect(() => {
+    txsRef.current = txs
+  }, [txs])
+
+  // A token rather than a cancellation flag: this cleanup fires only when the
+  // wallet changed or the provider went away, and `txs`, which must not abandon
+  // a running scan, is deliberately not a dependency.
+  const scanTokenRef = useRef(new AbortController())
   useEffect(() => {
-    if (!aspInfo.url || !aspInfo.signerPubkey || !dataReady || txs.length === 0 || scanningRef.current) return
-    let cancelled = false
-    scanningRef.current = true
+    const token = new AbortController()
+    scanTokenRef.current = token
+    return () => token.abort()
+  }, [svcWallet, aspInfo.url, aspInfo.signerPubkey, dataReady])
+
+  useEffect(() => {
+    if (!svcWallet || !aspInfo.url || !aspInfo.signerPubkey || !dataReady) return
+    if (scanningRef.current) {
+      rescanRef.current = true
+      return
+    }
+    const token = scanTokenRef.current
+    const stale = () => token.signal.aborted
     const scan = async () => {
-      const [existing, scanned] = await Promise.all([readSwaps(), assetSwapRepository.getScannedTxids()])
-      const { restored, scannedTxids } = await restoreAssetSwaps(
-        new RestIndexerProvider(aspInfo.url),
-        txs,
-        new Set(existing.map((s) => s.id)),
-        // x-only, matching the key the covenants were funded against
-        { serverPubkey: hex.decode(aspInfo.signerPubkey).slice(1), scanned },
-      )
-      // a wallet reset may have cleared the repository while the scan ran —
-      // never write the old profile's records into it. The repository clears
-      // asynchronously, so this is re-checked before every write below rather
-      // than once.
-      if (cancelled) return
-      await assetSwapRepository.markTxidsScanned(scannedTxids)
-      if (restored.length === 0) return
-      let next: WalletAssetSwap[] = []
-      for (const swap of restored) {
-        if (cancelled) return
-        // quote-time facts are not on chain; the fee rate is the one fact a
-        // restore can backfill, from the pair's current market card — an
-        // approximation if the solver changed its fee since the swap.
-        // TODO: delete this backfill once fee bps rides in a packet inside
-        // the funding tx — restoreAssetSwaps will then decode the actual
-        // historic rate from chain, like it already does the offer.
-        const feeBps = findMarket(marketsRef.current, swap.fromAsset, swap.toAsset)?.market?.fee_bps
-        next = (await addAssetSwap(
-          assetSwapRepository,
-          feeBps === undefined ? swap : ({ ...swap, quote: { feeBps } } as AssetSwap),
-        )) as WalletAssetSwap[]
+      const result = await restoreAssetSwapRepository({
+        wallet: svcWallet,
+        arkServerUrl: aspInfo.url,
+        indexer: new RestIndexerProvider(aspInfo.url),
+        repository: assetSwapRepository,
+        txs: txsRef.current,
+        serverPubkey: xOnlyServerKey(aspInfo.signerPubkey),
+        signal: token.signal,
+        prepareNew: (swap) => {
+          // Quote-time facts are not on chain. Backfill the fee from the
+          // pair's current card until it rides in the funding packet.
+          const feeBps = findMarket(marketsRef.current, swap.fromAsset, swap.toAsset)?.market?.fee_bps
+          return feeBps === undefined ? swap : ({ ...swap, quote: { feeBps } } as AssetSwap)
+        },
+      })
+      if (result.aborted || stale()) return
+      if (result.coverageError) {
+        consoleError(result.coverageError, 'swap covenant coverage restore failed')
       }
-      applySwaps(next)
+      if (result.changes.length === 0) return
+      const list = applySwaps(result.swaps)
+      const resolved = result.changes
+        .filter(({ previous, current }) => previous && previous.status !== current.status)
+        .map(({ current }) => current)
+      for (const swap of resolved) announceOutcome(swap)
+      // a covenant this run settled is still in the watched set. Liveness is a
+      // property of every record at a script, so the list goes whole.
+      if (resolved.length > 0 && svcWallet) {
+        await retireSettledOfferContracts(await svcWallet.getContractManager(), list)
+        if (stale()) return
+      }
       // re-merge the activity list so the tx couple collapses into Swap rows
       reloadWallet().catch(consoleError)
     }
+    scanningRef.current = true
     scan()
       .catch((err) => consoleError(err, 'swap restore scan failed'))
       .finally(() => {
         scanningRef.current = false
+        if (!rescanRef.current || scanTokenRef.current.signal.aborted) return
+        rescanRef.current = false
+        setScanTick((tick) => tick + 1)
       })
-    return () => {
-      cancelled = true
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aspInfo.url, aspInfo.signerPubkey, dataReady, txs])
+  }, [svcWallet, aspInfo.url, aspInfo.signerPubkey, dataReady, txs, scanTick])
 
   // read through a ref so the watcher (which deliberately does not rebind on
   // market refreshes) always names assets from the current list
@@ -275,7 +356,7 @@ export const AssetSwapsProvider = ({ children }: { children: ReactNode }) => {
         const deposit = vtxos.find((v) => v.txid === swap.fundingTxid)
         const state = deposit?.virtualStatus.state
         if (deposit && state === 'spent') {
-          if (await resolveCancellingSpend(swap, deposit.arkTxId ?? deposit.spentBy)) return
+          if (await resolveCancellingSpend(swap, deposit)) return
         } else if (state === 'swept') {
           applySwaps(await updateAssetSwap(assetSwapRepository, id, { status: 'recoverable' }))
           return
@@ -289,29 +370,189 @@ export const AssetSwapsProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
-  const resolveCancellingSpend = async (swap: WalletAssetSwap, spentTxid?: string): Promise<boolean> => {
-    if (!svcWallet || !spentTxid) return false
-    const spend = (await getTxHistory(svcWallet)).find((tx) =>
-      [tx.boardingTxid, tx.redeemTxid, tx.roundTxid].includes(spentTxid),
-    )
-    if (!spend) return false
-
-    // Re-read after the async history lookup so a completed cancelOffer call
-    // or the watcher always wins over this reconciliation.
-    if ((await readSwaps()).find((candidate) => candidate.id === swap.id)?.status !== 'cancelling') return true
-    const cancelled = isCancelSpend(decodeOffer(hex.decode(swap.offerHex)), spend)
-    applySwaps(
-      await updateAssetSwap(assetSwapRepository, swap.id, {
-        status: cancelled ? 'cancelled' : 'fulfilled',
-        spentTxid,
-        ...(cancelled ? {} : { completedAt: Date.now() }),
-      }),
-    )
-    if (cancelled) toast.success('Swap cancelled, funds returned')
-    else toast.success(`Swap completed, ${tickerFor(swap.toAsset)} received`)
-    reloadWallet().catch(consoleError)
-    return true
+  /**
+   * The spending txs the indexer serves for these txids, parsed and keyed by
+   * txid: one round-trip for however many the caller needs. A psbt that fails
+   * to parse is dropped rather than failing the batch, so the other spend of
+   * the same deposit can still answer.
+   */
+  const fetchSpendTxs = async (txids: string[]): Promise<Map<string, Transaction>> => {
+    const parsed = new Map<string, Transaction>()
+    if (txids.length === 0) return parsed
+    const { txs: spendTxs } = await new RestIndexerProvider(aspInfo.url).getVirtualTxs(txids)
+    for (const psbt of spendTxs) {
+      try {
+        const tx = Transaction.fromPSBT(base64.decode(psbt))
+        parsed.set(tx.id, tx)
+      } catch (err) {
+        consoleError(err, 'unparseable spending tx from indexer')
+      }
+    }
+    return parsed
   }
+
+  /**
+   * What a spend of the deposit was, read from the covenant leaf it took, and
+   * the txid the record carries for it: the ark txid, which is what the
+   * resolver matches a spend on.
+   *
+   * The one authoritative answer, and the one every writer here uses. The
+   * alternative — inferring from the history row for the spend, cancel if the
+   * want-asset did not arrive — reads a fill as a cancel when the history sync
+   * has not caught up with the covenant spend yet. A stored status is
+   * permanent, so that guess was too.
+   *
+   * Nothing when the deposit reports no spend or the leaf has no answer yet —
+   * a spend the indexer did not serve, a covenant that does not rebuild against
+   * this key — so the caller leaves the record open and a later pass asks again.
+   */
+  const classifyDeposit = (
+    swap: AssetSwap,
+    deposit: SpentDeposit,
+    spendTxs: Map<string, Transaction>,
+  ): { txid: string; kind: Exclude<SpendKind, 'indeterminate'> } | undefined => {
+    const txid = deposit.arkTxId || deposit.spentBy
+    if (!txid || !aspInfo.signerPubkey) return undefined
+    try {
+      const kind = classifyDepositSpend(
+        decodeOffer(hex.decode(swap.offerHex)),
+        xOnlyServerKey(aspInfo.signerPubkey),
+        spendTxidsOf(deposit)
+          .map((spendTxid) => spendTxs.get(spendTxid))
+          .filter((tx): tx is Transaction => tx !== undefined),
+        { txid: deposit.txid, vout: deposit.vout },
+      )
+      return kind === 'indeterminate' ? undefined : { txid, kind }
+    } catch (err) {
+      consoleError(err, 'failed to classify swap deposit spend')
+      return undefined
+    }
+  }
+
+  /**
+   * Writes the leaf's answer for a spent deposit onto a record still open, and
+   * announces it. The one routine behind both writers that start from a
+   * deposit the indexer reports spent: the unseen-spend pass, and a cancel that
+   * threw after the deposit was gone.
+   *
+   * The record is re-read right before the write so the watcher, or a cancel
+   * that completed meanwhile, wins: `spendUpdate` returns nothing for a
+   * terminal record, and that is the only open-check either writer relies on.
+   */
+  const resolveSpentDeposit = async (
+    swap: AssetSwap,
+    deposit: SpentDeposit,
+    spendTxs: Map<string, Transaction>,
+    stale: () => boolean,
+  ): Promise<{ answered: boolean; written: boolean }> => {
+    const spend = classifyDeposit(swap, deposit, spendTxs)
+    if (!spend) return { answered: false, written: false }
+    const row = txsRef.current.find((tx) => [tx.boardingTxid, tx.redeemTxid, tx.roundTxid].includes(spend.txid))
+    const current = (await readSwaps()).find((candidate) => candidate.id === swap.id)
+    const changes =
+      current &&
+      spendUpdate(current, {
+        ...spend,
+        at: row ? row.createdAt * 1000 : Date.now(), // history in seconds, records in milliseconds
+      })
+    if (!changes || stale()) return { answered: true, written: false }
+    const updated = await updateAssetSwap(assetSwapRepository, swap.id, changes)
+    if (stale()) return { answered: true, written: false }
+    applySwaps(updated)
+    announceOutcome({ ...swap, status: spend.kind })
+    return { answered: true, written: true }
+  }
+
+  /** A cancel that threw after the deposit was spent: something took it, and
+   * the leaf says what. True once it has answered, whichever writer got there
+   * first; false leaves the record `cancelling` for the watcher. */
+  const resolveCancellingSpend = async (swap: WalletAssetSwap, deposit: SpentDeposit): Promise<boolean> => {
+    const spendTxs = await fetchSpendTxs(spendTxidsOf(deposit))
+    const { answered, written } = await resolveSpentDeposit(swap, deposit, spendTxs, () => false)
+    if (written) reloadWallet().catch(consoleError)
+    return answered
+  }
+
+  /**
+   * Spends the watcher never received.
+   *
+   * `watchOfferSwaps` learns a spend only from a live subscription event, and
+   * the boot sync and failsafe poll both reach it with nothing usable, so the
+   * record keeps `pending` and the fill renders as a bare received row instead
+   * of collapsing into the swap. This pass reads the wallet's contract rows —
+   * which needs the covenant registered, done by `createOffer` immediately and
+   * by the restore scan for records rebuilt from seed — and classifies any
+   * spend it finds from the covenant leaf it took, exactly as the watcher and
+   * the scan classify theirs.
+   *
+   * A spend another path resolves while this one is between its re-read and its
+   * write costs a redundant write, not a redundant notice: `spendUpdate` makes
+   * the write idempotent and `announceOutcome` deduplicates the toast.
+   */
+  const reconcileUnseenSpends = async (stale: () => boolean) => {
+    if (!svcWallet) return
+    const open = (await readSwaps()).filter(isOpen)
+    if (open.length === 0) return
+
+    const manager = await svcWallet.getContractManager()
+    const contracts = await manager.getContractsWithVtxos({
+      script: [...new Set(open.map((swap) => swap.swapPkScript))],
+    })
+    const vtxos = contracts.flatMap((contract) => contract.vtxos)
+    const spent = open.flatMap((swap) => {
+      const deposit = vtxos.find(
+        (v) => v.isSpent && v.contractScript === swap.swapPkScript && v.txid === swap.fundingTxid,
+      )
+      return deposit ? [{ swap, deposit }] : []
+    })
+    // the steady state
+    if (spent.length === 0) return
+
+    const spendTxs = await fetchSpendTxs([...new Set(spent.flatMap(({ deposit }) => spendTxidsOf(deposit)))])
+    if (stale()) return
+    const settled = new Set<string>()
+    for (const { swap, deposit } of spent) {
+      const { written } = await resolveSpentDeposit(swap, deposit, spendTxs, stale)
+      if (stale()) return
+      if (written) settled.add(swap.swapPkScript)
+    }
+    if (settled.size === 0) return
+    // only the scripts this run resolved: liveness is a property of all records
+    // at a script, so the filter keeps the check sound
+    await retireSettledOfferContracts(
+      manager,
+      swapsRef.current.filter((swap) => settled.has(swap.swapPkScript)),
+    )
+    if (stale()) return
+    reloadWallet().catch(consoleError)
+  }
+
+  /**
+   * Re-run on every history change, not once at start.
+   *
+   * A spend can land at any point in the session, and `txs` changing is the
+   * wallet's signal that something moved: the deposit's own spend reaches
+   * history as a row, so the change that matters always arrives as one.
+   * Running once at start covers only a spend that predates the session.
+   *
+   * Chained rather than gated by a flag, so a change landing mid-run is
+   * answered instead of dropped, and each queued run carries its own liveness
+   * so a wallet switch abandons it.
+   */
+  const reconcileQueue = useRef<Promise<void>>(Promise.resolve())
+  useEffect(() => {
+    // the leaf is read off the server's copy of the spend, against its key;
+    // both arrive async, and the pass re-enters when they do
+    if (!svcWallet || !aspInfo.url || !aspInfo.signerPubkey || txs.length === 0) return
+    let stopped = false
+    reconcileQueue.current = reconcileQueue.current
+      .then(() => (stopped ? undefined : reconcileUnseenSpends(() => stopped)))
+      .catch((err) => consoleError(err, 'unseen spend reconciliation failed'))
+    return () => {
+      stopped = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [svcWallet, txs, aspInfo.url, aspInfo.signerPubkey])
 
   /** A status the watcher persisted. It writes before it notifies, so the
    * record is durable by the time this runs — all that is left is telling the
@@ -324,13 +565,9 @@ export const AssetSwapsProvider = ({ children }: { children: ReactNode }) => {
         : [updated, ...swapsRef.current],
     )
     if (before?.status === updated.status) return
-    if (updated.status === 'fulfilled') {
-      toast.success(`Swap completed, ${tickerFor(updated.toAsset)} received`)
-      reloadWallet().catch(consoleError)
-    } else if (updated.status === 'cancelled') {
-      toast.success('Swap cancelled, funds returned')
-      reloadWallet().catch(consoleError)
-    }
+    if (updated.status !== 'fulfilled' && updated.status !== 'cancelled') return
+    announceOutcome(updated)
+    reloadWallet().catch(consoleError)
   }
 
   // The watcher rides the wallet's contract events — registration in
@@ -365,9 +602,10 @@ export const AssetSwapsProvider = ({ children }: { children: ReactNode }) => {
   const swapAvailable = markets.length > 0 && Boolean(emulatorPubkey)
   const value = useMemo(
     () => ({ markets, swapAvailable, swaps, runDiscovery, createSwap, cancelSwap }),
-    // createSwap/cancelSwap close over these
+    // createSwap/cancelSwap close over these; the signer key reaches cancelSwap
+    // through classifyDeposit, which reads the leaf against it
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [markets, swapAvailable, swaps, svcWallet, emulatorPubkey, aspInfo.url, aspInfo.network],
+    [markets, swapAvailable, swaps, svcWallet, emulatorPubkey, aspInfo.url, aspInfo.network, aspInfo.signerPubkey],
   )
 
   return <AssetSwapsContext.Provider value={value}>{children}</AssetSwapsContext.Provider>
