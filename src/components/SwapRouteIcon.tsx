@@ -1,4 +1,4 @@
-import { getAssetSymbolBySwapAssetId, type AssetSymbol } from '../lib/assets'
+import { getAssetSymbolByAssetId, type AssetSymbol } from '../lib/assets'
 import AssetIcon from '../icons/AssetIcon'
 
 interface SwapRouteAsset {
@@ -42,7 +42,7 @@ export default function SwapRouteIcon({
 }
 
 function RouteAsset({ asset, size }: { asset: SwapRouteAsset; size: number }) {
-  const symbol = asset.assetId === 'btc' ? 'BTC' : asset.assetId ? getAssetSymbolBySwapAssetId(asset.assetId) : undefined
+  const symbol = asset.assetId === 'btc' ? 'BTC' : asset.assetId ? getAssetSymbolByAssetId(asset.assetId) : undefined
   if (symbol) return <AssetIcon symbol={symbol as AssetSymbol} size={size} />
   return (
     <div

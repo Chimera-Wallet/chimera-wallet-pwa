@@ -15,7 +15,7 @@ import type { NetworkName } from '@arkade-os/sdk'
 import betaSolverCard from './beta-solver.card.json'
 import { getSolverRegistryUrl } from './constants'
 import { consoleLog } from './logs'
-import { readSolverCardsFromStorage } from './storage'
+import { getStorageItem, readSolverCardsFromStorage } from './storage'
 import { assetSwapRepository } from './swapRepository'
 
 /**
@@ -35,29 +35,53 @@ import { assetSwapRepository } from './swapRepository'
  * but carrying the real one keeps the bundle byte-identical to what the
  * registry will list.
  *
- * Scoped to mainnet on purpose: the pubkey and relay in the card are the
- * production solver's, and offering it on regtest/signet would quote a
- * mainnet counterparty for testnet coins.
+ * Offered on both production (bitcoin) and staging (mutinynet). Not on
+ * regtest/signet, where no wallet build points.
  */
 // Exported so the Solvers settings screen can show built-in cards — a pinned
 // solver invisible in Settings reads as "no solver at all".
-export const BUNDLED_CARDS: LocalCardInput[] = [{ card: betaSolverCard as LocalCardInput['card'], network: 'bitcoin' }]
+export const BUNDLED_CARDS: LocalCardInput[] = (['bitcoin', 'mutinynet'] as const).map((network) => ({
+  card: betaSolverCard as LocalCardInput['card'],
+  network,
+}))
+
+// Short, stable hash of the local cards. The package's markets cache is keyed
+// by network + registry only, so without this a changed card set (a new build
+// shipping a new bundled card) would keep serving stale markets for an hour.
+const cardsFingerprint = (cards: LocalCardInput[]): string => {
+  const text = JSON.stringify(cards)
+  let hash = 5381
+  for (let i = 0; i < text.length; i++) hash = ((hash << 5) + hash + text.charCodeAt(i)) | 0
+  return (hash >>> 0).toString(36)
+}
+
+const cardsFingerprintKey = (network: string) => `solverCardsFingerprint:${network}`
 
 /**
  * Markets from the network's solver registry; [] when none is configured.
  * Caching (one hour, with a stale fallback for an unreachable registry) lives
- * in the repository the package writes through.
+ * in the repository the package writes through; a change in the local card
+ * set bypasses it.
  */
 export const discoverMarkets = async (network: NetworkName, useCache = true): Promise<DiscoveredMarket[]> => {
   if (!isNetwork(network)) return []
-  return discover({
+  const localCards = [...BUNDLED_CARDS, ...readSolverCardsFromStorage()].filter((c) => c.network === network)
+  const fingerprint = cardsFingerprint(localCards)
+  const cardsChanged = getStorageItem(cardsFingerprintKey(network), '', (val) => val) !== fingerprint
+  const markets = await discover({
     network,
     registryUrl: getSolverRegistryUrl(network),
     repository: assetSwapRepository,
-    localCards: [...BUNDLED_CARDS, ...readSolverCardsFromStorage()].filter((c) => c.network === network),
+    localCards,
     logger: (...args) => consoleLog('solver discovery:', ...args),
-    useCache,
+    useCache: useCache && !cardsChanged,
   })
+  try {
+    localStorage.setItem(cardsFingerprintKey(network), fingerprint)
+  } catch {
+    // storage unavailable: the next call just skips the cache again
+  }
+  return markets
 }
 
 /** The market feed's pre-fee price oriented give→receive, in whole display

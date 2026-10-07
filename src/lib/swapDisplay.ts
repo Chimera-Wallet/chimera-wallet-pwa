@@ -1,4 +1,4 @@
-import { getAssetConfig, getAssetSymbolBySwapAssetId, getDisplayTicker } from './assets'
+import { getAssetConfig, getAssetSymbolByAssetId, getDisplayTicker } from './assets'
 import type { WalletAssetSwap } from './swapRepository'
 import type { Tx, TxAssetSwap } from './types'
 
@@ -33,12 +33,12 @@ export function swapRouteLabel(tx: Tx): string {
 
 const derivedTicker = (assetId: string): string => {
   if (assetId === 'btc') return 'BTC'
-  const symbol = getAssetSymbolBySwapAssetId(assetId)
+  const symbol = getAssetSymbolByAssetId(assetId)
   return symbol ? getDisplayTicker(symbol) : assetId.slice(0, 8)
 }
 const derivedDecimals = (assetId: string): number => {
   if (assetId === 'btc') return 8
-  const symbol = getAssetSymbolBySwapAssetId(assetId)
+  const symbol = getAssetSymbolByAssetId(assetId)
   return (symbol && getAssetConfig(symbol)?.precision) ?? 8
 }
 

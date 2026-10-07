@@ -218,33 +218,6 @@ export const getAssetSymbolByAssetId = (assetId: string): AssetSymbol | undefine
   return undefined
 }
 
-// Asset-swap-only id overrides. Solver markets may quote a different token id
-// than the one the wallet wraps/holds (staging USDT today). Only swap code reads
-// these; everything else keeps using WRAPPED_ASSET_IDS. Unset → fall back.
-const SWAP_ASSET_ID_OVERRIDES: Partial<Record<AssetSymbol, string | undefined>> = {
-  USDT: import.meta.env.VITE_ARKADE_SWAP_USDT,
-}
-
-/** The asset id swaps use for a symbol: its swap override, else its wrapped id. */
-export const getSwapAssetId = (symbol: string): string | undefined =>
-  SWAP_ASSET_ID_OVERRIDES[symbol.toUpperCase() as AssetSymbol] || getWrappedAssetId(symbol)
-
-/** True when swaps use a different token id for this symbol than the wallet
- * holds, so the swap screen can explain why its balance differs. */
-export const hasSwapOnlyAssetId = (symbol: string): boolean => {
-  const swapId = getSwapAssetId(symbol)
-  return Boolean(swapId && swapId !== getWrappedAssetId(symbol))
-}
-
-/** Reverse of getSwapAssetId; also resolves plain wrapped ids so older swap
- * records made under the wrapped id still display correctly. */
-export const getAssetSymbolBySwapAssetId = (assetId: string): AssetSymbol | undefined => {
-  for (const [symbol, id] of Object.entries(SWAP_ASSET_ID_OVERRIDES)) {
-    if (id && id === assetId) return symbol as AssetSymbol
-  }
-  return getAssetSymbolByAssetId(assetId)
-}
-
 /**
  * Display ticker for a symbol — the plain symbol, for every asset.
  *

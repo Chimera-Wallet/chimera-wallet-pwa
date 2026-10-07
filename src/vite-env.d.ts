@@ -14,7 +14,6 @@ interface ImportMetaEnv {
   // Arkade wrapped asset IDs (differ per environment)
   readonly VITE_ARKADE_ETH?: string
   readonly VITE_ARKADE_USDT?: string
-  readonly VITE_ARKADE_SWAP_USDT?: string
   readonly VITE_ARKADE_TRX?: string
   readonly VITE_ARKADE_POL?: string
   readonly VITE_ARKADE_CEXT?: string

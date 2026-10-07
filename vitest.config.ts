@@ -27,7 +27,6 @@ export default defineConfig({
       VITE_ENABLED_ASSETS: 'BTC,CEXT',
       VITE_ARKADE_ETH: 'test-eth',
       VITE_ARKADE_USDT: 'test-usdt',
-      VITE_ARKADE_SWAP_USDT: 'test-usdt-swap',
       VITE_ARKADE_TRX: 'test-trx',
       VITE_ARKADE_POL: 'test-pol',
       VITE_ARKADE_CEXT: 'test-cext',
