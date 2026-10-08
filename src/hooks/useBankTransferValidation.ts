@@ -46,6 +46,8 @@ interface UseBankTransferValidationParams {
   amount: number
   currency?: BankCurrency
   circuit?: BankCircuit
+  /** Set false to skip the KYC status request while the result isn't needed. */
+  enabled?: boolean
 }
 
 /**
@@ -58,6 +60,7 @@ export function useBankTransferValidation({
   amount,
   currency = DEFAULT_BANK_CURRENCY,
   circuit,
+  enabled = true,
 }: UseBankTransferValidationParams): BankTransferValidation {
   const [config, setConfig] = useState<BankTransferConfig>(getBankTransferConfigSync())
   const [kycStatus, setKycStatus] = useState<KycStatus>('not_started')
@@ -75,6 +78,7 @@ export function useBankTransferValidation({
   }, [])
 
   useEffect(() => {
+    if (!enabled) return
     let cancelled = false
     fetchAuthoritativeKycStatus().then((status) => {
       if (!cancelled) setKycStatus(status ?? 'not_started')
@@ -82,7 +86,7 @@ export function useBankTransferValidation({
     return () => {
       cancelled = true
     }
-  }, [refreshCount])
+  }, [refreshCount, enabled])
 
   const kycVerified = kycStatus === 'confirmed'
 
