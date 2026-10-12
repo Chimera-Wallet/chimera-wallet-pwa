@@ -176,8 +176,7 @@ export const lnSendRendezvous = (
  * A side's bounds are what the SOLVER pays out on it, so the Lightning corridor's
  * two directions live on the two sides of one market: quote (Lightning) is the
  * send leg, base (arkade) the receive leg. A card whose base side is disabled
- * advertises no receive corridor, which is the current published state — see
- * arkade-os/lightning-swap-service#64.
+ * advertises no receive corridor.
  */
 export const lnReceiveRendezvous = (
   markets: DiscoveredMarket[],
