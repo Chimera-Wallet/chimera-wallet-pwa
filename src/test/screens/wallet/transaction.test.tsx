@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import '../../../lib/i18n'
 import Transaction from '../../../screens/Wallet/Transaction'
 import { FlowContext } from '../../../providers/flow'
-import { LimitsContext } from '../../../providers/limits'
 import {
   mockAspContextValue,
   mockFlowContextValue,
   mockIssuanceTxInfo,
-  mockLimitsContextValue,
   mockNavigationContextValue,
   mockTxId,
   mockTxInfo,
@@ -17,236 +16,86 @@ import { AspContext } from '../../../providers/asp'
 import { WalletContext } from '../../../providers/wallet'
 import { NavigationContext } from '../../../providers/navigation'
 
+// These pin Chimera-specific behaviour that an upstream Arkade merge has
+// silently reverted before: Confirmed / Pending / Failed statuses, amounts in
+// BTC, and no manual settle / "Complete Boarding" buttons (deposits board
+// automatically on app start and refresh).
+
+type TxInfo = typeof mockFlowContextValue.txInfo
+
+const renderTx = (txInfo: TxInfo, txs: TxInfo[] = [txInfo], walletOverrides: object = {}) =>
+  render(
+    <NavigationContext.Provider value={mockNavigationContextValue}>
+      <AspContext.Provider value={mockAspContextValue}>
+        <FlowContext.Provider value={{ ...mockFlowContextValue, txInfo }}>
+          <WalletContext.Provider value={{ ...mockWalletContextValue, txs, ...walletOverrides } as any}>
+            <Transaction />
+          </WalletContext.Provider>
+        </FlowContext.Provider>
+      </AspContext.Provider>
+    </NavigationContext.Provider>,
+  )
+
+const expectNoManualSettleButtons = () => {
+  expect(screen.queryByText('Complete Boarding')).not.toBeInTheDocument()
+  expect(screen.queryByText('Settle transaction')).not.toBeInTheDocument()
+  expect(screen.queryByText('Add reminder')).not.toBeInTheDocument()
+  expect(screen.queryByText('Resend')).not.toBeInTheDocument()
+}
+
+const pendingBoardingTx = { ...mockTxInfo, boardingTxid: mockTxId, settled: false, preconfirmed: true }
+
 describe('Transaction screen', () => {
-  it('renders the settled transaction screen correctly', async () => {
-    render(
-      <NavigationContext.Provider value={mockNavigationContextValue}>
-        <AspContext.Provider value={mockAspContextValue}>
-          <FlowContext.Provider value={mockFlowContextValue}>
-            <WalletContext.Provider value={mockWalletContextValue}>
-              <LimitsContext.Provider value={mockLimitsContextValue}>
-                <Transaction />
-              </LimitsContext.Provider>
-            </WalletContext.Provider>
-          </FlowContext.Provider>
-        </AspContext.Provider>
-      </NavigationContext.Provider>,
-    )
-    // left side of the table
+  it('shows a settled transaction as Confirmed with amounts in BTC', () => {
+    renderTx(mockTxInfo)
     expect(screen.getByText('Network fees')).toBeInTheDocument()
-    expect(screen.getByText('Transaction')).toBeInTheDocument()
-    expect(screen.getByText('Direction')).toBeInTheDocument()
     expect(screen.getByText('Amount')).toBeInTheDocument()
-    expect(screen.getByText('Total')).toBeInTheDocument()
-    expect(screen.getByText('Date')).toBeInTheDocument()
-    expect(screen.getByText('When')).toBeInTheDocument()
-    // right side of the table
-    expect(await screen.findByText('Received')).toBeInTheDocument()
-    expect(await screen.findByText('0 SATS')).toBeInTheDocument()
-  })
-
-  it('renders the preconfirmed transaction screen correctly', async () => {
-    // unsettled transaction
-    const localFlowContextValue = {
-      ...mockFlowContextValue,
-      txInfo: { ...mockFlowContextValue.txInfo, settled: false },
-    }
-
-    const localWalletContextValue = {
-      ...mockWalletContextValue,
-      txs: [localFlowContextValue.txInfo],
-    }
-
-    render(
-      <NavigationContext.Provider value={mockNavigationContextValue}>
-        <AspContext.Provider value={mockAspContextValue}>
-          <FlowContext.Provider value={localFlowContextValue}>
-            <WalletContext.Provider value={localWalletContextValue}>
-              <LimitsContext.Provider value={mockLimitsContextValue}>
-                <Transaction />
-              </LimitsContext.Provider>
-            </WalletContext.Provider>
-          </FlowContext.Provider>
-        </AspContext.Provider>
-      </NavigationContext.Provider>,
-    )
-    // left side of the table
-    expect(screen.getByText('Network fees')).toBeInTheDocument()
-    expect(screen.getByText('Transaction')).toBeInTheDocument()
-    expect(screen.getByText('Direction')).toBeInTheDocument()
-    expect(screen.getByText('Amount')).toBeInTheDocument()
-    expect(screen.getByText('Total')).toBeInTheDocument()
-    expect(screen.getByText('Date')).toBeInTheDocument()
-    expect(screen.getByText('When')).toBeInTheDocument()
-    // right side of the table
     expect(screen.getByText('Received')).toBeInTheDocument()
-    expect(screen.getByText('0 SATS')).toBeInTheDocument()
-    // buttons
-    expect(screen.queryByText('Settle transaction')).not.toBeInTheDocument()
-    expect(screen.queryByText('Add reminder')).not.toBeInTheDocument()
+    expect(screen.getByText('Confirmed')).toBeInTheDocument()
+    // amount and total
+    expect(screen.getAllByText('0.001 BTC')).toHaveLength(2)
+    expect(screen.queryByText(/SATS/)).not.toBeInTheDocument()
+    expectNoManualSettleButtons()
   })
 
-  it('renders the unconfirmed boarding transaction screen correctly', async () => {
-    // unconfirmed boarding transaction
-    const txInfo = { ...mockTxInfo, boardingTxid: mockTxId, settled: false, createdAt: 0, amount: 21000 }
-    const localFlowContextValue = { ...mockFlowContextValue, txInfo }
-    const localWalletContextValue = { ...mockWalletContextValue, txs: [txInfo] }
-
-    render(
-      <NavigationContext.Provider value={mockNavigationContextValue}>
-        <AspContext.Provider value={mockAspContextValue}>
-          <FlowContext.Provider value={localFlowContextValue}>
-            <WalletContext.Provider value={localWalletContextValue}>
-              <LimitsContext.Provider value={mockLimitsContextValue}>
-                <Transaction />
-              </LimitsContext.Provider>
-            </WalletContext.Provider>
-          </FlowContext.Provider>
-        </AspContext.Provider>
-      </NavigationContext.Provider>,
-    )
-    // left side of the table
-    expect(screen.getByText('Network fees')).toBeInTheDocument()
-    expect(screen.getByText('Transaction')).toBeInTheDocument()
-    expect(screen.getByText('Direction')).toBeInTheDocument()
-    expect(screen.getByText('Amount')).toBeInTheDocument()
-    expect(screen.getByText('Total')).toBeInTheDocument()
-    expect(screen.getByText('Date')).toBeInTheDocument()
-    expect(screen.getByText('When')).toBeInTheDocument()
-    // right side of the table
-    expect(screen.getByText('Received')).toBeInTheDocument()
-    expect(screen.getByText('0 SATS')).toBeInTheDocument()
-    // buttons should not be present
-    expect(screen.queryByText('Settle transaction')).not.toBeInTheDocument()
-    expect(screen.queryByText('Add reminder')).not.toBeInTheDocument()
+  it('shows an unconfirmed deposit as Pending, waiting for on-chain confirmation', () => {
+    renderTx({ ...pendingBoardingTx, createdAt: 0 })
+    // status row + banner title
+    expect(screen.getAllByText('Pending').length).toBeGreaterThan(0)
+    expect(screen.getByText(/Please wait for confirmation/)).toBeInTheDocument()
+    expectNoManualSettleButtons()
   })
 
-  it('renders the confirmed boarding transaction screen correctly', async () => {
-    // confirmed boarding transaction
-    const txInfo = { ...mockTxInfo, boardingTxid: mockTxId, settled: false }
-    const localFlowContextValue = { ...mockFlowContextValue, txInfo }
-    const localWalletContextValue = { ...mockWalletContextValue, txs: [txInfo] }
-
-    render(
-      <NavigationContext.Provider value={mockNavigationContextValue}>
-        <AspContext.Provider value={mockAspContextValue}>
-          <FlowContext.Provider value={localFlowContextValue}>
-            <WalletContext.Provider value={localWalletContextValue}>
-              <LimitsContext.Provider value={mockLimitsContextValue}>
-                <Transaction />
-              </LimitsContext.Provider>
-            </WalletContext.Provider>
-          </FlowContext.Provider>
-        </AspContext.Provider>
-      </NavigationContext.Provider>,
-    )
-    // left side of the table
-    expect(screen.getByText('Network fees')).toBeInTheDocument()
-    expect(screen.getByText('Transaction')).toBeInTheDocument()
-    expect(screen.getByText('Direction')).toBeInTheDocument()
-    expect(screen.getByText('Amount')).toBeInTheDocument()
-    expect(screen.getByText('Total')).toBeInTheDocument()
-    expect(screen.getByText('Date')).toBeInTheDocument()
-    expect(screen.getByText('When')).toBeInTheDocument()
-    // right side of the table
-    expect(screen.getByText('Received')).toBeInTheDocument()
-    expect(screen.getByText('0 SATS')).toBeInTheDocument()
-    // buttons should be present
-    expect(screen.queryByText('Settle transaction')).not.toBeInTheDocument()
-    expect(screen.queryByText('Add reminder')).not.toBeInTheDocument()
+  it('shows a confirmed deposit as Pending and says it boards automatically, with no button', () => {
+    renderTx(pendingBoardingTx)
+    expect(screen.getAllByText('Pending').length).toBeGreaterThan(0)
+    expect(screen.getByText(/being added to your wallet automatically/)).toBeInTheDocument()
+    expect(screen.queryByText('Pending Boarding')).not.toBeInTheDocument()
+    expectNoManualSettleButtons()
   })
 
-  it('renders the preconfirmed ark transaction screen correctly', async () => {
-    // preconfirmed ark transaction
-    const txInfo = { ...mockTxInfo, arkTxid: mockTxId, settled: false }
-    const localFlowContextValue = { ...mockFlowContextValue, txInfo }
-    const localWalletContextValue = { ...mockWalletContextValue, txs: [txInfo] }
-
-    render(
-      <NavigationContext.Provider value={mockNavigationContextValue}>
-        <AspContext.Provider value={mockAspContextValue}>
-          <FlowContext.Provider value={localFlowContextValue}>
-            <WalletContext.Provider value={localWalletContextValue}>
-              <LimitsContext.Provider value={mockLimitsContextValue}>
-                <Transaction />
-              </LimitsContext.Provider>
-            </WalletContext.Provider>
-          </FlowContext.Provider>
-        </AspContext.Provider>
-      </NavigationContext.Provider>,
-    )
-    // left side of the table
-    expect(screen.getByText('Network fees')).toBeInTheDocument()
-    expect(screen.getByText('Transaction')).toBeInTheDocument()
-    expect(screen.getByText('Direction')).toBeInTheDocument()
-    expect(screen.getByText('Amount')).toBeInTheDocument()
-    expect(screen.getByText('Total')).toBeInTheDocument()
-    expect(screen.getByText('Date')).toBeInTheDocument()
-    expect(screen.getByText('When')).toBeInTheDocument()
-    // right side of the table
-    // expect(screen.getByText('Received')).toBeInTheDocument()
-    expect(screen.getByText('0 SATS')).toBeInTheDocument()
-    // buttons should be present
-    expect(screen.queryByText('Settle transaction')).not.toBeInTheDocument()
-    expect(screen.queryByText('Add reminder')).not.toBeInTheDocument()
+  it('shows an expired deposit as Failed', () => {
+    renderTx({ ...pendingBoardingTx, createdAt: Math.floor(Date.now() / 1000) - 10_000 })
+    expect(screen.getAllByText('Failed').length).toBeGreaterThan(0)
+    expect(screen.getByText('Boarding transaction expired.')).toBeInTheDocument()
+    expectNoManualSettleButtons()
   })
 
-  it('should hide buttons if total amount < dust', async () => {
-    const amount = 21
-
-    // preconfirmed ark transaction
-    const txInfo = { ...mockTxInfo, amount, arkTxid: mockTxId, settled: false }
-    const localFlowContextValue = { ...mockFlowContextValue, txInfo }
-    const localWalletContextValue = { ...mockWalletContextValue, txs: [txInfo] }
-
-    render(
-      <NavigationContext.Provider value={mockNavigationContextValue}>
-        <AspContext.Provider value={mockAspContextValue}>
-          <FlowContext.Provider value={localFlowContextValue}>
-            <WalletContext.Provider value={localWalletContextValue}>
-              <LimitsContext.Provider value={mockLimitsContextValue}>
-                <Transaction />
-              </LimitsContext.Provider>
-            </WalletContext.Provider>
-          </FlowContext.Provider>
-        </AspContext.Provider>
-      </NavigationContext.Provider>,
-    )
-    // left side of the table
-    expect(screen.getByText('Network fees')).toBeInTheDocument()
-    expect(screen.getByText('Transaction')).toBeInTheDocument()
-    expect(screen.getByText('Direction')).toBeInTheDocument()
-    expect(screen.getByText('Amount')).toBeInTheDocument()
-    expect(screen.getByText('Total')).toBeInTheDocument()
-    expect(screen.getByText('Date')).toBeInTheDocument()
-    expect(screen.getByText('When')).toBeInTheDocument()
-    // right side of the table
-    expect(screen.getByText('Received')).toBeInTheDocument()
-    expect(screen.getByText('0 SATS')).toBeInTheDocument()
-    // buttons should not be present
-    expect(screen.queryByText('Settle transaction')).not.toBeInTheDocument()
-    expect(screen.queryByText('Add reminder')).not.toBeInTheDocument()
+  it('shows a preconfirmed Arkade transaction as Confirmed, not Preconfirmed', () => {
+    renderTx({ ...mockTxInfo, boardingTxid: '', redeemTxid: mockTxId, settled: false, preconfirmed: true })
+    expect(screen.getByText('Confirmed')).toBeInTheDocument()
+    expect(screen.queryByText('Preconfirmed')).not.toBeInTheDocument()
+    expectNoManualSettleButtons()
   })
 
-  it('renders issuance transaction with correct direction and amounts', async () => {
-    const localFlowContextValue = { ...mockFlowContextValue, txInfo: mockIssuanceTxInfo }
-    const localWalletContextValue = { ...mockWalletContextValue, txs: [mockIssuanceTxInfo] }
+  it('follows the live wallet entry, so the status updates once a deposit boards', () => {
+    renderTx(pendingBoardingTx, [{ ...pendingBoardingTx, settled: true, preconfirmed: false }])
+    expect(screen.getByText('Confirmed')).toBeInTheDocument()
+    expect(screen.queryByText(/being added to your wallet automatically/)).not.toBeInTheDocument()
+  })
 
-    render(
-      <NavigationContext.Provider value={mockNavigationContextValue}>
-        <AspContext.Provider value={mockAspContextValue}>
-          <FlowContext.Provider value={localFlowContextValue}>
-            <WalletContext.Provider value={localWalletContextValue}>
-              <LimitsContext.Provider value={mockLimitsContextValue}>
-                <Transaction />
-              </LimitsContext.Provider>
-            </WalletContext.Provider>
-          </FlowContext.Provider>
-        </AspContext.Provider>
-      </NavigationContext.Provider>,
-    )
-
-    // Should show "Issuance" instead of "Sent"
+  it('renders issuance transaction with correct direction', () => {
+    renderTx(mockIssuanceTxInfo as TxInfo)
     expect(screen.getByText('Issuance')).toBeInTheDocument()
     expect(screen.queryByText('Sent')).not.toBeInTheDocument()
   })
@@ -257,54 +106,25 @@ describe('Transaction screen', () => {
       ...mockIssuanceTxInfo,
       type: 'received',
       assets: [{ assetId, amount: BigInt(9_970_000_000) }],
-    }
+    } as TxInfo
     const assetMetadataCache = new Map([
       [assetId, { metadata: { ticker: 'ETH-CX', name: 'Ethereum', decimals: 18 }, cachedAt: Date.now() }],
     ])
 
-    render(
-      <NavigationContext.Provider value={mockNavigationContextValue}>
-        <AspContext.Provider value={mockAspContextValue}>
-          <FlowContext.Provider value={{ ...mockFlowContextValue, txInfo }}>
-            <WalletContext.Provider value={{ ...mockWalletContextValue, assetMetadataCache, txs: [txInfo] } as any}>
-              <LimitsContext.Provider value={mockLimitsContextValue}>
-                <Transaction />
-              </LimitsContext.Provider>
-            </WalletContext.Provider>
-          </FlowContext.Provider>
-        </AspContext.Provider>
-      </NavigationContext.Provider>,
-    )
+    renderTx(txInfo, [txInfo], { assetMetadataCache })
 
     expect(screen.getByText('0.00000000997 ETH-CX')).toBeInTheDocument()
     expect(screen.queryByText('9,970,000,000 ETH-CX')).not.toBeInTheDocument()
   })
 
-  it('renders burn transaction with correct direction', async () => {
+  it('renders burn transaction with correct direction', () => {
     const mockBurnTxInfo = {
       ...mockIssuanceTxInfo,
       assets: [
         { assetId: 'abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd', amount: BigInt(-5_000) },
       ],
     }
-    const localFlowContextValue = { ...mockFlowContextValue, txInfo: mockBurnTxInfo }
-    const localWalletContextValue = { ...mockWalletContextValue, txs: [mockBurnTxInfo] }
-
-    render(
-      <NavigationContext.Provider value={mockNavigationContextValue}>
-        <AspContext.Provider value={mockAspContextValue}>
-          <FlowContext.Provider value={localFlowContextValue}>
-            <WalletContext.Provider value={localWalletContextValue}>
-              <LimitsContext.Provider value={mockLimitsContextValue}>
-                <Transaction />
-              </LimitsContext.Provider>
-            </WalletContext.Provider>
-          </FlowContext.Provider>
-        </AspContext.Provider>
-      </NavigationContext.Provider>,
-    )
-
-    // Should show "Burn" instead of "Sent"
+    renderTx(mockBurnTxInfo as TxInfo)
     expect(screen.getByText('Burn')).toBeInTheDocument()
     expect(screen.queryByText('Sent')).not.toBeInTheDocument()
   })

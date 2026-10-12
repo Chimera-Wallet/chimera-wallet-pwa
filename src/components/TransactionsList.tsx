@@ -10,19 +10,11 @@ import { FiatContext } from '../providers/fiat'
 import Focusable from './Focusable'
 import { hapticSubtle } from '../lib/haptics'
 import { ASSETS, getWrappedAssetId, prettyAssetAmount, prettyAssetAmountHide } from '../lib/assets'
-import { getTxStatus, TxStatus } from '../lib/txStatus'
+import { getTxStatus, TX_STATUS_DISPLAY } from '../lib/txStatus'
 import { AspContext } from '../providers/asp'
 import { useTranslation } from 'react-i18next'
 import SwapRouteIcon from './SwapRouteIcon'
 import { swapRouteLabel, swapStatusLabel, swapFiatAmount } from '../lib/swapDisplay'
-
-const STATUS_STYLE: Record<TxStatus, { text: string; color: string }> = {
-  Settled: { text: 'lib.transactions.confirmed', color: 'var(--green)' },
-  Preconfirmed: { text: 'lib.transactions.confirmed', color: 'var(--green)' },
-  'Pending boarding': { text: 'lib.transactions.pending', color: 'var(--orange)' },
-  Unconfirmed: { text: 'lib.transactions.pending', color: 'var(--orange)' },
-  Expired: { text: 'lib.transactions.failed', color: 'var(--red)' },
-}
 
 const TransactionLine = ({ tx, onClick, isFirst }: { tx: Tx; onClick: () => void; isFirst?: boolean }) => {
   const { config } = useContext(ConfigContext)
@@ -68,7 +60,7 @@ const TransactionLine = ({ tx, onClick, isFirst }: { tx: Tx; onClick: () => void
   }
 
   const statusKey = getTxStatus(tx, boardingExitDelay)
-  const status = STATUS_STYLE[statusKey] ?? { text: statusKey, color: 'var(--grey)' }
+  const status = TX_STATUS_DISPLAY[statusKey] ??{ text: statusKey, color: 'var(--grey)' }
   const date = tx.createdAt ? prettyDate(tx.createdAt) : 'Unknown date'
   const action = tx.type === 'sent' ? t('lib.transactions.sentAss', {ass: assetLabel}) : t('lib.transactions.rcvAss', {ass: assetLabel})
 

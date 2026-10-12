@@ -26,7 +26,7 @@ import {
 } from '../lib/storage'
 import { NavigationContext, Pages } from './navigation'
 import { getRestApiExplorerURL } from '../lib/explorers'
-import { getBalance, getTxHistory, getVtxos, settleVtxos } from '../lib/asp'
+import { getBalance, getTxHistory, getVtxos, settleBoardingUtxos, settleVtxos } from '../lib/asp'
 import { AspContext } from './asp'
 import { NotificationsContext } from './notifications'
 import { FlowContext } from './flow'
@@ -108,6 +108,7 @@ interface WalletContextProps {
   lockWallet: () => Promise<void>
   resetWallet: () => Promise<void>
   settlePreconfirmed: () => Promise<void>
+  boardDeposits: () => Promise<void>
   unlockWallet: (password: string) => Promise<void>
   refreshAuthState: () => Promise<void>
   updateWallet: (w: Wallet | ((prev: Wallet) => Wallet)) => void
@@ -142,6 +143,7 @@ export const WalletContext = createContext<WalletContextProps>({
   lockWallet: () => Promise.resolve(),
   resetWallet: () => Promise.resolve(),
   settlePreconfirmed: () => Promise.resolve(),
+  boardDeposits: () => Promise.resolve(),
   unlockWallet: () => Promise.resolve(),
   refreshAuthState: () => Promise.resolve(),
   updateWallet: () => {},
@@ -204,6 +206,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const reloadGenerationRef = useRef(createRequestGeneration())
   const swMessageHandlerRef = useRef<(event: MessageEvent) => void>()
   const reinitInProgress = useRef(false)
+  const boardingInFlight = useRef(false)
   const initAbortRef = useRef<AbortController | null>(null)
   const reinitSvcWalletRef = useRef<((identity: Identity) => Promise<void>) | null>(null)
   const {t} = useTranslation()
@@ -652,6 +655,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       if (!(config.delegate && isDelegationEnabled())) {
         vtxoMgr.renewVtxos().catch(() => {})
       }
+      boardDeposits(svcWallet)
       return true
     } catch (err) {
       if (signal.aborted) return false
@@ -883,6 +887,26 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     notifyTxSettled()
   }
 
+  // Chimera requirement: confirmed on-chain deposits (peg-ins) board
+  // automatically on app start and on pull-to-refresh, so users never meet a
+  // "Complete boarding" button. Upstream Arkade dropped its equivalent and an
+  // upstream merge silently carried that over — keep this when merging.
+  // Never throws: a failed attempt is retried on the next start or refresh.
+  const boardDeposits = async (swWallet = svcWallet) => {
+    if (!swWallet || boardingInFlight.current) return
+    boardingInFlight.current = true
+    try {
+      if (await settleBoardingUtxos(swWallet, aspInfo.dust)) {
+        notifyTxSettled()
+        await reloadWallet(swWallet)
+      }
+    } catch (err) {
+      consoleError(err, 'Error boarding deposits')
+    } finally {
+      boardingInFlight.current = false
+    }
+  }
+
   const updateWallet = (data: Wallet | ((prev: Wallet) => Wallet)) => {
     setWallet((prev) => {
       const next = typeof data === 'function' ? (data as (prev: Wallet) => Wallet)(prev) : data
@@ -910,6 +934,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         initialized,
         resetWallet,
         settlePreconfirmed,
+        boardDeposits: () => boardDeposits(),
         unlockWallet,
         refreshAuthState,
         updateWallet,

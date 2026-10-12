@@ -47,6 +47,7 @@
         "boardingExpired": "Boarding transaction expired.",
         "onchainUnconfirmed": "Onchain transaction unconfirmed. Please wait for confirmation.",
         "onboardConfirmed": "Onboard transaction confirmed on-chain.",
+        "boardingAutomatically": "Your deposit is confirmed on-chain and is being added to your wallet automatically.",
         "transactionSettledSucc": "Transaction settled successfully",
         "resend": "Resend",
         "reminder": "Add reminder",

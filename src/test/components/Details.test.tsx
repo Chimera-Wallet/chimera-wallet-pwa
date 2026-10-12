@@ -20,4 +20,11 @@ describe('Details component', () => {
     render(<Details details={props} />)
     expect(screen.getByText('outgoing')).toBeInTheDocument()
   })
+
+  it('shows bitcoin amounts in BTC, never SATS', () => {
+    render(<Details details={props} />)
+    expect(screen.getByText('0.001 BTC')).toBeInTheDocument()
+    expect(screen.getAllByText('0.00001 BTC')).toHaveLength(2) // fees and total
+    expect(screen.queryByText(/SATS/)).not.toBeInTheDocument()
+  })
 })

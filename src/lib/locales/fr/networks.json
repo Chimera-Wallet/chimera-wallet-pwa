@@ -44,6 +44,7 @@
     "boardingExpired": "La transaction d’embarquement a expiré.",
     "onchainUnconfirmed": "Transaction on-chain non confirmée. Veuillez attendre la confirmation.",
     "onboardConfirmed": "Transaction d’embarquement confirmée sur la blockchain.",
+    "boardingAutomatically": "Votre dépôt est confirmé sur la blockchain et est ajouté automatiquement à votre portefeuille.",
     "transactionSettledSucc": "Transaction réglée avec succès",
     "resend": "Renvoyer",
     "reminder": "Ajouter un rappel",

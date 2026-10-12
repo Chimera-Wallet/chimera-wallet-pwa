@@ -5,7 +5,7 @@ import SpinnerIcon from '../icons/Spinner'
 import { sleep } from '../lib/sleep'
 
 export default function Refresher() {
-  const { reloadWallet, svcWallet } = useContext(WalletContext)
+  const { boardDeposits, reloadWallet, svcWallet } = useContext(WalletContext)
 
   const [showRefresh, setShowRefresh] = useState(false)
 
@@ -34,6 +34,9 @@ export default function Refresher() {
     try {
       await svcWallet?.reload()
       await reloadWallet()
+      // Not awaited: boarding waits for the next Ark batch, which can take a
+      // while. The wallet reloads itself once it lands.
+      boardDeposits()
     } catch (err) {
       consoleError(err, 'Failed to reload wallet')
     } finally {
