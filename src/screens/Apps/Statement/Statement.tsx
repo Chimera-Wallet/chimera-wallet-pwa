@@ -1,6 +1,7 @@
 import { useContext, useMemo, useState } from 'react'
 import { WalletContext } from '../../../providers/wallet'
-import { filterTransactionsByDateRange, generatePdf, StatementData } from '../../../lib/statement'
+import { filterTransactionsByDateRange, formatLongDate, generatePdf, StatementData } from '../../../lib/statement'
+import { useDateRange } from '../../../hooks/useDateRange'
 import { prettyAmount } from '../../../lib/format'
 import Button from '../../../components/Button'
 import Content from '../../../components/Content'
@@ -17,22 +18,11 @@ import { useTranslation } from 'react-i18next'
 export default function Statement() {
   const { txs, balance, dataReady } = useContext(WalletContext)
 
-  // Initialize dates: default to last 30 days
-  const today = new Date()
-  today.setHours(23, 59, 59, 999) // End of today
-
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-  thirtyDaysAgo.setHours(0, 0, 0, 0) // Start of that day
-
-  const [startDate, setStartDate] = useState<Date>(thirtyDaysAgo)
-  const [endDate, setEndDate] = useState<Date>(today)
+  const { startDate, endDate, changeStart, changeEnd, rangeError, maxDate } = useDateRange()
   const [isGenerating, setIsGenerating] = useState(false)
-  const [error, setError] = useState<string>('')
+  const [pdfError, setPdfError] = useState<string>('')
+  const error = rangeError || pdfError
 
-  // Today's date in YYYY-MM-DD format for max date validation
-  const todayString = today.toISOString().split('T')[0]
-  
   const {t} = useTranslation()
 
   const filteredData: StatementData[] = useMemo(() => {
@@ -47,51 +37,22 @@ export default function Statement() {
     return true
   }, [dataReady, startDate, endDate, txs.length, isGenerating])
 
-  const handleStartDateChange = (newStartDate: Date) => {
-    setError('')
-
-    // If start date is after end date, update end date too
-    if (newStartDate > endDate) {
-      setEndDate(newStartDate)
-    }
-    setStartDate(newStartDate)
-  }
-
-  const handleEndDateChange = (newEndDate: Date) => {
-    setError('')
-
-    // Validate end date is not before start date
-    if (newEndDate < startDate) {
-      setError('End date cannot be before start date')
-      return
-    }
-    setEndDate(newEndDate)
-  }
-
   const handleGeneratePdf = async () => {
     if (!isButtonEnabled) return
 
     setIsGenerating(true)
-    setError('')
+    setPdfError('')
 
     try {
-      const formatDate = (date: Date): string => {
-        return date.toLocaleDateString('en-US', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-        })
-      }
-
       await generatePdf({
-        startingOn: formatDate(startDate),
-        endingOn: formatDate(endDate),
+        startingOn: formatLongDate(startDate),
+        endingOn: formatLongDate(endDate),
         data: filteredData,
         balance: prettyAmount(balance),
       })
     } catch (err) {
       console.error('Error generating PDF:', err)
-      setError('Failed to generate PDF. Please try again.')
+      setPdfError('Failed to generate PDF. Please try again.')
     } finally {
       setIsGenerating(false)
     }
@@ -118,9 +79,9 @@ export default function Statement() {
           <FlexCol gap='1rem'>
             <Text wrap>{t('apps.statement.descr')}</Text>
 
-            <InputDate label={t('apps.statement.start')} value={startDate} onChange={handleStartDateChange} max={todayString} />
+            <InputDate label={t('apps.statement.start')} value={startDate} onChange={changeStart} max={maxDate} />
 
-            <InputDate label={t('apps.statement.end')} value={endDate} onChange={handleEndDateChange} max={todayString} />
+            <InputDate label={t('apps.statement.end')} value={endDate} onChange={changeEnd} max={maxDate} />
 
             {filteredData.length > 0 && (
               <InfoContainer>

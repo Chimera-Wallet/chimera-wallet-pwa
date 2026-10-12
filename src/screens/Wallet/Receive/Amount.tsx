@@ -22,29 +22,20 @@ import { LimitsContext } from '../../../providers/limits'
 import { InfoLine } from '../../../components/Info'
 import QrCode from '../../../components/QrCode'
 import CopyAddress from '../../../components/CopyAddress'
-import { canBrowserShareData, shareData } from '../../../lib/share'
+import { useShare } from '../../../hooks/useShare'
 import { NotificationsContext } from '../../../providers/notifications'
 import { LnReceiveContext } from '../../../providers/lnReceive'
 import WarningBox from '../../../components/Warning'
-import { ASSETS, getAssetConfig, requireAssetConfig, type AssetSymbol } from '../../../lib/assets'
+import { requireAssetConfig, type AssetSymbol } from '../../../lib/assets'
 import { assetSupportsWrap, requireAssetChainOption, type SourceChainId } from '../../../lib/sourceChains'
 import AssetSelector from '../../../components/AssetSelector'
 import NetworkSelector from '../../../components/NetworkSelector'
 import AssetNetworkSelector, { type AssetNetworkChoice } from '../../../components/AssetNetworkSelector'
 import InlineAmountInput from '../../../components/InlineAmountInput'
-import WhenIcon from '../../../icons/When'
 import FeesIcon from '../../../icons/Fees'
-import InfoIcon from '../../../icons/Info'
-import {
-  TERMS_AND_CONDITIONS,
-  TRANSFER_METHOD,
-  TRANSFER_METHOD_LABELS,
-  type InfoItemIcon,
-  type TransferMethod,
-} from '../../../lib/transferMethods'
-import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
-import clockIcon from '../../../../public/images/icons/ Clock.svg'
-import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
+import { TERMS_AND_CONDITIONS, TRANSFER_METHOD } from '../../../lib/transferMethods'
+import { TermsLines, termsIcon } from '../../../components/TermsInfo'
+import { useIncomingPayments } from '../../../hooks/useIncomingPayments'
 import checkMarkIcon from '../../../../public/images/icons/ CheckCheckMark.png'
 import {useTranslation} from 'react-i18next'
 
@@ -62,7 +53,7 @@ export default function ReceiveAmount() {
   const [faucetSuccess, setFaucetSuccess] = useState(false)
   const [faucetAvailable, setFaucetAvailable] = useState(false)
   const [satoshis, setSatoshis] = useState(0) // Amount for Lightning, 0 for flexible QR codes on other networks
-  const [sharing, setSharing] = useState(false)
+  const { canShare, share } = useShare()
   const [invoice, setInvoice] = useState(recvInfo.invoice ?? '')
   const [qrValue, setQrValue] = useState('')
   const [showQrCode, setShowQrCode] = useState(false)
@@ -147,30 +138,7 @@ export default function ReceiveAmount() {
   // Get T&Cs for current method
   const termsAndConditions = TERMS_AND_CONDITIONS.receive[selectedMethod]
 
-  // Helper to get icon component
-  const getIconComponent = (iconType?: InfoItemIcon) => {
-    switch (iconType) {
-      case 'time':
-        return <WhenIcon />
-      case 'fees':
-        return <FeesIcon />
-      case 'warning':
-        return undefined
-      case 'instruction':
-        return undefined
-      case 'info':
-        return <img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />
-      case 'receipt': 
-        return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} /> 
-      case 'clock':
-        return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(0.7)'}} /> 
-      default:
-        return <InfoIcon />
-    }
-  }
-
-  const shareText = invoice || arkAddress || address
-  const disabled = !canBrowserShareData({ title: t('common.general.receive'), text: shareText }) || sharing
+  const shareContent = { title: t('common.general.receive'), text: invoice || arkAddress || address }
 
   // set the QR code value to the plain address the first time
   useEffect(() => {
@@ -244,43 +212,11 @@ export default function ReceiveAmount() {
     }
   }, [satoshis, invoice, useLightning, svcWallet, requestReceive])
 
-  useEffect(() => {
-    if (!svcWallet) return
-
-    const listenForPayments = (event: MessageEvent) => {
-      if (!event.data) return
-      // v0.4 SDK wraps broadcast data under `payload`; fall back to the flat
-      // shape for safety in case an older worker build is still active.
-      const payload = event.data.payload ?? event.data
-      let incomingSats = 0
-      if (event.data.type === 'VTXO_UPDATE') {
-        const newVtxos = (payload?.newVtxos ?? []) as { value: number }[]
-        incomingSats = newVtxos.reduce((acc, v) => acc + v.value, 0)
-      }
-      if (event.data.type === 'UTXO_UPDATE') {
-        const coins = (payload?.coins ?? []) as { value: number }[]
-        incomingSats = coins.reduce((acc, v) => acc + v.value, 0)
-      }
-      if (incomingSats) {
-        setRecvInfo({ ...recvInfo, satoshis: incomingSats })
-        notifyPaymentReceived(incomingSats)
-      }
-    }
-
-    navigator.serviceWorker.addEventListener('message', listenForPayments)
-
-    return () => {
-      navigator.serviceWorker.removeEventListener('message', listenForPayments)
-    }
-  }, [svcWallet])
-
-  const handleShare = () => {
-    const shareText = invoice || arkAddress || address
-    setSharing(true)
-    shareData({ title: t('common.general.receive'), text: shareText })
-      .catch(consoleError)
-      .finally(() => setSharing(false))
-  }
+  useIncomingPayments(svcWallet, ({ sats }) => {
+    if (!sats) return
+    setRecvInfo({ ...recvInfo, satoshis: sats })
+    notifyPaymentReceived(sats)
+  })
 
   if (fauceting) {
     return (
@@ -385,19 +321,11 @@ export default function ReceiveAmount() {
               {needsAmountInput ? (
                 <InfoLine
                   compact
-                  icon={getIconComponent('info')}
+                  icon={termsIcon('info')}
                   text= {t('common.notifications.receive.lightning.lightningNetworkRcv')}
                 />
               ) : null}
-              {termsAndConditions.map((item) => (
-                <InfoLine
-                  key={item.text}
-                  compact
-                  color={item.color}
-                  icon={getIconComponent(item.icon)}
-                  text={t(item.text)}
-                />
-              ))}
+              <TermsLines items={termsAndConditions} />
               {showLightningFees ? (
                 <InfoLine
                   compact
@@ -427,7 +355,7 @@ export default function ReceiveAmount() {
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        <Button label={t('common.general.share')} onClick={handleShare} icon={<img src = {checkMarkIcon} alt = 'checkMark' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)', marginLeft: '0.5rem'}} />} disabled={disabled} style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '100%', height: '48px', borderRadius: '16px',}} />
+        <Button label={t('common.general.share')} onClick={() => share(shareContent)} icon={<img src = {checkMarkIcon} alt = 'checkMark' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)', marginLeft: '0.5rem'}} />} disabled={!canShare(shareContent)} style = {{ margin: '4px 0', fontFamily: 'Titillium Web', fontStyle:'semibold', fontWeight : 600, width: '100%', height: '48px', borderRadius: '16px',}} />
         {showFaucetButton ? <Button disabled={!satoshis} label={t('common.general.faucet')} onClick={handleFaucet} secondary /> : null}
       </ButtonsOnBottom>
     </>

@@ -53,13 +53,8 @@ import AssetSelector from '../../../components/AssetSelector'
 import NetworkSelector from '../../../components/NetworkSelector'
 import AssetNetworkSelector, { type AssetNetworkChoice } from '../../../components/AssetNetworkSelector'
 import InlineAmountInput from '../../../components/InlineAmountInput'
-import WhenIcon from '../../../icons/When'
-import FeesIcon from '../../../icons/Fees'
-import InfoIcon from '../../../icons/Info'
-import { TERMS_AND_CONDITIONS, TRANSFER_METHOD, type InfoItemIcon } from '../../../lib/transferMethods'
-import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
-import clockIcon from '../../../../public/images/icons/ Clock.svg'
-import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
+import { TERMS_AND_CONDITIONS, TRANSFER_METHOD } from '../../../lib/transferMethods'
+import { TermsLines, termsIcon } from '../../../components/TermsInfo'
 import checkMarkIcon from '../../../../public/images/icons/ CheckCheckMark.png'
 import {useTranslation, Trans} from 'react-i18next'
 import { decodeInvoice } from '../../../lib/bolt11'
@@ -195,12 +190,20 @@ export default function SendForm() {
       if (isBip21(lowerCaseData)) {
         const { address, arkAddress, invoice, lnUrl, satoshis, assetId, assetAmount } = decodeBip21(lowerCaseData)
         if (!address && !arkAddress && !invoice) return setError(t('errors.send.parsing.bip21'))
+        // A requested amount (e.g. a POS payment QR) is shown and locked, like
+        // an invoice amount, so the payer can't re-price it by typing a value.
+        const applyRequestedAmount = () => {
+          if (satoshis) setAmount(satoshis)
+          setAmountIsReadOnly(Boolean(satoshis))
+        }
         if (selectedMethod === TRANSFER_METHOD.bitcoin) {
           if (!address) return setError(t('errors.send.bitcoin.address'))
+          applyRequestedAmount()
           return setState({ ...sendInfo, address, arkAddress: '', invoice: '', lnUrl: undefined, recipient, satoshis })
         }
         if (selectedMethod === TRANSFER_METHOD.ark) {
           if (!arkAddress) return setError(t('errors.send.arkade.address'))
+          applyRequestedAmount()
           return setState({ ...sendInfo, address: '', arkAddress, invoice: '', lnUrl: undefined, recipient, satoshis })
         }
         if (selectedMethod === TRANSFER_METHOD.lightning) {
@@ -607,28 +610,6 @@ export default function SendForm() {
   // Get T&Cs for current method
   const termsAndConditions = TERMS_AND_CONDITIONS.send[resolvedMethod]
 
-  // Helper to get icon component
-  const getIconComponent = (iconType?: InfoItemIcon) => {
-    switch (iconType) {
-      case 'time':
-        return <WhenIcon />
-      case 'fees':
-        return <FeesIcon />
-      case 'warning':
-        return undefined
-      case 'instruction':
-        return undefined
-      case 'info':
-        return <img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />
-      case 'receipt': 
-        return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} /> 
-      case 'clock':
-        return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(0.7)'}} /> 
-      default:
-        return <InfoIcon />
-    }
-  }
-
   const assetSendDisabled =
     !arkAddress || selectedMethod !== TRANSFER_METHOD.ark || !assetAmount || assetAmount > selectedAssetBalance
   const bitcoinSendDisabled =
@@ -852,20 +833,12 @@ export default function SendForm() {
                 <InfoLine
                   compact
                   color='neutral'
-                  icon={getIconComponent('info')}
+                  icon={termsIcon('info')}
                   text= {t('placeholders.lightning.invoice')}
                 />
               ) : null}{' '}
-              {termsAndConditions.map((item) => (
-                <InfoLine
-                  key={item.text}
-                  compact
-                  color={item.color}
-                  icon={getIconComponent(item.icon)}
-                  text={t(item.text)}
-                />
-              ))}
-              {methodFeeText ? <InfoLine compact color='orange' icon={getIconComponent('receipt')} text={methodFeeText} /> : null}
+              <TermsLines items={termsAndConditions} />
+              {methodFeeText ? <InfoLine compact color='orange' icon={termsIcon('receipt')} text={methodFeeText} /> : null}
               {deductFromAmount ? (
                 <InfoLine compact color='orange' text={t('common.notifications.send.feesDeduction')}/>
               ) : null}

@@ -48,6 +48,96 @@ export interface BankDataUs {
 export type BankData = BankDataSepa | BankDataSwift | BankDataUs
 
 /**
+ * Flat, editable form state behind a BankData — every field any circuit may
+ * need, so switching circuit in a form keeps what the user already typed.
+ */
+export interface BankDetailsFields {
+  iban: string
+  bic: string
+  accountHolderName: string
+  accountNumber: string
+  routingNumber: string
+  country: string
+  streetName: string
+  buildingNumber: string
+  townName: string
+  postCode: string
+}
+
+export const emptyBankDetailsFields: BankDetailsFields = {
+  iban: '',
+  bic: '',
+  accountHolderName: '',
+  accountNumber: '',
+  routingNumber: '',
+  country: '',
+  streetName: '',
+  buildingNumber: '',
+  townName: '',
+  postCode: '',
+}
+
+export interface BankFieldSpec {
+  key: keyof BankDetailsFields
+  /** An i18n key, or a label shown as-is (t() returns unknown keys unchanged). */
+  label: string
+  placeholder: string
+  uppercase?: boolean
+}
+
+const IBAN: BankFieldSpec = { key: 'iban', label: 'IBAN', placeholder: 'DE89 3704 0044 0532 0130 00', uppercase: true }
+const HOLDER: BankFieldSpec = { key: 'accountHolderName', label: 'common.accountName', placeholder: 'John Doe' }
+
+/**
+ * The fields each circuit requires, in form order. Single source for
+ * validation (toBankData) and the entry form (components/BankDetails::BankDataForm).
+ */
+export const BANK_FIELDS: Record<BankCircuit, BankFieldSpec[]> = {
+  sepa: [IBAN, HOLDER],
+  // SWIFT needs the structured beneficiary address IBSettle requires (BankDataSwift)
+  swift: [
+    IBAN,
+    { key: 'bic', label: 'BIC/SWIFT', placeholder: 'DEUTDEFF', uppercase: true },
+    HOLDER,
+    { key: 'country', label: 'Country (ISO code)', placeholder: 'DE', uppercase: true },
+    { key: 'streetName', label: 'Street Name', placeholder: 'Musterstrasse' },
+    { key: 'buildingNumber', label: 'Building Number', placeholder: '1' },
+    { key: 'townName', label: 'Town', placeholder: 'Frankfurt' },
+    { key: 'postCode', label: 'Postal Code', placeholder: '60306' },
+  ],
+  us: [
+    HOLDER,
+    { key: 'accountNumber', label: 'common.accountNumber', placeholder: '123456789' },
+    { key: 'routingNumber', label: 'common.routingNumber', placeholder: '021000021' },
+  ],
+}
+
+// The form calls the IBAN `iban`; BankData calls it `destinationBankAddress`
+const toDataKey = (key: keyof BankDetailsFields) => (key === 'iban' ? 'destinationBankAddress' : key)
+
+/** Build the BankData for `circuit`, or null when a required field is missing. */
+export const toBankData = (circuit: BankCircuit, fields: BankDetailsFields): BankData | null => {
+  const specs = BANK_FIELDS[circuit]
+  if (!specs || !specs.every(({ key }) => fields[key])) return null
+  return { circuit, ...Object.fromEntries(specs.map(({ key }) => [toDataKey(key), fields[key]])) } as BankData
+}
+
+/** Inverse of toBankData — to prefill a form from saved details. */
+export const toBankDetailsFields = (data?: BankData): BankDetailsFields => {
+  if (!data) return { ...emptyBankDetailsFields }
+  const filled = BANK_FIELDS[data.circuit].map(({ key }) => [key, (data as unknown as Record<string, string>)[toDataKey(key)]])
+  return { ...emptyBankDetailsFields, ...Object.fromEntries(filled) }
+}
+
+/** Short, masked label for a saved account, e.g. "CH93 •••• 2957". */
+export const maskBankAccount = (data?: BankData): string => {
+  if (!data) return ''
+  const raw = (data.circuit === 'us' ? data.accountNumber : data.destinationBankAddress).replace(/\s+/g, '')
+  if (raw.length <= 8) return raw
+  return `${raw.slice(0, 4)} •••• ${raw.slice(-4)}`
+}
+
+/**
  * Configuration interface for bank transfers
  * Structured to support future backend integration
  */

@@ -259,5 +259,112 @@
         "image": "/images/apps/statement.png"
       }
         ]
+    },
+    "pos": {
+        "name": "POS",
+        "title": "POS Payments",
+        "settledToast": "POS payment received: {{amount}}",
+        "welcome": {
+            "intro": "Welcome to Chimera POS, the easiest and fastest way to accept payments in person with digital assets.",
+            "noWait": "No wait times",
+            "noVerification": "No verification",
+            "noPersonal": "No personal details",
+            "conversion": "Conversion up to {{limit}} a month without any personal detail or account",
+            "zeroFees": "Unlimited and zero fees Bitcoin payments on Arkade, Lightning and mainnet",
+            "getStarted": "Get started"
+        },
+        "payout": {
+            "title": "Choose your payout currency",
+            "subtitle": "Select how you want to receive your funds.",
+            "btc": "Bitcoin",
+            "chf": "Swiss Franc",
+            "eur": "Euro",
+            "btcDoneTitle": "You're all set",
+            "btcDone": "Congratulations, you don't need to do anything. Payments will be received immediately in your wallet without intermediaries or fees.",
+            "kycTitle": "KYC-free conversions",
+            "kycText": "You have up to {{limit}} {{currency}} of KYC-free conversions per rolling month. If you expect to transact more, please verify your identity.",
+            "verify": "Verify here",
+            "verified": "Your identity is verified, so higher amounts can be converted.",
+            "bankTitle": "Payout bank account",
+            "bankText": "Payments are converted to {{currency}} and paid out to this account.",
+            "save": "Save"
+        },
+        "terminal": {
+            "addNote": "Add note",
+            "note": "Note",
+            "notePlaceholder": "What is this payment for?",
+            "saveNote": "Save note",
+            "clearNote": "Remove note",
+            "confirm": "Confirm",
+            "discard": "Discard",
+            "history": "History",
+            "settings": "POS settings",
+            "switchUnit": "Change input currency",
+            "enterAmount": "Enter an amount",
+            "noRate": "Exchange rate unavailable. Please try again shortly.",
+            "setupPayout": "Finish setting up your payout bank account first."
+        },
+        "method": {
+            "ark": "Arkade",
+            "lightning": "Lightning"
+        },
+        "payment": {
+            "asset": "Bitcoin",
+            "qrLabel": "Scan to pay",
+            "arkAddress": "Ark address",
+            "invoice": "Lightning invoice",
+            "waiting": "Waiting for payment…",
+            "partial": "Received {{received}} of {{expected}} sats. Waiting for the rest of the payment…",
+            "generating": "Generating QR code…",
+            "limits": "This amount is outside the allowed limits for this method.",
+            "close": "Close"
+        },
+        "status": {
+            "completed": "Payment received",
+            "failed": "Payment failed",
+            "pending": "Processing payment",
+            "converting": "Converting to {{currency}}…",
+            "submitted": "Payout to your bank account submitted",
+            "conversionFailed": "Conversion to {{currency}} failed. The BTC stays in your wallet.",
+            "interrupted": "The conversion was interrupted. Retry to check it and continue.",
+            "retry": "Retry conversion",
+            "amount": "Amount",
+            "received": "Received",
+            "method": "Method",
+            "note": "Note",
+            "date": "Date",
+            "reference": "Reference",
+            "order": "Bank order",
+            "print": "Print",
+            "share": "Share",
+            "close": "Close",
+            "receiptTitle": "Payment receipt"
+        },
+        "history": {
+            "title": "Payments",
+            "descr": "Payments taken with the POS. Amounts are shown at the value fixed when each payment was made.",
+            "start": "Start date",
+            "end": "End date",
+            "empty": "No payments in this period",
+            "found": "{{count}} payments",
+            "total": "Total",
+            "exportPdf": "Export PDF",
+            "print": "Print",
+            "generating": "Generating…",
+            "exportTitle": "POS Payments",
+            "paid": "Paid",
+            "failed": "Failed",
+            "converting": "Converting"
+        },
+        "settings": {
+            "title": "POS settings",
+            "payout": "Payout currency",
+            "bank": "Bank account",
+            "language": "Language",
+            "currency": "Display currency",
+            "more": "More settings",
+            "history": "Payment history",
+            "notSet": "Not set"
+        }
     }
 }
