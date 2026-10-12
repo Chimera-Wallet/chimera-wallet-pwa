@@ -11,8 +11,9 @@
  *
  * Both backends are normalized to the RampOrder-shaped `BankOrder` type
  * (re-exported from ramp.ts) so screens don't need to know which backend is
- * active. Gift cards have no Chimera equivalent and keep talking to
- * `./ramp` directly.
+ * active. Gift cards have no Chimera API equivalent: the GiftCards screen uses
+ * this same switch to pick between ramp's native endpoints and the legacy
+ * hosted gift card site (VITE_GIFT_CARDS_BUY_URL / VITE_GIFT_CARDS_REDEEM_URL).
  */
 
 import * as chimera from './chimera'
