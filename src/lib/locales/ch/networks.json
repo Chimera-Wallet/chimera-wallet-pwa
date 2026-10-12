@@ -40,6 +40,7 @@
     "boardingExpired": "登船交易已过期。",
     "onchainUnconfirmed": "链上交易尚未确认。请等待确认。",
     "onboardConfirmed": "登船交易已在链上确认。",
+    "boardingAutomatically": "您的存款已在链上确认，正在自动存入您的钱包。",
     "transactionSettledSucc": "交易结算成功",
     "resend": "重新发送",
     "reminder": "添加提醒",

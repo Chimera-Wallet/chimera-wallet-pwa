@@ -293,6 +293,25 @@ export const settleVtxos = async (
   }
 }
 
+// Boards confirmed on-chain deposits (peg-ins) into Arkade. Unlike settleVtxos
+// it takes only boarding UTXOs, so it never competes with the SDK's own VTXO
+// renewal for the same inputs. Resolves false when there is nothing to board.
+export const settleBoardingUtxos = async (wallet: IWallet, dustAmount: bigint): Promise<boolean> => {
+  const inputs = await getConfirmedAndNotExpiredUtxos(wallet)
+  const amount = inputs.reduce((sum, input) => sum + input.value, 0)
+  if (inputs.length === 0 || amount < Number(dustAmount)) return false
+
+  const outputs = [{ address: await wallet.getAddress(), amount: BigInt(amount) }]
+
+  try {
+    await wallet.settle({ inputs, outputs }, console.log)
+  } catch (error) {
+    await captureSettleError(error, wallet, 'settleBoardingUtxos', { inputCount: inputs.length })
+    throw error
+  }
+  return true
+}
+
 export const renewCoins = async (
   wallet: IWallet,
   vtxoManager: IVtxoManager,

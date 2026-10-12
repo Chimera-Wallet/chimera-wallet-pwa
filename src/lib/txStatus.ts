@@ -14,3 +14,15 @@ export const getTxStatus = (tx: Tx, boardingExitDelay: number): TxStatus => {
   if (tx.settled) return 'Settled'
   return 'Preconfirmed'
 }
+
+// Chimera's user-facing statuses. Users only ever see Confirmed / Pending /
+// Failed, never Arkade's Settled / Preconfirmed / Pending boarding. Shared by
+// the transaction list and the detail screen so the two can't drift apart.
+// `text` is an i18n key.
+export const TX_STATUS_DISPLAY: Record<TxStatus, { text: string; color: string }> = {
+  Settled: { text: 'lib.transactions.confirmed', color: 'var(--green)' },
+  Preconfirmed: { text: 'lib.transactions.confirmed', color: 'var(--green)' },
+  'Pending boarding': { text: 'lib.transactions.pending', color: 'var(--orange)' },
+  Unconfirmed: { text: 'lib.transactions.pending', color: 'var(--orange)' },
+  Expired: { text: 'lib.transactions.failed', color: 'var(--red)' },
+}
