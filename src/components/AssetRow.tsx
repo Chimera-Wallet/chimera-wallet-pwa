@@ -1,4 +1,6 @@
 import AssetIcon from '../icons/AssetIcon'
+import AssetAvatar from './AssetAvatar'
+import UnverifiedBadge from './UnverifiedBadge'
 import { getAssetConfig, type AssetSymbol } from '../lib/assets'
 import { Fiats } from '../lib/types'
 
@@ -13,6 +15,15 @@ interface AssetRowProps {
   badge?: string
   onClick?: () => void
   isLast?: boolean
+  /**
+   * Set for a held Arkade asset with no ASSET_LIST entry. The row is then
+   * described by its own metadata (avatar, decimals) and never by a config
+   * looked up from its symbol — an unlisted token named "USDT" must not borrow
+   * USDT's logo or precision.
+   */
+  unlisted?: { icon?: string; decimals: number }
+  /** Shows the "Unverified" badge. */
+  unverified?: boolean
 }
 
 export default function AssetRow({
@@ -26,9 +37,11 @@ export default function AssetRow({
   badge,
   onClick,
   isLast = false,
+  unlisted,
+  unverified = false,
 }: AssetRowProps) {
-  const config = getAssetConfig(symbol)
-  const precision = config?.precision || 8
+  const config = unlisted ? undefined : getAssetConfig(symbol)
+  const precision = unlisted ? unlisted.decimals : config?.precision || 8
   const displayTicker = ticker ?? symbol
 
   // Undefined means "no market data for this asset" (see AssetConfig.noMarketData),
@@ -79,7 +92,11 @@ export default function AssetRow({
     >
       {/* Left Section - Icon + Name */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
-        <AssetIcon symbol={symbol} size={44} />
+        {unlisted ? (
+          <AssetAvatar icon={unlisted.icon} ticker={ticker} name={name} size={44} />
+        ) : (
+          <AssetIcon symbol={symbol} size={44} />
+        )}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <span
             style={{
@@ -109,6 +126,11 @@ export default function AssetRow({
               }}
             >
               {badge}
+            </span>
+          ) : null}
+          {unverified ? (
+            <span style={{ marginTop: 2, display: 'flex' }}>
+              <UnverifiedBadge />
             </span>
           ) : null}
         </div>

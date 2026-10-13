@@ -72,6 +72,20 @@ const serviceUrlForNetwork = (
 export const getSolverRegistryUrl = (network: NetworkName): string | undefined =>
   serviceUrlForNetwork(import.meta.env.VITE_SOLVER_REGISTRY_URL, SOLVER_REGISTRY_URL, network)
 
+// Verified asset lists (see ArkLabsHQ/asset-registry): a JSON array of asset
+// ids per network. Assets outside it, and outside this build's own wrapped
+// asset ids, are shown with an "Unverified" badge — never hidden or blocked.
+const ASSET_REGISTRY_URL: Record<NetworkName, string | null> = {
+  bitcoin: 'https://arklabshq.github.io/asset-registry/mainnet.json',
+  mutinynet: 'https://arklabshq.github.io/asset-registry/mutinynet.json',
+  signet: 'https://arklabshq.github.io/asset-registry/signet.json',
+  regtest: null,
+  testnet: null,
+}
+
+export const getAssetRegistryUrl = (network: NetworkName): string | undefined =>
+  serviceUrlForNetwork(import.meta.env.VITE_ASSET_REGISTRY_URL, ASSET_REGISTRY_URL, network)
+
 // The x-only key of the arkade signer co-signing swap covenants (a separate
 // service from arkd). This is a fact about the SOLVER's deployment, not a
 // value the client may look up: clients have no network path to the emulator,

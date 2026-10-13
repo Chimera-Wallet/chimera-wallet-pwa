@@ -19,6 +19,7 @@ import { getTxStatus, TX_STATUS_DISPLAY } from '../../lib/txStatus'
 import { Tx } from '../../lib/types'
 import {useTranslation} from 'react-i18next'
 import { useLnSendReceipt } from '../../hooks/useLnSendReceipt'
+import UnverifiedBadge from '../../components/UnverifiedBadge'
 
 const sameTx = (a: Tx, b: Tx): boolean => {
   if (a.type !== b.type) return false
@@ -33,7 +34,7 @@ const sameTx = (a: Tx, b: Tx): boolean => {
 export default function Transaction() {
   const { txInfo } = useContext(FlowContext)
   const { aspInfo } = useContext(AspContext)
-  const { assetMetadataCache, txs, wallet } = useContext(WalletContext)
+  const { assetMetadataCache, txs, wallet, isAssetVerified } = useContext(WalletContext)
 
   const {t} = useTranslation()
 
@@ -110,6 +111,7 @@ export default function Transaction() {
                           {prettyAssetAmount(a.amount, decimals)} {label}
                         </Text>
                         {name && ticker ? <TextSecondary>{name}</TextSecondary> : null}
+                        {!isAssetVerified(a.assetId) ? <UnverifiedBadge /> : null}
                       </FlexCol>
                     </FlexRow>
                   )

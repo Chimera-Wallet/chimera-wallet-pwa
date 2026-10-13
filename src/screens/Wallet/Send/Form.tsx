@@ -62,6 +62,7 @@ import { lnSendRendezvous, requestLnSend } from '../../../lib/lnSwap'
 import { withRfqTransport } from '../../../lib/nostrRfq'
 import { getEmulatorPubkeyForNetwork } from '../../../lib/constants'
 import { discoverMarkets } from '../../../lib/swapMarkets'
+import UnverifiedAssetNotice from '../../../components/UnverifiedAssetNotice'
 
 
 
@@ -75,7 +76,7 @@ export default function SendForm() {
   const { amountIsAboveMaxLimit, amountIsBelowMinLimit, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
   const { setOption } = useContext(OptionsContext)
   const { navigate } = useContext(NavigationContext)
-  const { assetBalances, assetMetadataCache, balance, svcWallet } = useContext(WalletContext)
+  const { assetBalances, assetMetadataCache, balance, svcWallet, isAssetVerified } = useContext(WalletContext)
 
   const seededAssetId = sendInfo.assets?.[0]?.assetId
   const seededAssetSymbol = seededAssetId ? getAssetSymbolByAssetId(seededAssetId) : undefined
@@ -112,7 +113,13 @@ export default function SendForm() {
   // Asset and network can be changed, initialized from wallet flow or defaults
   const [selectedAsset, setSelectedAsset] = useState<AssetSymbol>(seededAssetSymbol ?? 'BTC')
   const assetTicker = selectedAssetMetadata?.ticker ?? selectedAsset
-  const selectedMethod: TransferMethod = sendInfo.method ?? (isAssetSend ? TRANSFER_METHOD.ark : TRANSFER_METHOD.bitcoin)
+  // An asset with no ASSET_LIST entry can only move over Arkade, and the form
+  // shows no network selector for it — so a method seeded from elsewhere (e.g.
+  // emptySendInfo's 'bitcoin') must not stick, or the send can never enable.
+  const selectedMethod: TransferMethod =
+    isAssetSend && !seededAssetSymbol
+      ? TRANSFER_METHOD.ark
+      : (sendInfo.method ?? (isAssetSend ? TRANSFER_METHOD.ark : TRANSFER_METHOD.bitcoin))
 
   // Onchain sends deduct this fee from the amount (see SendDetails). If the
   // amount doesn't cover it, the send can't produce a positive output, so we
@@ -740,7 +747,12 @@ export default function SendForm() {
             ) : null}
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100', gap:'1rem'}}>
              {isAssetSend && !seededAssetSymbol ? (
-               <Text centered>Arkade</Text>
+               <>
+                 <Text centered>Arkade</Text>
+                 {selectedAssetId && !isAssetVerified(selectedAssetId) ? (
+                   <UnverifiedAssetNotice assetId={selectedAssetId} />
+                 ) : null}
+               </>
              ) : assetSupportsWrap(requireAssetConfig(selectedAsset).symbol) ? (
               <AssetNetworkSelector
                 assetSymbol={requireAssetConfig(selectedAsset).symbol}

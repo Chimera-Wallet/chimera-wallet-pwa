@@ -10,6 +10,8 @@ import Padded from '../../../components/Padded'
 import Shadow from '../../../components/Shadow'
 import Text, { TextSecondary } from '../../../components/Text'
 import AssetAvatar from '../../../components/AssetAvatar'
+import UnverifiedBadge from '../../../components/UnverifiedBadge'
+import UnverifiedAssetNotice from '../../../components/UnverifiedAssetNotice'
 import { NavigationContext, Pages } from '../../../providers/navigation'
 import { ConfigContext } from '../../../providers/config'
 import { FlowContext, emptyRecvInfo, emptySendInfo } from '../../../providers/flow'
@@ -17,13 +19,16 @@ import { WalletContext } from '../../../providers/wallet'
 import { consoleError } from '../../../lib/logs'
 import type { AssetDetails } from '@arkade-os/sdk'
 import { prettyAssetAmount } from '../../../lib/assets'
+import { TRANSFER_METHOD } from '../../../lib/transferMethods'
 import {useTranslation} from 'react-i18next'
 
 export default function AppAssetDetail() {
   const { navigate } = useContext(NavigationContext)
   const { config, updateConfig } = useContext(ConfigContext)
   const { assetInfo, setAssetInfo, setRecvInfo, setSendInfo } = useContext(FlowContext)
-  const { assetBalances, svcWallet, assetMetadataCache, setCacheEntry, iconApprovalManager } = useContext(WalletContext)
+  const { assetBalances, svcWallet, assetMetadataCache, setCacheEntry, iconApprovalManager, isAssetVerified } =
+    useContext(WalletContext)
+  const unverified = !isAssetVerified(assetInfo.assetId)
 
   const {t} = useTranslation()
 
@@ -83,7 +88,11 @@ export default function AppAssetDetail() {
   const canRemove = isImported && balance === BigInt(0)
 
   const handleSend = () => {
-    setSendInfo({ ...emptySendInfo, assets: [{ assetId: assetInfo.assetId, amount: BigInt(0) }] })
+    setSendInfo({
+      ...emptySendInfo,
+      method: TRANSFER_METHOD.ark,
+      assets: [{ assetId: assetInfo.assetId, amount: BigInt(0) }],
+    })
     navigate(Pages.SendForm)
   }
 
@@ -119,6 +128,7 @@ export default function AppAssetDetail() {
                 {prettyAssetAmount(balance, decimals)} {ticker}
               </Text>
               <TextSecondary centered>{name}</TextSecondary>
+              {unverified ? <UnverifiedBadge /> : null}
             </FlexCol>
 
             <FlexCol gap='0.25rem' centered>
@@ -192,6 +202,7 @@ export default function AppAssetDetail() {
                 ) : null}
               </FlexCol>
             </Shadow>
+            {unverified ? <UnverifiedAssetNotice assetId={assetInfo.assetId} /> : null}
             {hasIcon && !iconApprovalManager.isVerified(assetInfo.assetId) ? (
               <Button
                 label={iconApprovalManager.isApproved(assetInfo.assetId) ? t('apps.assets.hideIc') : t('apps.assets.showIc')}
@@ -211,14 +222,14 @@ export default function AppAssetDetail() {
       </Content>
       <ButtonsOnBottom>
         <FlexRow gap='0.75rem'>
-          <Button label={t('general.common.send')} onClick={handleSend} disabled={balance === BigInt(0)} />
-          <Button label={t('general.common.receive')} onClick={handleReceive} />
+          <Button label={t('common.general.send')} onClick={handleSend} disabled={balance === BigInt(0)} />
+          <Button label={t('common.general.receive')} onClick={handleReceive} />
         </FlexRow>
         <FlexRow gap='0.75rem'>
-          <Button label={t('general.common.reissue')} onClick={handleReissue} secondary disabled={!holdsControlAsset} />
-          {balance > 0 ? <Button label={t('general.common.burn')} onClick={handleBurn} secondary /> : null}
+          <Button label={t('common.general.reissue')} onClick={handleReissue} secondary disabled={!holdsControlAsset} />
+          {balance > 0 ? <Button label={t('common.general.burn')} onClick={handleBurn} secondary /> : null}
         </FlexRow>
-        {canRemove ? <Button label={t('general.common.remove')} onClick={handleRemove} secondary /> : null}
+        {canRemove ? <Button label={t('common.general.remove')} onClick={handleRemove} secondary /> : null}
       </ButtonsOnBottom>
     </>
   )

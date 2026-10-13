@@ -219,6 +219,55 @@ export const getAssetSymbolByAssetId = (assetId: string): AssetSymbol | undefine
 }
 
 /**
+ * The asset ids this build vouches for on its own: the configured Arkade
+ * wrapped-asset ids. They count as verified without the asset registry, so our
+ * own assets never read as "Unverified" when the registry is unreachable.
+ */
+export const getBuiltInVerifiedAssetIds = (): string[] =>
+  Object.values(WRAPPED_ASSET_IDS).filter((id): id is string => Boolean(id))
+
+/** A held Arkade asset that has no row of its own in ASSET_LIST. */
+export interface UnlistedAsset {
+  assetId: string
+  amount: bigint
+  name?: string
+  ticker?: string
+  icon?: string
+  decimals: number
+}
+
+/**
+ * Held assets the home list has no ASSET_LIST row for — anything the wallet
+ * received that isn't one of this build's offered wrapped assets.
+ *
+ * Described from on-chain metadata only. A token calling itself "USDT" must not
+ * pick up USDT's config, icon or price: trust is decided by asset id, never by
+ * ticker or name.
+ */
+export const getUnlistedHeldAssets = (
+  balances: { assetId: string; amount: bigint }[],
+  metadata: Map<string, { metadata?: { name?: unknown; ticker?: unknown; icon?: unknown; decimals?: unknown } }>,
+): UnlistedAsset[] => {
+  const listedIds = new Set(
+    ASSET_LIST.map((asset) => getWrappedAssetId(asset.symbol)).filter((id): id is string => Boolean(id)),
+  )
+  return balances
+    .filter((balance) => balance.amount > BigInt(0) && !listedIds.has(balance.assetId))
+    .map(({ assetId, amount }) => {
+      const meta = metadata.get(assetId)?.metadata
+      const decimals = typeof meta?.decimals === 'number' ? meta.decimals : 8
+      return {
+        assetId,
+        amount,
+        name: typeof meta?.name === 'string' ? meta.name : undefined,
+        ticker: typeof meta?.ticker === 'string' ? meta.ticker : undefined,
+        icon: typeof meta?.icon === 'string' ? meta.icon : undefined,
+        decimals,
+      }
+    })
+}
+
+/**
  * Display ticker for a symbol — the plain symbol, for every asset.
  *
  * Wrapped Arkade assets used to be shown with a `-CX` suffix (ETH -> ETH-CX,

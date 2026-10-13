@@ -44,6 +44,7 @@ import { FiatContext } from '../../../providers/fiat'
 import { useTranslation } from 'react-i18next'
 import { LnReceiveContext } from '../../../providers/lnReceive'
 import { useIncomingPayments } from '../../../hooks/useIncomingPayments'
+import UnverifiedAssetNotice from '../../../components/UnverifiedAssetNotice'
 
 
 
@@ -66,7 +67,7 @@ export default function ReceiveQRCode() {
   const { recvInfo, setRecvInfo } = useContext(FlowContext)
   const { notifyPaymentReceived } = useContext(NotificationsContext)
   const { createBtcToArkSwap } = useContext(SwapsContext)
-  const { assetMetadataCache, svcWallet } = useContext(WalletContext)
+  const { assetMetadataCache, svcWallet, isAssetVerified } = useContext(WalletContext)
   const { minSwapAllowed, validBtcToArk, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
   const { requestReceive } = useContext(LnReceiveContext)
 
@@ -381,6 +382,11 @@ export default function ReceiveQRCode() {
                   ) : null}
                   {lnReceiveError && !invoice && !isAssetReceive ? (
                     <WarningBox text={lnReceiveError} />
+                  ) : null}
+                  {isAssetReceive && !isAssetVerified(assetId) ? (
+                    <div style={{ marginTop: '0.75rem', textAlign: 'left' }}>
+                      <UnverifiedAssetNotice assetId={assetId} />
+                    </div>
                   ) : null}
                 </div>
               </div>

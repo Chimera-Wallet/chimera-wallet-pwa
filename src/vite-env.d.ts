@@ -17,6 +17,8 @@ interface ImportMetaEnv {
   readonly VITE_ARKADE_TRX?: string
   readonly VITE_ARKADE_POL?: string
   readonly VITE_ARKADE_CEXT?: string
+  // Verified asset registry override (defaults to ArkLabsHQ/asset-registry per network)
+  readonly VITE_ASSET_REGISTRY_URL?: string
   // ramp-system API (fiat<->crypto on/off-ramp, gift cards)
   readonly VITE_RAMP_API?: string
   // Off-ramp — company Ark wallet where user funds are sent before payout

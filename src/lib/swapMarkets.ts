@@ -45,6 +45,31 @@ export const BUNDLED_CARDS: LocalCardInput[] = (['bitcoin', 'mutinynet'] as cons
   network,
 }))
 
+const BUNDLED_PUBKEYS = new Set(
+  BUNDLED_CARDS.map((input) => (input.card as { discovery_pubkey?: string }).discovery_pubkey?.toLowerCase()).filter(
+    (pubkey): pubkey is string => Boolean(pubkey),
+  ),
+)
+
+/** Whether a solver discovery pubkey belongs to a card shipped with the build. */
+export const isBundledPubkey = (pubkey: string | undefined): boolean =>
+  Boolean(pubkey && BUNDLED_PUBKEYS.has(pubkey.toLowerCase()))
+
+/**
+ * Where a market's solver came from. Registry and bundled solvers are the
+ * trusted defaults; `custom` is a card the user added themselves, which the
+ * wallet still uses but labels — Chimera has not vouched for it.
+ *
+ * Bundled and user cards both arrive as `sourceType: 'local'`, so the bundled
+ * ones are told apart by discovery pubkey.
+ */
+export type SolverOrigin = 'registry' | 'bundled' | 'custom'
+
+export const getSolverOrigin = (market: Pick<DiscoveredMarket, 'sourceType' | 'discovery_pubkey'>): SolverOrigin => {
+  if (market.sourceType === 'registry') return 'registry'
+  return isBundledPubkey(market.discovery_pubkey) ? 'bundled' : 'custom'
+}
+
 // Short, stable hash of the local cards. The package's markets cache is keyed
 // by network + registry only, so without this a changed card set (a new build
 // shipping a new bundled card) would keep serving stale markets for an hour.
