@@ -58,6 +58,21 @@ export const ASSETS = {
 
 export type AssetSymbol = keyof typeof ASSETS
 
+/**
+ * Most fraction digits a balance is displayed with, whatever the asset's
+ * on-chain precision. Matches BTC (8) so every asset row reads the same; the
+ * config `precision` still governs unit conversion.
+ */
+export const BALANCE_DISPLAY_DECIMALS = 8
+
+/** Formats a balance with 2 to BALANCE_DISPLAY_DECIMALS fraction digits, truncating extra digits. */
+export const formatBalanceDisplay = (value: number, precision: number, locale: string): string =>
+  value.toLocaleString(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: Math.max(2, Math.min(precision, BALANCE_DISPLAY_DECIMALS)),
+    roundingMode: 'trunc',
+  })
+
 export interface EnabledAssets {
   assets: AssetConfig[]
   /** Symbols listed in the env var that aren't in ASSETS — a config typo. */

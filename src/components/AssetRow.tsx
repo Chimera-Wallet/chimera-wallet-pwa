@@ -1,7 +1,7 @@
 import AssetIcon from '../icons/AssetIcon'
 import AssetAvatar from './AssetAvatar'
 import UnverifiedBadge from './UnverifiedBadge'
-import { getAssetConfig, type AssetSymbol } from '../lib/assets'
+import { formatBalanceDisplay, getAssetConfig, type AssetSymbol } from '../lib/assets'
 import { Fiats } from '../lib/types'
 
 interface AssetRowProps {
@@ -56,13 +56,8 @@ export default function AssetRow({
   const formattedChange = `${Math.abs(percentChange ?? 0).toFixed(2)}%`
   const changeIcon = isPositive ? '/images/icons/ upGreen.png' : '/images/icons/ downRed.png'
 
-  // Format balance with asset's configured precision
-  const formatBalance = (value: number): string => {
-    return value.toLocaleString('de-CH', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: precision,
-    })
-  }
+  // Same decimal cap as BTC for every asset, whatever its on-chain precision
+  const formatBalance = (value: number): string => formatBalanceDisplay(value, precision, 'de-CH')
 
   const formatUsd = (value: number): string => {
     return value.toLocaleString('de-CH', {
