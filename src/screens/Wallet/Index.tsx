@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from 'react'
 import Balance from '../../components/Balance'
+import BalanceChart from '../../components/BalanceChart'
 import ErrorMessage from '../../components/Error'
 import TransactionsList from '../../components/TransactionsList'
 import AssetList from '../../components/AssetList'
@@ -13,15 +14,12 @@ import FlexCol from '../../components/FlexCol'
 import Button from '../../components/Button'
 import SendIcon from '../../icons/Send'
 import ReceiveIcon from '../../icons/Receive'
-import SwapIcon from '../../icons/Swap'
 import FlexRow from '../../components/FlexRow'
 import { emptyRecvInfo, emptySendInfo, FlowContext } from '../../providers/flow'
 import { NavigationContext, Pages } from '../../providers/navigation'
-import { AssetSwapsContext } from '../../providers/assetSwaps'
-import { BTC_ASSET_ID } from '@arkade-os/swap'
 import { NudgeContext } from '../../providers/nudge'
-import { pwaCanInstall, usePwaInstalled, canPromptInstall, promptPwaInstall } from '../../lib/pwa'
-import { isIOS, isAndroid, getIOSBrowser } from '../../lib/browser'
+import { usePwaInstalled, canPromptInstall, promptPwaInstall } from '../../lib/pwa'
+import { isIOS, getIOSBrowser } from '../../lib/browser'
 import { InfoBox } from '../../components/AlertBox'
 import { psaMessage } from '../../lib/constants'
 import { AnnouncementContext } from '../../providers/announcements'
@@ -53,16 +51,14 @@ export default function Wallet() {
   const { aspInfo } = useContext(AspContext)
   const { announcement } = useContext(AnnouncementContext)
   const { config, updateConfig } = useContext(ConfigContext)
-  const { setRecvInfo, setSendInfo, setWrapRecvInfo, setUnwrapSendInfo, setAssetSwapFromAssetId, setAssetInfo } =
+  const { setRecvInfo, setSendInfo, setWrapRecvInfo, setUnwrapSendInfo, setAssetInfo } =
     useContext(FlowContext)
   const { isInitialLoad, navigate, navigationCount, screen } = useContext(NavigationContext)
   const { balance, dataReady, txs, assetBalances, assetMetadataCache, isAssetVerified } = useContext(WalletContext)
-  const { nudge, nudgeVisible, nudgeCheckComplete } = useContext(NudgeContext)
-  const { swapAvailable } = useContext(AssetSwapsContext)
+  const { nudge } = useContext(NudgeContext)
 
   const pwaInstalled = usePwaInstalled()
   const dismissed = (config?.dismissedBanners ?? []).includes('pwa-install')
-  const showPwaBanner = pwaCanInstall() && (isIOS() || isAndroid()) && !pwaInstalled && !dismissed
   
   const {t} = useTranslation()
 
@@ -285,7 +281,9 @@ export default function Wallet() {
       <>
         <Header text={getDisplayTicker(selectedAsset)} back={handleBackToAll} />
         {announcement}
-        <Content>
+        {/* keyed per view: the asset page and home share this spot in the tree,
+            so without a key React reuses the scroll area and keeps its scroll */}
+        <Content key={`asset-${selectedAsset}`}>
           <Padded>
             <FlexCol>
               <AssetBalanceView symbol={selectedAsset} balance={getAssetBalance(selectedAsset)} />
@@ -334,18 +332,22 @@ export default function Wallet() {
     <>
       <Header
         text={t('common.general.wallet')}
+        logo
         auxIcon={<TransactionsIcon />}
         auxFunc={handleTransactions}
         auxAriaLabel={t('networks.transactions.viewAll')}
       />
       {announcement}
-      <Content>
+      <Content key='home'>
         <Padded>
           <WalletStaggerContainer animate={shouldStagger}>
             <FlexCol>
               <FlexCol gap='0'>
                 <WalletStaggerChild animate={shouldStagger}>
                   <Balance amount={balance} centered usdOnly />
+                </WalletStaggerChild>
+                <WalletStaggerChild animate={shouldStagger}>
+                  <BalanceChart />
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
                   <ErrorMessage error={error} text={t('errors.send.arkade.server')} />

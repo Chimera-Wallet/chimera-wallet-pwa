@@ -353,8 +353,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     computeThresholds()
   }, [initialized, vtxos, svcWallet, aspInfo])
 
-  // Verified asset ids: this build's wrapped assets plus the asset registry.
-  // Seeded synchronously from the built-in ids and the last cached registry so
+  // Verified asset ids: this build's wrapped assets plus the asset registries.
+  // Seeded synchronously from the built-in ids and the last cached registries so
   // our own assets never flash "Unverified", then refreshed from the network.
   useEffect(() => {
     const network = aspInfo.network as NetworkName | undefined
