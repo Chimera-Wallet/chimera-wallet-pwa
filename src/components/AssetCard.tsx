@@ -3,6 +3,7 @@ import Shadow from './Shadow'
 import FlexCol from './FlexCol'
 import FlexRow from './FlexRow'
 import AssetAvatar from './AssetAvatar'
+import UnverifiedBadge from './UnverifiedBadge'
 import { prettyAssetAmount, truncatedAssetId } from '../lib/assets'
 import { useTranslation } from 'react-i18next'
 
@@ -15,6 +16,7 @@ interface AssetCardProps {
   name?: string
   ticker?: string
   onClick?: () => void
+  unverified?: boolean
 }
 export default function AssetCard({
   assetId,
@@ -25,6 +27,7 @@ export default function AssetCard({
   name,
   ticker,
   onClick,
+  unverified = false,
 }: AssetCardProps) {
   const {t} = useTranslation()
   const assetName = name || truncatedAssetId(assetId) || t('components.assetCard.name')
@@ -39,6 +42,7 @@ export default function AssetCard({
             <Text color='white' smaller>
               {tokenTick}
             </Text>
+            {unverified ? <UnverifiedBadge /> : null}
           </FlexCol>
         </FlexRow>
         <FlexCol end>

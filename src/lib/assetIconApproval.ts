@@ -22,15 +22,16 @@ export class AssetIconApprovalManager {
   }
 
   isApproved(assetId: string): boolean {
-    return this.approvedIds.has(assetId) || this.verifiedIds.has(assetId)
+    return this.approvedIds.has(assetId) || this.isVerified(assetId)
   }
 
   setVerifiedAssets(ids: string[]): void {
-    this.verifiedIds = new Set(ids)
+    // Registry lists and env ids may differ in hex case; compare lowercased.
+    this.verifiedIds = new Set(ids.map((id) => id.toLowerCase()))
   }
 
   isVerified(assetId: string): boolean {
-    return this.verifiedIds.has(assetId)
+    return this.verifiedIds.has(assetId.toLowerCase())
   }
 
   private load(): Set<string> {

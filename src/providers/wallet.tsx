@@ -1,4 +1,4 @@
-import { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react'
+import { ReactNode, createContext, useContext, useEffect, useReducer, useRef, useState } from 'react'
 import {
   ArkNote,
   ServiceWorkerWallet,
@@ -45,6 +45,7 @@ import { defaultPassword, getDelegateUrl, isDelegationEnabled, maxPercentage } f
 import { setLoadingStatus } from '../lib/loadingStatus'
 import { assetSwapRepository, type WalletAssetSwap } from '../lib/swapRepository'
 import { assetSwapResolver } from '../lib/activity/assetSwapResolver'
+import { fetchRegistryIds, getCachedRegistryIds, mergeVerifiedIds } from '../lib/assetRegistry'
 
 
 // Thrown by initWallet when we refuse to boot the service worker because the
@@ -130,6 +131,7 @@ interface WalletContextProps {
   assetMetadataCache: Map<string, CachedAssetDetails>
   setCacheEntry: (assetId: string, details: AssetDetails) => CachedAssetDetails
   iconApprovalManager: AssetIconApprovalManager
+  isAssetVerified: (assetId?: string) => boolean
   dataReady: boolean
   loadError: string | null
   dismissLoadError: () => void
@@ -159,6 +161,7 @@ export const WalletContext = createContext<WalletContextProps>({
   assetMetadataCache: new Map(),
   setCacheEntry: () => ({ cachedAt: 0 }) as CachedAssetDetails,
   iconApprovalManager: new AssetIconApprovalManager(),
+  isAssetVerified: () => true,
   dataReady: false,
   loadError: null,
   dismissLoadError: () => {},
@@ -189,6 +192,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [vtxos, setVtxos] = useState<{ spendable: Vtxo[]; spent: Vtxo[] }>({ spendable: [], spent: [] })
   const [assetBalances, setAssetBalances] = useState<WalletBalance['assets']>([])
   const [assetSwaps, setAssetSwaps] = useState<WalletAssetSwap[]>([])
+  // Bumped whenever the verified set changes, so consumers of isAssetVerified re-render.
+  const [, bumpVerifiedAssets] = useReducer((n: number) => n + 1, 0)
 
 
   const [vtxoManager, setVtxoManager] = useState<IVtxoManager>()
@@ -200,7 +205,6 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   // read wallet from storage
   const assetMetadataCache = useRef<Map<string, CachedAssetDetails>>(readAssetMetadataFromStorage() ?? new Map())
   const iconApprovalManager = useRef(new AssetIconApprovalManager()).current
-  const verifiedAssetsFetched = useRef(false)
   const statusPingInterval = useRef<ReturnType<typeof setInterval>>()
   const reloadTimerRef = useRef<ReturnType<typeof setTimeout>>()
   const reloadGenerationRef = useRef(createRequestGeneration())
@@ -349,26 +353,29 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     computeThresholds()
   }, [initialized, vtxos, svcWallet, aspInfo])
 
-  // fetch verified assets list once on startup
+  // Verified asset ids: this build's wrapped assets plus the asset registries.
+  // Seeded synchronously from the built-in ids and the last cached registries so
+  // our own assets never flash "Unverified", then refreshed from the network.
   useEffect(() => {
-    const verifiedUrl = import.meta.env.VITE_VERIFIED_ASSETS_URL
-    if (!verifiedUrl || verifiedAssetsFetched.current) return
-    if (!initialized) return
-    verifiedAssetsFetched.current = true
+    const network = aspInfo.network as NetworkName | undefined
+    if (!network) return
+    let cancelled = false
+    const apply = (registryIds: string[]) => {
+      iconApprovalManager.setVerifiedAssets(mergeVerifiedIds(registryIds))
+      bumpVerifiedAssets()
+    }
+    apply(getCachedRegistryIds(network))
+    fetchRegistryIds(network)
+      .then((ids) => {
+        if (!cancelled) apply(ids)
+      })
+      .catch((err) => consoleError(err, 'Failed to fetch verified asset registry'))
+    return () => {
+      cancelled = true
+    }
+  }, [aspInfo.network])
 
-    fetch(verifiedUrl)
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json()
-      })
-      .then((data) => {
-        if (!Array.isArray(data) || !data.every((id) => typeof id === 'string')) {
-          throw new Error('Invalid verified assets response')
-        }
-        iconApprovalManager.setVerifiedAssets(data)
-      })
-      .catch((err) => consoleError(err, 'Failed to fetch verified assets'))
-  }, [initialized])
+  const isAssetVerified = (assetId?: string): boolean => !assetId || iconApprovalManager.isVerified(assetId)
 
   // if ark note is present in the URL, decode it and set the note info
   useEffect(() => {
@@ -951,6 +958,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         assetMetadataCache: assetMetadataCache.current,
         setCacheEntry,
         iconApprovalManager,
+        isAssetVerified,
         dataReady,
         loadError,
         dismissLoadError,

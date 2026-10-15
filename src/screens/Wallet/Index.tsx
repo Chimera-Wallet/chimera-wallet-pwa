@@ -29,6 +29,7 @@ import {
   ASSETS,
   ASSET_LIST,
   getDisplayTicker,
+  getUnlistedHeldAssets,
   getWrappedAssetId,
   requireAssetConfig,
   wrappedAmountToNumber,
@@ -50,9 +51,10 @@ export default function Wallet() {
   const { aspInfo } = useContext(AspContext)
   const { announcement } = useContext(AnnouncementContext)
   const { config, updateConfig } = useContext(ConfigContext)
-  const { setRecvInfo, setSendInfo, setWrapRecvInfo, setUnwrapSendInfo } = useContext(FlowContext)
+  const { setRecvInfo, setSendInfo, setWrapRecvInfo, setUnwrapSendInfo, setAssetInfo } =
+    useContext(FlowContext)
   const { isInitialLoad, navigate, navigationCount, screen } = useContext(NavigationContext)
-  const { balance, dataReady, txs, assetBalances } = useContext(WalletContext)
+  const { balance, dataReady, txs, assetBalances, assetMetadataCache, isAssetVerified } = useContext(WalletContext)
   const { nudge } = useContext(NudgeContext)
 
   const pwaInstalled = usePwaInstalled()
@@ -264,6 +266,15 @@ export default function Wallet() {
     balance: getAssetBalance(asset.symbol as AssetSymbol),
   }))
 
+  // Held assets with no ASSET_LIST row (received tokens this build doesn't
+  // offer). They open the generic asset detail screen, which can send them.
+  const otherAssets = getUnlistedHeldAssets(assetBalances, assetMetadataCache)
+
+  const handleOtherAssetClick = (assetId: string) => {
+    setAssetInfo({ assetId, supply: BigInt(0) })
+    navigate(Pages.AppAssetDetail)
+  }
+
   // Render asset detail view
   if (selectedAsset) {
     return (
@@ -401,6 +412,9 @@ export default function Wallet() {
                 <AssetList
                   balances={assetBalancesForList}
                   onAssetClick={handleAssetClick}
+                  otherAssets={otherAssets}
+                  isAssetVerified={isAssetVerified}
+                  onOtherAssetClick={handleOtherAssetClick}
                 />
               </WalletStaggerChild>
             </FlexCol>

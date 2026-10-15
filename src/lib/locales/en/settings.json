@@ -199,5 +199,11 @@
         "addRem": "Add reminder",
         "vcRenewal": "Virtual Coin Renewal"
 
-    } 
+    },
+  "solvers": {
+    "custom": "Custom",
+    "customNote": "Solvers you add yourself are not verified by Chimera Wallet. Only add cards from sources you trust.",
+    "solver": "Solver",
+    "customSolverNotice": "This quote comes from a custom solver you added. It is not verified by Chimera Wallet."
+  }
 }

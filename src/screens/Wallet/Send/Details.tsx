@@ -29,6 +29,7 @@ import { saveTransactionActivityMetadata } from '../../../lib/storage'
 import type { LnSendActivity } from '../../../lib/types'
 import { TRANSFER_METHOD } from '../../../lib/transferMethods'
 import { calculateCollaborativeExitOutput } from '../../../lib/collaborativeExit'
+import UnverifiedAssetNotice from '../../../components/UnverifiedAssetNotice'
 
 
 export default function SendDetails() {
@@ -38,7 +39,7 @@ export default function SendDetails() {
   const isAssetSend = Boolean(sendInfo.assets?.length)
   const { lnSwapsAllowed, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
   const { payInvoice, payBtc } = useContext(SwapsContext)
-  const { assetMetadataCache, balance, svcWallet } = useContext(WalletContext)
+  const { assetMetadataCache, balance, svcWallet, isAssetVerified } = useContext(WalletContext)
   const { notifyResult } = useContext(TxResultContext)
 
   const assetId = sendInfo.assets?.[0]?.assetId
@@ -281,6 +282,7 @@ export default function SendDetails() {
                   <Text bold testId='send-details-asset-amount'>
                     {prettyAssetAmount(assetAmountValue, assetMeta?.metadata?.decimals ?? 8)} {assetTicker}
                   </Text>
+                  {assetId && !isAssetVerified(assetId) ? <UnverifiedAssetNotice assetId={assetId} /> : null}
                 </FlexCol>
               ) : null}
               <Details details={details} />

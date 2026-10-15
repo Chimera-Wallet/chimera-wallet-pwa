@@ -38,7 +38,8 @@ import {
   type AssetConfig,
   type AssetSymbol,
 } from '../../../lib/assets'
-import { preFeeDisplayRate } from '../../../lib/swapMarkets'
+import { getSolverOrigin, preFeeDisplayRate } from '../../../lib/swapMarkets'
+import UnverifiedBadge from '../../../components/UnverifiedBadge'
 import { type AssetSwapQuoteSnapshot } from '../../../lib/swapRepository'
 import { extractError } from '../../../lib/error'
 import { hapticLight, hapticTap } from '../../../lib/haptics'
@@ -180,6 +181,7 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
   }, [assetSwapFromAssetId, swappableAssets])
 
   const pair = fromAsset && toAsset ? findMarket(markets, fromAsset.assetId, toAsset.assetId) : undefined
+  const customSolver = Boolean(pair?.market && getSolverOrigin(pair.market) === 'custom')
   const feedFetch = useMemo(() => makeCachedFeedFetch(), [])
   const { plan, setGiveAmount, solvable, status } = useOfferQuote(pair?.market ?? null, {
     give: pair?.give,
@@ -373,6 +375,7 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
           toAsset ? `1 ${fromAsset.ticker} ≈ ${prettyAssetNumber(preFeeDisplayRate(currentPlan), toAsset.decimals)} ${toAsset.ticker}` : '',
         ],
         [t('apps.swap.fee'), `${(currentPlan.market.fee_bps / 100).toFixed(2)}%`],
+        ...(customSolver ? ([[t('settings.solvers.solver'), t('settings.solvers.custom')]] as TableData) : []),
       ]
     : []
 
@@ -481,6 +484,15 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
                     <TextSecondary>{t('apps.swap.fee')}</TextSecondary>
                     <Text bold>{(currentPlan.market.fee_bps / 100).toFixed(2)}%</Text>
                   </FlexRow>
+                  {customSolver ? (
+                    <>
+                      <FlexRow between>
+                        <TextSecondary>{t('settings.solvers.solver')}</TextSecondary>
+                        <UnverifiedBadge label={t('settings.solvers.custom')} />
+                      </FlexRow>
+                      <TextSecondary>{t('settings.solvers.customSolverNotice')}</TextSecondary>
+                    </>
+                  ) : null}
                 </FlexCol>
               </Shadow>
             ) : null}

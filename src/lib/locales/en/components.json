@@ -199,5 +199,10 @@
         "live": "Live now!",
         "launch": "Launching in",
         "joinComm": "Join The Community"
-    }
+    },
+  "assetTrust": {
+    "unverified": "Unverified",
+    "notice": "This asset is not in Chimera's verified list. Anyone can create a token with any name, so confirm the asset ID with the sender or issuer.",
+    "assetId": "Asset ID"
+  }
 }
