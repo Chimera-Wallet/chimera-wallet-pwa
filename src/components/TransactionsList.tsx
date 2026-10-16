@@ -9,7 +9,18 @@ import { ConfigContext } from '../providers/config'
 import { FiatContext } from '../providers/fiat'
 import Focusable from './Focusable'
 import { hapticSubtle } from '../lib/haptics'
-import { ASSETS, getWrappedAssetId, prettyAssetAmount, prettyAssetAmountHide } from '../lib/assets'
+import {
+  ASSETS,
+  getAssetSymbolByAssetId,
+  getWrappedAssetId,
+  prettyAssetAmount,
+  prettyAssetAmountHide,
+  requireAssetConfig,
+  wrappedAmountToNumber,
+} from '../lib/assets'
+import { AssetPricesContext } from '../providers/assetPrices'
+
+const abs = (n: bigint): bigint => (n < BigInt(0) ? -n : n)
 import { getTxStatus, TX_STATUS_DISPLAY } from '../lib/txStatus'
 import { AspContext } from '../providers/asp'
 import { useTranslation } from 'react-i18next'
@@ -19,6 +30,7 @@ import { swapRouteLabel, swapStatusLabel, swapFiatAmount } from '../lib/swapDisp
 const TransactionLine = ({ tx, onClick, isFirst }: { tx: Tx; onClick: () => void; isFirst?: boolean }) => {
   const { config } = useContext(ConfigContext)
   const { toFiat } = useContext(FiatContext)
+  const { getPriceData } = useContext(AssetPricesContext)
   const { aspInfo } = useContext(AspContext)
   const { assetMetadataCache } = useContext(WalletContext)
   const boardingExitDelay = Number(aspInfo?.boardingExitDelay || 0)
@@ -46,7 +58,20 @@ const TransactionLine = ({ tx, onClick, isFirst }: { tx: Tx; onClick: () => void
     formattedAmount = config.showBalance
       ? `${prefix} ${prettyAssetAmount(assetEntry.amount, decimals)} ${assetLabel}`
       : prettyAssetAmountHide(assetEntry.amount, assetLabel)
-    formattedFiat = ''
+    // Fiat only for listed assets with a price. CX wrapped assets map 1-to-1
+    // with the original, so value the raw amount with the original asset's
+    // precision, as the home balance and asset list do.
+    const symbol = getAssetSymbolByAssetId(assetEntry.assetId)
+    const rate = symbol ? getPriceData(symbol).rate : 0
+    if (symbol && rate) {
+      const units = wrappedAmountToNumber(abs(assetEntry.amount), requireAssetConfig(symbol).precision)
+      const fiatValue = units * rate
+      formattedFiat = config.showBalance
+        ? `${prefix} ${prettyFiatAmount(fiatValue, config.fiat)}`
+        : prettyFiatHide(fiatValue, config.fiat)
+    } else {
+      formattedFiat = ''
+    }
   } else {
     assetLabel = ASSETS.BTC.symbol
     const btcAmount = fromSatoshis(tx.amount)

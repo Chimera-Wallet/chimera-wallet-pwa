@@ -15,15 +15,18 @@ interface BalanceProps {
   amount: number
   centered?: boolean
   usdOnly?: boolean
+  /** Fiat value to show in place of converting `amount`: the whole wallet's
+   * total across assets, which sats alone can't express. */
+  fiatTotal?: number
 }
 
-export default function Balance({ amount, centered = false, usdOnly = false }: BalanceProps) {
+export default function Balance({ amount, centered = false, usdOnly = false, fiatTotal }: BalanceProps) {
   const { config, updateConfig } = useContext(ConfigContext)
   const { toFiat, fiatDecimals } = useContext(FiatContext)
 
   const {t} = useTranslation()
 
-  const fiatAmount = toFiat(amount)
+  const fiatAmount = fiatTotal ?? toFiat(amount)
   const btcAmount = fromSatoshis(amount)
   const fiatSymbol = FIAT_SYMBOLS[config.fiat]
 

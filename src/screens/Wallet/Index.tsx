@@ -8,6 +8,8 @@ import AssetBalanceView from '../../components/AssetBalanceView'
 import { WalletContext } from '../../providers/wallet'
 import { AspContext } from '../../providers/asp'
 import { ConfigContext } from '../../providers/config'
+import { FiatContext } from '../../providers/fiat'
+import { AssetPricesContext } from '../../providers/assetPrices'
 import Padded from '../../components/Padded'
 import Content from '../../components/Content'
 import FlexCol from '../../components/FlexCol'
@@ -55,6 +57,8 @@ export default function Wallet() {
     useContext(FlowContext)
   const { isInitialLoad, navigate, navigationCount, screen } = useContext(NavigationContext)
   const { balance, dataReady, txs, assetBalances, assetMetadataCache, isAssetVerified } = useContext(WalletContext)
+  const { toFiat } = useContext(FiatContext)
+  const { getPriceData } = useContext(AssetPricesContext)
   const { nudge } = useContext(NudgeContext)
 
   const pwaInstalled = usePwaInstalled()
@@ -266,6 +270,15 @@ export default function Wallet() {
     balance: getAssetBalance(asset.symbol as AssetSymbol),
   }))
 
+  // Headline total: the whole wallet in fiat. BTC at the wallet's own rate, every
+  // other listed asset at the price the asset list shows. Assets with no price
+  // source (and unlisted ones) add nothing, as they show no fiat value there.
+  const totalFiat = assetBalancesForList.reduce(
+    (sum, { symbol, balance: units }) =>
+      symbol === ASSETS.BTC.symbol ? sum : sum + units * getPriceData(symbol).rate,
+    toFiat(balance),
+  )
+
   // Held assets with no ASSET_LIST row (received tokens this build doesn't
   // offer). They open the generic asset detail screen, which can send them.
   const otherAssets = getUnlistedHeldAssets(assetBalances, assetMetadataCache)
@@ -344,7 +357,7 @@ export default function Wallet() {
             <FlexCol>
               <FlexCol gap='0'>
                 <WalletStaggerChild animate={shouldStagger}>
-                  <Balance amount={balance} centered usdOnly />
+                  <Balance amount={balance} fiatTotal={totalFiat} centered usdOnly />
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
                   <BalanceChart />

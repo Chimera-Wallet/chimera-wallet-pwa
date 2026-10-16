@@ -1,7 +1,6 @@
-import { useContext, useEffect, useState } from 'react'
+import { useContext } from 'react'
 import AssetRow from './AssetRow'
 import {
-  ASSET_LIST,
   getHomeAssetList,
   getDisplayTicker,
   truncatedAssetId,
@@ -9,8 +8,7 @@ import {
   type AssetSymbol,
   type UnlistedAsset,
 } from '../lib/assets'
-import { CoinGeckoConversionService, type ConversionRateResult } from '../lib/coingecko/service'
-import { consoleError } from '../lib/logs'
+import { AssetPricesContext } from '../providers/assetPrices'
 import { ConfigContext } from '../providers/config'
 import { useTranslation } from 'react-i18next'
 
@@ -43,51 +41,17 @@ export default function AssetList({
   onOtherAssetClick,
 }: AssetListProps) {
   const { config } = useContext(ConfigContext)
-  const currency = config.fiat.toLowerCase()
   const {t} = useTranslation()
-
-  const [prices, setPrices] = useState<ConversionRateResult>({})
-  const [loading, setLoading] = useState(true)
+  const { getPriceData, loading } = useContext(AssetPricesContext)
 
   const balancesBySymbol = Object.fromEntries(balances.map((b) => [b.symbol, b.balance])) as Partial<
     Record<AssetSymbol, number>
   >
   const homeAssetList = getHomeAssetList(balancesBySymbol)
 
-  useEffect(() => {
-    const fetchPrices = async () => {
-      try {
-        const symbols = ASSET_LIST.map((a) => a.symbol)
-        const rates = await CoinGeckoConversionService.getBulkConversionRates(symbols, {
-          vsCurrencies: [currency],
-          include24hChange: true,
-        })
-        setPrices(rates)
-      } catch (error) {
-        consoleError(error, 'Failed to fetch asset prices')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchPrices()
-
-    // Refresh prices every 60 seconds
-    const interval = setInterval(fetchPrices, 60000)
-    return () => clearInterval(interval)
-  }, [currency])
-
   const getBalance = (symbol: AssetSymbol): number => {
     const found = balances.find((b) => b.symbol === symbol)
     return found?.balance || 0
-  }
-
-  const getPriceData = (symbol: string) => {
-    const data = prices[symbol] as unknown as Record<string, number> | undefined
-    return {
-      rate: data?.[currency] || 0,
-      change: data?.[`${currency}_24h_change`],
-    }
   }
 
   return (
