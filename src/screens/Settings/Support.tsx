@@ -124,7 +124,7 @@ export default function Support() {
             <ErrorMessage error={Boolean(error)} text={error} />
             <Section
               title={t('settings.support.custSupp')}
-              text={t('settings.support.custSuppText')}
+              text={t('settings.support.helpText')}
             />
             <Section
               title={t('settings.support.secure')}
@@ -147,7 +147,7 @@ export default function Support() {
           <Button
             onClick={handleOpenChat}
             disabled={!supportChatLoaded}
-            label={supportChatLoaded ? t('settings.support.openSupp') : t('common.settings.loading')}
+            label={supportChatLoaded ? t('settings.support.openSupp') : t('common.general.loading')}
           />
         )}
       </ButtonsOnBottom>

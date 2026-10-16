@@ -93,13 +93,13 @@ export default function SendDetails() {
     const isCollaborativeExit = destination === address && !pendingSwap
     const direction =
       destination === arkAddress
-        ? t('common.directions.arkade')
+        ? t('common.general.directions.arkade')
         : destination === invoice
-          ? t('common.directions.lightningSwap')
+          ? t('common.general.directions.lightningSwap')
           : pendingSwap?.type === 'chain'
-            ? t('common.directions.mainnetSwap')
+            ? t('common.general.directions.mainnetSwap')
             : destination === address
-              ? t('common.directions.mainnetPay')
+              ? t('common.general.directions.mainnetPay')
               : ''
     const total = pendingSwap
       ? pendingSwap.type === 'chain'
@@ -165,7 +165,7 @@ export default function SendDetails() {
   useEffect(() => {
     if (!sendDone) return
     if (error) {
-      notifyResult(false, t('common.notifications.failedTransaction')).then(() => setSending(false))
+      notifyResult(false, t('common.notifications.bank.failedTransaction')).then(() => setSending(false))
       return
     }
     navigate(Pages.SendSuccess)
@@ -264,11 +264,11 @@ export default function SendDetails() {
       <Content>
         {sending ? (
           details?.destination === invoice ? (
-            <Loading text={t('common.directions.lightningPay')} />
+            <Loading text={t('common.general.directions.lightningPay')} />
           ) : details?.destination === arkAddress ? (
-            <Loading text={t('common.directions.arkade')} />
+            <Loading text={t('common.general.directions.arkade')} />
           ) : (
-            <Loading text={t('common.directions.mainnetPay')} />
+            <Loading text={t('common.general.directions.mainnetPay')} />
           )
         ) : (
           <Padded>

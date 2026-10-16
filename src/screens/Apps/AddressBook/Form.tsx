@@ -212,7 +212,7 @@ export default function AddressBookForm() {
                 <input
                   className='input'
                   value={address}
-                  placeholder={t('placeholders.contact.enterAddr',{name: getAddressTypeName(addressType).toLowerCase()})}
+                  placeholder={t('placeholders.contacts.enterAddr',{name: getAddressTypeName(addressType).toLowerCase()})}
                   onChange={(e) => setAddress(e.target.value)}
                 />
               </InputContainer>

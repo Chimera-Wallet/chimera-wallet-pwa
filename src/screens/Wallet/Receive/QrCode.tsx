@@ -271,7 +271,7 @@ export default function ReceiveQRCode() {
       return setAssetAmount(cents)
     } else {
       const num = Number(value)
-      if (Number.isNaN(num) || !Number.isFinite(num)) throw new Error(t('errors.receive.general.invalidAmount'))
+      if (Number.isNaN(num) || !Number.isFinite(num)) throw new Error(t('common.notifications.receive.invalidAmount'))
       const sats = useFiat ? fromFiat(num) : num
       // if amount was changed, we need to reset invoice and swap address, since they are amount-specific
       // this will also trigger the useEffect to create new ones if needed
@@ -347,7 +347,7 @@ export default function ReceiveQRCode() {
                     onPointerUp={() => setQrTransform('')}
                     onPointerLeave={() => setQrTransform('')}
                     onPointerCancel={() => setQrTransform('')}
-                    aria-label= {t('common.notifications.receive.copyQr')}
+                    aria-label= {t('common.notifications.receive.copyQR')}
                     style={{
                       background: 'none',
                       border: 'none',

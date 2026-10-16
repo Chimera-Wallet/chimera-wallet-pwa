@@ -349,7 +349,7 @@ export default function AppAssetMint() {
                   <Input
                     value={controlAssetId}
                     onChange={setControlAssetId}
-                    placeholder={t('placeholders.assIdPaste')}
+                    placeholder={t('placeholders.assets.assIdPaste')}
                     testId='control-asset-id'
                   />
                 </FlexCol>

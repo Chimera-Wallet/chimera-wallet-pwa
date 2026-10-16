@@ -81,7 +81,7 @@ export default function WrapReceive() {
     if (!wrapRecvInfo) navigate(Pages.ReceiveAmount)
   }, [wrapRecvInfo])
 
-  if (!wrapRecvInfo || !chain || !assetConfig) return <Loading text={t('common.notifications.receive.loading')} />
+  if (!wrapRecvInfo || !chain || !assetConfig) return <Loading text={t('common.general.loading')} />
 
   const precision = assetConfig.precision
 
@@ -124,7 +124,7 @@ export default function WrapReceive() {
       return
     }
     if (!receiver) {
-      setError(t('errors.wrapService.arkadeRcvAddress'))
+      setError(t('errors.receive.wrapService.arkadeRcvAddress'))
       return
     }
     try {

@@ -6,6 +6,15 @@
     "accountName": "Account Holder Name",
     "accountNumber": "Account Number",
     "routingNumber": "Routing Number",
+    "bankFields": {
+        "iban": "IBAN",
+        "bicSwift": "BIC/SWIFT",
+        "country": "Country (ISO code)",
+        "streetName": "Street Name",
+        "buildingNumber": "Building Number",
+        "townName": "Town",
+        "postCode": "Postal Code"
+    },
     "orderHistory": "View order History",
     "notifications": {
         "send":{
@@ -117,6 +126,7 @@
         "continue": "Continue",
         "success": "Success",
         "receive": "Receive",
+        "sent": "Sent",
         "received": "Received",
         "fauceting": "Fauceting", 
         "faucet": "Faucet",
@@ -138,7 +148,7 @@
         "created": "Created",
         "refreshing": "Refreshing...",
         "wallet": "Wallet", 
-        "unkown": "Unkown",
+        "unkown": "Unknown",
         "unconfirmed": "Unconfirmed",
         "confirm": "confirm",
         "settled": "Settled",

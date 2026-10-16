@@ -1,9 +1,11 @@
 {
     "select": "Select network",
     "arkade":{
+        "name": "Arkade",
         "description": "Instant, low-fee Bitcoin transfers"
     },
     "lightning": {
+        "name": "Lightning",
         "description": "Fast Lightning Network payments"
     },
     "bitcoin": {

@@ -199,7 +199,7 @@ export default function BankSend() {
         // The message has to be assigned to state — building the string alone
         // left the screen silent, so the button just appeared to do nothing.
         setError(
-          t('errors.insufficientBalance', {
+          t('errors.send.bank.insufficientBalance', {
             required: prettyNumber(fromSatoshis(requiredSats), 8),
             balance: prettyNumber(fromSatoshis(balance), 8),
           }),

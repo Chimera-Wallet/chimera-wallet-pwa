@@ -84,7 +84,7 @@ export default function Backup() {
       if (!password) return
       const result = await verifyPassword(password)
       if (!result) {
-        setError(t('errors.json.initialisation.invalidPass'))
+        setError(t('errors.initialisation.invalidPass'))
         return
       }
       setError('')
