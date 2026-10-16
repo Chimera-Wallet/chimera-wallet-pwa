@@ -166,13 +166,13 @@
     },
     "addressBook": {
         "enterAdd": "Please enter an address",
-        "invalidAdd": "Invalid {{name}}}",
+        "invalidAdd": "Invalid {{name}}",
         "contactName": "Please enter a contact name"
     },
     "assets":{
         "positive": "Amount must be a positive number" ,
         "idNF": "Asset ID is required",
-        "balance": "Cannot burn more than your balance {{amount}} {{tick}})",
+        "balance": "Cannot burn more than your balance ({{amount}} {{tick}})",
         "idHex": "Asset ID must be a 68-character hex string",
         "assNF": "Asset not found",
         "range": "Decimals must be an integer between 0 and {{max}}"
@@ -182,7 +182,7 @@
         "integration": "Boltz integration is not ready yet. Try again in a moment.",
         "integrationSimple": "Boltz integration is not ready yet",
         "scan": "Could not scan: {{err}}",
-        "recover": "Recovered {{swept}} VTXO{{out}}}",
+        "recover": "Recovered {{swept}} VTXO{{out}}",
         "noSweep": "Nothing was swept; try again later."
     },
     "lendasat": {

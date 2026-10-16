@@ -154,7 +154,7 @@ export default function UnwrapSend() {
         <Header text= {t('common.general.success')} />
         <Content>
           <Success
-            headline={t('common.notifications.unwrapService.completeHeadline')} 
+            headline={t('common.notifications.unwrapService.completedHeadline')} 
             text={amount ? t('common.notifications.unwrapService.sendInfo', {value:amount, ticker: unwrapSendInfo.ticker, name: chain.name}) : t('common.notifications.unwrapService.sent')}
           />
         </Content>

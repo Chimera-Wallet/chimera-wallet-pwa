@@ -200,11 +200,11 @@ export default function BankOrderStatus() {
             ) : null}
 
             {isWaitingForDeposit ? (
-              <Info color='blue' title={isDepositOrder ? t('common.general.bank.awaitingtransfer') : t('common.general.bank.withdrawalSubmit')}>
+              <Info color='blue' title={isDepositOrder ? t('common.general.bank.awaitingTransfer') : t('common.general.bank.withdrawalSubmit')}>
                 <TextSecondary>
                   {isDepositOrder
                     ? t('common.general.bank.waitingForTransfer')
-                    : t('common.genreal.bank.withdrawlProcessing', {fiat: withdrawalFiatDisplay})}
+                    : t('common.general.bank.withdrawalProcessing', {fiat: withdrawalFiatDisplay})}
                 </TextSecondary>
               </Info>
             ) : null}

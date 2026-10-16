@@ -79,13 +79,13 @@ export const emptyBankDetailsFields: BankDetailsFields = {
 
 export interface BankFieldSpec {
   key: keyof BankDetailsFields
-  /** An i18n key, or a label shown as-is (t() returns unknown keys unchanged). */
+  /** An i18n key. */
   label: string
   placeholder: string
   uppercase?: boolean
 }
 
-const IBAN: BankFieldSpec = { key: 'iban', label: 'IBAN', placeholder: 'DE89 3704 0044 0532 0130 00', uppercase: true }
+const IBAN: BankFieldSpec = { key: 'iban', label: 'common.bankFields.iban', placeholder: 'DE89 3704 0044 0532 0130 00', uppercase: true }
 const HOLDER: BankFieldSpec = { key: 'accountHolderName', label: 'common.accountName', placeholder: 'John Doe' }
 
 /**
@@ -97,13 +97,13 @@ export const BANK_FIELDS: Record<BankCircuit, BankFieldSpec[]> = {
   // SWIFT needs the structured beneficiary address IBSettle requires (BankDataSwift)
   swift: [
     IBAN,
-    { key: 'bic', label: 'BIC/SWIFT', placeholder: 'DEUTDEFF', uppercase: true },
+    { key: 'bic', label: 'common.bankFields.bicSwift', placeholder: 'DEUTDEFF', uppercase: true },
     HOLDER,
-    { key: 'country', label: 'Country (ISO code)', placeholder: 'DE', uppercase: true },
-    { key: 'streetName', label: 'Street Name', placeholder: 'Musterstrasse' },
-    { key: 'buildingNumber', label: 'Building Number', placeholder: '1' },
-    { key: 'townName', label: 'Town', placeholder: 'Frankfurt' },
-    { key: 'postCode', label: 'Postal Code', placeholder: '60306' },
+    { key: 'country', label: 'common.bankFields.country', placeholder: 'DE', uppercase: true },
+    { key: 'streetName', label: 'common.bankFields.streetName', placeholder: 'Musterstrasse' },
+    { key: 'buildingNumber', label: 'common.bankFields.buildingNumber', placeholder: '1' },
+    { key: 'townName', label: 'common.bankFields.townName', placeholder: 'Frankfurt' },
+    { key: 'postCode', label: 'common.bankFields.postCode', placeholder: '60306' },
   ],
   us: [
     HOLDER,

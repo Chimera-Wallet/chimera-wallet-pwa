@@ -33,7 +33,7 @@ function friendlySwapError(message: string): string {
   const {t} = useTranslation()
   if (locktimeMatch) {
     const date = prettyDate(parseInt(locktimeMatch[1], 10))
-    return t('apps.boltz.unvavailableRefund', {date: date})
+    return t('apps.boltz.unavailableRefund', {date: date})
   }
   if (message.includes(t('apps.boltz.VHTLCspent'))) {
     return t('apps.boltz.swapSpent')
@@ -107,7 +107,7 @@ export default function AppBoltzSwap() {
       swapInfo.request.from === 'ARK' ? swapInfo.toAddress : swapInfo.response.claimDetails?.lockupAddress
 
     tableData = [
-      [t('apps.boltz.'), when],
+      [t('apps.boltz.when'), when],
       [t('apps.boltz.kind'), t('apps.boltz.chainS')],
       [t('apps.boltz.swapId'), swapId],
       [t('apps.boltz.direction'), swapInfo.request.from === 'ARK' ? 'Arkade to BTC' : 'BTC to Arkade'],

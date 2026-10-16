@@ -23,7 +23,7 @@ export default function InitBackupWarning() {
 
   return (
     <>
-      <Header text={t('important')} />
+      <Header text={t('init.warning.important')} />
       <Content>
         <Padded>
           <FlexCol gap='1.5rem'>
@@ -49,7 +49,7 @@ export default function InitBackupWarning() {
                   letterSpacing: '0.05em',
                 }}
               >
-                {t('warning')}
+                {t('init.warning.warning')}
               </p>
               <p style={{ margin: 0, fontSize: '1rem', lineHeight: 1.6 }}>
                <Trans
