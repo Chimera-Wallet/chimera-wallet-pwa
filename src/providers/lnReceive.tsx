@@ -73,6 +73,10 @@ interface LnReceiveContextProps {
   /** True once the manager has restored its stored swaps and is polling —
    * `requestReceive` throws before this. */
   ready: boolean
+  /** The solver's receive bounds in sats, once discovered; undefined while
+   * unknown or when no solver serves Lightning receive on this network.
+   * `requestReceive` enforces the same bounds. */
+  bounds?: { minSats: number; maxSats: number }
   requestReceive: (amountSats: number) => Promise<LnReceiveInvoice>
 }
 
@@ -88,6 +92,7 @@ export const LnReceiveProvider = ({ children }: { children: ReactNode }) => {
   const { svcWallet } = useContext(WalletContext)
 
   const [ready, setReady] = useState(false)
+  const [bounds, setBounds] = useState<{ minSats: number; maxSats: number }>()
   const managerRef = useRef<Promise<RfqSwapManager>>()
   const grantedRef = useRef<Promise<void>>()
 
@@ -162,6 +167,23 @@ export const LnReceiveProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [svcWallet, aspInfo.url, aspInfo.network])
 
+  useEffect(() => {
+    setBounds(undefined)
+    if (!aspInfo.network) return
+    const network = aspInfo.network as NetworkName
+    let stale = false
+    discoverMarkets(network)
+      .then((markets) => {
+        if (stale) return
+        const rendezvous = lnReceiveRendezvous(markets, getEmulatorPubkeyForNetwork(network))
+        setBounds(rendezvous ? { minSats: rendezvous.minSats, maxSats: rendezvous.maxSats } : undefined)
+      })
+      .catch((err) => consoleError(err, 'failed to discover lightning receive bounds'))
+    return () => {
+      stale = true
+    }
+  }, [aspInfo.network])
+
   const requestReceive = async (amountSats: number): Promise<LnReceiveInvoice> => {
     let pending = managerRef.current
     if (!pending && grantedRef.current) {
@@ -203,5 +225,5 @@ export const LnReceiveProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
-  return <LnReceiveContext.Provider value={{ ready, requestReceive }}>{children}</LnReceiveContext.Provider>
+  return <LnReceiveContext.Provider value={{ ready, bounds, requestReceive }}>{children}</LnReceiveContext.Provider>
 }

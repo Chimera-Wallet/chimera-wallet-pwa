@@ -19,7 +19,6 @@ import Padded from '../../components/Padded'
 import Input from '../../components/Input'
 import { TextSecondary } from '../../components/Text'
 import { hex } from '@scure/base'
-import { IndexedDbSwapRepository } from '@arkade-os/boltz-swap'
 import { OnboardStaggerContainer, OnboardStaggerChild } from '../../components/OnboardLoadIn'
 import { validateMnemonic } from '@scure/bip39'
 import { wordlist } from '@scure/bip39/wordlists/english'
@@ -123,7 +122,7 @@ export default function InitRestore() {
       setInitInfo({ privateKey, password: defaultPassword, restoring: true })
       seckey = privateKey!
     }
-    new BackupProvider({ seckey }, new IndexedDbSwapRepository())
+    new BackupProvider({ seckey })
       .restore((conf) => {
         // A recovery phrase is network-agnostic and the same one is legitimately
         // used on more than one network. The Nostr backup is keyed by the phrase,

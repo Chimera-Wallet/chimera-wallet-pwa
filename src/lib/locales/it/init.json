@@ -34,8 +34,6 @@
   },
   "connection": {
     "missingCreds": "Credenziali mancanti",
-    "restoringSwaps": "Ripristino degli swap...",
-    "swapsInfo": "Ripristinati {{num}} swap dalla rete",
     "connectionFailed": "Connessione non riuscita",
     "serverConnection": "Connessione al server in corso"
   },

@@ -3,9 +3,8 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { useContext } from 'react'
 import { AspContext } from '../../providers/asp'
 import { LimitsContext, LimitsProvider, getAspLimit } from '../../providers/limits'
-import { SwapsContext } from '../../providers/swaps'
 import { WalletContext } from '../../providers/wallet'
-import { mockAspContextValue, mockSvcWallet, mockSwapsContextValue, mockWalletContextValue } from '../screens/mocks'
+import { mockAspContextValue, mockSvcWallet, mockWalletContextValue } from '../screens/mocks'
 
 const LimitsProbe = () => {
   const { utxoTxsAllowed, validUtxoTx, vtxoTxsAllowed } = useContext(LimitsContext)
@@ -21,7 +20,7 @@ describe('ASP transaction limits', () => {
     expect(getAspLimit(undefined, undefined, BigInt(-1))).toBe(-1)
   })
 
-  it('applies ASP limits while swaps are disconnected', async () => {
+  it('applies ASP limits', async () => {
     render(
       <AspContext.Provider
         value={{
@@ -30,11 +29,9 @@ describe('ASP transaction limits', () => {
         }}
       >
         <WalletContext.Provider value={{ ...mockWalletContextValue, svcWallet: mockSvcWallet } as any}>
-          <SwapsContext.Provider value={{ ...mockSwapsContextValue, connected: false, arkadeSwaps: null }}>
-            <LimitsProvider>
-              <LimitsProbe />
-            </LimitsProvider>
-          </SwapsContext.Provider>
+          <LimitsProvider>
+            <LimitsProbe />
+          </LimitsProvider>
         </WalletContext.Provider>
       </AspContext.Provider>,
     )

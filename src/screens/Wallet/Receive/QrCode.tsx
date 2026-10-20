@@ -14,9 +14,7 @@ import FlexCol from '../../../components/FlexCol'
 import FlexRow from '../../../components/FlexRow'
 import { LimitsContext } from '../../../providers/limits'
 import LoadingLogo from '../../../components/LoadingLogo'
-import { SwapsContext } from '../../../providers/swaps'
 import { encodeBip21, encodeBip21Asset } from '../../../lib/bip21'
-import { enableChainSwapsReceive, lnurlServerUrl } from '../../../lib/constants'
 import { unitsToCents } from '../../../lib/assets'
 import WarningBox from '../../../components/Warning'
 import ErrorMessage from '../../../components/Error'
@@ -34,7 +32,6 @@ import CheckMarkIcon from '../../../icons/CheckMark'
 import { hapticSubtle } from '../../../lib/haptics'
 import { isMobileBrowser } from '../../../lib/browser'
 import Focusable from '../../../components/Focusable'
-import { LnurlContext } from '../../../providers/lnurl'
 import { useReducedMotion } from '../../../hooks/useReducedMotion'
 import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import { AssetOption } from '../../../lib/types'
@@ -66,10 +63,9 @@ export default function ReceiveQRCode() {
   const { navigate } = useContext(NavigationContext)
   const { recvInfo, setRecvInfo } = useContext(FlowContext)
   const { notifyPaymentReceived } = useContext(NotificationsContext)
-  const { createBtcToArkSwap } = useContext(SwapsContext)
   const { assetMetadataCache, svcWallet, isAssetVerified } = useContext(WalletContext)
-  const { minSwapAllowed, validBtcToArk, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
-  const { requestReceive } = useContext(LnReceiveContext)
+  const { utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
+  const { requestReceive, bounds: lnReceiveBounds } = useContext(LnReceiveContext)
 
   const { toast } = useToast()
 
@@ -100,8 +96,6 @@ export default function ReceiveQRCode() {
   const [arkAddress, setArkAddress] = useState(offchainAddr)
   const [btcAddress, setBtcAddress] = useState(boardingAddr)
   const [showQrCode, setShowQrCode] = useState(!satoshis)
-  const [swapsTimedOut, setSwapsTimedOut] = useState(false)
-  const [swapAddress, setSwapAddress] = useState('')
   const [qrCodeValue, setQrCodeValue] = useState('')
   const [bip21Uri, setBip21Uri] = useState('')
   const [invoice, setInvoice] = useState('')
@@ -140,25 +134,6 @@ export default function ReceiveQRCode() {
   useEffect(() => {
     setInvoice(recvInfo.invoice ?? '')
   }, [recvInfo.invoice])
-
-  const lnurlSession = useContext(LnurlContext)
-  const isAmountlessLnurl = !satoshis && !isAssetReceive && !!lnurlServerUrl && lnurlSession.active
-
-  const createBtcAddress = () => {
-    return new Promise((resolve, reject) => {
-      if (!enableChainSwapsReceive) return reject()
-      if (!validBtcToArk(satoshis)) return reject()
-      createBtcToArkSwap(satoshis)
-        .then((result) => {
-          if (!result) throw new Error(t('errors.receive.general.chainSwap'))
-          resolve(result.pendingSwap)
-        })
-        .catch((error) => {
-          consoleError(error, 'Error creating chain swap')
-          reject(error)
-        })
-    })
-  }
 
   const createBip21 = (): { ark: string; btc: string; bip21: string } => {
     const ark = vtxoTxsAllowed() ? recvInfo.offchainAddr : ''
@@ -206,16 +181,10 @@ export default function ReceiveQRCode() {
     if (!addressesLoaded) return
 
     const { ark, btc, bip21 } = createBip21()
-    // LNURL can be present for both amountless and amounted flows; check the
-    // session LNURL or the bip21 value for a lightning param.
-    const hasLnurl = Boolean(lnurlSession.lnurl) || isAmountlessLnurl
-
-    // Consider invoice, pending swap address, LNURL, and on-chain addresses
-    // as valid payment methods. This prevents the UI from showing
-    // "No payments available" when a Lightning invoice or swap is available.
+    // A Lightning invoice counts as a payment method too, so the UI does not
+    // show "No payments available" when only Lightning can be paid.
     const hasInvoice = Boolean(recvInfo.invoice)
-    const hasSwapAddress = Boolean(swapAddress)
-    setNoPaymentMethods(!ark && !btc && !hasInvoice && !hasLnurl && !hasSwapAddress && !isAssetReceive)
+    setNoPaymentMethods(!ark && !btc && !hasInvoice && !isAssetReceive)
     setArkAddress(ark)
     setBtcAddress(btc)
     setBip21Uri(bip21)
@@ -224,14 +193,10 @@ export default function ReceiveQRCode() {
     invoice,
     assetAmount,
     addressesLoaded,
-    isAmountlessLnurl,
-    lnurlSession.lnurl,
-    lnurlSession.active,
     recvInfo.offchainAddr,
     recvInfo.boardingAddr,
     recvInfo.satoshis,
     recvInfo.invoice,
-    swapAddress,
     showQrCode,
   ])
 
@@ -273,10 +238,9 @@ export default function ReceiveQRCode() {
       const num = Number(value)
       if (Number.isNaN(num) || !Number.isFinite(num)) throw new Error(t('common.notifications.receive.invalidAmount'))
       const sats = useFiat ? fromFiat(num) : num
-      // if amount was changed, we need to reset invoice and swap address, since they are amount-specific
-      // this will also trigger the useEffect to create new ones if needed
+      // if amount was changed, we need to reset the invoice, since it is amount-specific
+      // this will also trigger the useEffect to negotiate a new one if needed
       if (sats !== recvInfo.satoshis) {
-        setSwapAddress('')
         setShowQrCode(false)
         setRecvInfo({ ...recvInfo, satoshis: sats, invoice: undefined, pendingLnReceive: undefined })
         return
@@ -372,13 +336,10 @@ export default function ReceiveQRCode() {
                       {t('common.notifications.receive.request', {amount: prettyNumber(satoshis, 0), label: unitLabel})}
                     </div>
                   ) : null}
-                  {(!satoshis || satoshis < minSwapAllowed()) && !isAssetReceive ? (
+                  {lnReceiveBounds && (!satoshis || satoshis < lnReceiveBounds.minSats) && !isAssetReceive ? (
                     <div style={{ fontSize: '13px', color: 'var(--neutral-500)', marginTop: '0.25rem' }}>
-                      {t('common.notifications.receive.minLightning',{amount: minSwapAllowed()})}
+                      {t('common.notifications.receive.minLightning', { amount: lnReceiveBounds.minSats })}
                     </div>
-                  ) : null}
-                  {swapsTimedOut && !invoice && !isAssetReceive ? (
-                    <WarningBox text={t('errors.receive.lightning.tempUnavailable')} />
                   ) : null}
                   {lnReceiveError && !invoice && !isAssetReceive ? (
                     <WarningBox text={lnReceiveError} />
@@ -439,7 +400,6 @@ export default function ReceiveQRCode() {
             bip21Uri={bip21Uri}
             btcAddress={btcAddress}
             arkAddress={arkAddress}
-            lnurl={lnurlSession.lnurl}
             invoice={invoice}
             onCopy={handleCopy}
             onSelect={(v) => {
@@ -459,7 +419,6 @@ function AddressList({
   btcAddress,
   arkAddress,
   invoice,
-  lnurl,
   onCopy,
   onSelect,
   copied,
@@ -468,7 +427,6 @@ function AddressList({
   btcAddress: string
   arkAddress: string
   invoice: string
-  lnurl: string
   onCopy: (value: string) => void
   onSelect: (value: string) => void
   copied: string
@@ -511,16 +469,6 @@ function AddressList({
           testId='btc'
           title={t('common.notifications.receive.bitcoin.bitcoinAddress')}
           value={btcAddress}
-          onCopy={onCopy}
-          onSelect={onSelect}
-          copied={copied}
-        />
-      ) : null}
-      {lnurl ? (
-        <AddressLine
-          testId='lnurl'
-          title={t('common.notifications.receive.lnurl.lnurlAddress')}
-          value={lnurl}
           onCopy={onCopy}
           onSelect={onSelect}
           copied={copied}
