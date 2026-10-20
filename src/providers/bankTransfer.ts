@@ -244,6 +244,17 @@ export const createBankWithdraw = async ({
   return { order: chimeraToBankOrder(response.order, 'offramp') }
 }
 
+/**
+ * Tell the provider which transaction funded a withdrawal. Ramp can't credit
+ * the order without it: all its off-ramp orders share one deposit address.
+ * Safe to repeat. Returns the updated order; the legacy Chimera API has no
+ * such call, so there it's a no-op returning nothing.
+ */
+export const reportBankWithdrawalFunding = async (orderId: string, txid: string): Promise<RampOrder | undefined> => {
+  if (getBankTransferProvider() !== 'ramp') return
+  return ramp.reportRampDeposit(orderId, txid)
+}
+
 const getRampDepositAddress = (address: string | null): string => {
   if (!address || !isArkAddress(address)) {
     throw new Error('Ramp returned an invalid withdrawal deposit address')

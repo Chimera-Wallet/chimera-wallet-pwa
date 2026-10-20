@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { IWallet } from '@arkade-os/sdk'
-import { createBankWithdraw, getBankOrderStatus, getBankTransferProvider, type BankOrder } from '../../providers/bankTransfer'
+import {
+  createBankWithdraw,
+  getBankOrderStatus,
+  getBankTransferProvider,
+  reportBankWithdrawalFunding,
+  type BankOrder,
+} from '../../providers/bankTransfer'
 import { sendOffChain } from '../../lib/asp'
 import { decodeArkAddress } from '../../lib/address'
 import { clearPendingBankWithdrawal, getPendingBankWithdrawal, savePendingBankWithdrawal } from '../../lib/bankWithdrawalAttempt'
@@ -15,7 +21,8 @@ import fixtures from '../fixtures.json'
 vi.mock('../../providers/bankTransfer', () => ({
   createBankWithdraw: vi.fn(),
   getBankOrderStatus: vi.fn(),
-  // the order-specific deposit addresses below are ramp's behaviour
+  reportBankWithdrawalFunding: vi.fn(),
+  // the returned deposit addresses and txid reports below are ramp's behaviour
   getBankTransferProvider: vi.fn(() => 'ramp'),
 }))
 vi.mock('../../lib/asp', () => ({ sendOffChain: vi.fn() }))
@@ -66,6 +73,38 @@ describe('resolvePendingBankWithdrawal', () => {
     vi.mocked(getBankOrderStatus).mockResolvedValueOnce(order('WAITING_FOR_DEPOSIT'))
     expect(await resolvePendingBankWithdrawal()).toMatchObject({ kind: 'awaiting', fundingState: 'funding' })
     expect(getPendingBankWithdrawal()).toBeDefined()
+    expect(reportBankWithdrawalFunding).not.toHaveBeenCalled()
+  })
+
+  it('re-reports the txid of a funded order the provider has not credited', async () => {
+    savePendingBankWithdrawal({
+      order: order('WAITING_FOR_DEPOSIT'),
+      fundingAddress: depositAddress,
+      amountSats: 1,
+      fundingState: 'funded',
+      txid: 'funding-txid',
+    })
+    vi.mocked(getBankOrderStatus).mockResolvedValueOnce(order('WAITING_FOR_DEPOSIT'))
+    vi.mocked(reportBankWithdrawalFunding).mockResolvedValueOnce(order('DEPOSIT_RECEIVED'))
+
+    expect(await resolvePendingBankWithdrawal()).toMatchObject({ kind: 'progressed', order: { status: 'DEPOSIT_RECEIVED' } })
+    expect(reportBankWithdrawalFunding).toHaveBeenCalledWith('order-1', 'funding-txid')
+    expect(getPendingBankWithdrawal()).toBeUndefined()
+  })
+
+  it('keeps awaiting when the re-report fails', async () => {
+    savePendingBankWithdrawal({
+      order: order('WAITING_FOR_DEPOSIT'),
+      fundingAddress: depositAddress,
+      amountSats: 1,
+      fundingState: 'funded',
+      txid: 'funding-txid',
+    })
+    vi.mocked(getBankOrderStatus).mockResolvedValueOnce(order('WAITING_FOR_DEPOSIT'))
+    vi.mocked(reportBankWithdrawalFunding).mockRejectedValueOnce(new Error('offline'))
+
+    expect(await resolvePendingBankWithdrawal()).toMatchObject({ kind: 'awaiting', fundingState: 'funded' })
+    expect(getPendingBankWithdrawal()?.txid).toBe('funding-txid')
   })
 })
 
@@ -89,9 +128,27 @@ describe('fundBankWithdrawal', () => {
 
     expect(result).toEqual(order('WAITING_FOR_DEPOSIT'))
     expect(sendOffChain).toHaveBeenCalledWith(svcWallet, 25_000, depositAddress)
-    expect(getPendingBankWithdrawal()?.fundingState).toBe('funded')
+    expect(getPendingBankWithdrawal()).toMatchObject({ fundingState: 'funded', txid: 'txid' })
     expect(onOrderCreated).toHaveBeenCalledWith(order('WAITING_FOR_DEPOSIT'))
     expect(getBankOrderHistory()[0]).toMatchObject({ type: 'send', circuit: 'sepa' })
+  })
+
+  it('reports the funding txid so the provider can credit the order', async () => {
+    vi.mocked(createBankWithdraw).mockResolvedValue({ order: order('WAITING_FOR_DEPOSIT'), depositCryptoAddress: depositAddress })
+    vi.mocked(sendOffChain).mockResolvedValue('funding-txid')
+
+    await fundBankWithdrawal(input)
+
+    expect(reportBankWithdrawalFunding).toHaveBeenCalledWith('order-1', 'funding-txid')
+  })
+
+  it('still succeeds when the report fails, keeping the txid to report again', async () => {
+    vi.mocked(createBankWithdraw).mockResolvedValue({ order: order('WAITING_FOR_DEPOSIT'), depositCryptoAddress: depositAddress })
+    vi.mocked(sendOffChain).mockResolvedValue('funding-txid')
+    vi.mocked(reportBankWithdrawalFunding).mockRejectedValueOnce(new Error('ramp unavailable'))
+
+    await expect(fundBankWithdrawal(input)).resolves.toEqual(order('WAITING_FOR_DEPOSIT'))
+    expect(getPendingBankWithdrawal()).toMatchObject({ fundingState: 'funded', txid: 'funding-txid' })
   })
 
   it('refuses a deposit address that belongs to another Ark server, before paying', async () => {

@@ -6,7 +6,13 @@
  */
 
 import type { IWallet } from '@arkade-os/sdk'
-import { createBankWithdraw, getBankOrderStatus, getBankTransferProvider, type BankOrder } from '../providers/bankTransfer'
+import {
+  createBankWithdraw,
+  getBankOrderStatus,
+  getBankTransferProvider,
+  reportBankWithdrawalFunding,
+  type BankOrder,
+} from '../providers/bankTransfer'
 import { decodeArkAddress } from './address'
 import { sendOffChain } from './asp'
 import { addOrderToHistory } from './bankOrderHistory'
@@ -17,9 +23,11 @@ import {
   savePendingBankWithdrawal,
   type BankWithdrawalFundingState,
 } from './bankWithdrawalAttempt'
+import { consoleError } from './logs'
 
 // Legacy Chimera withdrawals use this shared funding wallet. Ramp orders return
-// a unique deposit address which must be funded instead.
+// the address to fund instead. It is the same for every ramp order, so ramp
+// only credits the deposit once told the funding txid (reportFunding).
 const COMPANY_WALLET = import.meta.env.VITE_BANK_WITHDRAW_WALLET as string
 
 const TERMINAL_STATUSES = ['COMPLETED', 'FAILED', 'REJECTED', 'EXPIRED', 'REFUNDED']
@@ -63,7 +71,30 @@ export const resolvePendingBankWithdrawal = async (): Promise<PendingWithdrawalR
     return { kind: 'progressed', order }
   }
 
+  // Funded but not credited: the earlier report may not have got through.
+  if (pending.fundingState === 'funded' && pending.txid) {
+    const credited = await reportFunding(pending.order.id, pending.txid)
+    if (credited && credited.status !== 'WAITING_FOR_DEPOSIT') {
+      clearPendingBankWithdrawal()
+      return { kind: 'progressed', order: credited }
+    }
+  }
+
   return { kind: 'awaiting', order, fundingState: pending.fundingState }
+}
+
+/**
+ * Report the funding txid so the provider credits the order. Never throws: the
+ * funds have already left the wallet, so a failed report must not read as a
+ * failed withdrawal. The pending slot keeps the txid for the next attempt.
+ */
+const reportFunding = async (orderId: string, txid: string): Promise<BankOrder | undefined> => {
+  try {
+    if (getBankTransferProvider() !== 'ramp') return
+    return await reportBankWithdrawalFunding(orderId, txid)
+  } catch (err) {
+    consoleError(err, `Reporting the funding of bank withdrawal ${orderId} failed`)
+  }
 }
 
 export interface FundBankWithdrawalInput {
@@ -123,12 +154,11 @@ export const fundBankWithdrawal = async ({
   onOrderCreated?.(order)
   addOrderToHistory(order, 'send', circuit)
 
-  // Ramp supplies an order-specific address; the legacy provider uses its
-  // configured shared funding wallet.
   savePendingBankWithdrawal({ order, fundingAddress, amountSats, fundingState: 'funding' })
   onFunding?.()
-  await sendOffChain(svcWallet, amountSats, fundingAddress)
-  savePendingBankWithdrawal({ order, fundingAddress, amountSats, fundingState: 'funded' })
+  const txid = await sendOffChain(svcWallet, amountSats, fundingAddress)
+  savePendingBankWithdrawal({ order, fundingAddress, amountSats, fundingState: 'funded', txid })
+  await reportFunding(order.id, txid)
 
   return order
 }

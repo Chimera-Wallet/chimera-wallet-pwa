@@ -93,6 +93,7 @@ export interface RampOrder {
   transfer_code: string
   destination_type: RampDestinationType | null
   destination_crypto_address: string | null
+  deposit_txid?: string | null // off-ramp: the Arkade txid credited as the deposit
   deposit_iban: string | null
   deposit_bic: string | null
   deposit_beneficiary: string | null
@@ -239,6 +240,14 @@ export const createOffRampOrder = async (payload: CreateOffRampOrderPayload): Pr
 
 export const getRampOrderStatus = (token: string): Promise<RampOrder> =>
   request<{ order: RampOrder }>(`/order/${encodeURIComponent(token)}`).then((r) => normalizeOrderAsset(r.order))
+
+// Every off-ramp order shares one deposit address, so ramp only credits a
+// deposit once it's told which Arkade transaction paid it. Safe to repeat.
+export const reportRampDeposit = (token: string, txid: string): Promise<RampOrder> =>
+  request<{ order: RampOrder }>(`/order/${encodeURIComponent(token)}/deposit`, {
+    method: 'POST',
+    body: JSON.stringify({ txid }),
+  }).then((r) => normalizeOrderAsset(r.order))
 
 // ─── Gift cards ─────────────────────────────────────────────────────────────
 
