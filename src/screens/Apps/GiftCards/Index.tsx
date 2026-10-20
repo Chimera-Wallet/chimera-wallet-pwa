@@ -2,6 +2,7 @@ import { useState, useContext, useEffect } from 'react'
 import { NavigationContext, Pages } from '../../../providers/navigation'
 import { WalletContext } from '../../../providers/wallet'
 import { getBankTransferProvider } from '../../../providers/bankTransfer'
+import { getGiftCardSettings } from '../../../providers/ramp'
 import { getReceivingAddresses } from '../../../lib/asp'
 import { getKycEmail } from '../../../lib/kyc'
 import AppWebView from '../AppWebView'
@@ -26,6 +27,16 @@ export default function AppGiftCards() {
   const [offchainAddr, setOffchainAddr] = useState('')
 
   const useRamp = getBankTransferProvider() === 'ramp'
+  // Ramp can switch purchases off from its dashboard. Buy stays hidden until it
+  // says they're on, and if the check fails — ramp would refuse the order anyway.
+  const [rampPurchaseEnabled, setRampPurchaseEnabled] = useState(false)
+
+  useEffect(() => {
+    if (!useRamp) return
+    getGiftCardSettings()
+      .then(({ purchase_enabled }) => setRampPurchaseEnabled(purchase_enabled))
+      .catch(console.error)
+  }, [useRamp])
 
   useEffect(() => {
     if (useRamp || !svcWallet) return
@@ -61,7 +72,7 @@ export default function AppGiftCards() {
       <Content>
         <Padded>
           <FlexCol>
-            <Button label={t('apps.giftCards.buy')} onClick={handleBuy} />
+            {!useRamp || rampPurchaseEnabled ? <Button label={t('apps.giftCards.buy')} onClick={handleBuy} /> : null}
             <Button label={t('apps.giftCards.redeem')} onClick={handleRedeem} disabled={!useRamp && !offchainAddr} />
           </FlexCol>
         </Padded>

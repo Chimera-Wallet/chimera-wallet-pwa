@@ -289,6 +289,9 @@ export interface PurchaseGiftCardResponse {
 export const purchaseGiftCard = (payload: PurchaseGiftCardPayload): Promise<PurchaseGiftCardResponse> =>
   request('/gift-card/purchase', { method: 'POST', body: JSON.stringify(payload) })
 
+// Whether ramp currently accepts gift card purchases (switched on its dashboard Config page).
+export const getGiftCardSettings = (): Promise<{ purchase_enabled: boolean }> => request('/gift-card/settings')
+
 export interface RampGiftCard {
   identification_code: string
   fiat_currency: string
