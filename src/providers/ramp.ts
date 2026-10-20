@@ -158,6 +158,20 @@ export interface RampAssetsResponse {
 
 export const getRampAssets = (): Promise<RampAssetsResponse> => request('/assets')
 
+// ─── Limits ─────────────────────────────────────────────────────────────────
+
+// The minimum order and KYC threshold ramp enforces at order creation. They're
+// configured in CHF; `by_currency` converts them at ramp's own FX rates (the
+// minimum rounded up, the threshold down), so checking against these agrees
+// with ramp. Amounts are decimal strings.
+export interface RampLimits {
+  min_order_chf: string
+  kyc_threshold_chf: string
+  by_currency: Record<string, { min_order: string; kyc_threshold: string }>
+}
+
+export const getRampLimits = (): Promise<RampLimits> => request('/limits')
+
 // ─── On-ramp (fiat -> crypto) ───────────────────────────────────────────────
 
 export interface CreateOnRampOrderPayload {

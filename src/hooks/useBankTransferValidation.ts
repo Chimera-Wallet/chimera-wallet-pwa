@@ -12,6 +12,7 @@ import {
   getBankTransferConfig,
   getBankTransferConfigSync,
   getMinimumOrderValue,
+  limitsFor,
   meetsMinimumAmount,
   requiresKyc,
   DEFAULT_BANK_CURRENCY,
@@ -62,14 +63,20 @@ export function useBankTransferValidation({
   circuit,
   enabled = true,
 }: UseBankTransferValidationParams): BankTransferValidation {
-  const [config, setConfig] = useState<BankTransferConfig>(getBankTransferConfigSync())
+  const [config, setConfig] = useState<BankTransferConfig>(getBankTransferConfigSync)
   const [kycStatus, setKycStatus] = useState<KycStatus>('not_started')
   // Refresh counter triggers a server-side KYC status check.
   const [refreshCount, setRefreshCount] = useState(0)
 
-  // Load config on mount
+  // Load the provider's limits on mount (ramp's, when it's the provider)
   useEffect(() => {
-    getBankTransferConfig().then(setConfig)
+    let cancelled = false
+    getBankTransferConfig().then((loaded) => {
+      if (!cancelled) setConfig(loaded)
+    })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   // Refresh KYC status from the provider rather than treating local data as proof.
@@ -91,17 +98,17 @@ export function useBankTransferValidation({
   const kycVerified = kycStatus === 'confirmed'
 
   // Calculate validation state
-  const minimumAmount = getMinimumOrderValue(circuit)
-  const isValidAmount = amount > 0 && meetsMinimumAmount(amount, circuit)
-  const kycRequired = requiresKyc(amount)
+  const { kycThreshold } = limitsFor(config, currency)
+  const minimumAmount = getMinimumOrderValue(circuit, currency)
+  const isValidAmount = amount > 0 && meetsMinimumAmount(amount, circuit, currency)
+  const kycRequired = requiresKyc(amount, currency)
   const canProceed = isValidAmount && (!kycRequired || kycVerified)
 
-  // Generate error message (user-facing messages unchanged)
   let errorMessage: string | null = null
   if (amount > 0 && !isValidAmount) {
     errorMessage = `Minimum amount is ${minimumAmount} ${currency}`
   } else if (kycRequired && !kycVerified) {
-    errorMessage = `Amounts over ${config.kycThreshold} ${currency} require KYC verification.`
+    errorMessage = `Amounts of ${kycThreshold} ${currency} or more require KYC verification.`
   }
 
   return {
@@ -112,28 +119,7 @@ export function useBankTransferValidation({
     canProceed,
     errorMessage,
     minimumAmount,
-    kycThreshold: config.kycThreshold,
+    kycThreshold,
     refreshKycStatus,
-  }
-}
-
-/**
- * Synchronous validation helper (for non-hook contexts)
- *
- * @param amount - The amount to validate
- * @returns Object with validation results
- */
-export function validateBankTransferAmount(amount: number): {
-  isValid: boolean
-  kycRequired: boolean
-  minimumAmount: number
-  kycThreshold: number
-} {
-  const config = getBankTransferConfigSync()
-  return {
-    isValid: amount >= config.minimumOrderValue,
-    kycRequired: amount > config.kycThreshold,
-    minimumAmount: config.minimumOrderValue,
-    kycThreshold: config.kycThreshold,
   }
 }

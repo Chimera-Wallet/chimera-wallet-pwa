@@ -4,11 +4,15 @@
  * Provides configuration for bank transfers including supported currencies,
  * validation thresholds, and available circuits.
  *
- * Currently uses hardcoded defaults, but structured for future backend integration.
- * When ready to integrate with backend, replace fetchBankTransferConfig() implementation.
+ * The minimum order and KYC threshold come from ramp (GET /limits) when it is
+ * the bank transfer provider, so they follow whatever ramp is configured with.
+ * The legacy Chimera API publishes no limits, so it keeps the hardcoded ones.
  */
 
 import { FIATS, type FiatSymbol } from './fiatConfig'
+import { getBankTransferProvider } from '../providers/bankTransfer'
+import { getRampLimits, type RampLimits } from '../providers/ramp'
+import { consoleError } from './logs'
 
 // Bank circuit types for different transfer methods
 export const BANK_CIRCUITS = ['sepa', 'swift', 'us'] as const
@@ -137,19 +141,29 @@ export const maskBankAccount = (data?: BankData): string => {
   return `${raw.slice(0, 4)} •••• ${raw.slice(-4)}`
 }
 
+export interface BankTransferLimits {
+  /** Smallest order accepted, in the order's currency */
+  minimumOrderValue: number
+  /** Orders at or above this need KYC verification, in the order's currency */
+  kycThreshold: number
+}
+
 /**
  * Configuration interface for bank transfers
- * Structured to support future backend integration
  */
 export interface BankTransferConfig {
   /** List of currencies supported for receiving (deposit) */
   supportedReceiveCurrencies: BankCurrency[]
   /** List of currencies supported for sending (withdrawal) */
   supportedSendCurrencies: BankCurrency[]
-  /** Minimum order value in the selected currency (e.g., 15 EUR) */
+  /** Minimum order value, for any currency missing from `limits` */
   minimumOrderValue: number
-  /** Threshold above which KYC verification is required (e.g., 1000 EUR) */
+  /** KYC threshold, for any currency missing from `limits` */
   kycThreshold: number
+  /** Limits per currency, as the provider enforces them */
+  limits: Partial<Record<BankCurrency, BankTransferLimits>>
+  /** The currency the provider defines its limits in (ramp: CHF) */
+  limitsCurrency: BankCurrency
   /** Default currency to use when none selected */
   defaultCurrency: BankCurrency
   /** Available bank circuits per currency */
@@ -161,8 +175,8 @@ export interface BankTransferConfig {
 }
 
 /**
- * Default hardcoded configuration
- * Will be replaced by backend response in future
+ * Default hardcoded configuration. The limits are the legacy Chimera API's;
+ * with ramp they're replaced by ramp's own (fetchBankTransferConfig).
  */
 const DEFAULT_CONFIG: BankTransferConfig = {
   // Receive (deposit): SEPA and SWIFT, EUR only
@@ -171,6 +185,8 @@ const DEFAULT_CONFIG: BankTransferConfig = {
   supportedSendCurrencies: [FIATS.EUR.symbol, FIATS.CHF.symbol, FIATS.USD.symbol],
   minimumOrderValue: 15,
   kycThreshold: 1000,
+  limits: {},
+  limitsCurrency: FIATS.EUR.symbol,
   defaultCurrency: FIATS.EUR.symbol,
   circuitsPerCurrency: {
     EUR: ['sepa', 'swift'],
@@ -191,35 +207,48 @@ const DEFAULT_CONFIG: BankTransferConfig = {
   ) as Record<BankCurrency, string>,
 }
 
-// Cached configuration
+// Cached configuration. Refetched after CONFIG_TTL_MS so a limit changed on
+// ramp reaches a long-running session too.
+const CONFIG_TTL_MS = 10 * 60 * 1000
 let cachedConfig: BankTransferConfig | null = null
+let cachedAt = 0
+
+const fromRampLimits = (ramp: RampLimits): BankTransferConfig['limits'] =>
+  Object.fromEntries(
+    Object.entries(ramp.by_currency)
+      .filter(([currency]) => currency in FIATS)
+      .map(([currency, l]) => [currency, { minimumOrderValue: Number(l.min_order), kycThreshold: Number(l.kyc_threshold) }]),
+  )
 
 /**
- * Fetch bank transfer configuration
- *
- * Currently returns hardcoded defaults.
- * Future implementation will fetch from backend API.
- *
- * @returns Promise resolving to BankTransferConfig
+ * Fetch bank transfer configuration: ramp's limits when ramp is the provider,
+ * the hardcoded defaults otherwise.
  */
 export const fetchBankTransferConfig = async (): Promise<BankTransferConfig> => {
-  // TODO: Replace with actual API call when backend is ready
-  // const response = await fetch(`${getBaseUrl()}/config/bank-transfer/`)
-  // return response.json()
-
-  // Simulate network delay for future-proofing
-  return Promise.resolve(DEFAULT_CONFIG)
+  if (getBankTransferProvider() !== 'ramp') return DEFAULT_CONFIG
+  const limits = fromRampLimits(await getRampLimits())
+  return { ...DEFAULT_CONFIG, limits, limitsCurrency: FIATS.CHF.symbol }
 }
 
 /**
  * Get bank transfer configuration (with caching)
  *
+ * If the limits can't be fetched, the last known (or default) configuration
+ * is returned and the next call tries again. Ramp still enforces its limits
+ * when the order is created, so the worst case is its error message.
+ *
  * @param forceRefresh - Force fetch fresh config from source
  * @returns Promise resolving to BankTransferConfig
  */
 export const getBankTransferConfig = async (forceRefresh = false): Promise<BankTransferConfig> => {
-  if (!cachedConfig || forceRefresh) {
-    cachedConfig = await fetchBankTransferConfig()
+  if (!cachedConfig || forceRefresh || Date.now() - cachedAt > CONFIG_TTL_MS) {
+    try {
+      cachedConfig = await fetchBankTransferConfig()
+      cachedAt = Date.now()
+    } catch (err) {
+      consoleError(err, 'Could not load bank transfer limits')
+      return cachedConfig ?? DEFAULT_CONFIG
+    }
   }
   return cachedConfig
 }
@@ -295,29 +324,41 @@ export const isCurrencySupported = (currency: string): currency is BankCurrency 
   return currency in FIATS
 }
 
+/** `config`'s limits for orders in `currency`. */
+export const limitsFor = (config: BankTransferConfig, currency: BankCurrency = DEFAULT_BANK_CURRENCY): BankTransferLimits =>
+  config.limits[currency] ?? { minimumOrderValue: config.minimumOrderValue, kycThreshold: config.kycThreshold }
+
+/** The provider's limits for orders in `currency`. */
+export const getBankTransferLimits = (currency?: BankCurrency): BankTransferLimits =>
+  limitsFor(getBankTransferConfigSync(), currency)
+
 /**
- * Validate if an amount meets minimum requirements
- *
- * @param amount - The amount to validate
- * @returns Boolean indicating if amount meets minimum
+ * Smallest order accepted, in `currency`. SWIFT has its own, higher minimum
+ * on top of the provider's.
  */
-export const getMinimumOrderValue = (circuit?: BankCircuit): number => {
-  const config = getBankTransferConfigSync()
-  if (circuit === 'swift') return SWIFT_MINIMUM_ORDER_VALUE
-  return config.minimumOrderValue
+export const getMinimumOrderValue = (circuit?: BankCircuit, currency?: BankCurrency): number => {
+  const { minimumOrderValue } = getBankTransferLimits(currency)
+  if (circuit === 'swift') return Math.max(SWIFT_MINIMUM_ORDER_VALUE, minimumOrderValue)
+  return minimumOrderValue
 }
 
-export const meetsMinimumAmount = (amount: number, circuit?: BankCircuit): boolean => {
-  return amount >= getMinimumOrderValue(circuit)
+export const meetsMinimumAmount = (amount: number, circuit?: BankCircuit, currency?: BankCurrency): boolean => {
+  return amount >= getMinimumOrderValue(circuit, currency)
 }
 
 /**
- * Check if an amount requires KYC verification
+ * Check if an amount requires KYC verification. Ramp asks for it from the
+ * threshold itself upwards, not only above it.
  *
- * @param amount - The amount to check
+ * @param amount - The amount to check, in `currency`
  * @returns Boolean indicating if KYC is required
  */
-export const requiresKyc = (amount: number): boolean => {
-  const config = getBankTransferConfigSync()
-  return amount > config.kycThreshold
+export const requiresKyc = (amount: number, currency?: BankCurrency): boolean => {
+  return amount >= getBankTransferLimits(currency).kycThreshold
+}
+
+/** The KYC threshold in the provider's own currency, e.g. "1,000 CHF". */
+export const getKycThresholdLabel = (): string => {
+  const { limitsCurrency } = getBankTransferConfigSync()
+  return `${getBankTransferLimits(limitsCurrency).kycThreshold.toLocaleString()} ${limitsCurrency}`
 }

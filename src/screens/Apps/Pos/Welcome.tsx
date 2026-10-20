@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 import { Clock, Coins, RefreshCw, ShieldCheck, UserCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import Button from '../../../components/Button'
@@ -6,7 +6,7 @@ import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import Content from '../../../components/Content'
 import Header from '../../../components/Header'
 import Padded from '../../../components/Padded'
-import { getBankTransferConfigSync } from '../../../lib/bankTransferConfig'
+import { getBankTransferConfig, getKycThresholdLabel } from '../../../lib/bankTransferConfig'
 
 function Feature({ icon, text }: { icon: ReactNode; text: string }) {
   return (
@@ -34,7 +34,17 @@ interface PosWelcomeProps {
 
 export default function PosWelcome({ onBack, onContinue }: PosWelcomeProps) {
   const { t } = useTranslation()
-  const limit = getBankTransferConfigSync().kycThreshold.toLocaleString()
+  const [limit, setLimit] = useState(getKycThresholdLabel)
+
+  useEffect(() => {
+    let cancelled = false
+    getBankTransferConfig().then(() => {
+      if (!cancelled) setLimit(getKycThresholdLabel())
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
     <>
