@@ -23,6 +23,7 @@ import IntercomMessenger from './components/IntercomMessenger'
 import Verification from './screens/Settings/Verification'
 import { setupPeriodicUpdateCheck } from './lib/serviceWorkerUpdate'
 import PosSettlement from './providers/posSettlement'
+import BankDepositReporting from './providers/bankDepositReporting'
 
 // Screens that make up the mandatory lock setup. While a stored wallet has no
 // lock the user is held here and cannot reach the rest of the app.
@@ -263,6 +264,7 @@ export default function App() {
         </PageTransition>
       </PageAnimWrapper>
       <PosSettlement />
+      <BankDepositReporting />
       {tab !== Tabs.None && !bootAnimActive && (
         <PillNavbarOverlay
           visible={showNavbar}

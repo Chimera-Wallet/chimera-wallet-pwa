@@ -19,11 +19,11 @@
 import * as chimera from './chimera'
 import type { ChimeraOrder } from './chimera'
 import * as ramp from './ramp'
-import type { RampOrder, RampBankDetails, RampOrderDirection, RampDestinationType } from './ramp'
+import type { RampOrder, RampBankDetails, RampOrderDirection, RampDestinationType, RampLimits } from './ramp'
 import type { BankCircuit, BankCurrency, BankData } from '../lib/bankTransferConfig'
 import { isArkAddress } from '../lib/address'
 
-export type { RampOrder as BankOrder, RampBankDetails as BankDetails }
+export type { RampOrder as BankOrder, RampBankDetails as BankDetails, RampLimits as BankProviderLimits }
 
 export type BankTransferProviderName = 'chimera' | 'ramp'
 
@@ -34,27 +34,11 @@ export const getBankTransferProvider = (): BankTransferProviderName =>
 
 const stripArkSuffix = (asset: string): string => asset.replace(/-ARK$/, '')
 
-// ─── Wallet ticker → ramp-system ticker ─────────────────────────────────────
-
-// ramp-system splits each asset into two distinct tickers by settlement
-// network: the plain ticker (BTC, USDT) settles to a native on-chain address
-// (Bitcoin / Tron), while the Arkade variant (ARK-BTC, USDT-CX) settles to an
-// ark1/tark1 address. This wallet only ever holds and pays out over Arkade, so
-// it must always name the Arkade variant — sending the plain ticker alongside
-// an Arkade address makes ramp reject the order with
-// `destination_crypto_address is not a valid Bitcoin address`.
-//
-// The legacy Chimera path below encodes the same fact with its own convention
-// (a `-ARK` suffix), which is why the two branches map the ticker differently.
-const RAMP_ARKADE_TICKER: Record<string, string> = {
-  BTC: 'ARK-BTC',
-  USDT: 'USDT-CX',
-}
-
-const toRampTicker = (asset: string): string => {
-  const upper = asset.toUpperCase()
-  return RAMP_ARKADE_TICKER[upper] ?? upper
-}
+// Both backends are only ever told about the Arkade variant of an asset, as
+// this wallet only holds and pays out over Arkade, but each names it its own
+// way: the legacy Chimera API with a `-ARK` suffix (below), ramp-system with a
+// separate ticker (BTC -> ARK-BTC, USDT -> USDT-CX) that ramp.ts maps at its
+// own boundary. So the ramp branches here pass the plain asset.
 
 const CHIMERA_STATUS_MAP: Record<ChimeraOrder['status'], RampOrder['status']> = {
   WAITING_FOR_DEPOSIT: 'WAITING_FOR_DEPOSIT',
@@ -127,7 +111,7 @@ export const createBankDeposit = async ({
 }: CreateDepositInput): Promise<CreateDepositResult> => {
   if (getBankTransferProvider() === 'ramp') {
     const { order, bank_details } = await ramp.createOnRampOrder({
-      asset: toRampTicker(asset),
+      asset,
       fiat_currency: fiatCurrency,
       email,
       fiat_amount: String(fiatAmount),
@@ -182,7 +166,12 @@ export interface CreateWithdrawResult {
   depositCryptoAddress?: string
 }
 
-const cryptoAmountToDecimalString = (sats: number, decimals = 8): string => (sats / 10 ** decimals).toString()
+// Exact, in plain notation: dividing would print small amounts as "1e-7",
+// which ramp rejects.
+const cryptoAmountToDecimalString = (sats: number, decimals = 8): string => {
+  const digits = String(sats).padStart(decimals + 1, '0')
+  return `${digits.slice(0, -decimals)}.${digits.slice(-decimals)}`
+}
 
 export const createBankWithdraw = async ({
   asset,
@@ -194,7 +183,7 @@ export const createBankWithdraw = async ({
 }: CreateWithdrawInput): Promise<CreateWithdrawResult> => {
   if (getBankTransferProvider() === 'ramp') {
     const cryptoAmount = cryptoAmountToDecimalString(cryptoAmountSats)
-    const base = { asset: toRampTicker(asset), fiat_currency: fiatCurrency, email, crypto_amount: cryptoAmount, origin: 'app' as const }
+    const base = { asset, fiat_currency: fiatCurrency, email, crypto_amount: cryptoAmount, origin: 'app' as const }
 
     if (circuit === 'sepa') {
       const d = bankData?.circuit === 'sepa' ? bankData : undefined
@@ -270,4 +259,16 @@ export const getBankOrderStatus = async (orderId: string, direction: RampOrderDi
   }
   const order = await chimera.getOrderStatus(orderId)
   return chimeraToBankOrder(order, direction)
+}
+
+// ─── Limits ─────────────────────────────────────────────────────────────────
+
+/**
+ * The minimum order and KYC threshold the provider enforces, as it publishes
+ * them (unvalidated). The legacy Chimera API publishes none, so there this
+ * returns nothing and the app keeps its hardcoded ones (lib/bankTransferConfig).
+ */
+export const getBankTransferLimits = async (): Promise<RampLimits | undefined> => {
+  if (getBankTransferProvider() !== 'ramp') return
+  return ramp.getRampLimits()
 }

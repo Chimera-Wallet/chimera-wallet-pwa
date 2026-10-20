@@ -293,7 +293,7 @@ export const getUnlistedHeldAssets = (
  * one place.
  *
  * Note this is display only — the wire tickers sent to ramp-system
- * (`USDT` -> `USDT-CX`, see providers/bankTransfer.ts) are a separate mapping
+ * (`USDT` -> `USDT-CX`, see providers/ramp.ts::toArkadeTicker) are a separate mapping
  * and must keep their suffix.
  */
 export const getDisplayTicker = (symbol: string): string => symbol.toUpperCase()

@@ -14,6 +14,7 @@
 import type { ServiceWorkerWallet } from '@arkade-os/sdk'
 import { getBankOrderStatus } from '../providers/bankTransfer'
 import { getPendingBankWithdrawal } from './bankWithdrawalAttempt'
+import { hasUnreportedBankDeposit } from './bankDepositReports'
 import { fundBankWithdrawal, resolvePendingBankWithdrawal } from './bankWithdrawalFlow'
 import { getUserEmailForBankTransfer } from './kyc'
 import { extractError } from './error'
@@ -38,6 +39,13 @@ export interface ConvertPosPaymentDeps {
 const ENDED_UNPAID = ['FAILED', 'REJECTED', 'REFUNDED']
 
 /**
+ * Whether this device may have paid `orderId`: its funding txid is still
+ * listed as unreported, or the pending slot holds it (mid-payment or funded).
+ */
+const mayHaveFunded = (orderId: string): boolean =>
+  hasUnreportedBankDeposit(orderId) || getPendingBankWithdrawal()?.order.id === orderId
+
+/**
  * A previous attempt for this sale already registered `orderId`. Work out
  * whether that order was funded, so a retry never pays the same sale out twice:
  * 'paid-out' when it was, 'retry' when it lapsed unfunded. Throws when it can't
@@ -45,7 +53,12 @@ const ENDED_UNPAID = ['FAILED', 'REJECTED', 'REFUNDED']
  */
 const reconcileOrder = async (orderId: string): Promise<'paid-out' | 'retry'> => {
   const order = await getBankOrderStatus(orderId, 'offramp')
-  if (order.status === 'EXPIRED') return 'retry'
+  if (order.status === 'EXPIRED') {
+    // Ramp credits a deposit only once told its txid, so a paid order can
+    // still expire if that report never got through.
+    if (!mayHaveFunded(orderId)) return 'retry'
+    throw new Error(`Payout order ${orderId} expired, but it may have been paid. Check it in the bank order history.`)
+  }
   if (ENDED_UNPAID.includes(order.status)) {
     throw new Error(`Payout order ${orderId} ended as ${order.status}. Check it in the bank order history.`)
   }
@@ -83,9 +96,11 @@ const convertNow = async (paymentId: string, deps: ConvertPosPaymentDeps): Promi
       orderId = undefined
     }
 
-    // A previous withdrawal that was funded is only waiting for the provider to
-    // confirm it, so a new sale can go ahead. One interrupted mid-payment may or
-    // may not have sent funds — stop until it has been checked.
+    // A previous withdrawal that was funded may still be waiting for the
+    // provider to credit it. Its txid stays listed (lib/bankDepositReports) and
+    // is reported in the background even once the slot is reused, so a new sale
+    // can go ahead. One interrupted mid-payment may or may not have sent funds
+    // — stop until it has been checked.
     const pending = await resolvePendingBankWithdrawal()
     if (pending.kind === 'awaiting' && pending.fundingState === 'funding') {
       throw new Error(

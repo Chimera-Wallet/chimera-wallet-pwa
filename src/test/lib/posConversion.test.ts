@@ -4,6 +4,7 @@ import { fundBankWithdrawal, resolvePendingBankWithdrawal } from '../../lib/bank
 import { getPosPayment, setBtcPayout, setFiatPayout, type PosPayment } from '../../lib/pos'
 import { convertPosPayment, isConversionInterrupted, resumePosConversions } from '../../lib/posConversion'
 import { clearPendingBankWithdrawal, savePendingBankWithdrawal } from '../../lib/bankWithdrawalAttempt'
+import { addUnreportedBankDeposit } from '../../lib/bankDepositReports'
 import { getBankOrderStatus, type BankOrder } from '../../providers/bankTransfer'
 
 vi.mock('../../lib/bankWithdrawalFlow', () => ({
@@ -178,6 +179,34 @@ describe('convertPosPayment', () => {
       expect(fundBankWithdrawal).toHaveBeenCalledTimes(1)
       expect(result?.conversion).toMatchObject({ status: 'submitted', orderId: 'order-10' })
     })
+
+    it('refuses to pay again when an expired order has an unreported funding txid', async () => {
+      setFiatPayout('CHF', 'swift', bankData)
+      interrupted()
+      addUnreportedBankDeposit('order-9', 'funding-txid')
+      vi.mocked(getBankOrderStatus).mockResolvedValue({ ...order, status: 'EXPIRED' })
+
+      const result = await convertPosPayment('sale-1', deps)
+
+      expect(result?.conversion).toMatchObject({ status: 'failed', orderId: 'order-9' })
+      expect(result?.conversion?.error).toMatch(/may have been paid/)
+      expect(fundBankWithdrawal).not.toHaveBeenCalled()
+    })
+
+    it.each(['funding', 'funded'] as const)(
+      'refuses to pay again when an expired order is still in the pending slot as %s',
+      async (fundingState) => {
+        setFiatPayout('CHF', 'swift', bankData)
+        interrupted()
+        savePendingBankWithdrawal({ order, fundingAddress: 'ark1x', amountSats: 20_100, fundingState })
+        vi.mocked(getBankOrderStatus).mockResolvedValue({ ...order, status: 'EXPIRED' })
+
+        const result = await convertPosPayment('sale-1', deps)
+
+        expect(result?.conversion).toMatchObject({ status: 'failed', orderId: 'order-9' })
+        expect(fundBankWithdrawal).not.toHaveBeenCalled()
+      },
+    )
   })
 
   it('runs conversions one at a time', async () => {

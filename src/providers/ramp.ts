@@ -136,7 +136,14 @@ const PLAIN_TICKER: Record<string, string> = Object.fromEntries(
   Object.entries(ARKADE_TICKER).map(([plain, arkade]) => [arkade, plain]),
 )
 
-const toArkadeTicker = (asset: string): string => ARKADE_TICKER[asset.toUpperCase()] ?? asset
+// Sending the plain ticker alongside an Arkade address makes ramp reject the
+// order (`destination_crypto_address is not a valid Bitcoin address`). The
+// legacy Chimera API encodes the same fact as a `-ARK` suffix instead
+// (providers/bankTransfer.ts).
+const toArkadeTicker = (asset: string): string => {
+  const upper = asset.toUpperCase()
+  return ARKADE_TICKER[upper] ?? upper
+}
 const fromArkadeTicker = (ticker: string): string => PLAIN_TICKER[ticker] ?? ticker
 
 const normalizeOrderAsset = <T extends { asset: string | null }>(order: T): T =>

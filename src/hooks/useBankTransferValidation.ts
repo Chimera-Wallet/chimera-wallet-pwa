@@ -9,18 +9,15 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import {
-  getBankTransferConfig,
-  getBankTransferConfigSync,
   getMinimumOrderValue,
   limitsFor,
-  meetsMinimumAmount,
   requiresKyc,
   DEFAULT_BANK_CURRENCY,
-  type BankTransferConfig,
   type BankCircuit,
   type BankCurrency,
 } from '../lib/bankTransferConfig'
 import { fetchAuthoritativeKycStatus, type KycStatus } from '../lib/kyc'
+import { useBankTransferConfig } from './useBankTransferConfig'
 
 export interface BankTransferValidation {
   /** Whether the amount meets minimum requirements */
@@ -63,21 +60,12 @@ export function useBankTransferValidation({
   circuit,
   enabled = true,
 }: UseBankTransferValidationParams): BankTransferValidation {
-  const [config, setConfig] = useState<BankTransferConfig>(getBankTransferConfigSync)
+  // The provider's limits (ramp's, when it's the provider): every check below
+  // reads this one config.
+  const config = useBankTransferConfig()
   const [kycStatus, setKycStatus] = useState<KycStatus>('not_started')
   // Refresh counter triggers a server-side KYC status check.
   const [refreshCount, setRefreshCount] = useState(0)
-
-  // Load the provider's limits on mount (ramp's, when it's the provider)
-  useEffect(() => {
-    let cancelled = false
-    getBankTransferConfig().then((loaded) => {
-      if (!cancelled) setConfig(loaded)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   // Refresh KYC status from the provider rather than treating local data as proof.
   const refreshKycStatus = useCallback(() => {
@@ -99,9 +87,9 @@ export function useBankTransferValidation({
 
   // Calculate validation state
   const { kycThreshold } = limitsFor(config, currency)
-  const minimumAmount = getMinimumOrderValue(circuit, currency)
-  const isValidAmount = amount > 0 && meetsMinimumAmount(amount, circuit, currency)
-  const kycRequired = requiresKyc(amount, currency)
+  const minimumAmount = getMinimumOrderValue(config, circuit, currency)
+  const isValidAmount = amount > 0 && amount >= minimumAmount
+  const kycRequired = requiresKyc(config, amount, currency)
   const canProceed = isValidAmount && (!kycRequired || kycVerified)
 
   let errorMessage: string | null = null
