@@ -23,14 +23,12 @@
   },
   "general": {
     "server": "Serveur inaccessible",
-    "swap": "Impossible de créer le swap",
     "missingAddress": "Adresse manquante",
     "missingAsset": "Montant de l'actif manquant",
     "missingAmount": "Montant manquant",
     "missingAssetList": "Liste des actifs manquante",
     "missingTotal": "Montant total manquant",
-    "missingSats": "Montant en satoshis manquant",
-    "swapAddUnavailable": "Adresse de swap indisponible"
+    "missingSats": "Montant en satoshis manquant"
   },
   "send": {
     "bitcoin": {
@@ -50,8 +48,7 @@
     },
     "lightning": {
       "address": "La méthode sélectionnée nécessite une facture Lightning",
-      "type": "La méthode sélectionnée nécessite un autre type d'adresse",
-      "swaps": "Les swaps Lightning ne sont pas activés"
+      "type": "La méthode sélectionnée nécessite un autre type d'adresse"
     },
     "bank": {
       "transfer": "Les virements bancaires sont gérés dans Transferts",
@@ -89,7 +86,6 @@
       "amount": "Montant invalide",
       "faucetFail": "Échec du faucet",
       "pendingSwap": "Impossible de créer le swap inversé",
-      "chainSwap": "Impossible de créer le swap on-chain",
       "reverseSwap": "Impossible de créer le swap inversé",
       "getAddress": "Impossible d'obtenir l'adresse : {{address}}"
     },
@@ -100,9 +96,6 @@
       "noOrderInfo": "Aucune information de commande disponible",
       "failedLoad": "Impossible de charger la commande",
       "failedRefresh": "Impossible d'actualiser la commande"
-    },
-    "lightning": {
-      "tempUnavailable": "Lightning est temporairement indisponible. Ce code QR prend uniquement en charge les paiements Arkade et on-chain."
     },
     "wrapService": {
       "validAddress": "Saisissez une adresse {{name}} valide",
@@ -171,14 +164,6 @@
     "idHex": "L'identifiant de l'actif doit être une chaîne hexadécimale de 68 caractères",
     "assNF": "Actif introuvable",
     "range": "Les décimales doivent être un entier compris entre 0 et {{max}}"
-  },
-  "boltz": {
-    "swapsRestore": "Erreur lors de la restauration des swaps : {{error}}",
-    "integration": "L'intégration Boltz n'est pas encore prête. Réessayez dans un instant.",
-    "integrationSimple": "L'intégration Boltz n'est pas encore prête",
-    "scan": "Impossible d'analyser : {{err}}",
-    "recover": "{{swept}} VTXO{{out}} récupéré(s)",
-    "noSweep": "Aucun VTXO récupéré ; réessayez plus tard."
   },
   "lendasat": {
     "walletNot": "Portefeuille non initialisé",

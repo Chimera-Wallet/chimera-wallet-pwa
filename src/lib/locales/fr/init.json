@@ -34,8 +34,6 @@
   },
   "connection": {
     "missingCreds": "Identifiants manquants",
-    "restoringSwaps": "Restauration des swaps...",
-    "swapsInfo": "{{num}} swaps restaurés depuis le réseau",
     "connectionFailed": "Échec de la connexion",
     "serverConnection": "Connexion au serveur"
   },

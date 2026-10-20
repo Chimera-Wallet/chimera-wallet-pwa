@@ -13,37 +13,42 @@ import {
 } from '@arkade-os/solver-discovery'
 import type { NetworkName } from '@arkade-os/sdk'
 import betaSolverCard from './beta-solver.card.json'
+import mutinynetSolverCard from './mutinynet-solver.card.json'
 import { getSolverRegistryUrl } from './constants'
 import { consoleLog } from './logs'
 import { getStorageItem, readSolverCardsFromStorage } from './storage'
 import { assetSwapRepository } from './swapRepository'
 
 /**
- * Solver cards shipped with the wallet.
+ * Solver cards shipped with the wallet, one per network.
  *
- * One card, one solver, multiple markets: the Arkade Labs solver behind
- * `discovery_pubkey`/`transports.nostr.relays` here serves both the asset-swap
- * corridors (`BTC/USDT-CX`, `ETH-CX/BTC`, `ETH-CX/USDT-CX`) and the Lightning
- * RFQ send leg (`arkade:BTC -> lightning:BTC`). None of it is published in the
- * solver registry yet, so without this bundle none of these corridors exist
- * for this wallet. Bundled rather than configured because the card carries its
- * own rendezvous (pubkey + nostr relays) — there is no URL to point at.
+ * Mainnet (bitcoin): the Arkade Labs beta solver, the counterparty for the
+ * Lightning RFQ legs (`arkade:BTC <-> bolt11:BTC`). It is not published in the
+ * mainnet solver registry yet, so without this the corridor does not exist
+ * and Lightning send/receive is unavailable. Same card as arkade-os/wallet
+ * ships, byte-identical: the solver's own `cli card` output, signature
+ * included. This client never verifies the signature (pinning a card is the
+ * user's own trust decision), but carrying the real one keeps the bundle what
+ * the registry will list.
  *
- * The card is the solver's own `cli card` output, signature included — it
- * signs the current `transports.nostr.relays` shape. This client never
- * verifies the signature (pinning a card is the user's own trust decision),
- * but carrying the real one keeps the bundle byte-identical to what the
- * registry will list.
+ * Staging (mutinynet): the card the staging asset swaps run on — the
+ * `BTC/USDT-CX`, `ETH-CX/BTC` and `ETH-CX/USDT-CX` markets, whose asset ids are
+ * the staging deployment's. It carries no Lightning market: on mutinynet the
+ * Lightning (and onchain) corridors come from the solver registry, as in
+ * arkade-os/wallet, which bundles nothing for this network.
  *
- * Offered on both production (bitcoin) and staging (mutinynet). Not on
- * regtest/signet, where no wallet build points.
+ * Each card is scoped to its own network on purpose: a card's pubkey and relay
+ * belong to one deployment, and offering it on another network would quote
+ * that counterparty for the wrong coins. Bundled rather than configured
+ * because a card carries its own rendezvous (pubkey + nostr relays) — there is
+ * no URL to point at.
  */
 // Exported so the Solvers settings screen can show built-in cards — a pinned
 // solver invisible in Settings reads as "no solver at all".
-export const BUNDLED_CARDS: LocalCardInput[] = (['bitcoin', 'mutinynet'] as const).map((network) => ({
-  card: betaSolverCard as LocalCardInput['card'],
-  network,
-}))
+export const BUNDLED_CARDS: LocalCardInput[] = [
+  { card: betaSolverCard as LocalCardInput['card'], network: 'bitcoin' },
+  { card: mutinynetSolverCard as LocalCardInput['card'], network: 'mutinynet' },
+]
 
 const BUNDLED_PUBKEYS = new Set(
   BUNDLED_CARDS.map((input) => (input.card as { discovery_pubkey?: string }).discovery_pubkey?.toLowerCase()).filter(
