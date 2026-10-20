@@ -112,3 +112,12 @@ describe('verified assets', () => {
     expect(mgr.isVerified('c')).toBe(true)
   })
 })
+
+describe('verified asset id case', () => {
+  it('matches verified ids regardless of hex case', () => {
+    const mgr = new AssetIconApprovalManager()
+    mgr.setVerifiedAssets(['ABCDEF'])
+    expect(mgr.isVerified('abcdef')).toBe(true)
+    expect(mgr.isApproved('AbCdEf')).toBe(true)
+  })
+})

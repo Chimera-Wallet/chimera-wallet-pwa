@@ -69,7 +69,7 @@ test('should fetch invoice from lnurl', async ({ page }) => {
   expect(isValidLnUrl(lnurl)).toBe(true)
 
   // fetch invoice
-  const invoice = await fetchInvoice(lnurl, 2000, 'Test payment')
+  const invoice = await fetchInvoice(lnurl, 2000, 'Test payment', 'regtest')
   expect(invoice).toContain('lnbcrt')
 
   // decode invoice
@@ -99,7 +99,7 @@ test('should receive payment', async ({ page }) => {
   expect(isValidLnUrl(lnurl)).toBe(true)
 
   // fetch invoice
-  const invoice = await fetchInvoice(lnurl, 2000, 'Test payment')
+  const invoice = await fetchInvoice(lnurl, 2000, 'Test payment', 'regtest')
   expect(invoice).toContain('lnbcrt')
 
   // pay invoice with lnd

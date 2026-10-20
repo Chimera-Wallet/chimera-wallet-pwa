@@ -9,19 +9,37 @@ import { ConfigContext } from '../providers/config'
 import { FiatContext } from '../providers/fiat'
 import Focusable from './Focusable'
 import { hapticSubtle } from '../lib/haptics'
-import { ASSETS, getWrappedAssetId, prettyAssetAmount, prettyAssetAmountHide } from '../lib/assets'
+import {
+  ASSETS,
+  getAssetSymbolByAssetId,
+  getWrappedAssetId,
+  prettyAssetAmount,
+  prettyAssetAmountHide,
+  requireAssetConfig,
+  wrappedAmountToNumber,
+} from '../lib/assets'
+import { AssetPricesContext } from '../providers/assetPrices'
+
+const abs = (n: bigint): bigint => (n < BigInt(0) ? -n : n)
 import { getTxStatus, TX_STATUS_DISPLAY } from '../lib/txStatus'
 import { AspContext } from '../providers/asp'
 import { useTranslation } from 'react-i18next'
+import SwapRouteIcon from './SwapRouteIcon'
+import { swapRouteLabel, swapStatusLabel, swapFiatAmount } from '../lib/swapDisplay'
 
 const TransactionLine = ({ tx, onClick, isFirst }: { tx: Tx; onClick: () => void; isFirst?: boolean }) => {
   const { config } = useContext(ConfigContext)
   const { toFiat } = useContext(FiatContext)
+  const { getPriceData } = useContext(AssetPricesContext)
   const { aspInfo } = useContext(AspContext)
   const { assetMetadataCache } = useContext(WalletContext)
   const boardingExitDelay = Number(aspInfo?.boardingExitDelay || 0)
 
   const {t} = useTranslation()
+
+  if (tx.type === 'swap' && tx.assetSwap) {
+    return <SwapTransactionLine tx={tx} onClick={onClick} isFirst={isFirst} />
+  }
 
   const prefix = tx.type === 'sent' ? '-' : '+'
 
@@ -40,7 +58,20 @@ const TransactionLine = ({ tx, onClick, isFirst }: { tx: Tx; onClick: () => void
     formattedAmount = config.showBalance
       ? `${prefix} ${prettyAssetAmount(assetEntry.amount, decimals)} ${assetLabel}`
       : prettyAssetAmountHide(assetEntry.amount, assetLabel)
-    formattedFiat = ''
+    // Fiat only for listed assets with a price. CX wrapped assets map 1-to-1
+    // with the original, so value the raw amount with the original asset's
+    // precision, as the home balance and asset list do.
+    const symbol = getAssetSymbolByAssetId(assetEntry.assetId)
+    const rate = symbol ? getPriceData(symbol).rate : 0
+    if (symbol && rate) {
+      const units = wrappedAmountToNumber(abs(assetEntry.amount), requireAssetConfig(symbol).precision)
+      const fiatValue = units * rate
+      formattedFiat = config.showBalance
+        ? `${prefix} ${prettyFiatAmount(fiatValue, config.fiat)}`
+        : prettyFiatHide(fiatValue, config.fiat)
+    } else {
+      formattedFiat = ''
+    }
   } else {
     assetLabel = ASSETS.BTC.symbol
     const btcAmount = fromSatoshis(tx.amount)
@@ -95,6 +126,79 @@ const TransactionLine = ({ tx, onClick, isFirst }: { tx: Tx; onClick: () => void
         <div style={{ fontSize: '14px', fontWeight: 500, fontFamily: 'Geist Mono, monospace' }}>{formattedAmount}</div>
         {formattedFiat ? (
           <div style={{ fontSize: '12px', color: 'var(--neutral-500)', fontWeight: 400 }}>{formattedFiat}</div>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+const SWAP_STATUS_COLOR: Record<string, string> = {
+  completed: 'var(--green)',
+  pending: 'var(--orange)',
+  cancelled: 'var(--red)',
+  recoverable: 'var(--red)',
+}
+
+/** A swap's funding tx and its fill/cancel, merged into one row by
+ * `activitiesToTxs` — a route icon and "X to Y" rather than a bare
+ * sent/received line, since neither leg alone tells the whole story. */
+function SwapTransactionLine({ tx, onClick, isFirst }: { tx: Tx; onClick: () => void; isFirst?: boolean }) {
+  const { config } = useContext(ConfigContext)
+  const { toFiat } = useContext(FiatContext)
+  const { t } = useTranslation()
+  const swap = tx.assetSwap!
+
+  const fiat = swapFiatAmount(tx, toFiat)
+  const formattedFiat =
+    fiat === undefined ? '' : config.showBalance ? prettyFiatAmount(fiat, config.fiat) : prettyFiatHide(fiat, config.fiat)
+  const date = tx.createdAt ? prettyDate(tx.createdAt) : 'Unknown date'
+  const statusColor = SWAP_STATUS_COLOR[swap.status] ?? 'var(--grey)'
+
+  return (
+    <div
+      onClick={onClick}
+      data-testid='tx-row'
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        padding: '12px 16px',
+        cursor: 'pointer',
+        borderTop: isFirst ? 'none' : '1px solid var(--neutral-100)',
+        transition: 'background 0.15s ease',
+        width: '100%',
+        boxSizing: 'border-box',
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--neutral-50)' }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+    >
+      <div style={{ marginRight: '12px', flexShrink: 0 }}>
+        <SwapRouteIcon
+          from={{ assetId: swap.fromAssetId, ticker: swap.fromTicker }}
+          to={{ assetId: swap.toAssetId, ticker: swap.toTicker }}
+          size={24}
+        />
+      </div>
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+        <div style={{ fontSize: '14px', fontWeight: 500 }}>{t('apps.swap.swap')}</div>
+        <div
+          style={{
+            fontSize: '11px',
+            color: 'var(--neutral-500)',
+            fontWeight: 400,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {swapRouteLabel(tx)} · {date}
+        </div>
+        <div style={{ fontSize: '12px', color: statusColor, fontWeight: 500 }}>{swapStatusLabel(tx)}</div>
+      </div>
+
+      <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '2px', flexShrink: 0 }}>
+        {formattedFiat ? (
+          <div style={{ fontSize: '14px', fontWeight: 500, fontFamily: 'Geist Mono, monospace' }}>{formattedFiat}</div>
         ) : null}
       </div>
     </div>

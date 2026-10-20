@@ -18,10 +18,19 @@ interface HeaderProps {
   auxIcon?: JSX.Element
   back?: (() => void) | boolean
   heading?: boolean
+  /** Show the tips of the Chimera logo emerging from the top of the
+   * screen in place of the title (home screen). `text` stays the accessible name. */
+  logo?: boolean
   text: string
 }
 
-export default function Header({ auxAriaLabel, auxFunc, auxText, back, text, auxIcon }: HeaderProps) {
+// The logo is 134x317. Only its bottom quarter shows, hanging from the top edge:
+// just the blade tips, not the body above them.
+const LOGO_HEIGHT = 180
+const LOGO_WIDTH = Math.round((LOGO_HEIGHT * 134) / 317)
+const LOGO_VISIBLE = Math.round(LOGO_HEIGHT / 4)
+
+export default function Header({ auxAriaLabel, auxFunc, auxText, back, logo, text, auxIcon }: HeaderProps) {
   const { goBack } = useContext(NavigationContext)
 
   const handleBack = back
@@ -87,7 +96,28 @@ export default function Header({ auxAriaLabel, auxFunc, auxText, back, text, aux
   }
 
   return (
-    <div className='header'>
+    <div className='header' style={logo ? { position: 'relative' } : undefined}>
+      {logo ? (
+        <div
+          aria-hidden='true'
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: LOGO_WIDTH,
+            height: LOGO_VISIBLE,
+            overflow: 'hidden',
+            pointerEvents: 'none',
+          }}
+        >
+          <img
+            src='/images/chimera_logo_claw.png'
+            alt=''
+            style={{ display: 'block', width: LOGO_WIDTH, height: LOGO_HEIGHT, marginTop: LOGO_VISIBLE - LOGO_HEIGHT }}
+          />
+        </div>
+      ) : null}
       <FlexRow between>
         <div style={{ minWidth: '4rem', marginLeft: '0.5rem' }}>
           {handleBack ? (
@@ -104,7 +134,7 @@ export default function Header({ auxAriaLabel, auxFunc, auxText, back, text, aux
             </Focusable>
           )}
         </div>
-        <p className='title'>{text}</p>
+        {logo ? <h1 className='sr-only'>{text}</h1> : <p className='title'>{text}</p>}
         <div style={style} onClick={auxFunc} aria-label={auxAriaLabel} data-testid='header-aux-btn'>
           {auxText || auxIcon ? (
             <Focusable onEnter={auxFunc} fit round>

@@ -106,9 +106,28 @@ export enum Themes {
   Light = 'Light',
 }
 
+/** The merged display facts for a `type: 'swap'` row — a funding tx and its
+ * fill/cancel collapsed into one, rather than two unrelated sent/received
+ * rows. See `buildAssetSwapActivityTx` in `lib/swapDisplay.ts`. */
+export interface TxAssetSwap {
+  fromAssetId: string
+  fromTicker: string
+  fromDecimals: number
+  fromAmount: bigint
+  toAssetId: string
+  toTicker: string
+  toDecimals: number
+  toAmount: bigint
+  fiatAmount?: number
+  fiatCurrency?: string
+  feeBps?: number
+  status: 'pending' | 'completed' | 'cancelled' | 'recoverable'
+}
+
 export type Tx = {
   amount: number
   assets?: Asset[]
+  assetSwap?: TxAssetSwap
   boardingTxid: string
   createdAt: number
   explorable: string | undefined

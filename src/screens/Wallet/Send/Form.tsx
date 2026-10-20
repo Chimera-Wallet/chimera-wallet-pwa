@@ -31,52 +31,65 @@ import { getReceivingAddresses } from '../../../lib/asp'
 import { OptionsContext } from '../../../providers/options'
 import { ConfigContext } from '../../../providers/config'
 import { FiatContext } from '../../../providers/fiat'
-import { ArkNote, AssetDetails, isValidArkAddress, type NetworkName } from '@arkade-os/sdk'
+import { ArkNote, type NetworkName } from '@arkade-os/sdk'
 import { LimitsContext } from '../../../providers/limits'
 import { checkLnUrlConditions, fetchInvoice, fetchArkAddress, isValidLnUrl } from '../../../lib/lnurl'
 import { extractError } from '../../../lib/error'
-import { getInvoiceSatoshis } from '@arkade-os/boltz-swap'
 import { SwapsContext } from '../../../providers/swaps'
 import { decodeBip21, isBip21 } from '../../../lib/bip21'
 import { FeesContext } from '../../../providers/fees'
 import { InfoLine } from '../../../components/Info'
 import { getNetworkConfig } from '../../../lib/networks'
-import { getAssetConfig, requireAssetConfig, type AssetSymbol, unitsToCents } from '../../../lib/assets'
+import {
+  getAssetSymbolByAssetId,
+  getWrappedAssetId,
+  centsToUnits,
+  requireAssetConfig,
+  type AssetSymbol,
+  unitsToCents,
+} from '../../../lib/assets'
 import { assetSupportsWrap, requireAssetChainOption, type SourceChainId } from '../../../lib/sourceChains'
 import AssetSelector from '../../../components/AssetSelector'
 import NetworkSelector from '../../../components/NetworkSelector'
 import AssetNetworkSelector, { type AssetNetworkChoice } from '../../../components/AssetNetworkSelector'
 import InlineAmountInput from '../../../components/InlineAmountInput'
-import WhenIcon from '../../../icons/When'
-import FeesIcon from '../../../icons/Fees'
-import InfoIcon from '../../../icons/Info'
-import { TERMS_AND_CONDITIONS, TRANSFER_METHOD, type InfoItemIcon } from '../../../lib/transferMethods'
-import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
-import clockIcon from '../../../../public/images/icons/ Clock.svg'
-import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
+import { TERMS_AND_CONDITIONS, TRANSFER_METHOD } from '../../../lib/transferMethods'
+import { TermsLines, termsIcon } from '../../../components/TermsInfo'
 import checkMarkIcon from '../../../../public/images/icons/ CheckCheckMark.png'
 import {useTranslation, Trans} from 'react-i18next'
 import { decodeInvoice } from '../../../lib/bolt11'
 import { lnSendRendezvous, requestLnSend } from '../../../lib/lnSwap'
 import { withRfqTransport } from '../../../lib/nostrRfq'
-import { getEmulatorPubkeyForNetwork, testDomains } from '../../../lib/constants'
+import { getEmulatorPubkeyForNetwork } from '../../../lib/constants'
 import { discoverMarkets } from '../../../lib/swapMarkets'
+import UnverifiedAssetNotice from '../../../components/UnverifiedAssetNotice'
 
 
 
 export default function SendForm() {
   const { aspInfo } = useContext(AspContext)
-  const { config, useFiat } = useContext(ConfigContext)
+  const { useFiat } = useContext(ConfigContext)
   const { calcOnchainOutputFee } = useContext(FeesContext)
-  const { fromFiat, toFiat } = useContext(FiatContext)
+  const { toFiat } = useContext(FiatContext)
   const { sendInfo, setNoteInfo, setSendInfo, setUnwrapSendInfo } = useContext(FlowContext)
   const { createSubmarineSwap, connected, calcSubmarineSwapFee, getApiUrl } = useContext(SwapsContext)
   const { amountIsAboveMaxLimit, amountIsBelowMinLimit, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
   const { setOption } = useContext(OptionsContext)
   const { navigate } = useContext(NavigationContext)
-  const { balance, svcWallet } = useContext(WalletContext)
+  const { assetBalances, assetMetadataCache, balance, svcWallet, isAssetVerified } = useContext(WalletContext)
 
-  const [amount, setAmount] = useState<number>()
+  const seededAssetId = sendInfo.assets?.[0]?.assetId
+  const seededAssetSymbol = seededAssetId ? getAssetSymbolByAssetId(seededAssetId) : undefined
+  const isAssetSend = Boolean(seededAssetId)
+  const selectedAssetId = isAssetSend ? seededAssetId : undefined
+  const selectedAssetMetadata = selectedAssetId ? assetMetadataCache.get(selectedAssetId)?.metadata : undefined
+  const selectedAssetBalance = selectedAssetId
+    ? (assetBalances.find((asset) => asset.assetId === selectedAssetId)?.amount ?? BigInt(0))
+    : BigInt(0)
+  const selectedAssetDecimals = selectedAssetMetadata?.decimals ?? (seededAssetSymbol ? requireAssetConfig(seededAssetSymbol).precision : 8)
+  const assetAmount = sendInfo.assets?.[0]?.amount ?? BigInt(0)
+
+  const [amount, setAmount] = useState<number>(() => Number(isAssetSend ? assetAmount : sendInfo.satoshis ?? 0))
   const [amountIsReadOnly, setAmountIsReadOnly] = useState(false)
   const [availableBalance, setAvailableBalance] = useState(0)
   const [deductFromAmount, setDeductFromAmount] = useState(false)
@@ -98,8 +111,15 @@ export default function SendForm() {
   const { t } = useTranslation()
 
   // Asset and network can be changed, initialized from wallet flow or defaults
-  const [selectedAsset, setSelectedAsset] = useState<AssetSymbol>('BTC')
-  const selectedMethod: TransferMethod = sendInfo.method ?? TRANSFER_METHOD.bitcoin
+  const [selectedAsset, setSelectedAsset] = useState<AssetSymbol>(seededAssetSymbol ?? 'BTC')
+  const assetTicker = selectedAssetMetadata?.ticker ?? selectedAsset
+  // An asset with no ASSET_LIST entry can only move over Arkade, and the form
+  // shows no network selector for it — so a method seeded from elsewhere (e.g.
+  // emptySendInfo's 'bitcoin') must not stick, or the send can never enable.
+  const selectedMethod: TransferMethod =
+    isAssetSend && !seededAssetSymbol
+      ? TRANSFER_METHOD.ark
+      : (sendInfo.method ?? (isAssetSend ? TRANSFER_METHOD.ark : TRANSFER_METHOD.bitcoin))
 
   // Onchain sends deduct this fee from the amount (see SendDetails). If the
   // amount doesn't cover it, the send can't produce a positive output, so we
@@ -177,12 +197,20 @@ export default function SendForm() {
       if (isBip21(lowerCaseData)) {
         const { address, arkAddress, invoice, lnUrl, satoshis, assetId, assetAmount } = decodeBip21(lowerCaseData)
         if (!address && !arkAddress && !invoice) return setError(t('errors.send.parsing.bip21'))
+        // A requested amount (e.g. a POS payment QR) is shown and locked, like
+        // an invoice amount, so the payer can't re-price it by typing a value.
+        const applyRequestedAmount = () => {
+          if (satoshis) setAmount(satoshis)
+          setAmountIsReadOnly(Boolean(satoshis))
+        }
         if (selectedMethod === TRANSFER_METHOD.bitcoin) {
           if (!address) return setError(t('errors.send.bitcoin.address'))
+          applyRequestedAmount()
           return setState({ ...sendInfo, address, arkAddress: '', invoice: '', lnUrl: undefined, recipient, satoshis })
         }
         if (selectedMethod === TRANSFER_METHOD.ark) {
           if (!arkAddress) return setError(t('errors.send.arkade.address'))
+          applyRequestedAmount()
           return setState({ ...sendInfo, address: '', arkAddress, invoice: '', lnUrl: undefined, recipient, satoshis })
         }
         if (selectedMethod === TRANSFER_METHOD.lightning) {
@@ -445,15 +473,55 @@ export default function SendForm() {
     setProcessing(false)
   }
 
-  const handleAmountChange = (sats: number) => {
-    setState({ ...sendInfo, satoshis: sats })
-    setAmount(sats)
+  const handleAmountChange = (value: number) => {
+    setState({ ...sendInfo, satoshis: value })
+    setAmount(value)
+  }
+
+  const handleAssetAmountChange = (assetAmount: bigint) => {
+    if (!selectedAssetId) return
+    setState({ ...sendInfo, assets: [{ assetId: selectedAssetId, amount: assetAmount }], satoshis: 0 })
+    setAmount(Number(assetAmount))
   }
 
   const handlePercentage = (percent: number) => {
-    const amountInSats = Math.floor(availableBalance * (percent / 100))
-    setState({ ...sendInfo, satoshis: amountInSats })
-    setAmount(amountInSats)
+    if (isAssetSend && selectedAssetId) {
+      const amount = (selectedAssetBalance * BigInt(percent)) / BigInt(100)
+      setState({ ...sendInfo, assets: [{ assetId: selectedAssetId, amount }], satoshis: 0 })
+      setAmount(Number(amount))
+      return
+    }
+    const amount = Math.floor(availableBalance * (percent / 100))
+    setState({ ...sendInfo, satoshis: amount })
+    setAmount(amount)
+  }
+
+  const handleAssetSelect = (symbol: AssetSymbol) => {
+    setSelectedAsset(symbol)
+    setAmount(0)
+    if (symbol === 'BTC') {
+      setState({ ...sendInfo, assets: undefined, satoshis: 0 })
+      return
+    }
+    const assetId = getWrappedAssetId(symbol)
+    if (!assetId) {
+      setError(`Asset ${symbol} is not configured`)
+      return
+    }
+    setRecipient('')
+    setState({
+      ...sendInfo,
+      assets: [{ assetId, amount: BigInt(0) }],
+      satoshis: 0,
+      method: TRANSFER_METHOD.ark,
+      address: '',
+      arkAddress: '',
+      invoice: '',
+      lnUrl: undefined,
+      pendingSwap: undefined,
+      pendingLnSend: undefined,
+      recipient: '',
+    })
   }
 
   const handleRecipientChange = (recipient: string) => {
@@ -466,6 +534,19 @@ export default function SendForm() {
     try {
       if (selectedMethod === TRANSFER_METHOD.bank) {
         handleError(t('errors.send.bank.transfer'))
+        return
+      }
+      if (isAssetSend) {
+        if (!selectedAssetId || !assetAmount) {
+          handleError(t('errors.general.missingAsset'))
+          return
+        }
+        if (assetAmount > selectedAssetBalance) {
+          handleError(t('errors.funds.insufficient'))
+          return
+        }
+        setState({ ...sendInfo, assets: [{ assetId: selectedAssetId, amount: assetAmount }], satoshis: 0 })
+        setProceed(true)
         return
       }
       if (sendInfo.lnUrl) {
@@ -488,7 +569,7 @@ export default function SendForm() {
           }
           setState({ ...sendInfo, arkAddress: arkResponse.address, invoice: undefined })
         } else if (selectedMethod === TRANSFER_METHOD.lightning) {
-          const invoice = await fetchInvoice(sendInfo.lnUrl, sendInfo.satoshis ?? 0, '')
+          const invoice = await fetchInvoice(sendInfo.lnUrl, sendInfo.satoshis ?? 0, '', aspInfo.network as NetworkName)
           setState((prev) => ({
             ...prev,
             arkAddress: undefined,
@@ -536,29 +617,9 @@ export default function SendForm() {
   // Get T&Cs for current method
   const termsAndConditions = TERMS_AND_CONDITIONS.send[resolvedMethod]
 
-  // Helper to get icon component
-  const getIconComponent = (iconType?: InfoItemIcon) => {
-    switch (iconType) {
-      case 'time':
-        return <WhenIcon />
-      case 'fees':
-        return <FeesIcon />
-      case 'warning':
-        return undefined
-      case 'instruction':
-        return undefined
-      case 'info':
-        return <img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />
-      case 'receipt': 
-        return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} /> 
-      case 'clock':
-        return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(0.7)'}} /> 
-      default:
-        return <InfoIcon />
-    }
-  }
-
-  const buttonDisabled =
+  const assetSendDisabled =
+    !arkAddress || selectedMethod !== TRANSFER_METHOD.ark || !assetAmount || assetAmount > selectedAssetBalance
+  const bitcoinSendDisabled =
     selectedMethod === TRANSFER_METHOD.bank ||
     !((address || arkAddress || lnUrl || invoice) && satoshis && satoshis > 0) ||
     (lnUrlLimits.max && satoshis > lnUrlLimits.max) ||
@@ -572,6 +633,7 @@ export default function SendForm() {
     Boolean(error) ||
     satoshis < 1 ||
     processing
+  const buttonDisabled = isAssetSend ? assetSendDisabled || aspInfo.unreachable || tryingToSelfSend || Boolean(error) || processing : bitcoinSendDisabled
 
   if (scan) {
     return (
@@ -579,6 +641,7 @@ export default function SendForm() {
     )
   }
 
+  const inputBalance = isAssetSend ? Number(selectedAssetBalance) : availableBalance
   const selectedAssetBalanceSats = selectedAsset === 'BTC' ? availableBalance : undefined
 
   return (
@@ -596,25 +659,32 @@ export default function SendForm() {
                   value={amount || 0}
                   onChange={(newAmount) => handleAmountChange(newAmount)}
                   asset={selectedAsset}
+                  allowFiat={!isAssetSend}
+                  onAssetAmountChange={isAssetSend ? handleAssetAmountChange : undefined}
+                  precision={isAssetSend ? selectedAssetDecimals : undefined}
+                  ticker={isAssetSend ? assetTicker : undefined}
+                  displayValue={isAssetSend ? centsToUnits(assetAmount, selectedAssetDecimals) : undefined}
                   disabled={amountIsReadOnly}
                 />
                 <div style={{ display: 'flex', justifyContent: 'center' , width: '100%', marginTop: '-1rem' }}>
                   <div style={{ width: '200px' }}>
-                   <AssetSelector label='' selected={selectedAsset} onSelect={setSelectedAsset} selectedBalance = {selectedAssetBalanceSats}
-                     style = {{
-                     justifyContent: 'center',
+                   {!isAssetSend || seededAssetSymbol ? (
+                     <AssetSelector label='' selected={selectedAsset} onSelect={handleAssetSelect} selectedBalance = {selectedAssetBalanceSats}
+                      style = {{
+                      justifyContent: 'center',
                      width: '235px',
                      height: '36px',
                      borderRadius : '2.5rem',
                      fontSize: '14px',
                      fontWeight: '600',
-                     padding: '1.3rem',
-                     }} />
+                      padding: '1.3rem',
+                      }} />
+                   ) : null}
                   </div>
                 </div>
 
                 {/* Percentage Buttons */}
-                {!amountIsReadOnly && availableBalance > 0 ? (
+                {!amountIsReadOnly && inputBalance > 0 ? (
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginTop: '-1rem' }}>
                     <FlexRow centered gap='0.7rem'>
                       {[25, 50, 75, 100].map((percent) => (
@@ -676,7 +746,14 @@ export default function SendForm() {
               </div>
             ) : null}
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100', gap:'1rem'}}>
-            {assetSupportsWrap(requireAssetConfig(selectedAsset).symbol) ? (
+             {isAssetSend && !seededAssetSymbol ? (
+               <>
+                 <Text centered>Arkade</Text>
+                 {selectedAssetId && !isAssetVerified(selectedAssetId) ? (
+                   <UnverifiedAssetNotice assetId={selectedAssetId} />
+                 ) : null}
+               </>
+             ) : assetSupportsWrap(requireAssetConfig(selectedAsset).symbol) ? (
               <AssetNetworkSelector
                 assetSymbol={requireAssetConfig(selectedAsset).symbol}
                 mode='send'
@@ -768,20 +845,12 @@ export default function SendForm() {
                 <InfoLine
                   compact
                   color='neutral'
-                  icon={getIconComponent('info')}
+                  icon={termsIcon('info')}
                   text= {t('placeholders.lightning.invoice')}
                 />
               ) : null}{' '}
-              {termsAndConditions.map((item) => (
-                <InfoLine
-                  key={item.text}
-                  compact
-                  color={item.color}
-                  icon={getIconComponent(item.icon)}
-                  text={t(item.text)}
-                />
-              ))}
-              {methodFeeText ? <InfoLine compact color='orange' icon={getIconComponent('receipt')} text={methodFeeText} /> : null}
+              <TermsLines items={termsAndConditions} />
+              {methodFeeText ? <InfoLine compact color='orange' icon={termsIcon('receipt')} text={methodFeeText} /> : null}
               {deductFromAmount ? (
                 <InfoLine compact color='orange' text={t('common.notifications.send.feesDeduction')}/>
               ) : null}

@@ -2,15 +2,20 @@ import { useContext, useState } from 'react'
 import { ConfigContext } from '../providers/config'
 import { FiatContext } from '../providers/fiat'
 import { prettyNumber } from '../lib/format'
-import { ASSETS, getDisplayTicker, type AssetSymbol } from '../lib/assets'
+import { ASSETS, getDisplayTicker, type AssetSymbol, unitsToCents } from '../lib/assets'
 import CurrencySwapIcon from '../icons/CurrencySwap'
 
 interface InlineAmountInputProps {
   value: number
   onChange: (value: number) => void
   asset: AssetSymbol
+  allowFiat?: boolean
+  onAssetAmountChange?: (value: bigint) => void
+  precision?: number
   disabled?: boolean
+  displayValue?: string
   placeholder?: string
+  ticker?: string
   bankCurrency?: string // Optional: for bank transfers (EUR/CHF) - enables BTC<->bankCurrency swap
 }
 
@@ -25,8 +30,13 @@ export default function InlineAmountInput({
   value,
   onChange,
   asset,
+  allowFiat = true,
+  onAssetAmountChange,
+  precision,
   disabled = false,
+  displayValue: initialDisplayValue,
   placeholder = '0',
+  ticker,
   bankCurrency,
 }: InlineAmountInputProps) {
   const { config } = useContext(ConfigContext)
@@ -38,15 +48,16 @@ export default function InlineAmountInput({
   const [inputString, setInputString] = useState('')
 
   const assetInfo = ASSETS[asset]
-  const assetTicker = getDisplayTicker(asset)
+  const assetTicker = ticker ? getDisplayTicker(ticker) : getDisplayTicker(asset)
   const isBankTransfer = Boolean(bankCurrency)
 
   // Calculate display values based on input mode
   // For bank transfers: value is in fiat cents/units, not satoshis
   const activeCurrency = bankCurrency || config.fiat
+  const assetPrecision = precision ?? assetInfo.precision
   const cryptoValue = isBankTransfer
-    ? fromCurrency(value, activeCurrency) / Math.pow(10, assetInfo.precision)
-    : value / Math.pow(10, assetInfo.precision)
+    ? fromCurrency(value, activeCurrency) / Math.pow(10, assetPrecision)
+    : value / Math.pow(10, assetPrecision)
 
   const fiatValue = isBankTransfer
     ? value // For bank transfers, value IS the fiat amount
@@ -55,7 +66,7 @@ export default function InlineAmountInput({
   // Use inputString while typing, or calculated value when empty/switching modes
   // Fiat values are always displayed to 2 decimal places
   const displayValue =
-    inputString || (inputMode === 'crypto' ? cryptoValue || '' : fiatValue ? parseFloat(fiatValue.toFixed(2)) : '')
+    inputString || initialDisplayValue || (inputMode === 'crypto' ? cryptoValue || '' : fiatValue ? parseFloat(fiatValue.toFixed(2)) : '')
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value
@@ -67,6 +78,11 @@ export default function InlineAmountInput({
     }
 
     setInputString(inputValue)
+
+    if (onAssetAmountChange) {
+      onAssetAmountChange(inputValue && inputValue !== '.' ? unitsToCents(inputValue, assetPrecision) : BigInt(0))
+      return
+    }
 
     if (inputValue === '' || inputValue === '0') {
       onChange(0)
@@ -82,7 +98,7 @@ export default function InlineAmountInput({
             finalValue = numValue
           } else {
             // User entered BTC, convert to fiat using real exchange rate
-            finalValue = toCurrency(Math.floor(numValue * Math.pow(10, assetInfo.precision)), activeCurrency)
+            finalValue = toCurrency(Math.floor(numValue * Math.pow(10, assetPrecision)), activeCurrency)
           }
         } else {
           // Regular crypto mode
@@ -91,7 +107,7 @@ export default function InlineAmountInput({
             finalValue = fromFiat(numValue)
           } else {
             // User entered crypto, convert to base units
-            finalValue = Math.floor(numValue * Math.pow(10, assetInfo.precision))
+            finalValue = Math.floor(numValue * Math.pow(10, assetPrecision))
           }
         }
 
@@ -156,28 +172,30 @@ export default function InlineAmountInput({
         <span style={{ fontSize: currencyFontSize, fontWeight: 600, color: 'white' }}>{primaryCurrency}</span>
       </div>
       {/* Swap icon */}
-      <button
-        onClick={handleSwap}
-        disabled={disabled}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          cursor: disabled ? 'default' : 'pointer',
-          padding: '0.5rem',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: disabled ? 0.5 : 1,
-        }}
-        aria-label='Toggle between crypto and fiat'
-      >
-        <div style={{ width: '20px', height: '20px', color: 'var(--white50)' }}>
-          <CurrencySwapIcon />
-        </div>
-      </button>
+      {allowFiat ? (
+        <button
+          onClick={handleSwap}
+          disabled={disabled}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            cursor: disabled ? 'default' : 'pointer',
+            padding: '0.5rem',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: disabled ? 0.5 : 1,
+          }}
+          aria-label='Toggle between crypto and fiat'
+        >
+          <div style={{ width: '20px', height: '20px', color: 'var(--white50)' }}>
+            <CurrencySwapIcon />
+          </div>
+        </button>
+      ) : null}
       </div>
       {/* Fiat/Crypto equivalent */}
-      <div style={{ fontSize: '1rem', color: 'var(--white50)', marginTop: '-10px' }}>{secondaryValue}</div>
+      {allowFiat ? <div style={{ fontSize: '1rem', color: 'var(--white50)', marginTop: '-10px' }}>{secondaryValue}</div> : null}
     </div>
   )
 }

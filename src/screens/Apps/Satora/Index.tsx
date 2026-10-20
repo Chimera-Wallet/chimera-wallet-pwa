@@ -2,7 +2,6 @@ import { useContext, useEffect, useRef, useState } from 'react'
 import Padded from '../../../components/Padded'
 import Header from '../../../components/Header'
 import Content from '../../../components/Content'
-import FlexCol from '../../../components/FlexCol'
 import { WalletContext } from '../../../providers/wallet'
 import { WalletProvider, type LoanAsset, AddressType } from '@lendasat/lendasat-wallet-bridge'
 import { collaborativeExit, getReceivingAddresses } from '../../../lib/asp'
@@ -125,16 +124,16 @@ export default function AppSatora() {
       <Header text={t('errors.satora.satora')} back />
       <Content>
         <Padded>
-          <FlexCol gap='2rem' between>
+          <div style={{ height: '100%' }}>
             <iframe
               ref={iframeRef}
               src={`${IFRAME_URL}${DEFAULT_SWAP_PATH}`}
               title='Satora'
               className='satora-iframe'
               allow='clipboard-write; clipboard-read'
-              style={{ height: '100%' }}
+              style={{ width: '100%', height: 'calc(100dvh - 150px)', border: 'none', borderRadius: '8px' }}
             />
-          </FlexCol>
+          </div>
         </Padded>
       </Content>
     </>

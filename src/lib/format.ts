@@ -10,6 +10,15 @@ export const toSatoshis = (num: number): number => {
   return Decimal.mul(num, 100_000_000).floor().toNumber()
 }
 
+export const formatBaseUnits = (value: string | null, precision: number): string => {
+  if (!value) return ''
+  return new Decimal(value)
+    .div(Decimal.pow(10, precision))
+    .toFixed(precision)
+    .replace(/(\.\d*?)0+$/, '$1')
+    .replace(/\.$/, '')
+}
+
 export const prettyAgo = (timestamp: number | string, long = false): string => {
   if (!timestamp) return ''
   const now = Math.floor(Date.now() / 1000)

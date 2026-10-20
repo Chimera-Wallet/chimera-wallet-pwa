@@ -251,7 +251,7 @@ export default function SwapForm({ onBack }: SwapFormProps) {
                   <TextSecondary>
                     {t('apps.swap.transReq', {thresh: prettyNumber(KYC_THRESHOLD_EUR)})}
                   </TextSecondary>
-                  <Button onClick={handleKycNavigate} label={t('apps.swap.complyKyc')} secondary small />
+                  <Button onClick={handleKycNavigate} label={t('apps.swap.complKyc')} secondary small />
                 </FlexCol>
               </Shadow>
             ) : null}

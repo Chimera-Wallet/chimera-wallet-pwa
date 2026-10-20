@@ -1,6 +1,8 @@
 import { bech32, hex, utf8 } from '@scure/base'
 import { sha256 } from '@noble/hashes/sha2.js'
 import { hmac } from '@noble/hashes/hmac.js'
+import type { NetworkName } from '@arkade-os/sdk'
+import { decodeInvoice, type DecodedInvoice, invoiceMatchesNetwork, isInvoiceExpired } from './bolt11'
 
 const emailRegex =
   /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
@@ -49,6 +51,27 @@ const fetchLnUrlInvoice = async (amount: number, note: string, data: LnUrlRespon
   return res.pr
 }
 
+export const validateLnUrlInvoice = (
+  invoice: DecodedInvoice,
+  amountMsats: number,
+  metadata: string,
+  network: NetworkName,
+): void => {
+  if (!Number.isSafeInteger(invoice.amountMsats) || invoice.amountMsats !== amountMsats) {
+    throw new Error('LNURL callback returned an invoice for a different amount')
+  }
+  if (!/^[0-9a-f]{64}$/i.test(invoice.paymentHash)) {
+    throw new Error('LNURL callback returned an invoice with an invalid payment hash')
+  }
+  if (isInvoiceExpired(invoice)) throw new Error('LNURL callback returned an expired invoice')
+  if (!invoiceMatchesNetwork(invoice, network)) throw new Error('LNURL callback returned an invoice for a different network')
+
+  const metadataHash = hex.encode(sha256(utf8.decode(metadata)))
+  if (invoice.descriptionHash !== metadataHash) {
+    throw new Error('LNURL callback invoice does not match its metadata')
+  }
+}
+
 const isValidBech32 = (data: string) => {
   try {
     bech32.decodeToBytes(data)
@@ -89,14 +112,18 @@ export const checkLnUrlConditions = (lnurl: string): Promise<LnUrlResponse> => {
   })
 }
 
-export const fetchInvoice = (lnurl: string, sats: number, note: string): Promise<string> => {
+export const fetchInvoice = (lnurl: string, sats: number, note: string, network: NetworkName): Promise<string> => {
   return new Promise<string>((resolve, reject) => {
     const url = getCallbackUrl(lnurl)
     const amount = Math.round(sats * 1000) // millisatoshis
     fetch(url)
       .then(checkResponse<LnUrlResponse>)
       .then((data) => checkLnUrlResponse(amount, data))
-      .then((data) => fetchLnUrlInvoice(amount, note, data))
+      .then(async (data) => {
+        const invoice = await fetchLnUrlInvoice(amount, note, data)
+        validateLnUrlInvoice(decodeInvoice(invoice), amount, data.metadata, network)
+        return invoice
+      })
       .then(resolve)
       .catch(reject)
   })

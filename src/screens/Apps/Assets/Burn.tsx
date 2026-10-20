@@ -52,7 +52,7 @@ export default function AppAssetBurn() {
       return
     }
     if (amount > balance) {
-      setError(t('errors.assets.positive', {amount: prettyAssetAmount(balance, decimals) , tick: ticker}))
+      setError(t('errors.assets.balance', {amount: prettyAssetAmount(balance, decimals) , tick: ticker}))
       return
     }
     setError('')
@@ -107,7 +107,7 @@ export default function AppAssetBurn() {
               {t('apps.assets.confBurn')}
             </Text>
             <Text centered wrap color='neutral-500'>
-              {t('apps.assets.burning', {amount: prettyAssetAmount(amount, decimals), id:(ticker || name)}) }
+              {t('apps.assets.amountBurn', {amount: prettyAssetAmount(amount, decimals), id:(ticker || name)}) }
             </Text>
           </FlexCol>
           <FlexRow>

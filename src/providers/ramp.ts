@@ -93,6 +93,7 @@ export interface RampOrder {
   transfer_code: string
   destination_type: RampDestinationType | null
   destination_crypto_address: string | null
+  deposit_txid?: string | null // off-ramp: the Arkade txid credited as the deposit
   deposit_iban: string | null
   deposit_bic: string | null
   deposit_beneficiary: string | null
@@ -135,7 +136,14 @@ const PLAIN_TICKER: Record<string, string> = Object.fromEntries(
   Object.entries(ARKADE_TICKER).map(([plain, arkade]) => [arkade, plain]),
 )
 
-const toArkadeTicker = (asset: string): string => ARKADE_TICKER[asset.toUpperCase()] ?? asset
+// Sending the plain ticker alongside an Arkade address makes ramp reject the
+// order (`destination_crypto_address is not a valid Bitcoin address`). The
+// legacy Chimera API encodes the same fact as a `-ARK` suffix instead
+// (providers/bankTransfer.ts).
+const toArkadeTicker = (asset: string): string => {
+  const upper = asset.toUpperCase()
+  return ARKADE_TICKER[upper] ?? upper
+}
 const fromArkadeTicker = (ticker: string): string => PLAIN_TICKER[ticker] ?? ticker
 
 const normalizeOrderAsset = <T extends { asset: string | null }>(order: T): T =>
@@ -156,6 +164,20 @@ export interface RampAssetsResponse {
 }
 
 export const getRampAssets = (): Promise<RampAssetsResponse> => request('/assets')
+
+// ─── Limits ─────────────────────────────────────────────────────────────────
+
+// The minimum order and KYC threshold ramp enforces at order creation. They're
+// configured in CHF; `by_currency` converts them at ramp's own FX rates (the
+// minimum rounded up, the threshold down), so checking against these agrees
+// with ramp. Amounts are decimal strings.
+export interface RampLimits {
+  min_order_chf: string
+  kyc_threshold_chf: string
+  by_currency: Record<string, { min_order: string; kyc_threshold: string }>
+}
+
+export const getRampLimits = (): Promise<RampLimits> => request('/limits')
 
 // ─── On-ramp (fiat -> crypto) ───────────────────────────────────────────────
 
@@ -239,6 +261,14 @@ export const createOffRampOrder = async (payload: CreateOffRampOrderPayload): Pr
 
 export const getRampOrderStatus = (token: string): Promise<RampOrder> =>
   request<{ order: RampOrder }>(`/order/${encodeURIComponent(token)}`).then((r) => normalizeOrderAsset(r.order))
+
+// Every off-ramp order shares one deposit address, so ramp only credits a
+// deposit once it's told which Arkade transaction paid it. Safe to repeat.
+export const reportRampDeposit = (token: string, txid: string): Promise<RampOrder> =>
+  request<{ order: RampOrder }>(`/order/${encodeURIComponent(token)}/deposit`, {
+    method: 'POST',
+    body: JSON.stringify({ txid }),
+  }).then((r) => normalizeOrderAsset(r.order))
 
 // ─── Gift cards ─────────────────────────────────────────────────────────────
 

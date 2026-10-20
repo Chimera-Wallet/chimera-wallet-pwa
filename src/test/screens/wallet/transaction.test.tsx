@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
 import '../../../lib/i18n'
 import Transaction from '../../../screens/Wallet/Transaction'
 import { FlowContext } from '../../../providers/flow'
@@ -15,6 +15,7 @@ import {
 import { AspContext } from '../../../providers/asp'
 import { WalletContext } from '../../../providers/wallet'
 import { NavigationContext } from '../../../providers/navigation'
+import { getTxNote, setTxNote } from '../../../lib/txNotes'
 
 // These pin Chimera-specific behaviour that an upstream Arkade merge has
 // silently reverted before: Confirmed / Pending / Failed statuses, amounts in
@@ -23,12 +24,12 @@ import { NavigationContext } from '../../../providers/navigation'
 
 type TxInfo = typeof mockFlowContextValue.txInfo
 
-const renderTx = (txInfo: TxInfo, txs: TxInfo[] = [txInfo]) =>
+const renderTx = (txInfo: TxInfo, txs: TxInfo[] = [txInfo], walletOverrides: object = {}) =>
   render(
     <NavigationContext.Provider value={mockNavigationContextValue}>
       <AspContext.Provider value={mockAspContextValue}>
         <FlowContext.Provider value={{ ...mockFlowContextValue, txInfo }}>
-          <WalletContext.Provider value={{ ...mockWalletContextValue, txs }}>
+          <WalletContext.Provider value={{ ...mockWalletContextValue, txs, ...walletOverrides } as any}>
             <Transaction />
           </WalletContext.Provider>
         </FlowContext.Provider>
@@ -100,6 +101,23 @@ describe('Transaction screen', () => {
     expect(screen.queryByText('Sent')).not.toBeInTheDocument()
   })
 
+  it('applies 18-decimal metadata to wrapped asset amounts', () => {
+    const assetId = mockIssuanceTxInfo.assets[0].assetId
+    const txInfo = {
+      ...mockIssuanceTxInfo,
+      type: 'received',
+      assets: [{ assetId, amount: BigInt(9_970_000_000) }],
+    } as TxInfo
+    const assetMetadataCache = new Map([
+      [assetId, { metadata: { ticker: 'ETH-CX', name: 'Ethereum', decimals: 18 }, cachedAt: Date.now() }],
+    ])
+
+    renderTx(txInfo, [txInfo], { assetMetadataCache })
+
+    expect(screen.getByText('0.00000000997 ETH-CX')).toBeInTheDocument()
+    expect(screen.queryByText('9,970,000,000 ETH-CX')).not.toBeInTheDocument()
+  })
+
   it('renders burn transaction with correct direction', () => {
     const mockBurnTxInfo = {
       ...mockIssuanceTxInfo,
@@ -110,5 +128,38 @@ describe('Transaction screen', () => {
     renderTx(mockBurnTxInfo as TxInfo)
     expect(screen.getByText('Burn')).toBeInTheDocument()
     expect(screen.queryByText('Sent')).not.toBeInTheDocument()
+  })
+})
+
+describe('Transaction note', () => {
+  afterEach(() => localStorage.clear())
+
+  it('adds a note to a past transaction', () => {
+    renderTx(mockTxInfo)
+
+    fireEvent.click(screen.getByText('Add note'))
+    fireEvent.change(screen.getByTestId('tx-note-input'), { target: { value: 'Invoice 42' } })
+    fireEvent.click(screen.getByText('Save note'))
+
+    expect(getTxNote(`received:${mockTxId}`)).toBe('Invoice 42')
+    expect(screen.getByTestId('tx-note')).toHaveTextContent('Invoice 42')
+  })
+
+  it('shows and removes a saved note', () => {
+    setTxNote(`received:${mockTxId}`, 'Rent')
+    renderTx(mockTxInfo)
+
+    expect(screen.getByTestId('tx-note')).toHaveTextContent('Rent')
+    fireEvent.click(screen.getByTestId('tx-note'))
+    fireEvent.click(screen.getByText('Remove note'))
+
+    expect(getTxNote(`received:${mockTxId}`)).toBe('')
+    expect(screen.getByTestId('tx-note')).toHaveTextContent('Add note')
+  })
+
+  it('keeps notes per transaction direction', () => {
+    setTxNote(`received:${mockTxId}`, 'Rent')
+    renderTx({ ...mockTxInfo, type: 'sent' })
+    expect(screen.getByTestId('tx-note')).toHaveTextContent('Add note')
   })
 })

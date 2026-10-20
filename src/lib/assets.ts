@@ -58,6 +58,21 @@ export const ASSETS = {
 
 export type AssetSymbol = keyof typeof ASSETS
 
+/**
+ * Most fraction digits a balance is displayed with, whatever the asset's
+ * on-chain precision. Matches BTC (8) so every asset row reads the same; the
+ * config `precision` still governs unit conversion.
+ */
+export const BALANCE_DISPLAY_DECIMALS = 8
+
+/** Formats a balance with 2 to BALANCE_DISPLAY_DECIMALS fraction digits, truncating extra digits. */
+export const formatBalanceDisplay = (value: number, precision: number, locale: string): string =>
+  value.toLocaleString(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: Math.max(2, Math.min(precision, BALANCE_DISPLAY_DECIMALS)),
+    roundingMode: 'trunc',
+  })
+
 export interface EnabledAssets {
   assets: AssetConfig[]
   /** Symbols listed in the env var that aren't in ASSETS — a config typo. */
@@ -219,6 +234,55 @@ export const getAssetSymbolByAssetId = (assetId: string): AssetSymbol | undefine
 }
 
 /**
+ * The asset ids this build vouches for on its own: the configured Arkade
+ * wrapped-asset ids. They count as verified without the asset registry, so our
+ * own assets never read as "Unverified" when the registry is unreachable.
+ */
+export const getBuiltInVerifiedAssetIds = (): string[] =>
+  Object.values(WRAPPED_ASSET_IDS).filter((id): id is string => Boolean(id))
+
+/** A held Arkade asset that has no row of its own in ASSET_LIST. */
+export interface UnlistedAsset {
+  assetId: string
+  amount: bigint
+  name?: string
+  ticker?: string
+  icon?: string
+  decimals: number
+}
+
+/**
+ * Held assets the home list has no ASSET_LIST row for — anything the wallet
+ * received that isn't one of this build's offered wrapped assets.
+ *
+ * Described from on-chain metadata only. A token calling itself "USDT" must not
+ * pick up USDT's config, icon or price: trust is decided by asset id, never by
+ * ticker or name.
+ */
+export const getUnlistedHeldAssets = (
+  balances: { assetId: string; amount: bigint }[],
+  metadata: Map<string, { metadata?: { name?: unknown; ticker?: unknown; icon?: unknown; decimals?: unknown } }>,
+): UnlistedAsset[] => {
+  const listedIds = new Set(
+    ASSET_LIST.map((asset) => getWrappedAssetId(asset.symbol)).filter((id): id is string => Boolean(id)),
+  )
+  return balances
+    .filter((balance) => balance.amount > BigInt(0) && !listedIds.has(balance.assetId))
+    .map(({ assetId, amount }) => {
+      const meta = metadata.get(assetId)?.metadata
+      const decimals = typeof meta?.decimals === 'number' ? meta.decimals : 8
+      return {
+        assetId,
+        amount,
+        name: typeof meta?.name === 'string' ? meta.name : undefined,
+        ticker: typeof meta?.ticker === 'string' ? meta.ticker : undefined,
+        icon: typeof meta?.icon === 'string' ? meta.icon : undefined,
+        decimals,
+      }
+    })
+}
+
+/**
  * Display ticker for a symbol — the plain symbol, for every asset.
  *
  * Wrapped Arkade assets used to be shown with a `-CX` suffix (ETH -> ETH-CX,
@@ -229,7 +293,7 @@ export const getAssetSymbolByAssetId = (assetId: string): AssetSymbol | undefine
  * one place.
  *
  * Note this is display only — the wire tickers sent to ramp-system
- * (`USDT` -> `USDT-CX`, see providers/bankTransfer.ts) are a separate mapping
+ * (`USDT` -> `USDT-CX`, see providers/ramp.ts::toArkadeTicker) are a separate mapping
  * and must keep their suffix.
  */
 export const getDisplayTicker = (symbol: string): string => symbol.toUpperCase()
@@ -241,7 +305,8 @@ export const wrappedAmountToNumber = (amount: bigint, decimals: number): number 
   return new Decimal(amount.toString()).div(Decimal.pow(10, decimals)).toNumber()
 }
 
-export const MAX_DECIMALS = 8 // Arbitrary value to allow at least 1 sat/asset
+const DEFAULT_DECIMALS = 8
+export const MAX_DECIMALS = 18
 
 export function isValidAssetId(id: string) {
   return /^[0-9a-fA-F]{68}$/.test(id)
@@ -249,7 +314,7 @@ export function isValidAssetId(id: string) {
 
 export const isValidDecimals = (d: number): boolean => Number.isInteger(d) && d >= 0 && d <= MAX_DECIMALS
 
-export function unitsToCents(units: string, decimals = MAX_DECIMALS): bigint {
+export function unitsToCents(units: string, decimals = DEFAULT_DECIMALS): bigint {
   if (!units || units === '') return BigInt(0)
   if (!isValidDecimals(decimals)) return BigInt(units)
   const [integer, fraction = ''] = units.split('.')
@@ -257,13 +322,17 @@ export function unitsToCents(units: string, decimals = MAX_DECIMALS): bigint {
   return BigInt(integer + paddedFraction) // string + string
 }
 
-export function centsToUnits(cents: bigint, decimals = MAX_DECIMALS): string {
+export function centsToUnits(cents: bigint, decimals = DEFAULT_DECIMALS): string {
   if (!isValidDecimals(decimals)) return cents.toString()
-  if (cents < BigInt(Number.MAX_SAFE_INTEGER) && cents > BigInt(Number.MIN_SAFE_INTEGER)) {
-    const str = Decimal.div(cents, Decimal.pow(10, decimals)).toFixed(decimals)
-    return str.includes('.') ? str.replace(/\.?0+$/, '') : str // remove trailing zeros and optional dot
-  }
-  return (cents / BigInt(10) ** BigInt(decimals)).toString() // TODO: prevent truncation
+  if (cents === BigInt(0)) return '0'
+
+  const negative = cents < BigInt(0)
+  const digits = (negative ? -cents : cents).toString()
+  if (decimals === 0) return `${negative ? '-' : ''}${digits}`
+  const paddedDigits = digits.padStart(decimals + 1, '0')
+  const integer = paddedDigits.slice(0, -decimals) || '0'
+  const fraction = paddedDigits.slice(-decimals).replace(/0+$/, '')
+  return `${negative ? '-' : ''}${integer}${fraction ? `.${fraction}` : ''}`
 }
 
 export const truncatedAssetId = (id: string): string => {
@@ -274,7 +343,7 @@ export const truncatedAssetId = (id: string): string => {
 const hideDots = (value: bigint): string => {
   const str = value.toString()
   const length = str.length * 2 > 6 ? str.length * 2 : 6
-  return '-�'.repeat(length)
+  return '·'.repeat(length)
 }
 
 export const prettyAssetAmountHide = (value: bigint, suffix: string): string => {
@@ -283,14 +352,14 @@ export const prettyAssetAmountHide = (value: bigint, suffix: string): string => 
   return suffix ? `${dots} ${suffix}` : dots
 }
 
-export const prettyAssetNumber = (num?: string | number, maximumFractionDigits = MAX_DECIMALS): string => {
+export const prettyAssetNumber = (num?: string | number, maximumFractionDigits = DEFAULT_DECIMALS): string => {
   if (num === undefined || num === null) return '0'
   if (typeof num === 'number') num = num.toString()
   let [integer, fraction = ''] = num.split('.')
   integer = integer.replace(/[^0-9-]+/g, '') // remove non-digit and non-negative sign characters
   const negative = integer === '-0'
   const paddedFraction = fraction
-    .padEnd(MAX_DECIMALS, '0') // fill with zeros to ensure consistent formatting
+    .padEnd(maximumFractionDigits, '0') // fill with zeros to ensure consistent formatting
     .slice(0, maximumFractionDigits) // slice to the desired number of decimals
     .replace(/0+$/, '') // remove trailing zeros
     .replace(/\.$/, '') // if the number ends with a dot, remove it

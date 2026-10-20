@@ -7,19 +7,17 @@
  * - Integration with existing KYC system
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
-  getBankTransferConfig,
-  getBankTransferConfigSync,
   getMinimumOrderValue,
-  meetsMinimumAmount,
+  limitsFor,
   requiresKyc,
   DEFAULT_BANK_CURRENCY,
-  type BankTransferConfig,
   type BankCircuit,
   type BankCurrency,
 } from '../lib/bankTransferConfig'
-import { getKycEmail, type KycStatus } from '../lib/kyc'
+import { fetchAuthoritativeKycStatus, type KycStatus } from '../lib/kyc'
+import { useBankTransferConfig } from './useBankTransferConfig'
 
 export interface BankTransferValidation {
   /** Whether the amount meets minimum requirements */
@@ -46,6 +44,8 @@ interface UseBankTransferValidationParams {
   amount: number
   currency?: BankCurrency
   circuit?: BankCircuit
+  /** Set false to skip the KYC status request while the result isn't needed. */
+  enabled?: boolean
 }
 
 /**
@@ -58,40 +58,45 @@ export function useBankTransferValidation({
   amount,
   currency = DEFAULT_BANK_CURRENCY,
   circuit,
+  enabled = true,
 }: UseBankTransferValidationParams): BankTransferValidation {
-  const [config, setConfig] = useState<BankTransferConfig>(getBankTransferConfigSync())
-  // Refresh counter triggers re-read of email from localStorage
+  // The provider's limits (ramp's, when it's the provider): every check below
+  // reads this one config.
+  const config = useBankTransferConfig()
+  const [kycStatus, setKycStatus] = useState<KycStatus>('not_started')
+  // Refresh counter triggers a server-side KYC status check.
   const [refreshCount, setRefreshCount] = useState(0)
 
-  // Load config on mount
-  useEffect(() => {
-    getBankTransferConfig().then(setConfig)
-  }, [])
-
-  // Refresh KYC status (re-reads email from localStorage)
+  // Refresh KYC status from the provider rather than treating local data as proof.
   const refreshKycStatus = useCallback(() => {
     setRefreshCount((c) => c + 1)
   }, [])
 
-  // Email presence is the source of truth for KYC verification
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const kycEmail = useMemo(() => getKycEmail(), [refreshCount])
-  const kycVerified = !!kycEmail
-  // Derive kycStatus for interface compatibility
-  const kycStatus: KycStatus = kycVerified ? 'confirmed' : 'not_started'
+  useEffect(() => {
+    if (!enabled) return
+    let cancelled = false
+    fetchAuthoritativeKycStatus().then((status) => {
+      if (!cancelled) setKycStatus(status ?? 'not_started')
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [refreshCount, enabled])
+
+  const kycVerified = kycStatus === 'confirmed'
 
   // Calculate validation state
-  const minimumAmount = getMinimumOrderValue(circuit)
-  const isValidAmount = amount > 0 && meetsMinimumAmount(amount, circuit)
-  const kycRequired = requiresKyc(amount)
+  const { kycThreshold } = limitsFor(config, currency)
+  const minimumAmount = getMinimumOrderValue(config, circuit, currency)
+  const isValidAmount = amount > 0 && amount >= minimumAmount
+  const kycRequired = requiresKyc(config, amount, currency)
   const canProceed = isValidAmount && (!kycRequired || kycVerified)
 
-  // Generate error message (user-facing messages unchanged)
   let errorMessage: string | null = null
   if (amount > 0 && !isValidAmount) {
     errorMessage = `Minimum amount is ${minimumAmount} ${currency}`
   } else if (kycRequired && !kycVerified) {
-    errorMessage = `Amounts over ${config.kycThreshold} ${currency} require KYC verification.`
+    errorMessage = `Amounts of ${kycThreshold} ${currency} or more require KYC verification.`
   }
 
   return {
@@ -102,28 +107,7 @@ export function useBankTransferValidation({
     canProceed,
     errorMessage,
     minimumAmount,
-    kycThreshold: config.kycThreshold,
+    kycThreshold,
     refreshKycStatus,
-  }
-}
-
-/**
- * Synchronous validation helper (for non-hook contexts)
- *
- * @param amount - The amount to validate
- * @returns Object with validation results
- */
-export function validateBankTransferAmount(amount: number): {
-  isValid: boolean
-  kycRequired: boolean
-  minimumAmount: number
-  kycThreshold: number
-} {
-  const config = getBankTransferConfigSync()
-  return {
-    isValid: amount >= config.minimumOrderValue,
-    kycRequired: amount > config.kycThreshold,
-    minimumAmount: config.minimumOrderValue,
-    kycThreshold: config.kycThreshold,
   }
 }

@@ -1,4 +1,4 @@
-import { ReactNode, createContext, useContext, useEffect, useRef } from 'react'
+import { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react'
 import { consoleError } from '../lib/logs'
 import { WalletContext } from './wallet'
 import { SwapsContext } from './swaps'
@@ -36,6 +36,11 @@ type LimitAmounts = {
 
 type LimitTxTypes = Record<TxType, LimitAmounts>
 
+export const getAspLimit = (override: string | undefined, serverLimit: bigint | undefined, fallback: bigint): number => {
+  if (override !== undefined && override !== '') return Number(override)
+  return Number(serverLimit ?? fallback)
+}
+
 export const LimitsContext = createContext<LimitsContextProps>({
   amountIsAboveMaxLimit: () => false,
   amountIsBelowMinLimit: () => false,
@@ -57,6 +62,7 @@ export const LimitsProvider = ({ children }: { children: ReactNode }) => {
   const { aspInfo } = useContext(AspContext)
   const { svcWallet } = useContext(WalletContext)
   const { arkadeSwaps, connected } = useContext(SwapsContext)
+  const [limitsVersion, setLimitsVersion] = useState(0)
 
   const limits = useRef<LimitTxTypes>({
     arkToBtc: { min: 0, max: 0 },
@@ -65,28 +71,25 @@ export const LimitsProvider = ({ children }: { children: ReactNode }) => {
     utxo: { min: 0, max: -1 },
     vtxo: { min: 0, max: -1 },
   })
-  // Track whether swap limits have been fetched to avoid duplicate /submarine calls
-  const swapLimitsFetched = useRef(false)
-
-  // update limits when aspInfo or svcWallet changes
+  // ASP transaction limits do not depend on swap connectivity.
   useEffect(() => {
-    if (!aspInfo.network || !svcWallet || !connected) return
+    if (!aspInfo.network || !svcWallet) return
 
     limits.current.utxo = {
-      min: Number(import.meta.env.VITE_UTXO_MIN_AMOUNT || aspInfo.utxoMinAmount || aspInfo.dust || -1),
-      max: Number(import.meta.env.VITE_UTXO_MAX_AMOUNT || aspInfo.utxoMaxAmount || -1),
+      min: getAspLimit(import.meta.env.VITE_UTXO_MIN_AMOUNT, aspInfo.utxoMinAmount ?? aspInfo.dust, BigInt(-1)),
+      max: getAspLimit(import.meta.env.VITE_UTXO_MAX_AMOUNT, aspInfo.utxoMaxAmount, BigInt(-1)),
     }
 
     limits.current.vtxo = {
-      min: Number(import.meta.env.VITE_VTXO_MIN_AMOUNT || aspInfo.vtxoMinAmount || aspInfo.dust || -1),
-      max: Number(import.meta.env.VITE_VTXO_MAX_AMOUNT || aspInfo.vtxoMaxAmount || -1),
+      min: getAspLimit(import.meta.env.VITE_VTXO_MIN_AMOUNT, aspInfo.vtxoMinAmount ?? aspInfo.dust, BigInt(-1)),
+      max: getAspLimit(import.meta.env.VITE_VTXO_MAX_AMOUNT, aspInfo.vtxoMaxAmount, BigInt(-1)),
     }
-  }, [aspInfo.network, svcWallet, connected])
+    setLimitsVersion((version) => version + 1)
+  }, [aspInfo.dust, aspInfo.network, aspInfo.utxoMaxAmount, aspInfo.utxoMinAmount, aspInfo.vtxoMaxAmount, aspInfo.vtxoMinAmount, svcWallet])
 
   // update limits when arkadeSwaps or connected changes
   useEffect(() => {
-    if (!arkadeSwaps) return
-    if (!connected) {
+    if (!connected || !arkadeSwaps) {
       limits.current.swap = {
         ...limits.current.swap,
         min: 0,
@@ -102,6 +105,7 @@ export const LimitsProvider = ({ children }: { children: ReactNode }) => {
         min: 0,
         max: 0,
       }
+      setLimitsVersion((version) => version + 1)
     } else {
       arkadeSwaps
         .getLimits()
@@ -112,6 +116,7 @@ export const LimitsProvider = ({ children }: { children: ReactNode }) => {
             min: res.min,
             max: res.max,
           }
+          setLimitsVersion((version) => version + 1)
         })
         .catch(consoleError)
       arkadeSwaps
@@ -123,6 +128,7 @@ export const LimitsProvider = ({ children }: { children: ReactNode }) => {
             min: res.min,
             max: res.max,
           }
+          setLimitsVersion((version) => version + 1)
         })
         .catch(consoleError)
       arkadeSwaps
@@ -134,6 +140,7 @@ export const LimitsProvider = ({ children }: { children: ReactNode }) => {
             min: res.min,
             max: res.max,
           }
+          setLimitsVersion((version) => version + 1)
         })
         .catch(consoleError)
     }

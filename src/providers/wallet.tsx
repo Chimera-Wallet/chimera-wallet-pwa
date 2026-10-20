@@ -1,4 +1,4 @@
-import { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react'
+import { ReactNode, createContext, useContext, useEffect, useReducer, useRef, useState } from 'react'
 import {
   ArkNote,
   ServiceWorkerWallet,
@@ -44,6 +44,8 @@ import { ConfigContext } from './config'
 import { defaultPassword, getDelegateUrl, isDelegationEnabled, maxPercentage } from '../lib/constants'
 import { setLoadingStatus } from '../lib/loadingStatus'
 import { assetSwapRepository, type WalletAssetSwap } from '../lib/swapRepository'
+import { assetSwapResolver } from '../lib/activity/assetSwapResolver'
+import { fetchRegistryIds, getCachedRegistryIds, mergeVerifiedIds } from '../lib/assetRegistry'
 
 
 // Thrown by initWallet when we refuse to boot the service worker because the
@@ -63,6 +65,7 @@ import { IndexedDBStorageAdapter } from '@arkade-os/sdk/adapters/indexedDB'
 import { Indexer } from '../lib/indexer'
 import { IndexedDbSwapRepository, migrateToSwapRepository, Network } from '@arkade-os/boltz-swap'
 import { useTranslation } from 'react-i18next'
+import { createRequestGeneration } from '../lib/requestGeneration'
 
 const SERVICE_WORKER_ACTIVATION_TIMEOUT_MS = 5_000
 const MESSAGE_BUS_INIT_TIMEOUT_MS = 30_000
@@ -128,6 +131,7 @@ interface WalletContextProps {
   assetMetadataCache: Map<string, CachedAssetDetails>
   setCacheEntry: (assetId: string, details: AssetDetails) => CachedAssetDetails
   iconApprovalManager: AssetIconApprovalManager
+  isAssetVerified: (assetId?: string) => boolean
   dataReady: boolean
   loadError: string | null
   dismissLoadError: () => void
@@ -157,6 +161,7 @@ export const WalletContext = createContext<WalletContextProps>({
   assetMetadataCache: new Map(),
   setCacheEntry: () => ({ cachedAt: 0 }) as CachedAssetDetails,
   iconApprovalManager: new AssetIconApprovalManager(),
+  isAssetVerified: () => true,
   dataReady: false,
   loadError: null,
   dismissLoadError: () => {},
@@ -187,6 +192,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [vtxos, setVtxos] = useState<{ spendable: Vtxo[]; spent: Vtxo[] }>({ spendable: [], spent: [] })
   const [assetBalances, setAssetBalances] = useState<WalletBalance['assets']>([])
   const [assetSwaps, setAssetSwaps] = useState<WalletAssetSwap[]>([])
+  // Bumped whenever the verified set changes, so consumers of isAssetVerified re-render.
+  const [, bumpVerifiedAssets] = useReducer((n: number) => n + 1, 0)
 
 
   const [vtxoManager, setVtxoManager] = useState<IVtxoManager>()
@@ -198,9 +205,9 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   // read wallet from storage
   const assetMetadataCache = useRef<Map<string, CachedAssetDetails>>(readAssetMetadataFromStorage() ?? new Map())
   const iconApprovalManager = useRef(new AssetIconApprovalManager()).current
-  const verifiedAssetsFetched = useRef(false)
   const statusPingInterval = useRef<ReturnType<typeof setInterval>>()
   const reloadTimerRef = useRef<ReturnType<typeof setTimeout>>()
+  const reloadGenerationRef = useRef(createRequestGeneration())
   const swMessageHandlerRef = useRef<(event: MessageEvent) => void>()
   const reinitInProgress = useRef(false)
   const boardingInFlight = useRef(false)
@@ -346,26 +353,29 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     computeThresholds()
   }, [initialized, vtxos, svcWallet, aspInfo])
 
-  // fetch verified assets list once on startup
+  // Verified asset ids: this build's wrapped assets plus the asset registries.
+  // Seeded synchronously from the built-in ids and the last cached registries so
+  // our own assets never flash "Unverified", then refreshed from the network.
   useEffect(() => {
-    const verifiedUrl = import.meta.env.VITE_VERIFIED_ASSETS_URL
-    if (!verifiedUrl || verifiedAssetsFetched.current) return
-    if (!initialized) return
-    verifiedAssetsFetched.current = true
+    const network = aspInfo.network as NetworkName | undefined
+    if (!network) return
+    let cancelled = false
+    const apply = (registryIds: string[]) => {
+      iconApprovalManager.setVerifiedAssets(mergeVerifiedIds(registryIds))
+      bumpVerifiedAssets()
+    }
+    apply(getCachedRegistryIds(network))
+    fetchRegistryIds(network)
+      .then((ids) => {
+        if (!cancelled) apply(ids)
+      })
+      .catch((err) => consoleError(err, 'Failed to fetch verified asset registry'))
+    return () => {
+      cancelled = true
+    }
+  }, [aspInfo.network])
 
-    fetch(verifiedUrl)
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json()
-      })
-      .then((data) => {
-        if (!Array.isArray(data) || !data.every((id) => typeof id === 'string')) {
-          throw new Error('Invalid verified assets response')
-        }
-        iconApprovalManager.setVerifiedAssets(data)
-      })
-      .catch((err) => consoleError(err, 'Failed to fetch verified assets'))
-  }, [initialized])
+  const isAssetVerified = (assetId?: string): boolean => !assetId || iconApprovalManager.isVerified(assetId)
 
   // if ark note is present in the URL, decode it and set the note info
   useEffect(() => {
@@ -425,26 +435,33 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
   const reloadWallet = async (swWallet = svcWallet) => {
     if (!swWallet) return
+    const generation = reloadGenerationRef.current.begin()
     const isFirstLoad = !hasLoadedOnce.current
     if (isFirstLoad) setLoadError(null)
     try {
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.fetchCoins'))
-      const vtxos = await getVtxos(swWallet)
+      const [vtxos, txs, { total, assets }] = await Promise.all([
+        getVtxos(swWallet),
+        getTxHistory(swWallet, assetSwaps),
+        getBalance(swWallet),
+      ])
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.fetchTrans'))
-      const txs = await getTxHistory(swWallet)
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.updBal'))
-      const { total, assets } = await getBalance(swWallet)
       // prefetch asset metadata before triggering re-renders
       if (isFirstLoad && assets.length > 0) setLoadingStatus(t('lib.wallet.loadingMeta'))
-      for (const ab of assets) {
+      const metadata = await Promise.all(assets.map(async (ab) => {
         const cached = assetMetadataCache.current.get(ab.assetId)
-        if (cached && Date.now() - cached.cachedAt < ASSET_METADATA_TTL_MS) continue
+        if (cached && Date.now() - cached.cachedAt < ASSET_METADATA_TTL_MS) return
         try {
-          const meta = await swWallet.assetManager.getAssetDetails(ab.assetId)
-          if (meta) setCacheEntry(ab.assetId, meta)
+          return await swWallet.assetManager.getAssetDetails(ab.assetId)
         } catch (err) {
           consoleError(err, `error prefetching metadata for ${ab.assetId}`)
         }
+      }))
+      if (!reloadGenerationRef.current.isCurrent(generation)) return
+      for (let index = 0; index < metadata.length; index++) {
+        const details = metadata[index]
+        if (details) setCacheEntry(assets[index].assetId, details)
       }
       setBalance(total)
       setAssetBalances(assets)
@@ -452,21 +469,27 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         updateConfig({ ...config, apps: { ...config.apps, assets: { enabled: true } } })
       }
       setVtxos(vtxos)
-      // Only replace existing transactions if we received data back.
-      // During an ARK round the indexer can briefly return an empty list
-      // while processing, causing transactions to flicker off then back on.
-      setTxs((prev) => (txs.length > 0 ? txs : prev))
+      setTxs(txs)
       if (!hasLoadedOnce.current) {
         hasLoadedOnce.current = true
         setDataReady(true)
       }
     } catch (err) {
+      if (!reloadGenerationRef.current.isCurrent(generation)) return
       consoleError(err, 'Error reloading wallet')
       if (!hasLoadedOnce.current) {
         setLoadError(t('lib.wallet.unableLoadWall'))
       }
     }
   }
+
+  const assetSwapsRef = useRef(assetSwaps)
+  useEffect(() => {
+    if (assetSwapsRef.current === assetSwaps) return
+    assetSwapsRef.current = assetSwaps
+    if (dataReady) reloadWallet().catch((err) => consoleError(err, 'Error reloading wallet after swap update'))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assetSwaps])
 
   const dismissLoadError = () => {
     setLoadError(null)
@@ -538,6 +561,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         settlementConfig: { vtxoThreshold: wallet.thresholdMs ? Math.floor(wallet.thresholdMs / 1000) : 1 },
       })
 
+      svcWallet.activity.use(assetSwapResolver())
+
       if (!skipMigration) {
         setLoadingStatus(t('lib.wallet.migrateData'))
         try {
@@ -575,6 +600,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         return false
       }
 
+      // Prevent an in-flight reload for the previous wallet from committing.
+      reloadGenerationRef.current.begin()
       setSvcWallet(svcWallet)
       setVtxoManager(vtxoMgr)
       setInitialized(walletInitialized)
@@ -931,6 +958,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         assetMetadataCache: assetMetadataCache.current,
         setCacheEntry,
         iconApprovalManager,
+        isAssetVerified,
         dataReady,
         loadError,
         dismissLoadError,

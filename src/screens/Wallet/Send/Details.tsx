@@ -28,6 +28,8 @@ import { type LnSendRequest } from '../../../lib/lnSwap'
 import { saveTransactionActivityMetadata } from '../../../lib/storage'
 import type { LnSendActivity } from '../../../lib/types'
 import { TRANSFER_METHOD } from '../../../lib/transferMethods'
+import { calculateCollaborativeExitOutput } from '../../../lib/collaborativeExit'
+import UnverifiedAssetNotice from '../../../components/UnverifiedAssetNotice'
 
 
 export default function SendDetails() {
@@ -37,7 +39,7 @@ export default function SendDetails() {
   const isAssetSend = Boolean(sendInfo.assets?.length)
   const { lnSwapsAllowed, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
   const { payInvoice, payBtc } = useContext(SwapsContext)
-  const { assetMetadataCache, balance, svcWallet } = useContext(WalletContext)
+  const { assetMetadataCache, balance, svcWallet, isAssetVerified } = useContext(WalletContext)
   const { notifyResult } = useContext(TxResultContext)
 
   const assetId = sendInfo.assets?.[0]?.assetId
@@ -73,6 +75,7 @@ export default function SendDetails() {
       return
     }
     if (!satoshis) return setError(t('errors.general.missingAmount'))
+    setError('')
     const destination =
       method === TRANSFER_METHOD.ark
         ? arkAddress && vtxoTxsAllowed() ? arkAddress : ''
@@ -87,15 +90,16 @@ export default function SendDetails() {
                 : address && utxoTxsAllowed()
                   ? address
                   : ''
+    const isCollaborativeExit = destination === address && !pendingSwap
     const direction =
       destination === arkAddress
-        ? t('common.directions.arkade')
+        ? t('common.general.directions.arkade')
         : destination === invoice
-          ? t('common.directions.lightningSwap')
+          ? t('common.general.directions.lightningSwap')
           : pendingSwap?.type === 'chain'
-            ? t('common.directions.mainnetSwap')
+            ? t('common.general.directions.mainnetSwap')
             : destination === address
-              ? t('common.directions.mainnetPay')
+              ? t('common.general.directions.mainnetPay')
               : ''
     const total = pendingSwap
       ? pendingSwap.type === 'chain'
@@ -106,7 +110,17 @@ export default function SendDetails() {
       : pendingLnSend
         ? pendingLnSend.fundAmount
         : satoshis
-    const amount = direction === t('common.general.directions.mainnetPay') ? satoshis - calcOnchainOutputFee() : satoshis
+    let amount = satoshis
+    if (isCollaborativeExit) {
+      try {
+        amount = calculateCollaborativeExitOutput(satoshis, calcOnchainOutputFee())
+      } catch (err) {
+        setDetails(undefined)
+        setButtonLabel(t('errors.network.tooLow'))
+        setError(extractError(err))
+        return
+      }
+    }
     const fees = total - amount > 0 ? total - amount : 0
     const swapId = pendingSwap?.id ?? pendingLnSend?.rfqId
     setDetails({
@@ -151,7 +165,7 @@ export default function SendDetails() {
   useEffect(() => {
     if (!sendDone) return
     if (error) {
-      notifyResult(false, t('common.notifications.failedTransaction')).then(() => setSending(false))
+      notifyResult(false, t('common.notifications.bank.failedTransaction')).then(() => setSending(false))
       return
     }
     navigate(Pages.SendSuccess)
@@ -250,11 +264,11 @@ export default function SendDetails() {
       <Content>
         {sending ? (
           details?.destination === invoice ? (
-            <Loading text={t('common.directions.lightningPay')} />
+            <Loading text={t('common.general.directions.lightningPay')} />
           ) : details?.destination === arkAddress ? (
-            <Loading text={t('common.directions.arkade')} />
+            <Loading text={t('common.general.directions.arkade')} />
           ) : (
-            <Loading text={t('common.directions.mainnetPay')} />
+            <Loading text={t('common.general.directions.mainnetPay')} />
           )
         ) : (
           <Padded>
@@ -268,6 +282,7 @@ export default function SendDetails() {
                   <Text bold testId='send-details-asset-amount'>
                     {prettyAssetAmount(assetAmountValue, assetMeta?.metadata?.decimals ?? 8)} {assetTicker}
                   </Text>
+                  {assetId && !isAssetVerified(assetId) ? <UnverifiedAssetNotice assetId={assetId} /> : null}
                 </FlexCol>
               ) : null}
               <Details details={details} />

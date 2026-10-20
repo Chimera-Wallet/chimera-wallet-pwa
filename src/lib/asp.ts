@@ -10,6 +10,7 @@ import {
   DelegateContractHandler,
   IVtxoManager,
   Asset,
+  sdkVersion,
 } from '@arkade-os/sdk'
 import { Addresses, Tx, Vtxo } from './types'
 import { AspInfo } from '../providers/asp'
@@ -18,6 +19,8 @@ import { getConfirmedAndNotExpiredUtxos } from './utxo'
 import * as Sentry from '@sentry/react'
 import { hex } from '@scure/base'
 import { toXOnlyHex } from './keys'
+import { activitiesToTxs, getActivities } from './activityHistory'
+import type { WalletAssetSwap } from './swapRepository'
 
 const emptyFees: FeeInfo = {
   intentFee: { offchainInput: '', offchainOutput: '', onchainInput: '', onchainOutput: '' },
@@ -81,13 +84,7 @@ export const collaborativeExit = async (wallet: IWallet, amount: number, address
   try {
     return await wallet.settle({ inputs: selectedVtxos, outputs })
   } catch (error) {
-    await captureSettleError(error, wallet, 'collaborativeExit', {
-      amount,
-      address,
-      selectedAmount,
-      changeAmount,
-      selectedVtxos: serializeForSentry(selectedVtxos),
-    })
+    reportSettlementFailure('collaborativeExit')
     throw error
   }
 }
@@ -127,14 +124,7 @@ export const collaborativeExitWithFees = async (
   try {
     return await wallet.settle({ inputs: selectedVtxos, outputs })
   } catch (error) {
-    await captureSettleError(error, wallet, 'collaborativeExitWithFees', {
-      inputAmount,
-      outputAmount,
-      address,
-      selectedAmount,
-      changeAmount,
-      selectedVtxos: serializeForSentry(selectedVtxos),
-    })
+    reportSettlementFailure('collaborativeExitWithFees')
     throw error
   }
 }
@@ -157,44 +147,15 @@ export const getBalance = async (wallet: IWallet): Promise<WalletBalance> => {
   return await wallet.getBalance()
 }
 
-export const getTxHistory = async (wallet: IWallet): Promise<Tx[]> => {
-  const txs: Tx[] = []
+
+export const getTxHistory = async (wallet: IWallet, swaps: WalletAssetSwap[] = []): Promise<Tx[]> => {
   try {
-    const res = await wallet.getTransactionHistory()
-    if (!res) return []
-    for (const tx of res) {
-      const date = new Date(tx.createdAt)
-      const unix = Math.floor(date.getTime() / 1000)
-      const { key, settled, type, amount } = tx
-      const explorable = key.boardingTxid ? key.boardingTxid : key.commitmentTxid ? key.commitmentTxid : undefined
-      const assets = tx.assets?.map((a) => ({ assetId: a.assetId, amount: a.amount }))
-      const isSentTx = type === 'SENT'
-      const txSettled = isSentTx ? true : settled // show all sent tx as settled
-      txs.push({
-        amount: Math.abs(amount),
-        assets,
-        boardingTxid: key.boardingTxid,
-        redeemTxid: key.arkTxid,
-        roundTxid: key.commitmentTxid,
-        createdAt: unix,
-        explorable,
-        preconfirmed: !txSettled,
-        settled: txSettled,
-        type: type.toLowerCase(),
-      })
-    }
+    const activities = await getActivities(wallet)
+    return activitiesToTxs(activities, swaps)
   } catch (err) {
     consoleError(err, 'error getting tx history')
     return []
   }
-  // sort by date, if have same date, put 'received' txs first
-  txs.sort((a, b) => {
-    if (a.createdAt === b.createdAt) return a.type === 'sent' ? -1 : 1
-    if (b.createdAt === 0) return 1 // tx with no date go to the top
-    if (a.createdAt === 0) return -1 // tx with no date go to the top
-    return a.createdAt > b.createdAt ? -1 : 1
-  })
-  return txs
 }
 
 export const getVtxos = async (wallet: ServiceWorkerWallet): Promise<{ spendable: Vtxo[]; spent: Vtxo[] }> => {
@@ -230,12 +191,7 @@ export const redeemNotes = async (wallet: IWallet, notes: string[]): Promise<voi
       outputs: [{ address: offchainAddr, amount }],
     })
   } catch (error) {
-    await captureSettleError(error, wallet, 'redeemNotes', {
-      notesCount: notes.length,
-      amount: amount.toString(),
-      offchainAddr,
-      inputs: serializeForSentry(inputs),
-    })
+    reportSettlementFailure('redeemNotes')
     throw error
   }
 }
@@ -283,12 +239,7 @@ export const settleVtxos = async (
   try {
     await wallet.settle({ inputs, outputs }, console.log)
   } catch (error) {
-    await captureSettleError(error, wallet, 'settleVtxos', {
-      amount: amount.toString(),
-      dustAmount: dustAmount.toString(),
-      thresholdMs,
-      inputs: serializeForSentry(inputs),
-    })
+    reportSettlementFailure('settleVtxos')
     throw error
   }
 }
@@ -306,7 +257,7 @@ export const settleBoardingUtxos = async (wallet: IWallet, dustAmount: bigint): 
   try {
     await wallet.settle({ inputs, outputs }, console.log)
   } catch (error) {
-    await captureSettleError(error, wallet, 'settleBoardingUtxos', { inputCount: inputs.length })
+    reportSettlementFailure('settleBoardingUtxos')
     throw error
   }
   return true
@@ -351,25 +302,11 @@ export const delegateVtxos = async (wallet: ServiceWorkerWallet): Promise<void> 
   }
 }
 
-const serializeForSentry = (value: any): string => {
-  return JSON.stringify(value, (key, val) => (typeof val === 'bigint' ? val.toString() : val))
-}
+export const createSettlementTelemetry = (operation: string, correlationId: string = crypto.randomUUID()) => ({
+  tags: { operation, sdkVersion },
+  contexts: { settlement: { category: 'settlement_failure', correlationId } },
+})
 
-const captureSettleError = async (
-  error: unknown,
-  wallet: IWallet,
-  functionName: string,
-  baseContext: Record<string, any>,
-): Promise<void> => {
-  const settleContext: Record<string, any> = { ...baseContext }
-  try {
-    settleContext.walletAddress = await wallet.getAddress()
-  } catch {
-    // Ignore if getAddress fails
-  }
-  Sentry.captureException(error, {
-    tags: { function: functionName },
-    contexts: { settle: settleContext },
-  })
-  throw error
+const reportSettlementFailure = (operation: string): void => {
+  Sentry.captureMessage('Settlement failed', createSettlementTelemetry(operation))
 }

@@ -8,7 +8,6 @@
  */
 
 import { useContext, useEffect, useRef, useState } from 'react'
-import Decimal from 'decimal.js'
 import Content from '../../../components/Content'
 import Header from '../../../components/Header'
 import Padded from '../../../components/Padded'
@@ -31,6 +30,7 @@ import { extractError } from '../../../lib/error'
 import { consoleError } from '../../../lib/logs'
 import { requireAssetConfig } from '../../../lib/assets'
 import { requireSourceChain } from '../../../lib/sourceChains'
+import { formatBaseUnits } from '../../../lib/format'
 import {
   createWrapQuote,
   getWrapQuote,
@@ -40,11 +40,6 @@ import {
 import { useTranslation } from 'react-i18next'
 
 const POLL_INTERVAL = 8000
-
-const formatBaseUnits = (value: string | null, precision: number): string => {
-  if (!value) return ''
-  return new Decimal(value).div(new Decimal(10).pow(precision)).toString()
-}
 
 const statusLabel = (status: WrapQuote['status']): string => {
   switch (status) {
@@ -86,7 +81,7 @@ export default function WrapReceive() {
     if (!wrapRecvInfo) navigate(Pages.ReceiveAmount)
   }, [wrapRecvInfo])
 
-  if (!wrapRecvInfo || !chain || !assetConfig) return <Loading text={t('common.notifications.receive.loading')} />
+  if (!wrapRecvInfo || !chain || !assetConfig) return <Loading text={t('common.general.loading')} />
 
   const precision = assetConfig.precision
 
@@ -129,7 +124,7 @@ export default function WrapReceive() {
       return
     }
     if (!receiver) {
-      setError(t('errors.wrapService.arkadeRcvAddress'))
+      setError(t('errors.receive.wrapService.arkadeRcvAddress'))
       return
     }
     try {

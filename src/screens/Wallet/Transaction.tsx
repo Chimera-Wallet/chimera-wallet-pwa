@@ -1,4 +1,4 @@
-import { useContext } from 'react'
+import { useContext, useSyncExternalStore } from 'react'
 import Padded from '../../components/Padded'
 import { WalletContext } from '../../providers/wallet'
 import { FlowContext } from '../../providers/flow'
@@ -19,6 +19,9 @@ import { getTxStatus, TX_STATUS_DISPLAY } from '../../lib/txStatus'
 import { Tx } from '../../lib/types'
 import {useTranslation} from 'react-i18next'
 import { useLnSendReceipt } from '../../hooks/useLnSendReceipt'
+import UnverifiedBadge from '../../components/UnverifiedBadge'
+import EditableNote from '../../components/NoteEditor'
+import { getTxNote, setTxNote, subscribeTxNotes, txNoteKey } from '../../lib/txNotes'
 
 const sameTx = (a: Tx, b: Tx): boolean => {
   if (a.type !== b.type) return false
@@ -33,7 +36,7 @@ const sameTx = (a: Tx, b: Tx): boolean => {
 export default function Transaction() {
   const { txInfo } = useContext(FlowContext)
   const { aspInfo } = useContext(AspContext)
-  const { assetMetadataCache, txs, wallet } = useContext(WalletContext)
+  const { assetMetadataCache, txs, wallet, isAssetVerified } = useContext(WalletContext)
 
   const {t} = useTranslation()
 
@@ -45,6 +48,8 @@ export default function Transaction() {
   const boardingTx = Boolean(tx?.boardingTxid)
   const boardingExitDelay = Number(aspInfo?.boardingExitDelay || 0)
   const lnSendReceipt = useLnSendReceipt(tx)
+  const noteKey = tx ? txNoteKey(tx) : undefined
+  const note = useSyncExternalStore(subscribeTxNotes, () => getTxNote(noteKey))
 
   if (!tx) return <></>
   const txid = tx.boardingTxid || tx.redeemTxid || tx.roundTxid || ''
@@ -110,11 +115,20 @@ export default function Transaction() {
                           {prettyAssetAmount(a.amount, decimals)} {label}
                         </Text>
                         {name && ticker ? <TextSecondary>{name}</TextSecondary> : null}
+                        {!isAssetVerified(a.assetId) ? <UnverifiedBadge /> : null}
                       </FlexCol>
                     </FlexRow>
                   )
                 })}
               </FlexCol>
+            ) : null}
+            {noteKey ? (
+              <EditableNote
+                value={note}
+                onSave={(text) => setTxNote(noteKey, text)}
+                placeholder={t('components.note.txPlaceholder')}
+                testId='tx-note'
+              />
             ) : null}
             <Details details={details} />
           </FlexCol>

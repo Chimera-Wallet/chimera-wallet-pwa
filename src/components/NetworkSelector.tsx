@@ -51,7 +51,7 @@ export default function NetworkSelector({
         icon={selected ? <NetworkIcon network={selected} size={40} /> : undefined}
         label={label !== undefined ? label : 'Network'}
         onClick={() => setIsOpen(true)}
-        value={selectedConfig?.name || selected || t('networks.select')}
+        value={selectedConfig ? t(selectedConfig.name) : selected || t('networks.select')}
         sublabel={t(selectedConfig?.description ?? 'placeholders.addressFallback')}
         style = {style}
       />

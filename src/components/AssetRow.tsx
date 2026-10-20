@@ -1,5 +1,7 @@
 import AssetIcon from '../icons/AssetIcon'
-import { getAssetConfig, type AssetSymbol } from '../lib/assets'
+import AssetAvatar from './AssetAvatar'
+import UnverifiedBadge from './UnverifiedBadge'
+import { formatBalanceDisplay, getAssetConfig, type AssetSymbol } from '../lib/assets'
 import { Fiats } from '../lib/types'
 
 interface AssetRowProps {
@@ -13,6 +15,15 @@ interface AssetRowProps {
   badge?: string
   onClick?: () => void
   isLast?: boolean
+  /**
+   * Set for a held Arkade asset with no ASSET_LIST entry. The row is then
+   * described by its own metadata (avatar, decimals) and never by a config
+   * looked up from its symbol — an unlisted token named "USDT" must not borrow
+   * USDT's logo or precision.
+   */
+  unlisted?: { icon?: string; decimals: number }
+  /** Shows the "Unverified" badge. */
+  unverified?: boolean
 }
 
 export default function AssetRow({
@@ -26,9 +37,11 @@ export default function AssetRow({
   badge,
   onClick,
   isLast = false,
+  unlisted,
+  unverified = false,
 }: AssetRowProps) {
-  const config = getAssetConfig(symbol)
-  const precision = config?.precision || 8
+  const config = unlisted ? undefined : getAssetConfig(symbol)
+  const precision = unlisted ? unlisted.decimals : config?.precision || 8
   const displayTicker = ticker ?? symbol
 
   // Undefined means "no market data for this asset" (see AssetConfig.noMarketData),
@@ -43,13 +56,8 @@ export default function AssetRow({
   const formattedChange = `${Math.abs(percentChange ?? 0).toFixed(2)}%`
   const changeIcon = isPositive ? '/images/icons/ upGreen.png' : '/images/icons/ downRed.png'
 
-  // Format balance with asset's configured precision
-  const formatBalance = (value: number): string => {
-    return value.toLocaleString('de-CH', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: precision,
-    })
-  }
+  // Same decimal cap as BTC for every asset, whatever its on-chain precision
+  const formatBalance = (value: number): string => formatBalanceDisplay(value, precision, 'de-CH')
 
   const formatUsd = (value: number): string => {
     return value.toLocaleString('de-CH', {
@@ -79,7 +87,11 @@ export default function AssetRow({
     >
       {/* Left Section - Icon + Name */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
-        <AssetIcon symbol={symbol} size={44} />
+        {unlisted ? (
+          <AssetAvatar icon={unlisted.icon} ticker={ticker} name={name} size={44} />
+        ) : (
+          <AssetIcon symbol={symbol} size={44} />
+        )}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <span
             style={{
@@ -109,6 +121,11 @@ export default function AssetRow({
               }}
             >
               {badge}
+            </span>
+          ) : null}
+          {unverified ? (
+            <span style={{ marginTop: 2, display: 'flex' }}>
+              <UnverifiedBadge />
             </span>
           ) : null}
         </div>

@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from 'react'
 import Balance from '../../components/Balance'
+import BalanceChart from '../../components/BalanceChart'
 import ErrorMessage from '../../components/Error'
 import TransactionsList from '../../components/TransactionsList'
 import AssetList from '../../components/AssetList'
@@ -7,6 +8,8 @@ import AssetBalanceView from '../../components/AssetBalanceView'
 import { WalletContext } from '../../providers/wallet'
 import { AspContext } from '../../providers/asp'
 import { ConfigContext } from '../../providers/config'
+import { FiatContext } from '../../providers/fiat'
+import { AssetPricesContext } from '../../providers/assetPrices'
 import Padded from '../../components/Padded'
 import Content from '../../components/Content'
 import FlexCol from '../../components/FlexCol'
@@ -17,8 +20,8 @@ import FlexRow from '../../components/FlexRow'
 import { emptyRecvInfo, emptySendInfo, FlowContext } from '../../providers/flow'
 import { NavigationContext, Pages } from '../../providers/navigation'
 import { NudgeContext } from '../../providers/nudge'
-import { pwaCanInstall, usePwaInstalled, canPromptInstall, promptPwaInstall } from '../../lib/pwa'
-import { isIOS, isAndroid, getIOSBrowser } from '../../lib/browser'
+import { usePwaInstalled, canPromptInstall, promptPwaInstall } from '../../lib/pwa'
+import { isIOS, getIOSBrowser } from '../../lib/browser'
 import { InfoBox } from '../../components/AlertBox'
 import { psaMessage } from '../../lib/constants'
 import { AnnouncementContext } from '../../providers/announcements'
@@ -28,6 +31,7 @@ import {
   ASSETS,
   ASSET_LIST,
   getDisplayTicker,
+  getUnlistedHeldAssets,
   getWrappedAssetId,
   requireAssetConfig,
   wrappedAmountToNumber,
@@ -49,14 +53,16 @@ export default function Wallet() {
   const { aspInfo } = useContext(AspContext)
   const { announcement } = useContext(AnnouncementContext)
   const { config, updateConfig } = useContext(ConfigContext)
-  const { setRecvInfo, setSendInfo, setWrapRecvInfo, setUnwrapSendInfo } = useContext(FlowContext)
+  const { setRecvInfo, setSendInfo, setWrapRecvInfo, setUnwrapSendInfo, setAssetInfo } =
+    useContext(FlowContext)
   const { isInitialLoad, navigate, navigationCount, screen } = useContext(NavigationContext)
-  const { balance, dataReady, txs, assetBalances } = useContext(WalletContext)
-  const { nudge, nudgeVisible, nudgeCheckComplete } = useContext(NudgeContext)
+  const { balance, dataReady, txs, assetBalances, assetMetadataCache, isAssetVerified } = useContext(WalletContext)
+  const { toFiat } = useContext(FiatContext)
+  const { getPriceData } = useContext(AssetPricesContext)
+  const { nudge } = useContext(NudgeContext)
 
   const pwaInstalled = usePwaInstalled()
   const dismissed = (config?.dismissedBanners ?? []).includes('pwa-install')
-  const showPwaBanner = pwaCanInstall() && (isIOS() || isAndroid()) && !pwaInstalled && !dismissed
   
   const {t} = useTranslation()
 
@@ -264,13 +270,33 @@ export default function Wallet() {
     balance: getAssetBalance(asset.symbol as AssetSymbol),
   }))
 
+  // Headline total: the whole wallet in fiat. BTC at the wallet's own rate, every
+  // other listed asset at the price the asset list shows. Assets with no price
+  // source (and unlisted ones) add nothing, as they show no fiat value there.
+  const totalFiat = assetBalancesForList.reduce(
+    (sum, { symbol, balance: units }) =>
+      symbol === ASSETS.BTC.symbol ? sum : sum + units * getPriceData(symbol).rate,
+    toFiat(balance),
+  )
+
+  // Held assets with no ASSET_LIST row (received tokens this build doesn't
+  // offer). They open the generic asset detail screen, which can send them.
+  const otherAssets = getUnlistedHeldAssets(assetBalances, assetMetadataCache)
+
+  const handleOtherAssetClick = (assetId: string) => {
+    setAssetInfo({ assetId, supply: BigInt(0) })
+    navigate(Pages.AppAssetDetail)
+  }
+
   // Render asset detail view
   if (selectedAsset) {
     return (
       <>
         <Header text={getDisplayTicker(selectedAsset)} back={handleBackToAll} />
         {announcement}
-        <Content>
+        {/* keyed per view: the asset page and home share this spot in the tree,
+            so without a key React reuses the scroll area and keeps its scroll */}
+        <Content key={`asset-${selectedAsset}`}>
           <Padded>
             <FlexCol>
               <AssetBalanceView symbol={selectedAsset} balance={getAssetBalance(selectedAsset)} />
@@ -319,18 +345,22 @@ export default function Wallet() {
     <>
       <Header
         text={t('common.general.wallet')}
+        logo
         auxIcon={<TransactionsIcon />}
         auxFunc={handleTransactions}
         auxAriaLabel={t('networks.transactions.viewAll')}
       />
       {announcement}
-      <Content>
+      <Content key='home'>
         <Padded>
           <WalletStaggerContainer animate={shouldStagger}>
             <FlexCol>
               <FlexCol gap='0'>
                 <WalletStaggerChild animate={shouldStagger}>
-                  <Balance amount={balance} centered usdOnly />
+                  <Balance amount={balance} fiatTotal={totalFiat} centered usdOnly />
+                </WalletStaggerChild>
+                <WalletStaggerChild animate={shouldStagger}>
+                  <BalanceChart />
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
                   <ErrorMessage error={error} text={t('errors.send.arkade.server')} />
@@ -395,6 +425,9 @@ export default function Wallet() {
                 <AssetList
                   balances={assetBalancesForList}
                   onAssetClick={handleAssetClick}
+                  otherAssets={otherAssets}
+                  isAssetVerified={isAssetVerified}
+                  onOtherAssetClick={handleOtherAssetClick}
                 />
               </WalletStaggerChild>
             </FlexCol>
