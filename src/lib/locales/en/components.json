@@ -204,5 +204,13 @@
     "unverified": "Unverified",
     "notice": "This asset is not in Chimera's verified list. Anyone can create a token with any name, so confirm the asset ID with the sender or issuer.",
     "assetId": "Asset ID"
+  },
+  "note": {
+    "title": "Note",
+    "add": "Add note",
+    "edit": "Edit note",
+    "save": "Save note",
+    "clear": "Remove note",
+    "txPlaceholder": "Add a reference for this transaction"
   }
 }

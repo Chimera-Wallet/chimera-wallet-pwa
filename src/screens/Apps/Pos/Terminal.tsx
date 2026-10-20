@@ -9,12 +9,10 @@ import { useContext, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Button from '../../../components/Button'
 import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
-import FlexCol from '../../../components/FlexCol'
 import FlexRow from '../../../components/FlexRow'
 import Header from '../../../components/Header'
-import Input from '../../../components/Input'
+import { NoteSheet } from '../../../components/NoteEditor'
 import SegmentedControl from '../../../components/SegmentedControl'
-import SheetModal from '../../../components/SheetModal'
 import Text from '../../../components/Text'
 import SettingsIcon from '../../../icons/Settings'
 import CurrencySwapIcon from '../../../icons/CurrencySwap'
@@ -74,7 +72,6 @@ export default function PosTerminal() {
   const [method, setMethod] = useState<PosMethod>(settings.method)
   const [text, setText] = useState('')
   const [note, setNote] = useState('')
-  const [noteDraft, setNoteDraft] = useState('')
   const [showNote, setShowNote] = useState(false)
   const [error, setError] = useState('')
 
@@ -122,11 +119,6 @@ export default function PosTerminal() {
     setText(converted ? prettyNumber(converted, posUnitDecimals(next), false) : '')
     setUnit(next)
     setError('')
-  }
-
-  const saveNote = () => {
-    setNote(noteDraft)
-    setShowNote(false)
   }
 
   const discard = () => {
@@ -222,10 +214,7 @@ export default function PosTerminal() {
           <button
             type='button'
             style={chipStyle}
-            onClick={() => {
-              setNoteDraft(note)
-              setShowNote(true)
-            }}
+            onClick={() => setShowNote(true)}
             data-testid='pos-note'
           >
             <NotesIcon small />
@@ -288,33 +277,14 @@ export default function PosTerminal() {
         </FlexRow>
       </ButtonsOnBottom>
 
-      <SheetModal isOpen={showNote} onClose={() => setShowNote(false)}>
-        <FlexCol gap='1rem' padding='0.5rem 0'>
-          <Text big bold>
-            {t('apps.pos.terminal.note')}
-          </Text>
-          <Input
-            focus
-            maxLength={140}
-            value={noteDraft}
-            onChange={setNoteDraft}
-            placeholder={t('apps.pos.terminal.notePlaceholder')}
-            onEnter={saveNote}
-            testId='pos-note-input'
-          />
-          <Button label={t('apps.pos.terminal.saveNote')} onClick={saveNote} />
-          {note ? (
-            <Button
-              label={t('apps.pos.terminal.clearNote')}
-              secondary
-              onClick={() => {
-                setNote('')
-                setShowNote(false)
-              }}
-            />
-          ) : null}
-        </FlexCol>
-      </SheetModal>
+      <NoteSheet
+        isOpen={showNote}
+        onClose={() => setShowNote(false)}
+        value={note}
+        onSave={setNote}
+        placeholder={t('apps.pos.terminal.notePlaceholder')}
+        testId='pos-note-input'
+      />
     </>
   )
 }

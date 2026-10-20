@@ -291,10 +291,7 @@
         },
         "terminal": {
             "addNote": "Add note",
-            "note": "Note",
             "notePlaceholder": "What is this payment for?",
-            "saveNote": "Save note",
-            "clearNote": "Remove note",
             "confirm": "Confirm",
             "discard": "Discard",
             "history": "History",

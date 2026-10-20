@@ -1,10 +1,19 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import AppPos, { AppPosPayout } from '../../../screens/Apps/Pos/Index'
+import PosStatus from '../../../screens/Apps/Pos/Status'
 import { ConfigContext } from '../../../providers/config'
 import { FiatContext } from '../../../providers/fiat'
 import { NavigationContext, Pages } from '../../../providers/navigation'
-import { getPosPayments, getPosSettings, savePosSettings, defaultPosSettings } from '../../../lib/pos'
+import {
+  createPosPayment,
+  getPosPayment,
+  getPosPayments,
+  getPosSettings,
+  savePosSettings,
+  defaultPosSettings,
+  updatePosPayment,
+} from '../../../lib/pos'
 import { mockConfigContextValue, mockNavigationContextValue } from '../mocks'
 
 // 1 EUR/CHF/USD = 1,000 sats keeps the arithmetic readable
@@ -17,13 +26,13 @@ const fiatContext = {
   updateFiatPrices: () => {},
 }
 
-function renderPos(ui: React.ReactElement = <AppPos />) {
+function renderPos(ui: React.ReactElement = <AppPos />, navigationData?: Record<string, unknown>) {
   const navigate = vi.fn()
   const goBack = vi.fn()
   render(
     <ConfigContext.Provider value={mockConfigContextValue}>
       <FiatContext.Provider value={fiatContext}>
-        <NavigationContext.Provider value={{ ...mockNavigationContextValue, navigate, goBack }}>
+        <NavigationContext.Provider value={{ ...mockNavigationContextValue, navigate, goBack, navigationData }}>
           {ui}
         </NavigationContext.Provider>
       </FiatContext.Provider>
@@ -106,7 +115,7 @@ describe('POS terminal', () => {
 
     fireEvent.click(screen.getByTestId('pos-note'))
     fireEvent.change(screen.getByTestId('pos-note-input'), { target: { value: 'Two coffees' } })
-    fireEvent.click(screen.getByText('apps.pos.terminal.saveNote'))
+    fireEvent.click(screen.getByText('components.note.save'))
 
     fireEvent.click(screen.getByTestId('pos-confirm'))
 
@@ -177,5 +186,49 @@ describe('POS terminal', () => {
 
     expect(navigate).toHaveBeenCalledWith(Pages.AppPosPayout)
     expect(getPosPayments()).toHaveLength(0)
+  })
+})
+
+describe('POS sale note', () => {
+  afterEach(() => localStorage.clear())
+
+  const paidSale = (note: string) => {
+    const sale = createPosPayment({
+      note,
+      method: 'ark',
+      sats: 2_000,
+      fiatAmount: 2,
+      fiatCurrency: 'EUR',
+      payoutCurrency: 'BTC',
+    })
+    updatePosPayment(sale.id, { status: 'completed', receivedSats: 2_000, completedAt: Date.now() })
+    return sale.id
+  }
+
+  it('adds a note to a past sale', () => {
+    const id = paidSale('')
+    renderPos(<PosStatus />, { paymentId: id })
+
+    expect(screen.getByTestId('pos-status-note')).toHaveTextContent('components.note.add')
+    fireEvent.click(screen.getByTestId('pos-status-note'))
+    fireEvent.change(screen.getByTestId('pos-status-note-input'), { target: { value: 'Table 4' } })
+    fireEvent.click(screen.getByText('components.note.save'))
+
+    expect(getPosPayment(id)?.note).toBe('Table 4')
+    expect(screen.getByTestId('pos-status-note')).toHaveTextContent('Table 4')
+  })
+
+  it('changes and removes an existing note', () => {
+    const id = paidSale('Two coffees')
+    renderPos(<PosStatus />, { paymentId: id })
+
+    fireEvent.click(screen.getByTestId('pos-status-note'))
+    fireEvent.change(screen.getByTestId('pos-status-note-input'), { target: { value: 'Three coffees' } })
+    fireEvent.click(screen.getByText('components.note.save'))
+    expect(getPosPayment(id)?.note).toBe('Three coffees')
+
+    fireEvent.click(screen.getByTestId('pos-status-note'))
+    fireEvent.click(screen.getByText('components.note.clear'))
+    expect(getPosPayment(id)?.note).toBe('')
   })
 })

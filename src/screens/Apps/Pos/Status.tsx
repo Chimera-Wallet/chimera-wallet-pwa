@@ -16,13 +16,14 @@ import Content from '../../../components/Content'
 import FlexCol from '../../../components/FlexCol'
 import FlexRow from '../../../components/FlexRow'
 import Header from '../../../components/Header'
+import EditableNote from '../../../components/NoteEditor'
 import Padded from '../../../components/Padded'
 import Shadow from '../../../components/Shadow'
 import Text, { TextSecondary } from '../../../components/Text'
 import WarningBox from '../../../components/Warning'
 import { useShare } from '../../../hooks/useShare'
 import { consoleError } from '../../../lib/logs'
-import { isFiatPayout, posPaymentOutcome, type PosOutcome, type PosPayment } from '../../../lib/pos'
+import { isFiatPayout, posPaymentOutcome, updatePosPayment, type PosOutcome, type PosPayment } from '../../../lib/pos'
 import { convertPosPayment, isConversionInterrupted } from '../../../lib/posConversion'
 import { generateTablePdf } from '../../../lib/statement'
 import { AspContext } from '../../../providers/asp'
@@ -40,15 +41,18 @@ const OUTCOME_UI: Record<PosOutcome, { title: string; color: string; icon: JSX.E
   },
 }
 
-/** Label/value rows of the recap, shared by the screen, the receipt and the share text. */
-const recapRows = (payment: PosPayment, t: TFunction): [string, string][] => {
+/**
+ * Label/value rows of the recap, shared by the screen, the receipt and the
+ * share text. The screen leaves the note out: it shows it as an editable row.
+ */
+const recapRows = (payment: PosPayment, t: TFunction, withNote = true): [string, string][] => {
   const rows: [string, string][] = [
     [t('apps.pos.status.amount'), paymentFiat(payment)],
     [t('apps.pos.status.received'), btcAmount(payment.receivedSats ?? 0)],
     [t('apps.pos.status.method'), t(methodName(payment.method))],
     [t('apps.pos.status.date'), new Date(payment.completedAt ?? payment.createdAt).toLocaleString()],
   ]
-  if (payment.note) rows.push([t('apps.pos.status.note'), payment.note])
+  if (withNote && payment.note) rows.push([t('apps.pos.status.note'), payment.note])
   if (payment.conversion?.orderId) rows.push([t('apps.pos.status.order'), payment.conversion.orderId])
   rows.push([t('apps.pos.status.reference'), payment.id])
   return rows
@@ -65,6 +69,7 @@ export default function PosStatus() {
   if (!payment) return null
 
   const rows = recapRows(payment, t)
+  const screenRows = recapRows(payment, t, false)
   const outcome = OUTCOME_UI[posPaymentOutcome(payment)]
   const title = t(outcome.title)
 
@@ -142,7 +147,7 @@ export default function PosStatus() {
 
             <Shadow>
               <FlexCol gap='0.625rem'>
-                {rows.map(([label, value]) => (
+                {screenRows.map(([label, value]) => (
                   <FlexRow between key={label} gap='1rem'>
                     <TextSecondary>{label}</TextSecondary>
                     <Text right wrap>
@@ -152,6 +157,13 @@ export default function PosStatus() {
                 ))}
               </FlexCol>
             </Shadow>
+
+            <EditableNote
+              value={payment.note}
+              onSave={(note) => updatePosPayment(payment.id, { note })}
+              placeholder={t('apps.pos.terminal.notePlaceholder')}
+              testId='pos-status-note'
+            />
           </FlexCol>
         </Padded>
       </Content>

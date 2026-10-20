@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
 import '../../../lib/i18n'
 import Transaction from '../../../screens/Wallet/Transaction'
 import { FlowContext } from '../../../providers/flow'
@@ -15,6 +15,7 @@ import {
 import { AspContext } from '../../../providers/asp'
 import { WalletContext } from '../../../providers/wallet'
 import { NavigationContext } from '../../../providers/navigation'
+import { getTxNote, setTxNote } from '../../../lib/txNotes'
 
 // These pin Chimera-specific behaviour that an upstream Arkade merge has
 // silently reverted before: Confirmed / Pending / Failed statuses, amounts in
@@ -127,5 +128,38 @@ describe('Transaction screen', () => {
     renderTx(mockBurnTxInfo as TxInfo)
     expect(screen.getByText('Burn')).toBeInTheDocument()
     expect(screen.queryByText('Sent')).not.toBeInTheDocument()
+  })
+})
+
+describe('Transaction note', () => {
+  afterEach(() => localStorage.clear())
+
+  it('adds a note to a past transaction', () => {
+    renderTx(mockTxInfo)
+
+    fireEvent.click(screen.getByText('Add note'))
+    fireEvent.change(screen.getByTestId('tx-note-input'), { target: { value: 'Invoice 42' } })
+    fireEvent.click(screen.getByText('Save note'))
+
+    expect(getTxNote(`received:${mockTxId}`)).toBe('Invoice 42')
+    expect(screen.getByTestId('tx-note')).toHaveTextContent('Invoice 42')
+  })
+
+  it('shows and removes a saved note', () => {
+    setTxNote(`received:${mockTxId}`, 'Rent')
+    renderTx(mockTxInfo)
+
+    expect(screen.getByTestId('tx-note')).toHaveTextContent('Rent')
+    fireEvent.click(screen.getByTestId('tx-note'))
+    fireEvent.click(screen.getByText('Remove note'))
+
+    expect(getTxNote(`received:${mockTxId}`)).toBe('')
+    expect(screen.getByTestId('tx-note')).toHaveTextContent('Add note')
+  })
+
+  it('keeps notes per transaction direction', () => {
+    setTxNote(`received:${mockTxId}`, 'Rent')
+    renderTx({ ...mockTxInfo, type: 'sent' })
+    expect(screen.getByTestId('tx-note')).toHaveTextContent('Add note')
   })
 })
