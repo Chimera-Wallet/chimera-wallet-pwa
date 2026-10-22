@@ -23,14 +23,12 @@
   },
   "general": {
     "server": "无法连接服务器",
-    "swap": "无法创建兑换",
     "missingAddress": "缺少地址",
     "missingAsset": "缺少资产金额",
     "missingAmount": "缺少金额",
     "missingAssetList": "缺少资产列表",
     "missingTotal": "缺少总金额",
-    "missingSats": "缺少 satoshi 金额",
-    "swapAddUnavailable": "兑换地址不可用"
+    "missingSats": "缺少 satoshi 金额"
   },
   "send": {
     "bitcoin": {
@@ -50,8 +48,7 @@
     },
     "lightning": {
       "address": "所选方式需要 Lightning 发票地址",
-      "type": "所选方式需要其他类型的地址",
-      "swaps": "Lightning 兑换未启用"
+      "type": "所选方式需要其他类型的地址"
     },
     "bank": {
       "transfer": "银行转账请在“转账”中进行",
@@ -89,7 +86,6 @@
       "amount": "金额无效",
       "faucetFail": "水龙头领取失败",
       "pendingSwap": "创建反向兑换失败",
-      "chainSwap": "创建链上兑换失败",
       "reverseSwap": "创建反向兑换失败",
       "getAddress": "获取地址失败：{{address}}"
     },
@@ -100,9 +96,6 @@
       "noOrderInfo": "没有可用的订单信息",
       "failedLoad": "加载订单失败",
       "failedRefresh": "刷新订单失败"
-    },
-    "lightning": {
-      "tempUnavailable": "Lightning 暂时不可用。此二维码仅支持 Arkade 和链上支付。"
     },
     "wrapService": {
       "validAddress": "请输入有效的 {{name}} 地址",
@@ -171,14 +164,6 @@
     "idHex": "资产 ID 必须是 68 个字符的十六进制字符串",
     "assNF": "未找到资产",
     "range": "小数位数必须是 0 到 {{max}} 之间的整数"
-  },
-  "boltz": {
-    "swapsRestore": "恢复兑换时出错：{{error}}",
-    "integration": "Boltz 集成尚未准备就绪。请稍后再试。",
-    "integrationSimple": "Boltz 集成尚未准备就绪",
-    "scan": "无法扫描：{{err}}",
-    "recover": "已恢复 {{swept}} 个 VTXO{{out}}",
-    "noSweep": "没有可恢复的资金；请稍后重试。"
   },
   "lendasat": {
     "walletNot": "钱包尚未初始化",

@@ -34,8 +34,6 @@
   },
   "connection": {
     "missingCreds": "缺少凭据",
-    "restoringSwaps": "正在恢复兑换...",
-    "swapsInfo": "已从网络恢复 {{num}} 个兑换",
     "connectionFailed": "连接失败",
     "serverConnection": "正在连接服务器"
   },

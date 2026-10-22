@@ -56,7 +56,7 @@ export const mockAspContextValue = {
 export const mockConfigContextValue = {
   config: {
     announcementsSeen: [],
-    apps: { assets: { enabled: false }, boltz: { connected: true } },
+    apps: { assets: { enabled: false } },
     aspUrl: 'http://asp.local',
     dismissedBanners: [],
     currencyDisplay: CurrencyDisplay.Both,
@@ -88,36 +88,6 @@ export const mockFiatContextValue = {
   fiatDecimals: () => 2,
   fromFiat: (amount: number) => amount,
   toFiat: (amount: number) => amount,
-}
-
-export const mockSwapsContextValue = {
-  arkadeSwaps: null,
-  swapManager: null,
-  swapsInitError: null as string | null,
-  connected: false,
-  calcArkToBtcSwapFee: () => 0,
-  calcBtcToArkSwapFee: () => 0,
-  calcSubmarineSwapFee: () => 0,
-  calcReverseSwapFee: () => 0,
-  createArkToBtcSwap: async () => null,
-  createBtcToArkSwap: async () => null,
-  createSubmarineSwap: async () => null,
-  createReverseSwap: async () => null,
-  claimArk: async () => {},
-  claimBtc: async () => {},
-  claimVHTLC: async () => {},
-  refundArk: async () => {},
-  refundVHTLC: async () => {},
-  payBtc: async () => {
-    throw new Error('Chain swap not initialized')
-  },
-  payInvoice: async () => {
-    throw new Error('Lightning not initialized')
-  },
-  getSwapHistory: async () => [],
-  getApiUrl: () => null,
-  restoreSwaps: async () => 0,
-  toggleConnection: () => {},
 }
 
 export const mockOptionsContextValue = {
@@ -174,7 +144,6 @@ export const mockWalletContextValue = {
 
 export const mockFlowContextValue = {
   txInfo: mockTxInfo,
-  swapInfo: undefined,
   initInfo: emptyInitInfo,
   noteInfo: emptyNoteInfo,
   recvInfo: emptyRecvInfo,
@@ -183,14 +152,11 @@ export const mockFlowContextValue = {
   setNoteInfo: () => {},
   setRecvInfo: () => {},
   setSendInfo: () => {},
-  setSwapInfo: () => {},
   setTxInfo: () => {},
   assetInfo: { assetId: '', supply: BigInt(0) },
   setAssetInfo: () => {},
   deepLinkInfo: undefined,
   setDeepLinkInfo: () => {},
-  lnurlInfo: undefined,
-  setLnurlInfo: () => {},
   kycAuthParams: undefined,
   setKycAuthParams: () => {},
   swapOrderInfo: undefined,

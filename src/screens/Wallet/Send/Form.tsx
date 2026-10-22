@@ -35,7 +35,6 @@ import { ArkNote, type NetworkName } from '@arkade-os/sdk'
 import { LimitsContext } from '../../../providers/limits'
 import { checkLnUrlConditions, fetchInvoice, fetchArkAddress, isValidLnUrl } from '../../../lib/lnurl'
 import { extractError } from '../../../lib/error'
-import { SwapsContext } from '../../../providers/swaps'
 import { decodeBip21, isBip21 } from '../../../lib/bip21'
 import { FeesContext } from '../../../providers/fees'
 import { InfoLine } from '../../../components/Info'
@@ -72,7 +71,6 @@ export default function SendForm() {
   const { calcOnchainOutputFee } = useContext(FeesContext)
   const { toFiat } = useContext(FiatContext)
   const { sendInfo, setNoteInfo, setSendInfo, setUnwrapSendInfo } = useContext(FlowContext)
-  const { createSubmarineSwap, connected, calcSubmarineSwapFee, getApiUrl } = useContext(SwapsContext)
   const { amountIsAboveMaxLimit, amountIsBelowMinLimit, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
   const { setOption } = useContext(OptionsContext)
   const { navigate } = useContext(NavigationContext)
@@ -97,7 +95,6 @@ export default function SendForm() {
   const [focus, setFocus] = useState('recipient')
   const [label, setLabel] = useState('')
   const [lnUrlLimits, setLnUrlLimits] = useState<{ min: number; max: number }>({ min: 0, max: 0 })
-  const [nudgeBoltz, setNudgeBoltz] = useState(false)
   const [proceed, setProceed] = useState(false)
   const [processing, setProcessing] = useState(false)
   // Seeded from the flow rather than filled in by an effect on mount: the parse
@@ -163,7 +160,6 @@ export default function SendForm() {
   useEffect(() => {
     smartSetError('')
     const parseRecipient = async () => {
-      setNudgeBoltz(false)
       // Bank transfers are handled by a separate screen
       if (selectedMethod === TRANSFER_METHOD.bank) return
       if (!recipient) {
@@ -180,7 +176,6 @@ export default function SendForm() {
                 invoice: '',
                 lnUrl: undefined,
                 pendingLnSend: undefined,
-                pendingSwap: undefined,
                 recipient: '',
               }
             : prev,
@@ -242,10 +237,6 @@ export default function SendForm() {
       if (isLightningInvoice(lowerCaseData)) {
         if (selectedMethod !== TRANSFER_METHOD.lightning) {
           return setError(t('errors.send.lightning.type'))
-        }
-        if (!connected) {
-          setError(t('errors.send.lightning.swaps'))
-          return setNudgeBoltz(true)
         }
         // Amount from the wallet's own decoder; expiry and chain are re-checked
         // by the RFQ client before any solver sees the invoice.
@@ -396,17 +387,14 @@ export default function SendForm() {
 
     // proceed to next step
   useEffect(() => {
-    const lowerCaseData = recipient.toLowerCase().replace(/^lightning:/, '')
-
     if (!proceed) return
     if (!sendInfo.address && !sendInfo.arkAddress && !sendInfo.invoice) return
-    if (!sendInfo.arkAddress && sendInfo.invoice && !sendInfo.pendingLnSend && isLightningInvoice(lowerCaseData)) {
+    if (!sendInfo.arkAddress && sendInfo.invoice && !sendInfo.pendingLnSend) {
       // RFQ Lightning send: negotiate a quote over Nostr, derive the covenant
       // locally, verify, and carry the address+amount to the pay screen. The
       // negotiation is the only interactive step — funding IS acceptance.
-      // This is the primary Lightning-send path; the legacy Boltz submarine
-      // swap below only runs for invoices this branch's guard excludes, and
-      // is otherwise superseded now that RFQ is in place.
+      // The only Lightning-send path, whatever carried the invoice: a pasted
+      // invoice, a BIP21 `lightning=` param, or one fetched from an LNURL.
       const negotiate = async () => {
         if (!svcWallet) return handleError('Wallet not ready')
         const network = aspInfo.network as NetworkName
@@ -436,15 +424,8 @@ export default function SendForm() {
         })
       }
       negotiate().catch(handleError)
-    } else if (!sendInfo.arkAddress && sendInfo.invoice && !sendInfo.pendingLnSend && !sendInfo.pendingSwap) {
-      createSubmarineSwap(sendInfo.invoice)
-        .then((pendingSwap) => {
-          if (!pendingSwap) return setError(t('errors.general.swap'))
-          setState({ ...sendInfo, pendingSwap })
-        })
-        .catch(handleError)
     } else navigate(Pages.SendDetails)
-  }, [proceed, sendInfo.address, sendInfo.arkAddress, sendInfo.invoice, sendInfo.pendingSwap, sendInfo.pendingLnSend])
+  }, [proceed, sendInfo.address, sendInfo.arkAddress, sendInfo.invoice, sendInfo.pendingLnSend])
 
   // deal with fees deduction from amount
   useEffect(() => {
@@ -457,10 +438,6 @@ export default function SendForm() {
   }, [availableBalance, sendInfo.satoshis, sendInfo.address, sendInfo.arkAddress, sendInfo.invoice])
 
   if (!svcWallet) return <Loading text={t('common.general.loading')} />
-
-  const gotoBoltzApp = () => {
-    navigate(Pages.AppBoltzSettings)
-  }
 
   const gotoRollover = () => {
     setOption(SettingsOptions.Vtxos)
@@ -518,7 +495,6 @@ export default function SendForm() {
       arkAddress: '',
       invoice: '',
       lnUrl: undefined,
-      pendingSwap: undefined,
       pendingLnSend: undefined,
       recipient: '',
     })
@@ -606,7 +582,9 @@ export default function SendForm() {
 
   const methodFee = (() => {
     if (!satoshis) return undefined
-    if (resolvedMethod === TRANSFER_METHOD.lightning) return calcSubmarineSwapFee(satoshis) 
+    // the solver's fee is only known once a quote is negotiated
+    if (resolvedMethod === TRANSFER_METHOD.lightning)
+      return sendInfo.pendingLnSend ? Math.max(0, sendInfo.pendingLnSend.fundAmount - satoshis) : undefined
     if (resolvedMethod === TRANSFER_METHOD.bitcoin) return calcOnchainOutputFee()
     if (resolvedMethod === TRANSFER_METHOD.ark) return 0
     return undefined
@@ -778,7 +756,6 @@ export default function SendForm() {
                       arkAddress: '',
                       invoice: '',
                       lnUrl: undefined,
-                      pendingSwap: undefined,
                       recipient: '',
                     })
                     return
@@ -817,7 +794,6 @@ export default function SendForm() {
                   arkAddress: '',
                   invoice: '',
                   lnUrl: undefined,
-                  pendingSwap: undefined,
                   recipient: '',
                 })
               }}
@@ -868,18 +844,6 @@ export default function SendForm() {
                     i18nKey="common.notifications.send.rollOverVTXO"
                     components={{
                       a: <a onClick={gotoRollover} />
-                    }}
-                  />
-                </Text>
-              </div>
-            ) : null}
-            {nudgeBoltz && getApiUrl() ? (
-              <div style={{ width: '100%' }}>
-                <Text centered small>
-                  <Trans
-                    i18nKey="common.notifications.send.lightningSwaps"
-                    components={{
-                      a: <a onClick={gotoBoltzApp} />
                     }}
                   />
                 </Text>

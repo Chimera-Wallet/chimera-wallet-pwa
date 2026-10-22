@@ -1,4 +1,3 @@
-import { BoltzSwap } from '@arkade-os/boltz-swap'
 import { ReactNode, createContext, useState, Dispatch, SetStateAction } from 'react'
 import type { Asset, AssetDetails } from '@arkade-os/sdk'
 import { Tx } from '../lib/types'
@@ -107,7 +106,6 @@ export type SendInfo = {
   arkAddress?: string
   invoice?: string
   lnUrl?: string
-  pendingSwap?: BoltzSwap
   pendingLnSend?: LnSendRequest
   method?: TransferMethod
   recipient?: string
@@ -118,13 +116,11 @@ export type SendInfo = {
   txid?: string
 }
 
-export type SwapInfo = BoltzSwap | undefined
 
 export type SwapOrderInfo = ChimeraOrder | undefined
 
 export type TxInfo = Tx | undefined
 
-export type LnUrlInfo = Uint8Array | undefined
 
 interface FlowContextProps {
   initInfo: InitInfo
@@ -133,7 +129,6 @@ interface FlowContextProps {
   deepLinkInfo: DeepLinkInfo | undefined
   recvInfo: RecvInfo
   sendInfo: SendInfo
-  swapInfo: SwapInfo
   swapOrderInfo: SwapOrderInfo
   txInfo: TxInfo
   bankRecvInfo: BankRecvInfo
@@ -153,13 +148,10 @@ interface FlowContextProps {
   setDeepLinkInfo: (arg0: DeepLinkInfo) => void
   setRecvInfo: (arg0: SetStateAction<RecvInfo>) => void
   setSendInfo: (arg0: SetStateAction<SendInfo>) => void
-  setSwapInfo: (arg0: SwapInfo) => void
   setSwapOrderInfo: (arg0: SwapOrderInfo) => void
   setTxInfo: (arg0: TxInfo) => void
   assetInfo: AssetDetails
   setAssetInfo: (arg0: AssetDetails) => void
-  lnurlInfo: LnUrlInfo
-  setLnurlInfo: (arg0: LnUrlInfo) => void
   setBankRecvInfo: (arg0: BankRecvInfo) => void
   setBankSendInfo: (arg0: BankSendInfo) => void
   setBankStatusOrder: (order: BankOrder | undefined) => void
@@ -217,7 +209,6 @@ export const FlowContext = createContext<FlowContextProps>({
   deepLinkInfo: undefined,
   recvInfo: emptyRecvInfo,
   sendInfo: emptySendInfo,
-  swapInfo: undefined,
   swapOrderInfo: undefined,
   txInfo: undefined,
   bankRecvInfo: emptyBankRecvInfo,
@@ -234,13 +225,10 @@ export const FlowContext = createContext<FlowContextProps>({
   setDeepLinkInfo: () => {},
   setRecvInfo: () => {},
   setSendInfo: () => {},
-  setSwapInfo: () => {},
   setSwapOrderInfo: () => {},
   setTxInfo: () => {},
   assetInfo: emptyAssetInfo,
   setAssetInfo: () => {},
-  lnurlInfo: undefined,
-  setLnurlInfo: () => {},
   setBankRecvInfo: () => {},
   setBankSendInfo: () => {},
   setBankStatusOrder: () => {},
@@ -256,11 +244,9 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
   const [deepLinkInfo, setDeepLinkInfo] = useState<DeepLinkInfo | undefined>()
   const [recvInfo, setRecvInfo] = useState(emptyRecvInfo)
   const [sendInfo, setSendInfo] = useState(emptySendInfo)
-  const [swapInfo, setSwapInfo] = useState<SwapInfo>()
   const [swapOrderInfo, setSwapOrderInfo] = useState<SwapOrderInfo>()
   const [txInfo, setTxInfo] = useState<TxInfo>()
   const [assetInfo, setAssetInfo] = useState<AssetDetails>(emptyAssetInfo)
-  const [lnurlInfo, setLnurlInfo] = useState<LnUrlInfo>()
   const [bankRecvInfo, setBankRecvInfo] = useState<BankRecvInfo>(emptyBankRecvInfo)
   const [bankSendInfo, setBankSendInfo] = useState<BankSendInfo>(emptyBankSendInfo)
   const [bankStatusOrder, setBankStatusOrder] = useState<BankOrder | undefined>()
@@ -276,10 +262,8 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
         kycAuthParams,
         noteInfo,
         deepLinkInfo,
-        lnurlInfo,
         recvInfo,
         sendInfo,
-        swapInfo,
         swapOrderInfo,
         txInfo,
         bankRecvInfo,
@@ -296,12 +280,10 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
         setDeepLinkInfo,
         setRecvInfo,
         setSendInfo,
-        setSwapInfo,
         setSwapOrderInfo,
         setTxInfo,
         assetInfo,
         setAssetInfo,
-        setLnurlInfo,
         setBankRecvInfo,
         setBankSendInfo,
         setBankStatusOrder,

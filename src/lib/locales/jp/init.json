@@ -34,8 +34,6 @@
   },
   "connection": {
     "missingCreds": "認証情報がありません",
-    "restoringSwaps": "スワップを復元中...",
-    "swapsInfo": "ネットワークから {{num}} 件のスワップを復元しました",
     "connectionFailed": "接続に失敗しました",
     "serverConnection": "サーバーに接続中"
   },

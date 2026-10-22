@@ -23,14 +23,12 @@
     },
     "general": {
             "server": "Server unreachable",
-            "swap": "Unable to create swap",
             "missingAddress": "Missing address",
             "missingAsset": "Missing asset amount",
             "missingAmount": "Missing amount",
             "missingAssetList": "Missing assets list",
             "missingTotal": "Missing total amount",
-            "missingSats": "Missing satoshis amount", 
-            "swapAddUnavailable": "Swap address not available"
+            "missingSats": "Missing satoshis amount"
 
 
     },
@@ -52,8 +50,7 @@
         },
         "lightning": {
             "address": "Selected method requires a Lightning invoice address",
-            "type": "Selected method requires a different address type",
-            "swaps": "Lightning swaps not enabled"
+            "type": "Selected method requires a different address type"
         },
         "bank": {
             "transfer": "Bank transfers are handled in Transfers",
@@ -92,7 +89,6 @@
             "amount": "Invalid amount",
             "faucetFail": "Faucet failed",
             "pendingSwap": "Failed to create reverse swap",
-            "chainSwap": "Failed to create chain swap",
             "reverseSwap": "Failed to create reverse swap",
             "getAddress": "Failed to get address: {{address}}"
             
@@ -104,9 +100,6 @@
             "noOrderInfo": "No order information available",
             "failedLoad": "Failed to load order",
             "failedRefresh": "Failed to refresh order"
-        },
-        "lightning": {
-            "tempUnavailable": "Lightning is temporarily unavailable. This QR code only supports Arkade and on-chain payments."
         },
         "wrapService": {
             "validAddress": "Enter a valid {{name}} address",
@@ -176,14 +169,6 @@
         "idHex": "Asset ID must be a 68-character hex string",
         "assNF": "Asset not found",
         "range": "Decimals must be an integer between 0 and {{max}}"
-    },
-    "boltz":{
-        "swapsRestore": "Error restoring swaps: {{error}}",
-        "integration": "Boltz integration is not ready yet. Try again in a moment.",
-        "integrationSimple": "Boltz integration is not ready yet",
-        "scan": "Could not scan: {{err}}",
-        "recover": "Recovered {{swept}} VTXO{{out}}",
-        "noSweep": "Nothing was swept; try again later."
     },
     "lendasat": {
         "walletNot": "Wallet not initialized",

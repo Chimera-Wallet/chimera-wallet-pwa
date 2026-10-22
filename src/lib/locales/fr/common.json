@@ -10,8 +10,7 @@
     "send": {
       "invoiceDeets": "Détails de la facture",
       "feesDeduction": "Les frais seront déduits du montant envoyé",
-      "rollOverVTXO": "Vouliez-vous <a>renouveler vos VTXO</a> ?",
-      "lightningSwaps": "Activez les <a>swaps Lightning</a> pour payer"
+      "rollOverVTXO": "Vouliez-vous <a>renouveler vos VTXO</a> ?"
     },
     "bank": {
       "submissionSuccess": "Retrait soumis",
@@ -73,9 +72,6 @@
       },
       "bitcoin": {
         "bitcoinAddress": "Adresse Bitcoin"
-      },
-      "lnurl": {
-        "lnurlAddress": "Adresse LNURL"
       },
       "invalidAmount": "Aucune méthode de paiement valide disponible pour ce montant",
       "depositCreated": "Ordre de dépôt créé",
@@ -188,7 +184,6 @@
       "arkade": "Paiement dans Arkade",
       "lightningSwap": "Conversion vers Lightning",
       "lightningPay": "Paiement vers Lightning",
-      "mainnetSwap": "Conversion vers le réseau principal",
       "mainnetPay": "Paiement vers le réseau principal"
     },
 

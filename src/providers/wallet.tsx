@@ -36,7 +36,7 @@ import { parseKycDeepLink } from '../lib/kyc'
 import { consoleError } from '../lib/logs'
 import { Tx, Vtxo, Wallet } from '../lib/types'
 import { nsecToPrivateKey, getPrivateKey, noUserDefinedPassword } from '../lib/privateKey'
-import { hasMnemonic, getMnemonic, deriveNostrKeyFromMnemonic } from '../lib/mnemonic'
+import { hasMnemonic, getMnemonic } from '../lib/mnemonic'
 import { calcBatchLifetimeMs, calcNextRollover } from '../lib/wallet'
 import { hex } from '@scure/base'
 import * as secp from '@noble/secp256k1'
@@ -63,7 +63,6 @@ export class ArkadeUnreachableError extends Error {
 import { AssetIconApprovalManager } from '../lib/assetIconApproval'
 import { IndexedDBStorageAdapter } from '@arkade-os/sdk/adapters/indexedDB'
 import { Indexer } from '../lib/indexer'
-import { IndexedDbSwapRepository, migrateToSwapRepository, Network } from '@arkade-os/boltz-swap'
 import { useTranslation } from 'react-i18next'
 import { createRequestGeneration } from '../lib/requestGeneration'
 
@@ -176,7 +175,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const { aspInfo } = useContext(AspContext)
   const { config, updateConfig } = useContext(ConfigContext)
   const { navigate } = useContext(NavigationContext)
-  const { setNoteInfo, noteInfo, setDeepLinkInfo, deepLinkInfo, setKycAuthParams, setLnurlInfo } = useContext(FlowContext)
+  const { setNoteInfo, noteInfo, setDeepLinkInfo, deepLinkInfo, setKycAuthParams } = useContext(FlowContext)
   const { notifyTxSettled } = useContext(NotificationsContext)
 
   const [txs, setTxs] = useState<Tx[]>([])
@@ -410,9 +409,6 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     // if app url is present, navigate to it
     if (!deepLinkInfo?.appId) return
     switch (deepLinkInfo?.appId) {
-      case 'boltz':
-        navigate(Pages.AppBoltz)
-        break
       case 'lendasat':
         navigate(Pages.AppLendasat)
         break
@@ -582,7 +578,6 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                 throw err
               }
             }
-            await migrateToSwapRepository(oldStorage, new IndexedDbSwapRepository())
           }
         } catch (err) {
           consoleError(err, 'Error migrating wallet repository')
@@ -721,13 +716,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       const mnemonicIdentity = MnemonicIdentity.fromMnemonic(credentials.mnemonic, { isMainnet: isMainnet(network) })
       identity = mnemonicIdentity
       pubkey = hex.encode(await mnemonicIdentity.compressedPublicKey())
-      const secret = deriveNostrKeyFromMnemonic(credentials.mnemonic, isMainnet(network))
-      setLnurlInfo(secret)
       updateConfig({ ...config, pubkey })
     } else if (credentials.privateKey) {
       identity = SingleKey.fromPrivateKey(credentials.privateKey)
       pubkey = hex.encode(secp.getPublicKey(credentials.privateKey))
-      setLnurlInfo(credentials.privateKey)
       updateConfig({ ...config, pubkey })
     } else {
       throw new Error('Either mnemonic or privateKey must be provided')

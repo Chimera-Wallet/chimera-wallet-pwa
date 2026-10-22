@@ -34,8 +34,6 @@
   },
   "connection": {
     "missingCreds": "Faltan credenciales",
-    "restoringSwaps": "Restaurando intercambios...",
-    "swapsInfo": "Se restauraron {{num}} intercambios desde la red",
     "connectionFailed": "Conexión fallida",
     "serverConnection": "Conectando al servidor"
   },

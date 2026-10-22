@@ -23,14 +23,12 @@
   },
   "general": {
     "server": "サーバーに接続できません",
-    "swap": "スワップを作成できません",
     "missingAddress": "アドレスがありません",
     "missingAsset": "アセット数量がありません",
     "missingAmount": "金額がありません",
     "missingAssetList": "アセット一覧がありません",
     "missingTotal": "合計金額がありません",
-    "missingSats": "サトシ数量がありません",
-    "swapAddUnavailable": "スワップアドレスを利用できません"
+    "missingSats": "サトシ数量がありません"
   },
   "send": {
     "bitcoin": {
@@ -50,8 +48,7 @@
     },
     "lightning": {
       "address": "選択された方法にはLightning請求書アドレスが必要です",
-      "type": "選択された方法には別のアドレスタイプが必要です",
-      "swaps": "Lightningスワップが有効になっていません"
+      "type": "選択された方法には別のアドレスタイプが必要です"
     },
     "bank": {
       "transfer": "銀行振込は「送金」セクションで処理されます",
@@ -89,7 +86,6 @@
       "amount": "無効な金額です",
       "faucetFail": "フォーセットに失敗しました",
       "pendingSwap": "リバーススワップの作成に失敗しました",
-      "chainSwap": "チェーンスワップの作成に失敗しました",
       "reverseSwap": "リバーススワップの作成に失敗しました",
       "getAddress": "アドレスの取得に失敗しました: {{address}}"
     },
@@ -100,9 +96,6 @@
       "noOrderInfo": "利用可能な注文情報がありません",
       "failedLoad": "注文の読み込みに失敗しました",
       "failedRefresh": "注文の更新に失敗しました"
-    },
-    "lightning": {
-      "tempUnavailable": "Lightningは一時的に利用できません。このQRコードはArkadeおよびオンチェーン支払いのみをサポートしています。"
     },
     "wrapService": {
       "validAddress": "有効な {{name}} アドレスを入力してください",
@@ -171,14 +164,6 @@
     "idHex": "アセットIDは68文字の16進文字列である必要があります",
     "assNF": "アセットが見つかりません",
     "range": "小数桁は0から{{max}}までの整数である必要があります"
-  },
-  "boltz": {
-    "swapsRestore": "スワップ復元エラー: {{error}}",
-    "integration": "Boltz連携はまだ準備中です。しばらくしてから再試行してください。",
-    "integrationSimple": "Boltz連携はまだ準備中です",
-    "scan": "スキャンできませんでした: {{err}}",
-    "recover": "{{swept}} VTXO{{out}} を回収しました",
-    "noSweep": "回収されたものはありません。後でもう一度お試しください。"
   },
   "lendasat": {
     "walletNot": "ウォレットが初期化されていません",
