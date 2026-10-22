@@ -25,18 +25,25 @@ describe('BUNDLED_CARDS', () => {
   const read = (file: string) => fs.readFileSync(path.resolve(__dirname, '../../..', file), 'utf8')
   const arkadeIds = (...files: string[]) =>
     new Set(files.flatMap((file) => [...read(file).matchAll(/^VITE_ARKADE_[A-Z]+=(\S+)$/gm)].map((m) => m[1])))
-  const cardFor = (network: string) =>
-    BUNDLED_CARDS.find((c) => c.network === network)?.card as {
-      discovery_pubkey: string
-      markets: { base_asset: { id: string }; quote_asset: { id: string } }[]
-    }
+  const cardsFor = (network: string) =>
+    BUNDLED_CARDS.filter((c) => c.network === network).map(
+      (c) =>
+        c.card as {
+          discovery_pubkey: string
+          markets: { base_asset: { id: string }; quote_asset: { id: string } }[]
+        },
+    )
+  // Cards spell assets either bare (`btc`, `<hex>`) or CAIP-style
+  // (`arkade:bitcoin/slip44:0`, `arkade:bitcoin/asset:<hex>`); compare the hex.
   const assetIds = (network: string) =>
-    cardFor(network)
-      .markets.flatMap((m) => [m.base_asset.id, m.quote_asset.id])
-      .filter((id) => id !== 'btc')
+    cardsFor(network)
+      .flatMap((card) => card.markets)
+      .flatMap((m) => [m.base_asset.id, m.quote_asset.id])
+      .filter((id) => id !== 'btc' && !id.includes('/slip44:'))
+      .map((id) => id.replace(/^[a-z0-9]+:[a-z]+\/asset:/, ''))
 
-  it('ships one card per network', () => {
-    expect(BUNDLED_CARDS.map((c) => c.network).sort()).toEqual(['bitcoin', 'mutinynet'])
+  it('ships the asset-swap and Lightning cards on bitcoin, one card on mutinynet', () => {
+    expect(BUNDLED_CARDS.map((c) => c.network).sort()).toEqual(['bitcoin', 'bitcoin', 'mutinynet'])
   })
 
   it('treats every bundled card as bundled', () => {

@@ -13,6 +13,7 @@ import {
 } from '@arkade-os/solver-discovery'
 import type { NetworkName } from '@arkade-os/sdk'
 import betaSolverCard from './beta-solver.card.json'
+import bitcoinSolverCard from './bitcoin-solver.card.json'
 import mutinynetSolverCard from './mutinynet-solver.card.json'
 import { getSolverRegistryUrl } from './constants'
 import { consoleLog } from './logs'
@@ -20,16 +21,20 @@ import { getStorageItem, readSolverCardsFromStorage } from './storage'
 import { assetSwapRepository } from './swapRepository'
 
 /**
- * Solver cards shipped with the wallet, one per network.
+ * Solver cards shipped with the wallet.
  *
- * Mainnet (bitcoin): the Arkade Labs beta solver, the counterparty for the
- * Lightning RFQ legs (`arkade:BTC <-> bolt11:BTC`). It is not published in the
- * mainnet solver registry yet, so without this the corridor does not exist
- * and Lightning send/receive is unavailable. Same card as arkade-os/wallet
- * ships, byte-identical: the solver's own `cli card` output, signature
- * included. This client never verifies the signature (pinning a card is the
- * user's own trust decision), but carrying the real one keeps the bundle what
- * the registry will list.
+ * Mainnet (bitcoin) ships two:
+ * - Chimera's own solver, serving the `BTC/USDT` asset-swap market with the
+ *   mainnet asset ids from .env.beta (production and beta both run on
+ *   `bitcoin`). It carries no Lightning market.
+ * - The Arkade Labs beta solver, the counterparty for the Lightning RFQ legs
+ *   (`arkade:BTC <-> bolt11:BTC`). It is not published in the mainnet solver
+ *   registry yet, so without it the corridor does not exist and Lightning
+ *   send/receive is unavailable. Same card arkade-os/wallet ships,
+ *   byte-identical: the solver's own `cli card` output, signature included.
+ *
+ * This client never verifies card signatures (pinning a card is the user's own
+ * trust decision).
  *
  * Staging (mutinynet): the card the staging asset swaps run on — the
  * `BTC/USDT-CX`, `ETH-CX/BTC` and `ETH-CX/USDT-CX` markets, whose asset ids are
@@ -46,6 +51,7 @@ import { assetSwapRepository } from './swapRepository'
 // Exported so the Solvers settings screen can show built-in cards — a pinned
 // solver invisible in Settings reads as "no solver at all".
 export const BUNDLED_CARDS: LocalCardInput[] = [
+  { card: bitcoinSolverCard as LocalCardInput['card'], network: 'bitcoin' },
   { card: betaSolverCard as LocalCardInput['card'], network: 'bitcoin' },
   { card: mutinynetSolverCard as LocalCardInput['card'], network: 'mutinynet' },
 ]

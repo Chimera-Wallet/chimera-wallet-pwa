@@ -42,24 +42,27 @@ const registryLightningMarket = {
 }
 
 describe('bundled solver cards', () => {
-  it('ships exactly one card per network', () => {
-    expect(BUNDLED_CARDS.map((c) => c.network).sort()).toEqual(['bitcoin', 'mutinynet'])
+  it('ships the asset-swap and Lightning cards on bitcoin, one card on mutinynet', () => {
+    expect(BUNDLED_CARDS.map((c) => c.network).sort()).toEqual(['bitcoin', 'bitcoin', 'mutinynet'])
   })
 
-  it('resolves the mainnet card (asset-id form, no quote_corridor) for Lightning send and receive', async () => {
+  it('resolves the beta solver card (asset-id form, no quote_corridor) for mainnet Lightning send and receive', async () => {
     const markets = await bundledMarkets('bitcoin')
     const pin = getEmulatorPubkeyForNetwork('bitcoin')
+    const betaPubkey = '66422c952f8dcb96e4d0c3f049cd1e265b8461b916d9913c65c2494b64b4e3ce'
 
     const send = lnSendRendezvous(markets, pin)
     expect(send).toMatchObject({ minSats: 500, maxSats: 100_000, transports: { nostr: { relays: ['wss://nostr.arkade.sh'] } } })
-    expect(send?.solverPubkey).toBe((BUNDLED_CARDS[0].card as { discovery_pubkey: string }).discovery_pubkey)
+    expect(send?.solverPubkey).toBe(betaPubkey)
 
-    expect(lnReceiveRendezvous(markets, pin)).toMatchObject({ minSats: 500, maxSats: 100_000 })
+    const receive = lnReceiveRendezvous(markets, pin)
+    expect(receive).toMatchObject({ minSats: 500, maxSats: 100_000 })
+    expect(receive?.solverPubkey).toBe(betaPubkey)
   })
 
-  it('offers no mainnet asset-swap markets: the staging asset ids stay on mutinynet', async () => {
+  it('offers the mainnet BTC/USDT market from the bitcoin card beside the Lightning market', async () => {
     const markets = await bundledMarkets('bitcoin')
-    expect(markets.map((m) => m.base_asset.ticker + '/' + m.quote_asset.ticker)).toEqual(['BTC/BTC'])
+    expect(markets.map((m) => m.base_asset.ticker + '/' + m.quote_asset.ticker).sort()).toEqual(['BTC/BTC', 'BTC/d4e095d6'])
   })
 
   it('bundles no Lightning corridor for mutinynet: it comes from the registry', async () => {
