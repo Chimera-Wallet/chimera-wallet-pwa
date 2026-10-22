@@ -97,6 +97,15 @@ export const createWrapQuote = async (payload: WrapQuoteRequest): Promise<WrapQu
   return response.json()
 }
 
+// Unwrap names the wrapped Arkade asset (`USDT` -> `USDT-CX`), while wrap names
+// the native one. The published spec says otherwise ("ticker on the destination
+// chain"), but the live API rejects `ethereum/USDT` as an unsupported unwrap and
+// accepts `ethereum/USDT-CX`. Callers pass the plain asset ticker for both.
+const WRAPPED_TICKER_SUFFIX = '-CX'
+
+export const toWrappedTicker = (ticker: string): string =>
+  ticker.toUpperCase().endsWith(WRAPPED_TICKER_SUFFIX) ? ticker : `${ticker}${WRAPPED_TICKER_SUFFIX}`
+
 /**
  * Create an unwrap quote: burn the wrapped Arkade asset and receive the
  * underlying native/token on the destination chain. Deposit the wrapped asset
@@ -106,7 +115,7 @@ export const createUnwrapQuote = async (payload: WrapQuoteRequest): Promise<Wrap
   const response = await fetch(`${getArkadeWrapBaseUrl()}/unwrap`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, ticker: toWrappedTicker(payload.ticker) }),
   })
   if (!response.ok) return parseError(response, 'Failed to create unwrap quote')
   return response.json()
