@@ -12,38 +12,34 @@ import {
   type OfferPlan,
 } from '@arkade-os/solver-discovery'
 import type { NetworkName } from '@arkade-os/sdk'
-import betaSolverCard from './beta-solver.card.json'
+import bitcoinSolverCard from './bitcoin-solver.card.json'
 import { getSolverRegistryUrl } from './constants'
 import { consoleLog } from './logs'
+import mutinynetSolverCard from './mutinynet-solver.card.json'
 import { getStorageItem, readSolverCardsFromStorage } from './storage'
 import { assetSwapRepository } from './swapRepository'
 
 /**
- * Solver cards shipped with the wallet.
+ * Solver cards shipped with the wallet, one per network.
  *
- * One card, one solver, multiple markets: the Arkade Labs solver behind
- * `discovery_pubkey`/`transports.nostr.relays` here serves both the asset-swap
- * corridors (`BTC/USDT-CX`, `ETH-CX/BTC`, `ETH-CX/USDT-CX`) and the Lightning
- * RFQ send leg (`arkade:BTC -> lightning:BTC`). None of it is published in the
- * solver registry yet, so without this bundle none of these corridors exist
- * for this wallet. Bundled rather than configured because the card carries its
- * own rendezvous (pubkey + nostr relays) — there is no URL to point at.
+ * Each card is one solver serving multiple markets: the asset-swap corridors
+ * (`BTC/USDT-CX`, `ETH-CX/BTC`, `ETH-CX/USDT-CX`) and the Lightning RFQ send
+ * leg (`arkade:BTC -> lightning:BTC`).
  *
- * The card is the solver's own `cli card` output, signature included — it
- * signs the current `transports.nostr.relays` shape. This client never
- * verifies the signature (pinning a card is the user's own trust decision),
- * but carrying the real one keeps the bundle byte-identical to what the
- * registry will list.
+ * Asset ids are per network and must match that network's VITE_ARKADE_* ids:
+ * the mutinynet card uses .env.staging's, the bitcoin card the mainnet ids
+ * from .env.beta (production and beta both run on `bitcoin`). This client
+ * never verifies card signatures (pinning a card is the user's own trust
+ * decision).
  *
- * Offered on both production (bitcoin) and staging (mutinynet). Not on
- * regtest/signet, where no wallet build points.
+ * Not on regtest/signet, where no wallet build points.
  */
 // Exported so the Solvers settings screen can show built-in cards — a pinned
 // solver invisible in Settings reads as "no solver at all".
-export const BUNDLED_CARDS: LocalCardInput[] = (['bitcoin', 'mutinynet'] as const).map((network) => ({
-  card: betaSolverCard as LocalCardInput['card'],
-  network,
-}))
+export const BUNDLED_CARDS: LocalCardInput[] = [
+  { network: 'bitcoin', card: bitcoinSolverCard as LocalCardInput['card'] },
+  { network: 'mutinynet', card: mutinynetSolverCard as LocalCardInput['card'] },
+]
 
 const BUNDLED_PUBKEYS = new Set(
   BUNDLED_CARDS.map((input) => (input.card as { discovery_pubkey?: string }).discovery_pubkey?.toLowerCase()).filter(
