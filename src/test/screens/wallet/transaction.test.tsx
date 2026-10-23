@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import '../../../lib/i18n'
 import Transaction from '../../../screens/Wallet/Transaction'
@@ -16,6 +16,7 @@ import { AspContext } from '../../../providers/asp'
 import { WalletContext } from '../../../providers/wallet'
 import { NavigationContext } from '../../../providers/navigation'
 import { getTxNote, setTxNote } from '../../../lib/txNotes'
+import { AssetSwapsContext } from '../../../providers/assetSwaps'
 
 // These pin Chimera-specific behaviour that an upstream Arkade merge has
 // silently reverted before: Confirmed / Pending / Failed statuses, amounts in
@@ -161,5 +162,55 @@ describe('Transaction note', () => {
     setTxNote(`received:${mockTxId}`, 'Rent')
     renderTx({ ...mockTxInfo, type: 'sent' })
     expect(screen.getByTestId('tx-note')).toHaveTextContent('Add note')
+  })
+})
+
+describe('Transaction screen: asset swaps', () => {
+  const swapTx = (status: 'pending' | 'completed') => ({
+    ...mockTxInfo,
+    type: 'swap',
+    redeemTxid: mockTxId,
+    assetSwap: {
+      id: mockTxId,
+      fromAssetId: 'btc',
+      fromTicker: 'BTC',
+      fromDecimals: 8,
+      fromAmount: BigInt(10_000),
+      toAssetId: 'aa'.repeat(34),
+      toTicker: 'USDT',
+      toDecimals: 6,
+      toAmount: BigInt(1_000_000),
+      status,
+    },
+  })
+
+  const renderSwap = (recordStatus: string, cancelSwap = vi.fn().mockResolvedValue(undefined)) => {
+    const txInfo = swapTx(recordStatus === 'fulfilled' ? 'completed' : 'pending') as unknown as TxInfo
+    render(
+      <NavigationContext.Provider value={mockNavigationContextValue}>
+        <AspContext.Provider value={mockAspContextValue}>
+          <FlowContext.Provider value={{ ...mockFlowContextValue, txInfo }}>
+            <WalletContext.Provider value={{ ...mockWalletContextValue, txs: [txInfo] } as any}>
+              <AssetSwapsContext.Provider value={{ swaps: [{ id: mockTxId, status: recordStatus }], cancelSwap } as any}>
+                <Transaction />
+              </AssetSwapsContext.Provider>
+            </WalletContext.Provider>
+          </FlowContext.Provider>
+        </AspContext.Provider>
+      </NavigationContext.Provider>,
+    )
+    return cancelSwap
+  }
+
+  it('offers to cancel a swap still waiting for a fill, and cancels that swap', () => {
+    const cancelSwap = renderSwap('pending')
+    expect(screen.getByText('Waiting for a solver')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('cancel-swap'))
+    expect(cancelSwap).toHaveBeenCalledWith(mockTxId)
+  })
+
+  it.each(['fulfilled', 'cancelling', 'cancelled', 'recoverable'])('offers no cancel for a %s swap', (status) => {
+    renderSwap(status)
+    expect(screen.queryByTestId('cancel-swap')).not.toBeInTheDocument()
   })
 })

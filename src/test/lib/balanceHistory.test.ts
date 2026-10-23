@@ -31,6 +31,7 @@ const tx = (type: string, amount: number, createdAtSec: number, extra: Partial<T
 const swap = (overrides: Partial<TxAssetSwap>, createdAtSec = 0): Tx =>
   tx('swap', 0, createdAtSec, {
     assetSwap: {
+      id: 'swap',
       fromAssetId: BTC_KEY,
       fromTicker: 'BTC',
       fromDecimals: 8,

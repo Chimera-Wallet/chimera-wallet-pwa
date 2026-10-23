@@ -1,4 +1,4 @@
-import { useContext, useSyncExternalStore } from 'react'
+import { useContext, useState, useSyncExternalStore } from 'react'
 import Padded from '../../components/Padded'
 import { WalletContext } from '../../providers/wallet'
 import { FlowContext } from '../../providers/flow'
@@ -16,6 +16,10 @@ import VtxosIcon from '../../icons/Vtxos'
 import { AspContext } from '../../providers/asp'
 import { prettyAssetAmount } from '../../lib/assets'
 import { getTxStatus, TX_STATUS_DISPLAY } from '../../lib/txStatus'
+import { AssetSwapsContext } from '../../providers/assetSwaps'
+import Button from '../../components/Button'
+import ErrorMessage from '../../components/Error'
+import { extractError } from '../../lib/error'
 import { Tx } from '../../lib/types'
 import {useTranslation} from 'react-i18next'
 import { useLnSendReceipt } from '../../hooks/useLnSendReceipt'
@@ -50,6 +54,24 @@ export default function Transaction() {
   const lnSendReceipt = useLnSendReceipt(tx)
   const noteKey = tx ? txNoteKey(tx) : undefined
   const note = useSyncExternalStore(subscribeTxNotes, () => getTxNote(noteKey))
+  const { swaps, cancelSwap } = useContext(AssetSwapsContext)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState('')
+
+  // Read the stored record, not the row: the row folds `cancelling` into
+  // `pending`, and only a deposit still waiting for a fill can be cancelled
+  // (a `recoverable` one was swept and has no cooperative path left).
+  const swapRecord = tx?.assetSwap ? swaps.find((s) => s.id === tx.assetSwap!.id) : undefined
+  const canCancelSwap = swapRecord?.status === 'pending'
+
+  const handleCancelSwap = () => {
+    if (!swapRecord) return
+    setCancelError('')
+    setCancelling(true)
+    cancelSwap(swapRecord.id)
+      .catch((err) => setCancelError(extractError(err)))
+      .finally(() => setCancelling(false))
+  }
 
   if (!tx) return <></>
   const txid = tx.boardingTxid || tx.redeemTxid || tx.roundTxid || ''
@@ -97,6 +119,11 @@ export default function Transaction() {
                 <Text wrap>{t('networks.transactions.boardingAutomatically')}</Text>
               </Info>
             ) : null}
+            {canCancelSwap || cancelling ? (
+              <Info color='orange' icon={<VtxosIcon />} title={t('apps.swap.cancelPendingTitle')}>
+                <Text wrap>{t('apps.swap.cancelPendingDesc')}</Text>
+              </Info>
+            ) : null}
             {tx.assets?.length ? (
               <FlexCol gap='0.5rem'>
                 {tx.assets.map((a) => {
@@ -131,6 +158,17 @@ export default function Transaction() {
               />
             ) : null}
             <Details details={details} />
+            {cancelError ? <ErrorMessage error text={cancelError} /> : null}
+            {canCancelSwap || cancelling ? (
+              <Button
+                label={t('apps.swap.cancelSwap')}
+                onClick={handleCancelSwap}
+                loading={cancelling}
+                disabled={cancelling}
+                red
+                testId='cancel-swap'
+              />
+            ) : null}
           </FlexCol>
         </Padded>
       </Content>
