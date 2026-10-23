@@ -14,7 +14,6 @@ This project supports environment-specific configuration through `.env` files:
 | Variable                    | Description                                                         | Example Value                                     |
 | --------------------------- | ------------------------------------------------------------------- | ------------------------------------------------- |
 | `VITE_ARK_SERVER`           | Override the default Arkade server URL                              | `VITE_ARK_SERVER=https://arkade.computer`         |
-| `VITE_BOLTZ_URL`            | Override the default Boltz swap provider URL for Lightning          | `VITE_BOLTZ_URL=https://api.ark.boltz.exchange`   |
 | `VITE_CHIMERA_API`          | Override the Chimera API URL                                        | `VITE_CHIMERA_API=https://api.chimerawallet.com/v1` |
 | `VITE_KYC_API_URL`          | IDFlow KYC API URL                                                  | `VITE_KYC_API_URL=https://api.idflow.ch`          |
 | `VITE_KYC_WEBVIEW_URL`      | IDFlow KYC webview URL                                              | `VITE_KYC_WEBVIEW_URL=https://demo.idflow.ch/`    |
@@ -47,7 +46,6 @@ but cannot be selected to send or receive.
 |-------------------------------|---------------------------------------------------------------------|--------------------------------------------------------------------------------------|
 | `VITE_ARK_SERVER`             | Override the default Arkade server URL                              | `VITE_ARK_SERVER=http://localhost:7070`                                              |
 | `VITE_APP_VERSION`            | App version string shown in support diagnostics                     | `VITE_APP_VERSION=1.2.3`                                                             |
-| `VITE_BOLTZ_URL`              | Override the default Boltz swap provider URL for Lightning          | `VITE_BOLTZ_URL=https://boltz-provider-url.com`                                      |
 | `VITE_CHATWOOT_WEBSITE_TOKEN` | ChatWoot website token for customer support integration             | `VITE_CHATWOOT_WEBSITE_TOKEN=your-token`                                             |
 | `VITE_CHATWOOT_BASE_URL`      | ChatWoot server base URL for customer support integration           | `VITE_CHATWOOT_BASE_URL=https://app.chatwoot.com`                                    |
 | `VITE_DELEGATOR_URL`          | Delegator service URL for the wallet service worker                 | `VITE_DELEGATOR_URL=https://delegator.example.com`                                   |
@@ -85,7 +83,6 @@ Environment variables can be passed at runtime to configure the wallet without r
 ```bash
 docker run -p 8080:80 \
   -e VITE_ARK_SERVER=https://arkade.computer \
-  -e VITE_BOLTZ_URL=https://api.boltz.exchange \
   ghcr.io/arkade-os/wallet:latest
 ```
 
@@ -99,7 +96,6 @@ docker build -t arkade-wallet .
 # With build-time configuration
 docker build \
   --build-arg VITE_ARK_SERVER=https://arkade.computer \
-  --build-arg VITE_BOLTZ_URL=https://api.boltz.exchange \
   -t arkade-wallet .
 ```
 

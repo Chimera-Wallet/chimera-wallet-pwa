@@ -35,8 +35,6 @@
     },
     "connection": {
         "missingCreds": "Missing credentials",
-        "restoringSwaps": "Restoring swaps...",
-        "swapsInfo": "Restored {{num}} swaps from network",
         "connectionFailed": "Connection failed",
         "serverConnection": "Connecting to server" 
     },

@@ -23,14 +23,12 @@
   },
   "general": {
     "server": "Servidor inaccesible",
-    "swap": "No se pudo crear el intercambio",
     "missingAddress": "Falta la dirección",
     "missingAsset": "Falta la cantidad del activo",
     "missingAmount": "Falta la cantidad",
     "missingAssetList": "Falta la lista de activos",
     "missingTotal": "Falta la cantidad total",
-    "missingSats": "Falta la cantidad de satoshis",
-    "swapAddUnavailable": "Dirección de intercambio no disponible"
+    "missingSats": "Falta la cantidad de satoshis"
   },
   "send": {
     "bitcoin": {
@@ -50,8 +48,7 @@
     },
     "lightning": {
       "address": "El método seleccionado requiere una factura Lightning",
-      "type": "El método seleccionado requiere un tipo de dirección diferente",
-      "swaps": "Los intercambios Lightning no están habilitados"
+      "type": "El método seleccionado requiere un tipo de dirección diferente"
     },
     "bank": {
       "transfer": "Las transferencias bancarias se gestionan en Transferencias",
@@ -89,7 +86,6 @@
       "amount": "Cantidad no válida",
       "faucetFail": "El faucet falló",
       "pendingSwap": "No se pudo crear el intercambio inverso",
-      "chainSwap": "No se pudo crear el intercambio en cadena",
       "reverseSwap": "No se pudo crear el intercambio inverso",
       "getAddress": "No se pudo obtener la dirección: {{address}}"
     },
@@ -100,9 +96,6 @@
       "noOrderInfo": "No hay información de la orden disponible",
       "failedLoad": "No se pudo cargar la orden",
       "failedRefresh": "No se pudo actualizar la orden"
-    },
-    "lightning": {
-      "tempUnavailable": "Lightning no está disponible temporalmente. Este código QR solo admite pagos de Arkade y en cadena."
     },
     "wrapService": {
       "validAddress": "Introduce una dirección {{name}} válida",
@@ -171,14 +164,6 @@
     "idHex": "El ID del activo debe ser una cadena hexadecimal de 68 caracteres",
     "assNF": "Activo no encontrado",
     "range": "Los decimales deben ser un número entero entre 0 y {{max}}"
-  },
-  "boltz": {
-    "swapsRestore": "Error al restaurar intercambios: {{error}}",
-    "integration": "La integración con Boltz aún no está lista. Inténtalo de nuevo en un momento.",
-    "integrationSimple": "La integración con Boltz aún no está lista",
-    "scan": "No se pudo escanear: {{err}}",
-    "recover": "Se recuperaron {{swept}} VTXO{{out}}",
-    "noSweep": "No se recuperó nada; inténtalo de nuevo más tarde."
   },
   "lendasat": {
     "walletNot": "La billetera no está inicializada",

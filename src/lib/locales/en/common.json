@@ -20,8 +20,7 @@
         "send":{
             "invoiceDeets": "Invoice Details",
             "feesDeduction": "Fees will be deducted from the amount sent",
-            "rollOverVTXO":  "Did you mean <a>roll over your VTXOs</a>?",
-            "lightningSwaps": "Enable <a>Lightning swaps</a> to pay"
+            "rollOverVTXO":  "Did you mean <a>roll over your VTXOs</a>?"
 
         },
         "bank": {
@@ -84,9 +83,6 @@
             },
             "bitcoin":{
                 "bitcoinAddress": "Bitcoin address"
-            },
-            "lnurl": {
-                "lnurlAddress": "LNURL address"
             },
             "invalidAmount": "No valid payment methods available for this amount",
             "depositCreated": "Deposit order created",
@@ -203,7 +199,6 @@
             "arkade": "Paying inside Arkade",
             "lightningSwap": "Swapping to Lightning",
             "lightningPay": "Paying to Lightning", 
-            "mainnetSwap": "Swapping to mainnet",
             "mainnetPay": "Paying to mainnet"
 
         },

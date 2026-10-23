@@ -6,8 +6,7 @@ import Loading from '../../components/Loading'
 import Header from '../../components/Header'
 import { setPrivateKey } from '../../lib/privateKey'
 import { setMnemonic } from '../../lib/mnemonic'
-import { consoleError, consoleLog } from '../../lib/logs'
-import { SwapsContext } from '../../providers/swaps'
+import { consoleError } from '../../lib/logs'
 import { useLoadingStatus } from '../../hooks/useLoadingStatus'
 import { setLoadingStatus } from '../../lib/loadingStatus'
 import { NavigationContext, Pages } from '../../providers/navigation'
@@ -15,7 +14,6 @@ import {useTranslation} from 'react-i18next'
 
 export default function InitConnect() {
   const { initInfo, setInitInfo } = useContext(FlowContext)
-  const { arkadeSwaps, restoreSwaps } = useContext(SwapsContext)
   const { navigate } = useContext(NavigationContext)
   const { initWallet } = useContext(WalletContext)
 
@@ -46,15 +44,12 @@ export default function InitConnect() {
     }
   }, [])
 
+  // Nothing else to wait for once the wallet is up: asset swaps rebuild
+  // themselves from history (providers/assetSwaps), and Lightning receives
+  // live in the local swap store.
   useEffect(() => {
-    if (!initialized || !arkadeSwaps) return
-    if (!initInfo.restoring) return setConnectDone(true)
-    setLoadingStatus(t('init.connection.restoringSwaps'))
-    restoreSwaps()
-      .then((count) => count && consoleLog(t('init.connection.swapsInfo', {num:count})))
-      .catch((err) => consoleError(err, 'Error restoring swaps:'))
-      .finally(() => setConnectDone(true))
-  }, [arkadeSwaps, initialized, initInfo.restoring])
+    if (initialized) setConnectDone(true)
+  }, [initialized])
 
   useEffect(() => {
     if (!connectDone) return

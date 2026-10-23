@@ -10,8 +10,7 @@
     "send": {
       "invoiceDeets": "发票详情",
       "feesDeduction": "费用将从发送金额中扣除",
-      "rollOverVTXO": "您是否想要<a>滚动续期您的 VTXO</a>？",
-      "lightningSwaps": "启用<a>Lightning 兑换</a>以进行支付"
+      "rollOverVTXO": "您是否想要<a>滚动续期您的 VTXO</a>？"
     },
     "bank": {
       "submissionSuccess": "提现申请已提交",
@@ -73,9 +72,6 @@
       },
       "bitcoin": {
         "bitcoinAddress": "Bitcoin 地址"
-      },
-      "lnurl": {
-        "lnurlAddress": "LNURL 地址"
       },
       "invalidAmount": "没有适用于此金额的有效支付方式",
       "depositCreated": "存款订单已创建",
@@ -187,7 +183,6 @@
       "arkade": "在 Arkade 内支付",
       "lightningSwap": "兑换至 Lightning",
       "lightningPay": "向 Lightning 支付",
-      "mainnetSwap": "兑换至主网",
       "mainnetPay": "向主网支付"
     },
     "bank": {

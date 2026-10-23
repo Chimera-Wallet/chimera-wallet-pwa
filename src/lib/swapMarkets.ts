@@ -3,7 +3,7 @@
  * not own — which registry to ask, which cards ship with the build, and the
  * pre-fee rate the swap composer displays.
  */
-import { discoverMarkets as discover } from '@arkade-os/swap'
+import { BTC_ASSET_ID, discoverMarkets as discover } from '@arkade-os/swap'
 import {
   displayPrice,
   isNetwork,
@@ -13,6 +13,8 @@ import {
 } from '@arkade-os/solver-discovery'
 import type { NetworkName } from '@arkade-os/sdk'
 import betaSolverCard from './beta-solver.card.json'
+import bitcoinSolverCard from './bitcoin-solver.card.json'
+import mutinynetSolverCard from './mutinynet-solver.card.json'
 import { getSolverRegistryUrl } from './constants'
 import { consoleLog } from './logs'
 import { getStorageItem, readSolverCardsFromStorage } from './storage'
@@ -21,29 +23,38 @@ import { assetSwapRepository } from './swapRepository'
 /**
  * Solver cards shipped with the wallet.
  *
- * One card, one solver, multiple markets: the Arkade Labs solver behind
- * `discovery_pubkey`/`transports.nostr.relays` here serves both the asset-swap
- * corridors (`BTC/USDT-CX`, `ETH-CX/BTC`, `ETH-CX/USDT-CX`) and the Lightning
- * RFQ send leg (`arkade:BTC -> lightning:BTC`). None of it is published in the
- * solver registry yet, so without this bundle none of these corridors exist
- * for this wallet. Bundled rather than configured because the card carries its
- * own rendezvous (pubkey + nostr relays) — there is no URL to point at.
+ * Mainnet (bitcoin) ships two:
+ * - Chimera's own solver, serving the `BTC/USDT` asset-swap market with the
+ *   mainnet asset ids from .env.beta (production and beta both run on
+ *   `bitcoin`). It carries no Lightning market.
+ * - The Arkade Labs beta solver, the counterparty for the Lightning RFQ legs
+ *   (`arkade:BTC <-> bolt11:BTC`). It is not published in the mainnet solver
+ *   registry yet, so without it the corridor does not exist and Lightning
+ *   send/receive is unavailable. Same card arkade-os/wallet ships,
+ *   byte-identical: the solver's own `cli card` output, signature included.
  *
- * The card is the solver's own `cli card` output, signature included — it
- * signs the current `transports.nostr.relays` shape. This client never
- * verifies the signature (pinning a card is the user's own trust decision),
- * but carrying the real one keeps the bundle byte-identical to what the
- * registry will list.
+ * This client never verifies card signatures (pinning a card is the user's own
+ * trust decision).
  *
- * Offered on both production (bitcoin) and staging (mutinynet). Not on
- * regtest/signet, where no wallet build points.
+ * Staging (mutinynet): the card the staging asset swaps run on — the
+ * `BTC/USDT-CX`, `ETH-CX/BTC` and `ETH-CX/USDT-CX` markets, whose asset ids are
+ * the staging deployment's. It carries no Lightning market: on mutinynet the
+ * Lightning (and onchain) corridors come from the solver registry, as in
+ * arkade-os/wallet, which bundles nothing for this network.
+ *
+ * Each card is scoped to its own network on purpose: a card's pubkey and relay
+ * belong to one deployment, and offering it on another network would quote
+ * that counterparty for the wrong coins. Bundled rather than configured
+ * because a card carries its own rendezvous (pubkey + nostr relays) — there is
+ * no URL to point at.
  */
 // Exported so the Solvers settings screen can show built-in cards — a pinned
 // solver invisible in Settings reads as "no solver at all".
-export const BUNDLED_CARDS: LocalCardInput[] = (['bitcoin', 'mutinynet'] as const).map((network) => ({
-  card: betaSolverCard as LocalCardInput['card'],
-  network,
-}))
+export const BUNDLED_CARDS: LocalCardInput[] = [
+  { card: bitcoinSolverCard as LocalCardInput['card'], network: 'bitcoin' },
+  { card: betaSolverCard as LocalCardInput['card'], network: 'bitcoin' },
+  { card: mutinynetSolverCard as LocalCardInput['card'], network: 'mutinynet' },
+]
 
 const BUNDLED_PUBKEYS = new Set(
   BUNDLED_CARDS.map((input) => (input.card as { discovery_pubkey?: string }).discovery_pubkey?.toLowerCase()).filter(
@@ -108,6 +119,29 @@ export const discoverMarkets = async (network: NetworkName, useCache = true): Pr
   }
   return markets
 }
+
+const ARKADE_BTC_ID = /^arkade:[^/]+\/slip44:[01]$/
+const ARKADE_ASSET_ID = /^arkade:[^/]+\/asset:([0-9a-f]{68})$/
+
+/** An Arkade-corridor asset id in the wallet's own form: `btc` for BTC, the
+ * bare 68-hex id for an issued asset. Cards may spell either side CAIP-style
+ * (`arkade:bitcoin/slip44:0`, `arkade:bitcoin/asset:<hex>`), and discovery
+ * passes that through untouched — but everything downstream compares against
+ * `VITE_ARKADE_*` ids and `BTC_ASSET_ID`, and funds with the plan's asset id. */
+const toWalletAssetId = (id: string): string => {
+  if (ARKADE_BTC_ID.test(id)) return BTC_ASSET_ID
+  return ARKADE_ASSET_ID.exec(id)?.[1] ?? id
+}
+
+/** A market with both sides' ids in the wallet's form (see
+ * {@link toWalletAssetId}). Only for markets already known to settle on the
+ * Arkade corridor: the corridor is read off the CAIP namespace, so normalizing
+ * first would make a `bolt11:` side look like an Arkade one. */
+export const withWalletAssetIds = (market: DiscoveredMarket): DiscoveredMarket => ({
+  ...market,
+  base_asset: { ...market.base_asset, id: toWalletAssetId(market.base_asset.id) },
+  quote_asset: { ...market.quote_asset, id: toWalletAssetId(market.quote_asset.id) },
+})
 
 /** The market feed's pre-fee price oriented give→receive, in whole display
  * units. Derived from the plan's exact price rational — plan.priceDisplay

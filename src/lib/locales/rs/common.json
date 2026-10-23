@@ -10,8 +10,7 @@
     "send": {
       "invoiceDeets": "Детали счёта",
       "feesDeduction": "Комиссии будут вычтены из отправляемой суммы",
-      "rollOverVTXO": "Возможно, вы хотели <a>продлить свои VTXO</a>?",
-      "lightningSwaps": "Включите <a>Lightning-свопы</a> для оплаты"
+      "rollOverVTXO": "Возможно, вы хотели <a>продлить свои VTXO</a>?"
     },
     "bank": {
       "submissionSuccess": "Вывод средств отправлен",
@@ -73,9 +72,6 @@
       },
       "bitcoin": {
         "bitcoinAddress": "Bitcoin-адрес"
-      },
-      "lnurl": {
-        "lnurlAddress": "LNURL-адрес"
       },
       "invalidAmount": "Для этой суммы нет доступных способов оплаты",
       "depositCreated": "Заказ на депозит создан",
@@ -186,7 +182,6 @@
       "arkade": "Оплата внутри Arkade",
       "lightningSwap": "Обмен в Lightning",
       "lightningPay": "Оплата через Lightning",
-      "mainnetSwap": "Обмен в mainnet",
       "mainnetPay": "Оплата в mainnet"
     },
     "bank": {

@@ -34,8 +34,6 @@
   },
   "connection": {
     "missingCreds": "Отсутствуют учётные данные",
-    "restoringSwaps": "Восстановление свопов...",
-    "swapsInfo": "Восстановлено свопов из сети: {{num}}",
     "connectionFailed": "Ошибка подключения",
     "serverConnection": "Подключение к серверу"
   },

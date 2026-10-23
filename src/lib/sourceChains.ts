@@ -63,7 +63,8 @@ export const ASSET_SOURCE_CHAINS: Record<string, AssetChainOption[]> = {
   ETH: [{ chain: SOURCE_CHAINS.ethereum, ticker: 'ETH' }],
   USDT: [
     { chain: SOURCE_CHAINS.ethereum, ticker: 'USDT' },
-    { chain: SOURCE_CHAINS.tron, ticker: 'USDT' },
+    // Temporarily disabled: USDT on Tron is hidden from send and receive.
+    // { chain: SOURCE_CHAINS.tron, ticker: 'USDT' },
   ],
   TRX: [{ chain: SOURCE_CHAINS.tron, ticker: 'TRX' }],
   POL: [{ chain: SOURCE_CHAINS.polygon, ticker: 'POL' }],

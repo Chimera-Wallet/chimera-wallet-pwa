@@ -28,12 +28,9 @@ import Wallet from '../screens/Wallet/Index'
 import Settings from '../screens/Settings/Index'
 
 import Apps from '../screens/Apps/Index'
-import AppBoltz from '../screens/Apps/Boltz/Index'
-import AppBoltzSettings from '../screens/Apps/Boltz/Settings'
 import InitSuccess from '../screens/Init/Success'
 import InitBackupKey from '../screens/Init/BackupKey'
 import InitBackupWarning from '../screens/Init/BackupWarning'
-import AppBoltzSwap from '../screens/Apps/Boltz/Swap'
 import AppLendasat from '../screens/Apps/Lendasat/Index'
 import AppSatora from '../screens/Apps/Satora/Index'
 import AppAssets from '../screens/Apps/Assets/Index'
@@ -66,9 +63,6 @@ import { trackPageView } from '../lib/analytics'
 export type NavigationDirection = 'forward' | 'back' | 'none'
 
 export enum Pages {
-  AppBoltz,
-  AppBoltzSettings,
-  AppBoltzSwap,
   AppLendasat,
   AppSatora,
   AppAssets,
@@ -142,9 +136,6 @@ export enum Tabs {
 }
 
 const pageTab: Record<Pages, Tabs> = {
-  [Pages.AppBoltz]: Tabs.Apps,
-  [Pages.AppBoltzSettings]: Tabs.Apps,
-  [Pages.AppBoltzSwap]: Tabs.Apps,
   [Pages.AppLendasat]: Tabs.Apps,
   [Pages.AppSatora]: Tabs.Apps,
   [Pages.AppAssets]: Tabs.Apps,
@@ -228,12 +219,6 @@ export const subNavHandler = {
 
 export const pageComponent = (page: Pages, navigationData?: Record<string, unknown>): JSX.Element => {
   switch (page) {
-    case Pages.AppBoltz:
-      return <AppBoltz />
-    case Pages.AppBoltzSettings:
-      return <AppBoltzSettings />
-    case Pages.AppBoltzSwap:
-      return <AppBoltzSwap />
     case Pages.AppLendasat:
       return <AppLendasat />
     case Pages.AppSatora:
