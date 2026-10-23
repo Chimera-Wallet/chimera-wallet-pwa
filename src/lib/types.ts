@@ -104,6 +104,8 @@ export enum Themes {
  * fill/cancel collapsed into one, rather than two unrelated sent/received
  * rows. See `buildAssetSwapActivityTx` in `lib/swapDisplay.ts`. */
 export interface TxAssetSwap {
+  /** The swap record's id (its funding txid) — what `cancelSwap` takes. */
+  id: string
   fromAssetId: string
   fromTicker: string
   fromDecimals: number
