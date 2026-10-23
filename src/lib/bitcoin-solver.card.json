@@ -34,56 +34,6 @@
       "max_base_amount": "5000000",
       "min_quote_amount": "1000000",
       "max_quote_amount": "5000000000"
-    },
-    {
-      "base_asset": {
-        "id": "arkade:bitcoin/asset:28a0194ea9a8d4383f630af83e4c564a38803b3f1f21123efd09ffaef3265f380000",
-        "name": "Arkade asset 28a0194e",
-        "ticker": "28a0194e",
-        "decimals": 18
-      },
-      "quote_asset": {
-        "id": "arkade:bitcoin/slip44:0",
-        "name": "Bitcoin",
-        "ticker": "BTC",
-        "decimals": 8
-      },
-      "fee_bps": 100,
-      "price_feed": "https://api.binance.com/api/v3/ticker/price?symbol=ETHBTC",
-      "price_feed_schema": {
-        "type": "json",
-        "price_path": "/price"
-      },
-      "price_decimals": 10,
-      "min_base_amount": "1000",
-      "max_base_amount": "1000000000000000000",
-      "min_quote_amount": "1000",
-      "max_quote_amount": "100000000"
-    },
-    {
-      "base_asset": {
-        "id": "arkade:bitcoin/asset:28a0194ea9a8d4383f630af83e4c564a38803b3f1f21123efd09ffaef3265f380000",
-        "name": "Arkade asset 28a0194e",
-        "ticker": "28a0194e",
-        "decimals": 18
-      },
-      "quote_asset": {
-        "id": "arkade:bitcoin/asset:d4e095d6e9003607655a65936057a4db37e9cf2b3003d522ea121df5793f76a00000",
-        "name": "Arkade asset d4e095d6",
-        "ticker": "d4e095d6",
-        "decimals": 6
-      },
-      "fee_bps": 100,
-      "price_feed": "https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT",
-      "price_feed_schema": {
-        "type": "json",
-        "price_path": "/price"
-      },
-      "price_decimals": 12,
-      "min_base_amount": "1000",
-      "max_base_amount": "1000000000000000000",
-      "min_quote_amount": "1000000",
-      "max_quote_amount": "100000000"
     }
   ],
   "sig": "5fa8c9f0234d0d0ebff89bf2c42b3156829921b73d99f2642d22ab8510ca2d04ba9fae610edfe72e208911e68a33ec226bf243fbcaa3e75532f0975dd28ac014"
