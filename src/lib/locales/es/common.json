@@ -10,8 +10,7 @@
     "send": {
       "invoiceDeets": "Detalles de la factura",
       "feesDeduction": "Las comisiones se deducirán del importe enviado",
-      "rollOverVTXO": "¿Querías <a>renovar tus VTXOs</a>?",
-      "lightningSwaps": "Habilita los <a>intercambios Lightning</a> para pagar"
+      "rollOverVTXO": "¿Querías <a>renovar tus VTXOs</a>?"
     },
     "bank": {
       "submissionSuccess": "Retirada enviada",
@@ -73,9 +72,6 @@
       },
       "bitcoin": {
         "bitcoinAddress": "Dirección de Bitcoin"
-      },
-      "lnurl": {
-        "lnurlAddress": "Dirección LNURL"
       },
       "invalidAmount": "No hay métodos de pago válidos disponibles para este importe",
       "depositCreated": "Orden de depósito creada",

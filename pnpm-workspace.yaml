@@ -3,4 +3,4 @@ onlyBuiltDependencies:
 ignoredBuiltDependencies:
   - esbuild
 overrides:
-  '@arkade-os/sdk': 0.4.76
+  '@arkade-os/sdk': 0.4.79

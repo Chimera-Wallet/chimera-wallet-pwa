@@ -1,4 +1,3 @@
-import { BoltzReverseSwap, BoltzSubmarineSwap } from '@arkade-os/boltz-swap'
 import { Asset, NetworkName, type ExtendedVirtualCoin } from '@arkade-os/sdk'
 
 export type Addresses = {
@@ -11,9 +10,6 @@ export type Config = {
   apps: {
     assets: {
       enabled: boolean
-    }
-    boltz: {
-      connected: boolean
     }
   }
   aspUrl: string
@@ -54,8 +50,6 @@ export enum Fiats {
   GBP = 'GBP',
   CNY = 'CNY',
 }
-
-export type PendingSwap = BoltzReverseSwap | BoltzSubmarineSwap
 
 export type Satoshis = number
 
