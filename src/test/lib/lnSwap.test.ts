@@ -60,9 +60,17 @@ describe('bundled solver cards', () => {
     expect(receive?.solverPubkey).toBe(betaPubkey)
   })
 
-  it('offers the mainnet BTC/USDT market from the bitcoin card beside the Lightning market', async () => {
+  it('offers the mainnet asset-swap markets from the bitcoin card beside the Lightning market', async () => {
     const markets = await bundledMarkets('bitcoin')
-    expect(markets.map((m) => m.base_asset.ticker + '/' + m.quote_asset.ticker).sort()).toEqual(['BTC/BTC', 'BTC/d4e095d6'])
+    expect(markets.map((m) => m.base_asset.ticker + '/' + m.quote_asset.ticker).sort()).toEqual([
+      '28a0194e/BTC',
+      '28a0194e/d4e095d6',
+      'BTC/BTC',
+      'BTC/d4e095d6',
+    ])
+    // Only the beta card's market is a Lightning corridor: the asset markets
+    // must not shadow it.
+    expect(lnSendRendezvous(markets, getEmulatorPubkeyForNetwork('bitcoin'))?.minSats).toBe(500)
   })
 
   it('bundles no Lightning corridor for mutinynet: it comes from the registry', async () => {

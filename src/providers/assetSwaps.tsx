@@ -31,7 +31,7 @@ import {
 import { DiscoveredMarket, OfferPlan } from '@arkade-os/solver-discovery'
 import { AspContext } from './asp'
 import { WalletContext } from './wallet'
-import { discoverMarkets } from '../lib/swapMarkets'
+import { discoverMarkets, withWalletAssetIds } from '../lib/swapMarkets'
 import { assetSwapRepository, type AssetSwapQuoteSnapshot, type WalletAssetSwap } from '../lib/swapRepository'
 import { getEmulatorPubkeyForNetwork, getEmulatorPubkeyHexForNetwork } from '../lib/constants'
 import { consoleError } from '../lib/logs'
@@ -161,7 +161,8 @@ export const AssetSwapsProvider = ({ children }: { children: ReactNode }) => {
       // tradeable here: this provider builds offers, and a corridor is
       // negotiated with a solver instead. Keeping them would let one Lightning
       // card turn the whole swap surface on with nothing behind it.
-      .then((all) => setMarkets(all.filter((m) => !isRfqMarket(m))))
+      // Filtered BEFORE the ids are rewritten: the corridor is read off them.
+      .then((all) => setMarkets(all.filter((m) => !isRfqMarket(m)).map(withWalletAssetIds)))
       .catch((err) => consoleError(err, 'solver discovery failed'))
     setEmulatorPubkey(getEmulatorPubkeyForNetwork(network))
   }

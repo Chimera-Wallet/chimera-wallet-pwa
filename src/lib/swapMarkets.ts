@@ -3,7 +3,7 @@
  * not own — which registry to ask, which cards ship with the build, and the
  * pre-fee rate the swap composer displays.
  */
-import { discoverMarkets as discover } from '@arkade-os/swap'
+import { BTC_ASSET_ID, discoverMarkets as discover } from '@arkade-os/swap'
 import {
   displayPrice,
   isNetwork,
@@ -119,6 +119,29 @@ export const discoverMarkets = async (network: NetworkName, useCache = true): Pr
   }
   return markets
 }
+
+const ARKADE_BTC_ID = /^arkade:[^/]+\/slip44:[01]$/
+const ARKADE_ASSET_ID = /^arkade:[^/]+\/asset:([0-9a-f]{68})$/
+
+/** An Arkade-corridor asset id in the wallet's own form: `btc` for BTC, the
+ * bare 68-hex id for an issued asset. Cards may spell either side CAIP-style
+ * (`arkade:bitcoin/slip44:0`, `arkade:bitcoin/asset:<hex>`), and discovery
+ * passes that through untouched — but everything downstream compares against
+ * `VITE_ARKADE_*` ids and `BTC_ASSET_ID`, and funds with the plan's asset id. */
+const toWalletAssetId = (id: string): string => {
+  if (ARKADE_BTC_ID.test(id)) return BTC_ASSET_ID
+  return ARKADE_ASSET_ID.exec(id)?.[1] ?? id
+}
+
+/** A market with both sides' ids in the wallet's form (see
+ * {@link toWalletAssetId}). Only for markets already known to settle on the
+ * Arkade corridor: the corridor is read off the CAIP namespace, so normalizing
+ * first would make a `bolt11:` side look like an Arkade one. */
+export const withWalletAssetIds = (market: DiscoveredMarket): DiscoveredMarket => ({
+  ...market,
+  base_asset: { ...market.base_asset, id: toWalletAssetId(market.base_asset.id) },
+  quote_asset: { ...market.quote_asset, id: toWalletAssetId(market.quote_asset.id) },
+})
 
 /** The market feed's pre-fee price oriented give→receive, in whole display
  * units. Derived from the plan's exact price rational — plan.priceDisplay
