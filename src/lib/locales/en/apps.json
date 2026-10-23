@@ -172,7 +172,10 @@
         "belowMin": "Amount is below the minimum for this pair",
         "aboveMax": "Amount is above the maximum for this pair",
         "belowDust": "Amount is below the dust limit",
-        "available": "available"
+        "available": "available",
+        "cancelSwap": "Cancel swap",
+        "cancelPendingTitle": "Waiting for a solver",
+        "cancelPendingDesc": "No solver has filled this swap yet. Cancelling returns your deposit to your wallet."
     },
     "card": {
         "card": "Card Reservation"
