@@ -23,6 +23,8 @@
       "paymentAmount": "{{displayed}} успешно отправлено"
     },
     "unwrapService": {
+      "availableBalance": "Доступно: {{amount}} {{ticker}}",
+      "confirming": "Депозит отправлен, ожидание подтверждения…",
       "pending": "Ожидание вашего депозита в Arkade…",
       "deposited": "Депозит обнаружен, подтверждение…",
       "processing": "Отправка вашей выплаты…",
