@@ -34,6 +34,8 @@
             "paymentAmount": "{{displayed}} sent successfully"   
         },
         "unwrapService":{
+            "availableBalance": "{{amount}} {{ticker}} available",
+            "confirming": "Deposit sent, waiting for confirmation…",
             "pending": "Waiting for your Arkade deposit…",
             "deposited": "Deposit detected, confirming…",
             "processing": "Sending your payout…",

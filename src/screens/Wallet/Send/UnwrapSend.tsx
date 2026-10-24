@@ -1,220 +1,381 @@
 /**
- * Unwrap Send Screen (Arkade -> native chain)
- *
- * Burns an Arkade-native wrapped asset and pays out the underlying native/token
- * on the destination EVM/TRON chain. The user enters the destination address,
- * we reserve an Arkade treasury deposit address, and once the wrapped asset is
- * deposited to it the bridge sends the payout on the destination chain.
+ * Unwrap Send Screen (Arkade -> native chain).
+ * Collect the destination, then the amount, and fund the bridge from this wallet.
  */
 
 import { useContext, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import Content from '../../../components/Content'
 import Header from '../../../components/Header'
 import Padded from '../../../components/Padded'
 import FlexCol from '../../../components/FlexCol'
+import FlexRow from '../../../components/FlexRow'
+import Text from '../../../components/Text'
 import Button from '../../../components/Button'
 import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import ErrorMessage from '../../../components/Error'
 import Input from '../../../components/Input'
+import InlineAmountInput from '../../../components/InlineAmountInput'
 import InfoContainer from '../../../components/InfoContainer'
 import { InfoLine } from '../../../components/Info'
-import QrCode from '../../../components/QrCode'
 import Loading from '../../../components/Loading'
 import Success from '../../../components/Success'
 import { NavigationContext, Pages } from '../../../providers/navigation'
-import { FlowContext } from '../../../providers/flow'
+import { FlowContext, type UnwrapSendInfo } from '../../../providers/flow'
 import { WalletContext } from '../../../providers/wallet'
 import { TxResultContext } from '../../../providers/txResult'
-import { getReceivingAddresses } from '../../../lib/asp'
+import { getReceivingAddresses, sendAssets } from '../../../lib/asp'
 import { extractError } from '../../../lib/error'
 import { consoleError } from '../../../lib/logs'
-import { requireAssetConfig } from '../../../lib/assets'
+import {
+  centsToUnits,
+  getWrappedAssetId,
+  prettyAssetAmount,
+  requireAssetConfig,
+  type AssetSymbol,
+} from '../../../lib/assets'
 import { requireSourceChain } from '../../../lib/sourceChains'
 import { formatBaseUnits } from '../../../lib/format'
-import {
-  createUnwrapQuote,
-  getWrapQuote,
-  isTerminalWrapStatus,
-  type WrapQuote,
-} from '../../../lib/arkadeWrap'
-import { useTranslation } from 'react-i18next'
-
+import { saveTransactionActivityMetadata } from '../../../lib/storage'
+import { createUnwrapQuote, getWrapQuote, isTerminalWrapStatus, type WrapQuote } from '../../../lib/arkadeWrap'
 
 const POLL_INTERVAL = 8000
 
-const statusLabel = (status: WrapQuote['status']): string => {
-    switch (status) {
-      case 'pending':
-        return ('common.notifications.unwrapService.pending')
-      case 'deposited':
-        return ('common.notifications.unwrapService.deposited')
-      case 'processing':
-        return ('common.notifications.unwrapService.processing')
-      case 'completed':
-        return ('common.notifications.unwrapService.completed')
-      case 'expired':
-        return ('common.notifications.unwrapService.expired')
-      case 'failed':
-        return ('common.notifications.unwrapService.failed')
-    }
-  }
+const statusLabel = (status: WrapQuote['status']): string => `common.notifications.unwrapService.${status}`
 
 export default function UnwrapSend() {
   const { t } = useTranslation()
   const { navigate, goBack } = useContext(NavigationContext)
   const { unwrapSendInfo, setUnwrapSendInfo } = useContext(FlowContext)
-  const { svcWallet } = useContext(WalletContext)
+  const { assetBalances, assetMetadataCache, svcWallet } = useContext(WalletContext)
   const { notifyResult } = useContext(TxResultContext)
 
-  const [sender, setSender] = useState<string>(unwrapSendInfo?.sender ?? '')
-  const [receiver, setReceiver] = useState<string>(unwrapSendInfo?.receiver ?? '')
-  const [quote, setQuote] = useState<WrapQuote | undefined>(unwrapSendInfo?.quote)
-  const [loading, setLoading] = useState(false)
+  const [receiver, setReceiver] = useState(unwrapSendInfo?.receiver ?? '')
+  const [step, setStep] = useState<'address' | 'amount'>(
+    unwrapSendInfo?.amount !== undefined || unwrapSendInfo?.quote ? 'amount' : 'address',
+  )
   const [error, setError] = useState('')
-  const [completed, setCompleted] = useState(false)
+  const sendingRef = useRef(false)
+  const notifiedQuote = useRef<string>()
 
+  const sender = unwrapSendInfo?.sender ?? ''
+  const amount = unwrapSendInfo?.amount ?? BigInt(0)
+  const quote = unwrapSendInfo?.quote
+  const txid = unwrapSendInfo?.txid
+  const sending = Boolean(unwrapSendInfo?.fundingId)
   const chain = unwrapSendInfo ? requireSourceChain(unwrapSendInfo.chainId) : undefined
   const assetConfig = unwrapSendInfo ? requireAssetConfig(unwrapSendInfo.assetSymbol) : undefined
+  const assetId = unwrapSendInfo ? getWrappedAssetId(unwrapSendInfo.assetSymbol) : undefined
+  const precision =
+    (assetId ? assetMetadataCache.get(assetId)?.metadata?.decimals : undefined) ?? assetConfig?.precision ?? 8
+  const availableBalance = assetBalances.find((asset) => asset.assetId === assetId)?.amount ?? BigInt(0)
+  const depositStarted = Boolean(
+    txid || quote?.deposit_tx_hash || (quote && quote.status !== 'pending' && quote.status !== 'expired'),
+  )
 
-
-
-  
   useEffect(() => {
     if (!unwrapSendInfo) navigate(Pages.SendForm)
-  }, [unwrapSendInfo])
+  }, [unwrapSendInfo, navigate])
 
-  if (!unwrapSendInfo || !chain || !assetConfig) return <Loading text='Loading...' />
-
-  const precision = assetConfig.precision
-
-  // Load the Arkade address that will deposit the wrapped asset.
   useEffect(() => {
     if (!svcWallet || sender) return
+    let active = true
     getReceivingAddresses(svcWallet)
-      .then(({ offchainAddr }) => setSender(offchainAddr))
+      .then(({ offchainAddr }) => {
+        if (!active) return
+        setUnwrapSendInfo((prev) => (prev ? { ...prev, sender: offchainAddr } : prev))
+      })
       .catch((err) => {
+        if (!active) return
         consoleError(err, 'error getting ark address')
         setError(extractError(err))
       })
-  }, [svcWallet])
+    return () => {
+      active = false
+    }
+  }, [svcWallet, sender, setUnwrapSendInfo])
 
-  const pollRef = useRef<ReturnType<typeof setInterval>>()
+  // Pause polling during funding so an older response cannot race the send.
   useEffect(() => {
-    if (!quote || isTerminalWrapStatus(quote.status)) return
-    pollRef.current = setInterval(() => {
-      getWrapQuote(quote.id)
-        .then((updated) => {
-          setQuote(updated)
-          if (unwrapSendInfo) setUnwrapSendInfo({ ...unwrapSendInfo, sender, receiver, quote: updated })
-          if (updated.status === 'completed') {
-            setCompleted(true)
-            notifyResult(true, t('common.notifications.unwrapService.sent'))
-          }
-          if (isTerminalWrapStatus(updated.status) && pollRef.current) clearInterval(pollRef.current)
-        })
-        .catch((err) => consoleError(err, 'error polling unwrap quote'))
+    if (!quote || isTerminalWrapStatus(quote.status) || sending) return
+    let active = true
+    let polling = false
+    const interval = setInterval(async () => {
+      if (polling) return
+      polling = true
+      try {
+        const updated = await getWrapQuote(quote.id)
+        if (!active) return
+        setUnwrapSendInfo((prev) => (prev?.quote?.id === updated.id ? { ...prev, quote: updated } : prev))
+      } catch (err) {
+        consoleError(err, 'error polling unwrap quote')
+      } finally {
+        polling = false
+      }
     }, POLL_INTERVAL)
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current)
+      active = false
+      clearInterval(interval)
     }
-  }, [quote?.id, quote?.status])
+  }, [quote?.id, quote?.status, sending, setUnwrapSendInfo])
 
-  const handleCreateQuote = async () => {
+  useEffect(() => {
+    if (quote?.status !== 'completed' || notifiedQuote.current === quote.id) return
+    notifiedQuote.current = quote.id
+    notifyResult(true, t('common.notifications.unwrapService.sent'))
+  }, [quote?.id, quote?.status, notifyResult, t])
+
+  if (!unwrapSendInfo || !chain || !assetConfig) return <Loading text={t('common.general.loading')} />
+
+  const handleContinue = () => {
     if (!chain.isValidAddress(receiver)) {
-      setError(t('errors.send.chain.invalidAddress' ,{chain: chain.name}))
+      setError(t('errors.send.chain.invalidAddress', { chain: chain.name }))
       return
     }
-    if (!sender) {
-      setError(t('errors.send.arkade.addressUnable'))
-      return
-    }
+    const destination = receiver.trim()
+    setError('')
+    setReceiver(destination)
+    setUnwrapSendInfo({
+      ...unwrapSendInfo,
+      receiver: destination,
+      amount,
+      quote: destination === unwrapSendInfo.receiver ? quote : undefined,
+    })
+    setStep('amount')
+  }
+
+  const handleAmountChange = (value: bigint) => {
+    setError('')
+    setUnwrapSendInfo({ ...unwrapSendInfo, amount: value })
+  }
+
+  const handleSend = async () => {
+    if (sendingRef.current || sending || depositStarted) return
+    if (!svcWallet) return setError(t('errors.send.wallet.notReady'))
+    if (!sender) return setError(t('errors.send.arkade.addressUnable'))
+    if (!assetId) return setError(t('errors.general.missingAsset'))
+    if (amount <= BigInt(0)) return setError(t('errors.general.missingAmount'))
+    if (amount > availableBalance) return setError(t('errors.funds.insufficient'))
+
+    sendingRef.current = true
+    const fundingId = crypto.randomUUID()
+    setUnwrapSendInfo({ ...unwrapSendInfo, fundingId })
+    // The request may finish after navigation. Update only its own flow, and
+    // keep the in-flight marker in context so returning cannot submit it twice.
+    const updateFunding = (updates: Partial<UnwrapSendInfo>) =>
+      setUnwrapSendInfo((prev) => (prev?.fundingId === fundingId ? { ...prev, ...updates } : prev))
+    setError('')
     try {
-      setLoading(true)
-      setError('')
-      const created = await createUnwrapQuote({
-        chain: unwrapSendInfo.chainId,
-        ticker: unwrapSendInfo.ticker,
-        sender,
-        receiver: receiver.trim(),
-      })
-      setQuote(created)
-      setUnwrapSendInfo({ ...unwrapSendInfo, sender, receiver: receiver.trim(), quote: created })
+      // Reserve only when the amount is confirmed. On retry, check whether the
+      // previous deposit was already observed before allowing another send.
+      let currentQuote = quote ? await getWrapQuote(quote.id) : undefined
+      if (
+        !currentQuote ||
+        (!currentQuote.deposit_tx_hash &&
+          (currentQuote.status === 'expired' ||
+            (currentQuote.status === 'pending' && currentQuote.expiry <= Date.now())))
+      ) {
+        currentQuote = await createUnwrapQuote({
+          chain: unwrapSendInfo.chainId,
+          ticker: unwrapSendInfo.ticker,
+          sender,
+          receiver: unwrapSendInfo.receiver,
+        })
+      }
+      const fundingQuote = currentQuote
+      updateFunding({ quote: fundingQuote })
+      if (fundingQuote.status !== 'pending' || fundingQuote.deposit_tx_hash) return
+      if (fundingQuote.expiry <= Date.now()) throw new Error(t('common.notifications.unwrapService.expired'))
+
+      // The bridge derives the payout from the deposit, not an amount in the
+      // quote request. Keep the wallet transfer in bigint base units throughout.
+      const fundingTxid = await sendAssets(svcWallet, fundingQuote.treasury, [{ assetId, amount }])
+      if (!fundingTxid) throw new Error(t('errors.send.general.errorSend'))
+      updateFunding({ amount, txid: fundingTxid })
+      saveTransactionActivityMetadata(fundingTxid, { destination: unwrapSendInfo.receiver })
     } catch (err) {
+      consoleError(err, 'error sending unwrap deposit')
       setError(extractError(err))
-      notifyResult(false, t('common.notifications.unwrapService.failedQuote'))
+      notifyResult(false, t('common.notifications.bank.failedTransaction'))
     } finally {
-      setLoading(false)
+      sendingRef.current = false
+      updateFunding({ fundingId: undefined })
     }
   }
 
-  if (completed) {
-    const amount = formatBaseUnits(quote?.payout_amount ?? null, precision)
+  const handleBack = () => {
+    if (step === 'amount' && !depositStarted) {
+      setError('')
+      setStep('address')
+    } else {
+      goBack()
+    }
+  }
+
+  if (quote?.status === 'completed') {
+    const payout = formatBaseUnits(quote.payout_amount, assetConfig.precision)
     return (
       <>
-        <Header text= {t('common.general.success')} />
+        <Header text={t('common.general.success')} />
         <Content>
           <Success
-            headline={t('common.notifications.unwrapService.completedHeadline')} 
-            text={amount ? t('common.notifications.unwrapService.sendInfo', {value:amount, ticker: unwrapSendInfo.ticker, name: chain.name}) : t('common.notifications.unwrapService.sent')}
+            headline={t('common.notifications.unwrapService.completedHeadline')}
+            text={
+              payout
+                ? t('common.notifications.unwrapService.sendInfo', {
+                    value: payout,
+                    ticker: unwrapSendInfo.ticker,
+                    name: chain.name,
+                  })
+                : t('common.notifications.unwrapService.sent')
+            }
           />
         </Content>
         <ButtonsOnBottom>
-          <Button label='Done' onClick={() => navigate(Pages.Wallet)} />
+          <Button label={t('common.general.done')} onClick={() => navigate(Pages.Wallet)} />
         </ButtonsOnBottom>
       </>
     )
   }
 
+  const enteringAddress = step === 'address' && !depositStarted
+  const insufficientFunds = amount > availableBalance
+
   return (
     <>
-      <Header text={t('common.notifications.unwrapService.sendHeader', {ticker: unwrapSendInfo.ticker, name: chain.name})} back={goBack} />
+      <Header
+        text={t('common.notifications.unwrapService.sendHeader', { ticker: unwrapSendInfo.ticker, name: chain.name })}
+        back={sending ? false : handleBack}
+      />
       <Content>
         <Padded>
-          <FlexCol gap='1rem'>
+          <FlexCol gap='1.5rem'>
             <ErrorMessage error={Boolean(error)} text={error} />
-
-            {!quote ? (
-              <>
-                <Input
-                  label={t('common.notifications.unwrapService.destination', {name: chain.name})}
-                  value={receiver}
-                  onChange={setReceiver}
-                  placeholder={chain.addressPlaceholder}
-                />
-              </>
+            {enteringAddress ? (
+              <Input
+                label={t('common.notifications.unwrapService.destination', { name: chain.name })}
+                value={receiver}
+                onChange={setReceiver}
+                onEnter={handleContinue}
+                placeholder={chain.addressPlaceholder}
+              />
             ) : (
               <>
+                {!depositStarted ? (
+                  <>
+                    <Text centered small color='neutral-500'>
+                      {t('common.general.amount')}
+                    </Text>
+                    <InlineAmountInput
+                      ariaLabel={t('common.general.amount')}
+                      value={Number(amount)}
+                      onChange={(value) => handleAmountChange(BigInt(value))}
+                      onAssetAmountChange={handleAmountChange}
+                      asset={assetConfig.symbol as AssetSymbol}
+                      ticker={unwrapSendInfo.ticker}
+                      precision={precision}
+                      displayValue={centsToUnits(amount, precision)}
+                      allowFiat={false}
+                      disabled={sending}
+                    />
+                    <Text centered small color='neutral-500'>
+                      {t('common.notifications.unwrapService.availableBalance', {
+                        amount: prettyAssetAmount(availableBalance, precision),
+                        ticker: unwrapSendInfo.ticker,
+                      })}
+                    </Text>
+                    {availableBalance > BigInt(0) ? (
+                      <FlexRow centered gap='0.7rem'>
+                        {[25, 50, 75, 100].map((percent) => (
+                          <button
+                            key={percent}
+                            type='button'
+                            disabled={sending}
+                            onClick={() => handleAmountChange((availableBalance * BigInt(percent)) / BigInt(100))}
+                            style={{
+                              background: 'var(--surface)',
+                              border: '1px solid var(--neutral-100)',
+                              borderRadius: '0.5rem',
+                              color: 'var(--neutral-700)',
+                              cursor: sending ? 'default' : 'pointer',
+                              fontSize: '0.875rem',
+                              fontWeight: 500,
+                              padding: '0.5rem 1rem',
+                            }}
+                          >
+                            {percent}%
+                          </button>
+                        ))}
+                      </FlexRow>
+                    ) : null}
+                  </>
+                ) : (
+                  <Text centered bold>
+                    {prettyAssetAmount(amount, precision)} {unwrapSendInfo.ticker}
+                  </Text>
+                )}
+                <FlexCol gap='0.25rem'>
+                  <Text small color='neutral-500'>
+                    {t('common.notifications.unwrapService.destination', { name: chain.name })}
+                  </Text>
+                  <Text small wrap>
+                    {unwrapSendInfo.receiver}
+                  </Text>
+                </FlexCol>
                 <InfoContainer>
-                  <InfoLine compact text={t(statusLabel(quote.status))} />
-                  <InfoLine
-                    compact
-                    color='orange'
-                    text={t('common.notifications.unwrapService.timeSensitive', {ticker: unwrapSendInfo.ticker})}
-                  />
-                  {quote.payout_amount ? (
-                    <InfoLine compact text={t('common.notifications.unwrapService.payout', {amount: formatBaseUnits(quote.payout_amount, precision),  ticker: unwrapSendInfo.ticker})} />
+                  {depositStarted && quote ? (
+                    <InfoLine
+                      compact
+                      text={t(
+                        quote.status === 'pending'
+                          ? 'common.notifications.unwrapService.confirming'
+                          : statusLabel(quote.status),
+                      )}
+                    />
+                  ) : (
+                    <InfoLine compact text={t('common.notifications.send.feesDeduction')} />
+                  )}
+                  {quote?.fee_amount ? (
+                    <InfoLine
+                      compact
+                      text={t('common.notifications.wrapService.bridgeFee', {
+                        amount: formatBaseUnits(quote.fee_amount, assetConfig.precision),
+                        ticker: unwrapSendInfo.ticker,
+                      })}
+                    />
+                  ) : null}
+                  {quote?.payout_amount ? (
+                    <InfoLine
+                      compact
+                      text={t('common.notifications.unwrapService.payout', {
+                        amount: formatBaseUnits(quote.payout_amount, assetConfig.precision),
+                        ticker: unwrapSendInfo.ticker,
+                      })}
+                    />
                   ) : null}
                 </InfoContainer>
-                <FlexCol centered gap='0.75rem'>
-                  <QrCode value={quote.treasury} />
-                  <div
-                    style={{ wordBreak: 'break-all', textAlign: 'center', fontSize: '13px', cursor: 'pointer' }}
-                    onClick={() => navigator.clipboard?.writeText(quote.treasury)}
-                    title={t('common.general.tapCopy')}
-                  >
-                    {quote.treasury}
-                  </div>
-                </FlexCol>
               </>
             )}
           </FlexCol>
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        {!quote ? (
-          <Button label={loading ? t('common.general.reserving') : t('common.general.continue')} onClick={handleCreateQuote} disabled={loading || !receiver} />
+        {enteringAddress ? (
+          <Button label={t('common.general.continue')} onClick={handleContinue} disabled={!receiver.trim()} />
+        ) : depositStarted ? (
+          <Button label={t('common.general.done')} onClick={() => navigate(Pages.Wallet)} secondary />
         ) : (
-          <Button label='Done' onClick={() => navigate(Pages.Wallet)} secondary />
+          <Button
+            label={t(
+              sending
+                ? 'common.general.sendAsset'
+                : insufficientFunds
+                  ? 'errors.funds.insufficient'
+                  : 'common.confirmSend',
+            )}
+            onClick={handleSend}
+            disabled={sending || !svcWallet || !sender || !assetId || amount <= BigInt(0) || insufficientFunds}
+          />
         )}
       </ButtonsOnBottom>
     </>

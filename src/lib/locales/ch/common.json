@@ -23,6 +23,8 @@
       "paymentAmount": "{{displayed}} 已成功发送"
     },
     "unwrapService": {
+      "availableBalance": "可用余额：{{amount}} {{ticker}}",
+      "confirming": "存款已发送，等待确认…",
       "pending": "等待您的 Arkade 存款…",
       "deposited": "检测到存款，正在确认…",
       "processing": "正在发送您的款项…",
