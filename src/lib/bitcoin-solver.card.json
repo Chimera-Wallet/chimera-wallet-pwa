@@ -24,10 +24,10 @@
         "decimals": 6
       },
       "fee_bps": 100,
-      "price_feed": "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT",
+      "price_feed": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
       "price_feed_schema": {
         "type": "json",
-        "price_path": "/price"
+        "price_path": "/bitcoin/usd"
       },
       "price_decimals": 2,
       "min_base_amount": "1000",
@@ -36,5 +36,5 @@
       "max_quote_amount": "5000000000"
     }
   ],
-  "sig": "5fa8c9f0234d0d0ebff89bf2c42b3156829921b73d99f2642d22ab8510ca2d04ba9fae610edfe72e208911e68a33ec226bf243fbcaa3e75532f0975dd28ac014"
+  "sig": "a68529d92e972d3bbcff7233866202f649fd6e666a80e6d02c9258cccce9cfa1b042522b6a41cca49592c1271f133f6e8d751016e613e46176a3063c1cfe14e5"
 }
