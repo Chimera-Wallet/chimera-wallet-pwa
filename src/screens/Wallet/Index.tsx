@@ -86,11 +86,21 @@ export default function Wallet() {
     : t('networks.browser.installDescr')
 
   const [showInstallBanner, setShowInstallBanner] = useState(Boolean(!dismissed && !pwaInstalled))
-  const dismissPwaBanner = () => {
+  const [showStakingBanner, setShowStakingBanner] = useState(
+    !(config?.dismissedBanners ?? []).includes('staking'),
+  )
+  const dismissBanner = (id: string) => {
     if (!config) return
-    const dismissedBanners = [...(config.dismissedBanners ?? []), 'pwa-install']
+    const dismissedBanners = [...(config.dismissedBanners ?? []), id]
     updateConfig({ ...config, dismissedBanners })
+  }
+  const dismissPwaBanner = () => {
+    dismissBanner('pwa-install')
     setShowInstallBanner(false)
+  }
+  const dismissStakingBanner = () => {
+    dismissBanner('staking')
+    setShowStakingBanner(false)
   }
 
   const [error, setError] = useState(false)
@@ -384,9 +394,11 @@ export default function Wallet() {
                   </FlexRow>
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
+                {showInstallBanner || showStakingBanner ? (
                 <div style={{ display: 'flex', flexDirection: 'column', paddingTop: 'var(--banner-padding-top)' }}>
+                  {/* Install first: saving the app to the home screen matters
+                      more than the token promo, which comes second. */}
                   <BannerCarousel>
-                    <StakingBanner variant='home' />
                     {showInstallBanner ? (
                       <InstallBanner
                         description={pwaDescription}
@@ -404,8 +416,12 @@ export default function Wallet() {
                         onDismiss={dismissPwaBanner}
                       />
                     ) : null}
+                    {showStakingBanner ? (
+                      <StakingBanner variant='home' onDismiss={dismissStakingBanner} />
+                    ) : null}
                   </BannerCarousel>
                 </div>
+                ) : null}
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
                   {nudge ? nudge : psaMessage ? <InfoBox html={psaMessage} /> : null}

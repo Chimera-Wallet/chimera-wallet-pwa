@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import Button from './Button'
+import BannerDismiss from './BannerDismiss'
 import { useTranslation } from 'react-i18next'
 
 const TITLE = 'components.stakingBanner.title'
@@ -184,9 +185,12 @@ const descriptionStyle: React.CSSProperties = {
 
 interface StakingBannerProps {
   variant: 'asset' | 'home'
+  /** Shows a close button. Not everyone wants the token promo on their home
+   * screen, and it must always be possible to get rid of it. */
+  onDismiss?: () => void
 }
 
-export default function StakingBanner({ variant }: StakingBannerProps) {
+export default function StakingBanner({ variant, onDismiss }: StakingBannerProps) {
   const parts = useCountdown()
   const { t } = useTranslation()
   const launchingIn = !parts
@@ -231,6 +235,7 @@ export default function StakingBanner({ variant }: StakingBannerProps) {
     <div style={wrapperStyle}>
       <div style={cardStyle}>
         <CoinStack />
+        {onDismiss ? <BannerDismiss onDismiss={onDismiss} onArtwork /> : null}
         <div style={topContentStyle}>
           <span style={titleStyle}>{t(TITLE)}</span>
           {/* No countdown configured (VITE_TGE_DATE unset or unparsable) means the
