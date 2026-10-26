@@ -7,7 +7,7 @@
  * to the wallet's Arkade address.
  */
 
-import { useContext, useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import Content from '../../../components/Content'
 import Header from '../../../components/Header'
 import Padded from '../../../components/Padded'
@@ -18,7 +18,7 @@ import ErrorMessage from '../../../components/Error'
 import Input from '../../../components/Input'
 import InfoContainer from '../../../components/InfoContainer'
 import { InfoLine } from '../../../components/Info'
-import QrCode from '../../../components/QrCode'
+import ReceiveAddress from '../../../components/ReceiveAddress'
 import Loading from '../../../components/Loading'
 import Success from '../../../components/Success'
 import { NavigationContext, Pages } from '../../../providers/navigation'
@@ -31,15 +31,9 @@ import { consoleError } from '../../../lib/logs'
 import { requireAssetConfig } from '../../../lib/assets'
 import { requireSourceChain } from '../../../lib/sourceChains'
 import { formatBaseUnits } from '../../../lib/format'
-import {
-  createWrapQuote,
-  getWrapQuote,
-  isTerminalWrapStatus,
-  type WrapQuote,
-} from '../../../lib/arkadeWrap'
+import { createWrapQuote, type WrapQuote } from '../../../lib/arkadeWrap'
+import { getWrapDeposit, saveWrapDeposit, subscribeWrapDeposits } from '../../../lib/wrapDeposits'
 import { useTranslation } from 'react-i18next'
-
-const POLL_INTERVAL = 8000
 
 const statusLabel = (status: WrapQuote['status']): string => {
   switch (status) {
@@ -66,7 +60,10 @@ export default function WrapReceive() {
 
   const [receiver, setReceiver] = useState<string>(wrapRecvInfo?.receiver ?? '')
   const [sender, setSender] = useState<string>(wrapRecvInfo?.sender ?? '')
-  const [quote, setQuote] = useState<WrapQuote | undefined>(wrapRecvInfo?.quote)
+  const [quoteId, setQuoteId] = useState<string | undefined>(wrapRecvInfo?.quote?.id)
+  const tracked = useSyncExternalStore(subscribeWrapDeposits, () => getWrapDeposit(quoteId))
+  // A quote from before tracking existed isn't in the store; show it as it was.
+  const quote = tracked?.quote ?? wrapRecvInfo?.quote
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [completed, setCompleted] = useState(false)
@@ -96,25 +93,17 @@ export default function WrapReceive() {
       })
   }, [svcWallet])
 
-  // Poll the quote until it reaches a terminal state.
-  const pollRef = useRef<ReturnType<typeof setInterval>>()
+  // Follow the quote's progress. WrapDepositTracking polls it in the
+  // background (so the transaction list shows it as pending after this screen
+  // closes); this only reacts to what it stores.
+  const notifiedRef = useRef(false)
   useEffect(() => {
-    if (!quote || isTerminalWrapStatus(quote.status)) return
-    pollRef.current = setInterval(() => {
-      getWrapQuote(quote.id)
-        .then((updated) => {
-          setQuote(updated)
-          if (wrapRecvInfo) setWrapRecvInfo({ ...wrapRecvInfo, sender, receiver, quote: updated })
-          if (updated.status === 'completed') {
-            setCompleted(true)
-            notifyResult(true, t('common.notifications.wrapService.assetReceived'))
-          }
-          if (isTerminalWrapStatus(updated.status) && pollRef.current) clearInterval(pollRef.current)
-        })
-        .catch((err) => consoleError(err, 'error polling wrap quote'))
-    }, POLL_INTERVAL)
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current)
+    if (!quote) return
+    if (wrapRecvInfo.quote !== quote) setWrapRecvInfo({ ...wrapRecvInfo, sender, receiver, quote })
+    if (quote.status === 'completed' && !notifiedRef.current) {
+      notifiedRef.current = true
+      setCompleted(true)
+      notifyResult(true, t('common.notifications.wrapService.assetReceived'))
     }
   }, [quote?.id, quote?.status])
 
@@ -136,7 +125,8 @@ export default function WrapReceive() {
         sender: sender.trim(),
         receiver,
       })
-      setQuote(created)
+      saveWrapDeposit({ assetSymbol: wrapRecvInfo.assetSymbol, createdAt: Date.now(), quote: created })
+      setQuoteId(created.id)
       setWrapRecvInfo({ ...wrapRecvInfo, sender: sender.trim(), receiver, quote: created })
     } catch (err) {
       setError(extractError(err))
@@ -197,16 +187,7 @@ export default function WrapReceive() {
                     <InfoLine compact text={t('common.notifications.wrapService.bridgeFee' ,{amount: formatBaseUnits(quote.fee_amount, precision), ticker: wrapRecvInfo.ticker})} />
                   ) : null}
                 </InfoContainer>
-                <FlexCol centered gap='0.75rem'>
-                  <QrCode value={quote.treasury} />
-                  <div
-                    style={{ wordBreak: 'break-all', textAlign: 'center', fontSize: '13px', cursor: 'pointer' }}
-                    onClick={() => navigator.clipboard?.writeText(quote.treasury)}
-                    title= {t('common.general.tapCopy')}
-                  >
-                    {quote.treasury}
-                  </div>
-                </FlexCol>
+                <ReceiveAddress value={quote.treasury} />
               </>
             )}
           </FlexCol>

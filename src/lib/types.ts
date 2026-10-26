@@ -1,4 +1,5 @@
 import { Asset, NetworkName, type ExtendedVirtualCoin } from '@arkade-os/sdk'
+import type { WrapStatus } from './arkadeWrap'
 
 export type Addresses = {
   boardingAddr: string
@@ -120,6 +121,15 @@ export interface TxAssetSwap {
   status: 'pending' | 'completed' | 'cancelled' | 'recoverable'
 }
 
+/** A bridge deposit still on its way in, shown before the minted asset
+ * arrives as a real Arkade transaction. See `lib/wrapDeposits.ts`. */
+export interface TxWrap {
+  /** Source chain the deposit was made on, e.g. 'ethereum'. */
+  chain: string
+  quoteId: string
+  status: WrapStatus
+}
+
 export type Tx = {
   amount: number
   assets?: Asset[]
@@ -135,6 +145,8 @@ export type Tx = {
   roundTxid: string
   settled: boolean
   type: string
+  /** Present only on a pending bridge deposit, which has no Arkade tx yet. */
+  wrap?: TxWrap
 }
 
 export enum Unit {

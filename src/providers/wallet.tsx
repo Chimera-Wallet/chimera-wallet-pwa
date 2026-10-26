@@ -27,6 +27,7 @@ import {
 import { NavigationContext, Pages } from './navigation'
 import { getRestApiExplorerURL } from '../lib/explorers'
 import { getBalance, getTxHistory, getVtxos, settleBoardingUtxos, settleVtxos } from '../lib/asp'
+import { boardingAwareTotal } from '../lib/boardingBalance'
 import { AspContext } from './asp'
 import { NotificationsContext } from './notifications'
 import { FlowContext } from './flow'
@@ -68,6 +69,9 @@ import { createRequestGeneration } from '../lib/requestGeneration'
 
 const SERVICE_WORKER_ACTIVATION_TIMEOUT_MS = 5_000
 const MESSAGE_BUS_INIT_TIMEOUT_MS = 30_000
+// While the explorer lags a boarding batch: re-read every 3s for up to a minute
+const BOARDING_RECHECK_MS = 3_000
+const MAX_BOARDING_RECHECKS = 20
 
 interface InitSvcWorkerWalletParams {
   arkServerUrl: string
@@ -198,6 +202,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [vtxoManager, setVtxoManager] = useState<IVtxoManager>()
 
   const hasLoadedOnce = useRef(false)
+  const boardingRecheckRef = useRef<ReturnType<typeof setTimeout>>()
+  const boardingRechecks = useRef(0)
   const listeningForServiceWorker = useRef(false)
   const syncedRef = useRef(false)
 
@@ -436,11 +442,19 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     if (isFirstLoad) setLoadError(null)
     try {
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.fetchCoins'))
-      const [vtxos, txs, { total, assets }] = await Promise.all([
+      const [vtxos, txs, sdkBalance] = await Promise.all([
         getVtxos(swWallet),
         getTxHistory(swWallet, assetSwaps),
         getBalance(swWallet),
       ])
+      const { assets } = sdkBalance
+      // Don't count a deposit twice while the explorer lags the batch that
+      // boarded it (see lib/boardingBalance).
+      const { total, lagging } = await boardingAwareTotal(
+        sdkBalance,
+        vtxos.spendable,
+        getRestApiExplorerURL(aspInfo.network as NetworkName),
+      )
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.fetchTrans'))
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.updBal'))
       // prefetch asset metadata before triggering re-renders
@@ -461,6 +475,16 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       }
       setBalance(total)
       setAssetBalances(assets)
+      // Re-read until the explorer catches up. Usually the explorer seeing the
+      // boarding spend fires a UTXO_UPDATE that reloads anyway, but a batch
+      // that didn't board this deposit never touches the boarding address.
+      clearTimeout(boardingRecheckRef.current)
+      if (lagging && boardingRechecks.current < MAX_BOARDING_RECHECKS) {
+        boardingRechecks.current++
+        boardingRecheckRef.current = setTimeout(() => reloadWallet(swWallet), BOARDING_RECHECK_MS)
+      } else if (!lagging) {
+        boardingRechecks.current = 0
+      }
       if (assets.length > 0 && !config.apps.assets.enabled) {
         updateConfig({ ...config, apps: { ...config.apps, assets: { enabled: true } } })
       }
@@ -603,6 +627,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
       // Cancel any pending reload from a previous wallet instance
       clearTimeout(reloadTimerRef.current)
+      clearTimeout(boardingRecheckRef.current)
+      boardingRechecks.current = 0
 
       // handle messages from the service worker
       // we listen for UTXO/VTXO updates to refresh the tx history and balance

@@ -20,13 +20,18 @@ import { consoleError } from '../../../lib/logs'
 import { AspContext } from '../../../providers/asp'
 import { LimitsContext } from '../../../providers/limits'
 import { InfoLine } from '../../../components/Info'
-import QrCode from '../../../components/QrCode'
-import CopyAddress from '../../../components/CopyAddress'
+import ReceiveAddress from '../../../components/ReceiveAddress'
 import { useShare } from '../../../hooks/useShare'
 import { NotificationsContext } from '../../../providers/notifications'
 import { LnReceiveContext } from '../../../providers/lnReceive'
 import WarningBox from '../../../components/Warning'
-import { requireAssetConfig, type AssetSymbol } from '../../../lib/assets'
+import {
+  ASSETS,
+  getAssetSymbolByAssetId,
+  getWrappedAssetId,
+  requireAssetConfig,
+  type AssetSymbol,
+} from '../../../lib/assets'
 import { assetSupportsWrap, requireAssetChainOption, type SourceChainId } from '../../../lib/sourceChains'
 import AssetSelector from '../../../components/AssetSelector'
 import NetworkSelector from '../../../components/NetworkSelector'
@@ -62,8 +67,33 @@ export default function ReceiveAmount() {
 
 
   // Asset and network can be changed, initialized from wallet flow or defaults
-  const [selectedAsset, setSelectedAsset] = useState<AssetSymbol>('BTC')
+  const [selectedAsset, setSelectedAsset] = useState<AssetSymbol>(
+    () => (recvInfo.assetId ? getAssetSymbolByAssetId(recvInfo.assetId) : undefined) ?? 'BTC',
+  )
   const selectedMethod = recvInfo.method ?? TRANSFER_METHOD.bitcoin
+
+  // Wrapped assets arrive over Arkade (or bridge in through their own chain,
+  // which is a separate screen), so picking one moves a Bitcoin or Lightning
+  // receive onto Arkade. The Arkade address is shared by every asset, so it
+  // stays put.
+  const handleAssetSelect = (symbol: AssetSymbol) => {
+    setSelectedAsset(symbol)
+    if (symbol === ASSETS.BTC.symbol) {
+      setRecvInfo((prev) => ({ ...prev, assetId: undefined }))
+      return
+    }
+    const assetId = getWrappedAssetId(symbol)
+    const leavesBitcoinRails = selectedMethod === TRANSFER_METHOD.bitcoin || selectedMethod === TRANSFER_METHOD.lightning
+    if (leavesBitcoinRails) {
+      setInvoice('')
+      setSatoshis(0)
+    }
+    setRecvInfo((prev) => ({
+      ...prev,
+      assetId,
+      ...(leavesBitcoinRails ? { method: TRANSFER_METHOD.ark, invoice: undefined, pendingLnReceive: undefined } : {}),
+    }))
+  }
 
   useEffect(() => {
     setError(aspInfo.unreachable ? t('errors.send.arkade.server') : '')
@@ -248,7 +278,7 @@ export default function ReceiveAmount() {
             {isLightningMethod ? (
               <InlineAmountInput value={satoshis} onChange={setSatoshis} asset={selectedAsset} />
             ) : null}
-            <AssetSelector label = '' selected={selectedAsset} onSelect={setSelectedAsset} showValue iconSize = {40}
+            <AssetSelector label = '' selected={selectedAsset} onSelect={handleAssetSelect} showValue iconSize = {40}
             style = {{
                      justifyContent: 'center',
                      borderRadius : '2.5rem',
@@ -339,8 +369,7 @@ export default function ReceiveAmount() {
               ) : (
                 <FlexCol centered>
                   {invoice ? <InfoLine centered color='orange' text={t('common.notifications.receive.lightning.tabOpen')} /> : null}
-                  <QrCode value={qrValue} />
-                  <CopyAddress value={qrValue} />
+                  <ReceiveAddress value={qrValue} abbreviate={Boolean(invoice)} />
                 </FlexCol>
               )
             ) : (

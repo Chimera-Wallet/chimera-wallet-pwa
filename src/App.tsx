@@ -24,6 +24,7 @@ import Verification from './screens/Settings/Verification'
 import { setupPeriodicUpdateCheck } from './lib/serviceWorkerUpdate'
 import PosSettlement from './providers/posSettlement'
 import BankDepositReporting from './providers/bankDepositReporting'
+import WrapDepositTracking from './providers/wrapDepositTracking'
 
 // Screens that make up the mandatory lock setup. While a stored wallet has no
 // lock the user is held here and cannot reach the rest of the app.
@@ -265,6 +266,7 @@ export default function App() {
       </PageAnimWrapper>
       <PosSettlement />
       <BankDepositReporting />
+      <WrapDepositTracking />
       {tab !== Tabs.None && !bootAnimActive && (
         <PillNavbarOverlay
           visible={showNavbar}
