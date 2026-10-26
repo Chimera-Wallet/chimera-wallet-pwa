@@ -312,7 +312,6 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
   const handleDone = () => {
     setCompleted(undefined)
     setAmount('')
-    onBack()
   }
 
   if (!swapAvailable) {

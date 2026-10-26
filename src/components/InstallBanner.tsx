@@ -1,7 +1,7 @@
 import React from 'react'
 import Button from './Button'
+import BannerDismiss from './BannerDismiss'
 import HomeIcon from '../icons/Home'
-import { hapticSubtle } from '../lib/haptics'
 import { useTranslation } from 'react-i18next'
 
 const FONT = "'Titillium Web', sans-serif"
@@ -40,19 +40,6 @@ const iconStyle: React.CSSProperties = {
   flexShrink: 0,
 }
 
-const dismissStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: 14,
-  right: 14,
-  background: 'none',
-  border: 'none',
-  cursor: 'pointer',
-  padding: 6,
-  lineHeight: 0,
-  color: 'var(--neutral-500)',
-  touchAction: 'manipulation',
-}
-
 interface InstallBannerProps {
   description: string
   action?: { label: string; onClick: () => void }
@@ -60,25 +47,12 @@ interface InstallBannerProps {
 }
 
 export default function InstallBanner({ description, action, onDismiss }: InstallBannerProps) {
-  const handleDismiss = () => {
-    hapticSubtle()
-    onDismiss()
-  }
   const {t} = useTranslation()
 
   return (
     <div style={wrapperStyle}>
       <div style={cardStyle}>
-        <button onClick={handleDismiss} style={dismissStyle} aria-label='Dismiss'>
-          <svg width='18' height='18' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
-            <path
-              d='M6 6l12 12M18 6L6 18'
-              stroke='currentColor'
-              strokeWidth='2'
-              strokeLinecap='round'
-            />
-          </svg>
-        </button>
+        <BannerDismiss onDismiss={onDismiss} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingRight: 24 }}>
           <div style={iconStyle}>
             <HomeIcon />

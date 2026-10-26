@@ -23,6 +23,8 @@
       "paymentAmount": "{{displayed}} を正常に送金しました"
     },
     "unwrapService": {
+      "availableBalance": "利用可能残高：{{amount}} {{ticker}}",
+      "confirming": "入金を送信しました。承認を待っています…",
       "pending": "Arkadeへの入金を待っています…",
       "deposited": "入金を検出しました。確認中…",
       "processing": "払い出しを送信中…",

@@ -194,7 +194,10 @@ export default function SendForm() {
         if (!address && !arkAddress && !invoice) return setError(t('errors.send.parsing.bip21'))
         // A requested amount (e.g. a POS payment QR) is shown and locked, like
         // an invoice amount, so the payer can't re-price it by typing a value.
+        // The requested amount is in sats, so it can't price an asset send;
+        // a recipient kept across a switch to an asset mustn't lock its field.
         const applyRequestedAmount = () => {
+          if (isAssetSend) return setAmountIsReadOnly(false)
           if (satoshis) setAmount(satoshis)
           setAmountIsReadOnly(Boolean(satoshis))
         }
@@ -473,10 +476,34 @@ export default function SendForm() {
     setAmount(amount)
   }
 
+  // Switching the asset or network keeps what the user typed in the recipient
+  // field: it says who the payment is for, which neither choice changes. Only
+  // what was parsed out of it is dropped when the method changes, since the
+  // parse depends on the method; the parse effect re-runs on that change and
+  // re-derives it (or explains why the address doesn't fit the new network).
+  const switchMethod = (method: TransferMethod, extra: Partial<SendInfo> = {}) => {
+    if (method === selectedMethod) {
+      setState({ ...sendInfo, ...extra })
+      return
+    }
+    setAmountIsReadOnly(false)
+    setLnUrlLimits({ min: 0, max: 0 })
+    setState({
+      ...sendInfo,
+      ...extra,
+      method,
+      address: '',
+      arkAddress: '',
+      invoice: '',
+      lnUrl: undefined,
+      pendingLnSend: undefined,
+    })
+  }
+
   const handleAssetSelect = (symbol: AssetSymbol) => {
-    setSelectedAsset(symbol)
-    setAmount(0)
     if (symbol === 'BTC') {
+      setSelectedAsset(symbol)
+      setAmount(0)
       setState({ ...sendInfo, assets: undefined, satoshis: 0 })
       return
     }
@@ -485,19 +512,10 @@ export default function SendForm() {
       setError(`Asset ${symbol} is not configured`)
       return
     }
-    setRecipient('')
-    setState({
-      ...sendInfo,
-      assets: [{ assetId, amount: BigInt(0) }],
-      satoshis: 0,
-      method: TRANSFER_METHOD.ark,
-      address: '',
-      arkAddress: '',
-      invoice: '',
-      lnUrl: undefined,
-      pendingLnSend: undefined,
-      recipient: '',
-    })
+    setSelectedAsset(symbol)
+    setAmount(0)
+    // Wrapped assets only move over Arkade on this screen
+    switchMethod(TRANSFER_METHOD.ark, { assets: [{ assetId, amount: BigInt(0) }], satoshis: 0 })
   }
 
   const handleRecipientChange = (recipient: string) => {
@@ -748,27 +766,21 @@ export default function SendForm() {
                     return
                   }
                   if (choice === TRANSFER_METHOD.ark) {
-                    setRecipient('')
-                    setSendInfo({
-                      ...sendInfo,
-                      method: TRANSFER_METHOD.ark,
-                      address: '',
-                      arkAddress: '',
-                      invoice: '',
-                      lnUrl: undefined,
-                      recipient: '',
-                    })
+                    switchMethod(TRANSFER_METHOD.ark)
                     return
                   }
-                  // Native destination chain selected -> Arkade Unwrap flow
+                  // Native destination chain selected -> Arkade Unwrap flow.
+                  // A destination already pasted here carries over when it's
+                  // an address on that chain.
                   const symbol = requireAssetConfig(selectedAsset).symbol
                   const option = requireAssetChainOption(symbol, choice as SourceChainId)
+                  const pasted = recipient.trim()
                   setUnwrapSendInfo({
                     assetSymbol: symbol,
                     chainId: choice as SourceChainId,
                     ticker: option.ticker,
                     sender: '',
-                    receiver: '',
+                    receiver: option.chain.isValidAddress(pasted) ? pasted : '',
                   })
                   navigate(Pages.UnwrapSend)
                 }}
@@ -786,16 +798,7 @@ export default function SendForm() {
                   navigate(Pages.BankSend)
                   return
                 }
-                setRecipient('')
-                setSendInfo({
-                  ...sendInfo,
-                  method: network,
-                  address: '',
-                  arkAddress: '',
-                  invoice: '',
-                  lnUrl: undefined,
-                  recipient: '',
-                })
+                switchMethod(network)
               }}
               style = {{
                 borderRadius : '2.5rem',

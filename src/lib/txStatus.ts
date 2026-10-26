@@ -1,8 +1,21 @@
 import { Tx } from './types'
 
-export type TxStatus = 'Expired' | 'Unconfirmed' | 'Pending boarding' | 'Settled' | 'Preconfirmed'
+export type TxStatus =
+  | 'Expired'
+  | 'Unconfirmed'
+  | 'Pending boarding'
+  | 'Settled'
+  | 'Preconfirmed'
+  | 'Wrapping'
+  | 'Wrap failed'
 
 export const getTxStatus = (tx: Tx, boardingExitDelay: number): TxStatus => {
+  // A bridge deposit has no Arkade tx yet; the bridge's own status decides.
+  if (tx.wrap) {
+    if (tx.wrap.status === 'completed') return 'Settled'
+    return tx.wrap.status === 'failed' || tx.wrap.status === 'expired' ? 'Wrap failed' : 'Wrapping'
+  }
+
   const boardingTx = Boolean(tx.boardingTxid)
   const unconfirmedBoardingTx = boardingTx && !tx.createdAt
   const expiredBoardingTx =
@@ -25,4 +38,6 @@ export const TX_STATUS_DISPLAY: Record<TxStatus, { text: string; color: string }
   'Pending boarding': { text: 'lib.transactions.pending', color: 'var(--orange)' },
   Unconfirmed: { text: 'lib.transactions.pending', color: 'var(--orange)' },
   Expired: { text: 'lib.transactions.failed', color: 'var(--red)' },
+  Wrapping: { text: 'lib.transactions.pending', color: 'var(--orange)' },
+  'Wrap failed': { text: 'lib.transactions.failed', color: 'var(--red)' },
 }

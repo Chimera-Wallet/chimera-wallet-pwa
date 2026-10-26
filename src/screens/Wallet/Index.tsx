@@ -17,7 +17,7 @@ import Button from '../../components/Button'
 import SendIcon from '../../icons/Send'
 import ReceiveIcon from '../../icons/Receive'
 import FlexRow from '../../components/FlexRow'
-import { emptyRecvInfo, emptySendInfo, FlowContext } from '../../providers/flow'
+import { emptyRecvInfo, emptySendInfo, FlowContext, type RecvInfo, type SendInfo } from '../../providers/flow'
 import { NavigationContext, Pages } from '../../providers/navigation'
 import { NudgeContext } from '../../providers/nudge'
 import { usePwaInstalled, canPromptInstall, promptPwaInstall } from '../../lib/pwa'
@@ -86,11 +86,21 @@ export default function Wallet() {
     : t('networks.browser.installDescr')
 
   const [showInstallBanner, setShowInstallBanner] = useState(Boolean(!dismissed && !pwaInstalled))
-  const dismissPwaBanner = () => {
+  const [showStakingBanner, setShowStakingBanner] = useState(
+    !(config?.dismissedBanners ?? []).includes('staking'),
+  )
+  const dismissBanner = (id: string) => {
     if (!config) return
-    const dismissedBanners = [...(config.dismissedBanners ?? []), 'pwa-install']
+    const dismissedBanners = [...(config.dismissedBanners ?? []), id]
     updateConfig({ ...config, dismissedBanners })
+  }
+  const dismissPwaBanner = () => {
+    dismissBanner('pwa-install')
     setShowInstallBanner(false)
+  }
+  const dismissStakingBanner = () => {
+    dismissBanner('staking')
+    setShowStakingBanner(false)
   }
 
   const [error, setError] = useState(false)
@@ -149,6 +159,18 @@ export default function Wallet() {
     }
   }
 
+  // The send and receive screens show whichever asset the flow carries and
+  // fall back to BTC when it carries none. Navigating there without the asset
+  // picked here (or the asset page the user came from) showed Bitcoin even
+  // after choosing Tether, and people sent the wrong asset.
+  const sendAssetSeed = (symbol: AssetSymbol): Pick<SendInfo, 'assets'> => {
+    const assetId = symbol === ASSETS.BTC.symbol ? undefined : getWrappedAssetId(symbol)
+    return { assets: assetId ? [{ assetId, amount: BigInt(0) }] : undefined }
+  }
+  const recvAssetSeed = (symbol: AssetSymbol): Pick<RecvInfo, 'assetId'> => ({
+    assetId: symbol === ASSETS.BTC.symbol ? undefined : getWrappedAssetId(symbol),
+  })
+
   const handleAssetSelected = (asset: AssetSymbol) => {
     setSelectedFlowAsset(asset)
     setShowAssetSelector(false)
@@ -163,7 +185,7 @@ export default function Wallet() {
 
     // Update flow context and navigate based on mode and network
     if (flowMode === 'send') {
-      setSendInfo({ ...emptySendInfo, method: network })
+      setSendInfo({ ...emptySendInfo, ...sendAssetSeed(selectedFlowAsset), method: network })
 
       if (network === TRANSFER_METHOD.bank) {
         navigate(Pages.BankSend)
@@ -171,7 +193,7 @@ export default function Wallet() {
         navigate(Pages.SendForm)
       }
     } else {
-      setRecvInfo({ ...emptyRecvInfo, method: network })
+      setRecvInfo({ ...emptyRecvInfo, ...recvAssetSeed(selectedFlowAsset), method: network })
 
       if (network === TRANSFER_METHOD.bank) {
         navigate(Pages.BankReceive)
@@ -204,10 +226,10 @@ export default function Wallet() {
 
     if (choice === TRANSFER_METHOD.ark) {
       if (flowMode === 'send') {
-        setSendInfo({ ...emptySendInfo, method: TRANSFER_METHOD.ark })
+        setSendInfo({ ...emptySendInfo, ...sendAssetSeed(selectedFlowAsset), method: TRANSFER_METHOD.ark })
         navigate(Pages.SendForm)
       } else {
-        setRecvInfo({ ...emptyRecvInfo, method: TRANSFER_METHOD.ark })
+        setRecvInfo({ ...emptyRecvInfo, ...recvAssetSeed(selectedFlowAsset), method: TRANSFER_METHOD.ark })
         navigate(Pages.ReceiveAmount)
       }
       setFlowMode(null)
@@ -372,9 +394,11 @@ export default function Wallet() {
                   </FlexRow>
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
+                {showInstallBanner || showStakingBanner ? (
                 <div style={{ display: 'flex', flexDirection: 'column', paddingTop: 'var(--banner-padding-top)' }}>
+                  {/* Install first: saving the app to the home screen matters
+                      more than the token promo, which comes second. */}
                   <BannerCarousel>
-                    <StakingBanner variant='home' />
                     {showInstallBanner ? (
                       <InstallBanner
                         description={pwaDescription}
@@ -392,8 +416,12 @@ export default function Wallet() {
                         onDismiss={dismissPwaBanner}
                       />
                     ) : null}
+                    {showStakingBanner ? (
+                      <StakingBanner variant='home' onDismiss={dismissStakingBanner} />
+                    ) : null}
                   </BannerCarousel>
                 </div>
+                ) : null}
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
                   {nudge ? nudge : psaMessage ? <InfoBox html={psaMessage} /> : null}

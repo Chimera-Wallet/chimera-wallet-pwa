@@ -26,9 +26,12 @@ import { useLnSendReceipt } from '../../hooks/useLnSendReceipt'
 import UnverifiedBadge from '../../components/UnverifiedBadge'
 import EditableNote from '../../components/NoteEditor'
 import { getTxNote, setTxNote, subscribeTxNotes, txNoteKey } from '../../lib/txNotes'
+import { buildWrapTx, getWrapDeposits, subscribeWrapDeposits } from '../../lib/wrapDeposits'
+import { SOURCE_CHAINS, type SourceChainId } from '../../lib/sourceChains'
 
 const sameTx = (a: Tx, b: Tx): boolean => {
   if (a.type !== b.type) return false
+  if (a.wrap) return a.wrap.quoteId === b.wrap?.quoteId
   if (a.boardingTxid) return a.boardingTxid === b.boardingTxid
   if (a.redeemTxid) return a.redeemTxid === b.redeemTxid
   return Boolean(a.roundTxid) && a.roundTxid === b.roundTxid
@@ -46,7 +49,13 @@ export default function Transaction() {
 
   // txInfo is a snapshot taken when the row was tapped. Follow the live entry
   // so the status updates when the wallet reloads (e.g. once a deposit boards).
-  const tx = (txInfo && txs.find((candidate) => sameTx(txInfo, candidate))) ?? txInfo
+  // A pending bridge deposit isn't a wallet tx; follow it in its own store.
+  const wrapDeposits = useSyncExternalStore(subscribeWrapDeposits, getWrapDeposits)
+  const wrapDeposit = txInfo?.wrap ? wrapDeposits.find((d) => d.quote.id === txInfo.wrap!.quoteId) : undefined
+  const tx =
+    (wrapDeposit && buildWrapTx(wrapDeposit)) ??
+    (txInfo && txs.find((candidate) => sameTx(txInfo, candidate))) ??
+    txInfo
   const issuanceTx = tx ? isIssuance(tx) : false
   const burnTx = tx ? isBurn(tx) : false
   const boardingTx = Boolean(tx?.boardingTxid)
@@ -77,6 +86,7 @@ export default function Transaction() {
   const txid = tx.boardingTxid || tx.redeemTxid || tx.roundTxid || ''
   const txStatus = getTxStatus(tx, boardingExitDelay)
   const statusLabel = t(TX_STATUS_DISPLAY[txStatus].text)
+  const wrapChain = tx.wrap ? SOURCE_CHAINS[tx.wrap.chain as SourceChainId] : undefined
 
 
   const details: DetailsProps = {
@@ -84,7 +94,7 @@ export default function Transaction() {
     when: tx.createdAt ? prettyAgo(tx.createdAt) : txStatus !== 'Unconfirmed' ? t('common.general.unkown') : t('common.general.unconfirmed'),
     date: tx.createdAt ? prettyDate(tx.createdAt) : txStatus !== 'Unconfirmed' ? t('common.general.unkown') : t('common.general.unconfirmed'),
     status: statusLabel,
-    type: boardingTx ? t('networks.transactions.boarding') : t('networks.transactions.offchain'),
+    type: wrapChain ? wrapChain.name : boardingTx ? t('networks.transactions.boarding') : t('networks.transactions.offchain'),
     isOffchainTx: !tx.boardingTxid && Boolean(tx.redeemTxid),
     assetId: tx.assets?.[0]?.assetId,
     wallet: wallet,
@@ -98,6 +108,9 @@ export default function Transaction() {
         // how the swap branch above expresses the same thing.
     ...lnSendReceipt,
     txid: lnSendReceipt ? undefined : txid,
+    // A bridge deposit has no BTC leg and no Arkade tx yet, so none of the
+    // sats rows apply.
+    ...(tx.wrap ? { satoshis: undefined, fees: undefined, total: undefined } : {}),
   }
 
   return (
@@ -117,6 +130,10 @@ export default function Transaction() {
             ) : txStatus === 'Pending boarding' ? (
               <Info color='orange' icon={<VtxosIcon />} title={statusLabel}>
                 <Text wrap>{t('networks.transactions.boardingAutomatically')}</Text>
+              </Info>
+            ) : tx.wrap && (txStatus === 'Wrapping' || txStatus === 'Wrap failed') ? (
+              <Info color={txStatus === 'Wrapping' ? 'orange' : 'red'} icon={<VtxosIcon />} title={statusLabel}>
+                <Text wrap>{t(`common.notifications.wrapService.${tx.wrap.status}`)}</Text>
               </Info>
             ) : null}
             {canCancelSwap || cancelling ? (

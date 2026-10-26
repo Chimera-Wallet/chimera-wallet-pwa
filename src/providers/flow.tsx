@@ -97,6 +97,12 @@ export interface UnwrapSendInfo {
   sender: string
   // Destination-chain address that receives the payout.
   receiver: string
+  // Amount of the wrapped asset to send, in its smallest base unit.
+  amount?: bigint
+  // In-flight funding attempt, retained when navigating away and back.
+  fundingId?: string
+  // Arkade transaction funding the quote; prevents funding it again on return.
+  txid?: string
   quote?: WrapQuote
 }
 
@@ -157,7 +163,7 @@ interface FlowContextProps {
   setBankStatusOrder: (order: BankOrder | undefined) => void
   setCurrentBankOrderType: (type: BankOrderType | undefined) => void
   setWrapRecvInfo: (arg0: WrapRecvInfo | undefined) => void
-  setUnwrapSendInfo: (arg0: UnwrapSendInfo | undefined) => void
+  setUnwrapSendInfo: (arg0: SetStateAction<UnwrapSendInfo | undefined>) => void
 }
 
 export const emptyInitInfo: InitInfo = {

@@ -1,4 +1,6 @@
-import { useContext, useRef } from 'react'
+import { useContext, useRef, useSyncExternalStore } from 'react'
+import { getWrapDeposits, getWrapDepositTxs, subscribeWrapDeposits } from '../lib/wrapDeposits'
+import { sortLocalTxs } from '../lib/transactionHistory'
 import { WalletContext } from '../providers/wallet'
 import { TextLabel, TextSecondary } from './Text'
 import { Tx } from '../lib/types'
@@ -55,9 +57,12 @@ const TransactionLine = ({ tx, onClick, isFirst }: { tx: Tx; onClick: () => void
   if (assetEntry) {
     const decimals = assetMeta?.decimals ?? 8
     assetLabel = assetMeta?.ticker ?? assetMeta?.name ?? `${assetEntry.assetId.slice(0, 8)}…`
+    // The SDK signs asset amounts (a send is negative), and the row adds its
+    // own sign, so print the magnitude or a send reads "- -1 USDT".
+    const magnitude = abs(assetEntry.amount)
     formattedAmount = config.showBalance
-      ? `${prefix} ${prettyAssetAmount(assetEntry.amount, decimals)} ${assetLabel}`
-      : prettyAssetAmountHide(assetEntry.amount, assetLabel)
+      ? `${prefix} ${prettyAssetAmount(magnitude, decimals)} ${assetLabel}`
+      : prettyAssetAmountHide(magnitude, assetLabel)
     // Fiat only for listed assets with a price. CX wrapped assets map 1-to-1
     // with the original, so value the raw amount with the original asset's
     // precision, as the home balance and asset list do.
@@ -214,11 +219,15 @@ export default function TransactionsList({
 } = {}) {
   const { setTxInfo } = useContext(FlowContext)
   const { navigate } = useContext(NavigationContext)
-  const { txs: allTxs } = useContext(WalletContext)
+  const { txs: walletTxs } = useContext(WalletContext)
+  const wrapDeposits = useSyncExternalStore(subscribeWrapDeposits, getWrapDeposits)
   const {t} = useTranslation()
 
   const txs = (() => {
-    let list = allTxs
+    // Bridge deposits still on their way in have no wallet tx yet; list them
+    // as pending alongside the rest, by date.
+    const wrapTxs = getWrapDepositTxs(wrapDeposits)
+    let list = wrapTxs.length ? sortLocalTxs([...walletTxs, ...wrapTxs]) : walletTxs
     if (filterAsset) {
       // `filterAsset` is an app symbol (e.g. 'ETH'); BTC matches native txs,
       // wrapped assets match by their Arkade asset ID.
@@ -239,7 +248,9 @@ export default function TransactionsList({
   const focusedIndexRef = useRef(0)
 
   const key = (tx: Tx, index: number) =>
-    [tx.roundTxid, tx.redeemTxid, tx.boardingTxid].filter(Boolean).join('-') || `tx-${index}`
+    (tx.wrap && `wrap-${tx.wrap.quoteId}`) ||
+    [tx.roundTxid, tx.redeemTxid, tx.boardingTxid].filter(Boolean).join('-') ||
+    `tx-${index}`
 
   const focusRow = (index: number) => {
     if (index < 0 || index >= txs.length) return
