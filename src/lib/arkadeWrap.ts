@@ -53,6 +53,8 @@ export interface WrapQuote {
   payout_amount: string | null
   /** Minimum accepted unwrap deposit in base units. Null for wrap quotes. */
   min_amount?: string | null
+  /** Fixed destination-network charge deducted from an unwrap payout, in base units. Null for wrap quotes. */
+  network_fee_amount?: string | null
   deposit_tx_hash: string | null
   mint_tx_hash: string | null
   burn_tx_hash: string | null

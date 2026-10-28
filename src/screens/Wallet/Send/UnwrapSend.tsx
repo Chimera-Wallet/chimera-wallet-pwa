@@ -400,6 +400,15 @@ export default function UnwrapSend() {
                       })}
                     />
                   ) : null}
+                  {quote?.network_fee_amount ? (
+                    <InfoLine
+                      compact
+                      text={t('common.notifications.unwrapService.networkFee', {
+                        amount: formatBaseUnits(quote.network_fee_amount, assetConfig.precision),
+                        ticker: unwrapSendInfo.ticker,
+                      })}
+                    />
+                  ) : null}
                   {quote?.fee_amount ? (
                     <InfoLine
                       compact

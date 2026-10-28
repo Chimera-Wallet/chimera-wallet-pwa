@@ -156,10 +156,11 @@ describe('Send to chains', () => {
   })
 
   it('shows the bridge minimum and blocks amounts below it', async () => {
-    quote = { ...quote, min_amount: '20000000' }
+    quote = { ...quote, min_amount: '20000000', network_fee_amount: '1500000' }
     render(<Harness />)
     enterDestination()
     expect(await screen.findByText('Minimum: 20 USDT')).toBeInTheDocument()
+    expect(screen.getByText('Network fee: 1.5 USDT')).toBeInTheDocument()
 
     enterAmount('19.999999')
     expect(screen.getByRole('button', { name: 'Below minimum' })).toBeDisabled()
