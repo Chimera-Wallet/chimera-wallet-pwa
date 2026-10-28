@@ -33,6 +33,9 @@
 
     },
     "send": {
+        "unwrap": {
+            "belowMinimum": "The minimum unwrap amount is {{amount}} {{ticker}}"
+        },
         "bitcoin": {
             "address": "Selected method requires a Bitcoin address",
             "type": "Selected method requires a different address type",

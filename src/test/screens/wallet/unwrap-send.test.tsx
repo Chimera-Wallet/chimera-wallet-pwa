@@ -76,6 +76,9 @@ const enterDestination = (value = destination) => {
   fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
 }
 
+// The amount step reserves a quote up front to learn the bridge minimum.
+const waitForQuote = () => screen.findByText(/^Minimum: /)
+
 const enterAmount = (value: string) => {
   fireEvent.change(screen.getByRole('spinbutton', { name: 'Amount' }), { target: { value } })
 }
@@ -95,6 +98,7 @@ beforeEach(() => {
     amount: null,
     fee_amount: null,
     payout_amount: null,
+    min_amount: '1',
     deposit_tx_hash: null,
     mint_tx_hash: null,
     burn_tx_hash: null,
@@ -111,7 +115,7 @@ afterEach(() => {
 })
 
 describe('Send to chains', () => {
-  it('validates the destination, then offers an amount and balance shortcuts without funding a quote', () => {
+  it('validates the destination, then offers an amount and balance shortcuts without funding the quote', async () => {
     render(<Harness />)
     expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled()
     enterDestination('invalid')
@@ -119,6 +123,7 @@ describe('Send to chains', () => {
     expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument()
 
     enterDestination(` ${destination} `)
+    await waitForQuote()
     expect(screen.getByText('100 USDT available')).toBeInTheDocument()
     expect(screen.getByText(destination)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Confirm sending' })).toBeDisabled()
@@ -134,7 +139,12 @@ describe('Send to chains', () => {
       expect(screen.getByRole('spinbutton', { name: 'Amount' })).toHaveValue(percent)
     }
     expect(screen.getByRole('button', { name: 'Confirm sending' })).toBeEnabled()
-    expect(bridge.createUnwrapQuote).not.toHaveBeenCalled()
+    expect(bridge.createUnwrapQuote).toHaveBeenCalledExactlyOnceWith({
+      chain: 'ethereum',
+      ticker: 'USDT',
+      sender: initialInfo.sender,
+      receiver: destination,
+    })
     expect(send).not.toHaveBeenCalled()
 
     fireEvent.click(screen.getByLabelText('Go back'))
@@ -142,6 +152,39 @@ describe('Send to chains', () => {
     expect(goBack).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
     expect(screen.getByRole('spinbutton', { name: 'Amount' })).toHaveValue(100)
+    expect(bridge.createUnwrapQuote).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows the bridge minimum and blocks amounts below it', async () => {
+    quote = { ...quote, min_amount: '20000000' }
+    render(<Harness />)
+    enterDestination()
+    expect(await screen.findByText('Minimum: 20 USDT')).toBeInTheDocument()
+
+    enterAmount('19.999999')
+    expect(screen.getByRole('button', { name: 'Below minimum' })).toBeDisabled()
+    enterAmount('20')
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm sending' }))
+    await screen.findByText('Deposit sent, waiting for confirmation…')
+    expect(send).toHaveBeenCalledTimes(1)
+  })
+
+  it('rechecks the minimum on the refreshed quote before funding', async () => {
+    render(<Harness />)
+    enterDestination()
+    await waitForQuote()
+    enterAmount('10')
+    quote = { ...quote, min_amount: '20000000' }
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm sending' }))
+    await screen.findByText('The minimum unwrap amount is 20 USDT')
+    expect(send).not.toHaveBeenCalled()
+  })
+
+  it('rounds the displayed minimum up to the displayed precision', async () => {
+    quote = { ...quote, min_amount: '1000000000000001' }
+    render(<Harness info={{ ...initialInfo, assetSymbol: 'ETH', ticker: 'ETH' }} />)
+    enterDestination()
+    expect(await screen.findByText('Minimum: 0.00100001 ETH')).toBeInTheDocument()
   })
 
   it.each<[AssetSymbol, SourceChainId, string, bigint]>([
@@ -159,6 +202,7 @@ describe('Send to chains', () => {
       />,
     )
     enterDestination(receiver)
+    await waitForQuote()
     enterAmount(value)
     fireEvent.click(screen.getByRole('button', { name: 'Confirm sending' }))
 
@@ -182,6 +226,7 @@ describe('Send to chains', () => {
   it('uses the wrapped asset metadata precision for amount entry', async () => {
     render(<Harness info={{ ...initialInfo, assetSymbol: 'ETH', ticker: 'ETH' }} decimals={8} />)
     enterDestination()
+    await waitForQuote()
     enterAmount('0.12345678')
     fireEvent.click(screen.getByRole('button', { name: 'Confirm sending' }))
     await screen.findByText('Deposit sent, waiting for confirmation…')
@@ -202,6 +247,7 @@ describe('Send to chains', () => {
     )
     const view = render(<Harness />)
     enterDestination()
+    await waitForQuote()
     enterAmount('20')
     fireEvent.click(screen.getByRole('button', { name: 'Confirm sending' }))
     await waitFor(() => expect(send).toHaveBeenCalledTimes(1))
@@ -226,15 +272,14 @@ describe('Send to chains', () => {
     vi.mocked(bridge.createUnwrapQuote).mockRejectedValueOnce(new Error('Bridge unavailable'))
     render(<Harness />)
     enterDestination()
-    enterAmount('20')
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm sending' }))
     await screen.findByText('Bridge unavailable')
+    enterAmount('20')
     expect(send).not.toHaveBeenCalled()
-    expect(screen.getByRole('spinbutton')).toHaveValue(20)
 
     send.mockRejectedValueOnce(new Error('Wallet send failed'))
     fireEvent.click(screen.getByRole('button', { name: 'Confirm sending' }))
     await screen.findByText('Wallet send failed')
+    expect(bridge.createUnwrapQuote).toHaveBeenCalledTimes(2)
     expect(screen.getByRole('spinbutton')).toHaveValue(20)
 
     quote = { ...quote, status: 'deposited', deposit_tx_hash: 'previous-funding-txid' }
@@ -244,13 +289,16 @@ describe('Send to chains', () => {
     expect(send).toHaveBeenCalledTimes(1)
   })
 
-  it('replaces an expired, unfunded quote before sending', async () => {
+  it('replaces an expired, unfunded quote on the amount step and again before sending', async () => {
     const expired = { ...quote, id: 'expired-quote', status: 'expired' as const, expiry: Date.now() - 1 }
-    vi.mocked(bridge.getWrapQuote).mockResolvedValueOnce(expired)
     render(<Harness info={{ ...initialInfo, receiver: destination, amount: BigInt(20_000_000), quote: expired }} />)
+    await waitForQuote()
+    expect(bridge.createUnwrapQuote).toHaveBeenCalledTimes(1)
+
+    vi.mocked(bridge.getWrapQuote).mockResolvedValueOnce(expired)
     fireEvent.click(screen.getByRole('button', { name: 'Confirm sending' }))
     await screen.findByText('Deposit sent, waiting for confirmation…')
-    expect(bridge.createUnwrapQuote).toHaveBeenCalledTimes(1)
+    expect(bridge.createUnwrapQuote).toHaveBeenCalledTimes(2)
     expect(send).toHaveBeenCalledExactlyOnceWith({
       address: quote.treasury,
       amount: 0,

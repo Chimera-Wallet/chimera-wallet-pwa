@@ -51,6 +51,8 @@ export interface WrapQuote {
   fee_amount: string | null
   /** Net payout (amount - fee) credited to the receiver, in base units. */
   payout_amount: string | null
+  /** Minimum accepted unwrap deposit in base units. Null for wrap quotes. */
+  min_amount?: string | null
   deposit_tx_hash: string | null
   mint_tx_hash: string | null
   burn_tx_hash: string | null
