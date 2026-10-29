@@ -19,6 +19,8 @@ export const getArkadeWrapBaseUrl = (): string => {
   return url
 }
 
+export const SERVICE_FEE_PERCENT = 0.3
+
 // Direction of a quote.
 export type WrapType = 'wrap' | 'unwrap'
 
@@ -51,6 +53,10 @@ export interface WrapQuote {
   fee_amount: string | null
   /** Net payout (amount - fee) credited to the receiver, in base units. */
   payout_amount: string | null
+  /** Minimum accepted unwrap deposit in base units. Null for wrap quotes. */
+  min_amount?: string | null
+  /** Fixed destination-network charge deducted from an unwrap payout, in base units. Null for wrap quotes. */
+  network_fee_amount?: string | null
   deposit_tx_hash: string | null
   mint_tx_hash: string | null
   burn_tx_hash: string | null

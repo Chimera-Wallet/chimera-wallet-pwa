@@ -35,6 +35,9 @@
         },
         "unwrapService":{
             "availableBalance": "{{amount}} {{ticker}} available",
+            "minAmount": "Minimum: {{amount}} {{ticker}}",
+            "belowMinimum": "Below minimum",
+            "networkFee": "Network fee: {{amount}} {{ticker}}",
             "confirming": "Deposit sent, waiting for confirmation…",
             "pending": "Waiting for your Arkade deposit…",
             "deposited": "Deposit detected, confirming…",
@@ -61,6 +64,7 @@
             "expiry": "Send {{ticker}} on {{name}} to the address below before the quote expires.",
             "depositDetected": "Deposit detected {{amount}} {{ticker}}",
             "bridgeFee": "Bridge fee: {{amount}} {{ticker}}",
+            "feeRate": "Service fee: {{rate}}%",
             "getDepositAddress": "Get deposit address",
             "pending": "Waiting for your deposit...",
             "deposited": "Deposit detected, confirming…",

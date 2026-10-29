@@ -28,6 +28,7 @@ import { getReceivingAddresses, sendAssets } from '../../../lib/asp'
 import { extractError } from '../../../lib/error'
 import { consoleError } from '../../../lib/logs'
 import {
+  BALANCE_DISPLAY_DECIMALS,
   centsToUnits,
   getWrappedAssetId,
   prettyAssetAmount,
@@ -37,11 +38,24 @@ import {
 import { requireSourceChain } from '../../../lib/sourceChains'
 import { formatBaseUnits } from '../../../lib/format'
 import { saveTransactionActivityMetadata } from '../../../lib/storage'
-import { createUnwrapQuote, getWrapQuote, isTerminalWrapStatus, type WrapQuote } from '../../../lib/arkadeWrap'
+import {
+  SERVICE_FEE_PERCENT,
+  createUnwrapQuote,
+  getWrapQuote,
+  isTerminalWrapStatus,
+  type WrapQuote,
+} from '../../../lib/arkadeWrap'
 
 const POLL_INTERVAL = 8000
 
 const statusLabel = (status: WrapQuote['status']): string => `common.notifications.unwrapService.${status}`
+
+const minAmountOf = (quote?: WrapQuote): bigint => (quote?.min_amount ? BigInt(quote.min_amount) : BigInt(0))
+
+const prettyMinAmount = (minAmount: bigint, precision: number): string => {
+  const step = BigInt(10) ** BigInt(Math.max(0, precision - BALANCE_DISPLAY_DECIMALS))
+  return prettyAssetAmount(((minAmount + step - BigInt(1)) / step) * step, precision)
+}
 
 export default function UnwrapSend() {
   const { t } = useTranslation()
@@ -55,6 +69,7 @@ export default function UnwrapSend() {
     unwrapSendInfo?.amount !== undefined || unwrapSendInfo?.quote ? 'amount' : 'address',
   )
   const [error, setError] = useState('')
+  const [quoteRequest, setQuoteRequest] = useState<'idle' | 'loading' | 'failed'>('idle')
   const sendingRef = useRef(false)
   const notifiedQuote = useRef<string>()
 
@@ -72,6 +87,14 @@ export default function UnwrapSend() {
   const depositStarted = Boolean(
     txid || quote?.deposit_tx_hash || (quote && quote.status !== 'pending' && quote.status !== 'expired'),
   )
+  const receiverSet = unwrapSendInfo?.receiver
+  const needsQuote =
+    step === 'amount' &&
+    !depositStarted &&
+    !sending &&
+    Boolean(sender && receiverSet) &&
+    (!quote || quote.status === 'expired')
+  const awaitingQuote = needsQuote && quoteRequest !== 'failed'
 
   useEffect(() => {
     if (!unwrapSendInfo) navigate(Pages.SendForm)
@@ -94,6 +117,33 @@ export default function UnwrapSend() {
       active = false
     }
   }, [svcWallet, sender, setUnwrapSendInfo])
+
+  // The minimum unwrap amount only comes with a quote, so reserve one as soon as
+  // the destination is set. handleSend still refreshes it before funding.
+  useEffect(() => {
+    if (!needsQuote || !unwrapSendInfo) return
+    const { chainId, ticker, receiver: destination } = unwrapSendInfo
+    let active = true
+    setQuoteRequest('loading')
+    createUnwrapQuote({ chain: chainId, ticker, sender, receiver: destination })
+      .then((created) => {
+        if (!active) return
+        setQuoteRequest('idle')
+        setUnwrapSendInfo((prev) =>
+          prev?.receiver === destination && !prev.fundingId && !prev.txid ? { ...prev, quote: created } : prev,
+        )
+      })
+      .catch((err) => {
+        if (!active) return
+        consoleError(err, 'error creating unwrap quote')
+        setQuoteRequest('failed')
+        setError(extractError(err))
+      })
+    return () => {
+      active = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needsQuote, sender, receiverSet, unwrapSendInfo?.chainId, unwrapSendInfo?.ticker, setUnwrapSendInfo])
 
   // Pause polling during funding so an older response cannot race the send.
   useEffect(() => {
@@ -156,6 +206,7 @@ export default function UnwrapSend() {
     if (!assetId) return setError(t('errors.general.missingAsset'))
     if (amount <= BigInt(0)) return setError(t('errors.general.missingAmount'))
     if (amount > availableBalance) return setError(t('errors.funds.insufficient'))
+    if (awaitingQuote) return
 
     sendingRef.current = true
     const fundingId = crypto.randomUUID()
@@ -166,7 +217,7 @@ export default function UnwrapSend() {
       setUnwrapSendInfo((prev) => (prev?.fundingId === fundingId ? { ...prev, ...updates } : prev))
     setError('')
     try {
-      // Reserve only when the amount is confirmed. On retry, check whether the
+      // Refresh the quote reserved on the amount step. On retry, check whether the
       // previous deposit was already observed before allowing another send.
       let currentQuote = quote ? await getWrapQuote(quote.id) : undefined
       if (
@@ -186,6 +237,15 @@ export default function UnwrapSend() {
       updateFunding({ quote: fundingQuote })
       if (fundingQuote.status !== 'pending' || fundingQuote.deposit_tx_hash) return
       if (fundingQuote.expiry <= Date.now()) throw new Error(t('common.notifications.unwrapService.expired'))
+      const fundingMinAmount = minAmountOf(fundingQuote)
+      if (amount < fundingMinAmount) {
+        return setError(
+          t('errors.send.unwrap.belowMinimum', {
+            amount: prettyMinAmount(fundingMinAmount, precision),
+            ticker: unwrapSendInfo.ticker,
+          }),
+        )
+      }
 
       // The bridge derives the payout from the deposit, not an amount in the
       // quote request. Keep the wallet transfer in bigint base units throughout.
@@ -240,6 +300,8 @@ export default function UnwrapSend() {
 
   const enteringAddress = step === 'address' && !depositStarted
   const insufficientFunds = amount > availableBalance
+  const minAmount = minAmountOf(quote)
+  const belowMinimum = amount > BigInt(0) && amount < minAmount
 
   return (
     <>
@@ -335,6 +397,28 @@ export default function UnwrapSend() {
                   ) : (
                     <InfoLine compact text={t('common.notifications.send.feesDeduction')} />
                   )}
+                  {!depositStarted && minAmount > BigInt(0) ? (
+                    <InfoLine
+                      compact
+                      text={t('common.notifications.unwrapService.minAmount', {
+                        amount: prettyMinAmount(minAmount, precision),
+                        ticker: unwrapSendInfo.ticker,
+                      })}
+                    />
+                  ) : null}
+                  <InfoLine
+                    compact
+                    text={t('common.notifications.wrapService.feeRate', { rate: SERVICE_FEE_PERCENT })}
+                  />
+                  {quote?.network_fee_amount ? (
+                    <InfoLine
+                      compact
+                      text={t('common.notifications.unwrapService.networkFee', {
+                        amount: formatBaseUnits(quote.network_fee_amount, assetConfig.precision),
+                        ticker: unwrapSendInfo.ticker,
+                      })}
+                    />
+                  ) : null}
                   {quote?.fee_amount ? (
                     <InfoLine
                       compact
@@ -371,10 +455,21 @@ export default function UnwrapSend() {
                 ? 'common.general.sendAsset'
                 : insufficientFunds
                   ? 'errors.funds.insufficient'
-                  : 'common.confirmSend',
+                  : belowMinimum
+                    ? 'common.notifications.unwrapService.belowMinimum'
+                    : 'common.confirmSend',
             )}
             onClick={handleSend}
-            disabled={sending || !svcWallet || !sender || !assetId || amount <= BigInt(0) || insufficientFunds}
+            disabled={
+              sending ||
+              awaitingQuote ||
+              !svcWallet ||
+              !sender ||
+              !assetId ||
+              amount <= BigInt(0) ||
+              insufficientFunds ||
+              belowMinimum
+            }
           />
         )}
       </ButtonsOnBottom>
