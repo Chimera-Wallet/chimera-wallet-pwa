@@ -31,7 +31,7 @@ import { consoleError } from '../../../lib/logs'
 import { requireAssetConfig } from '../../../lib/assets'
 import { requireSourceChain } from '../../../lib/sourceChains'
 import { formatBaseUnits } from '../../../lib/format'
-import { createWrapQuote, type WrapQuote } from '../../../lib/arkadeWrap'
+import { SERVICE_FEE_PERCENT, createWrapQuote, type WrapQuote } from '../../../lib/arkadeWrap'
 import { getWrapDeposit, saveWrapDeposit, subscribeWrapDeposits } from '../../../lib/wrapDeposits'
 import { useTranslation } from 'react-i18next'
 
@@ -180,6 +180,7 @@ export default function WrapReceive() {
                     color='orange'
                     text={t('common.notifications.wrapService.expiry', {ticker: wrapRecvInfo.ticker, name: chain.name})}
                   />
+                  <InfoLine compact text={t('common.notifications.wrapService.feeRate', { rate: SERVICE_FEE_PERCENT })} />
                   {quote.amount ? (
                     <InfoLine compact text={t('common.notifications.wrapService.depositDetected', {amount: formatBaseUnits(quote.amount, precision), ticker: wrapRecvInfo.ticker})} />
                   ) : null}

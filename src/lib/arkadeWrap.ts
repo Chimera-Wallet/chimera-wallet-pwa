@@ -19,6 +19,8 @@ export const getArkadeWrapBaseUrl = (): string => {
   return url
 }
 
+export const SERVICE_FEE_PERCENT = 0.3
+
 // Direction of a quote.
 export type WrapType = 'wrap' | 'unwrap'
 

@@ -38,7 +38,13 @@ import {
 import { requireSourceChain } from '../../../lib/sourceChains'
 import { formatBaseUnits } from '../../../lib/format'
 import { saveTransactionActivityMetadata } from '../../../lib/storage'
-import { createUnwrapQuote, getWrapQuote, isTerminalWrapStatus, type WrapQuote } from '../../../lib/arkadeWrap'
+import {
+  SERVICE_FEE_PERCENT,
+  createUnwrapQuote,
+  getWrapQuote,
+  isTerminalWrapStatus,
+  type WrapQuote,
+} from '../../../lib/arkadeWrap'
 
 const POLL_INTERVAL = 8000
 
@@ -400,6 +406,10 @@ export default function UnwrapSend() {
                       })}
                     />
                   ) : null}
+                  <InfoLine
+                    compact
+                    text={t('common.notifications.wrapService.feeRate', { rate: SERVICE_FEE_PERCENT })}
+                  />
                   {quote?.network_fee_amount ? (
                     <InfoLine
                       compact
