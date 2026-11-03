@@ -21,7 +21,7 @@
         "warning": "⚠ WARNING",
         "lossFunds": "If you deposit funds to your wallet <bold>without backing up your keys</bold> you are at constant risk of <danger>TOTAL AND IRREVERSIBLE loss of funds</danger>.",
         "nonCustodial": "Chimera Wallet is a <bold>fully non-custodial wallet</bold>. <strongWarning>NO ONE</strongWarning> can help you recover your funds if you don't have your key.",
-        "understood": "I understood, proceed",
+        "understood": "I understand, proceed",
         "goBack": "Go back"
     },
     "biometrics": {
@@ -43,7 +43,7 @@
         "restoreWallet": "Restore Wallet"
     },
     "restore": {
-        "invalidPhrase": "Invalid Recovery phrase",
+        "invalidPhrase": "Invalid recovery phrase",
         "validationUnable": "Unable to validate private key format",
         "validationUnableSimple": "Unable to validate key format",
         "restoringWallet": "Restoring Wallet...",

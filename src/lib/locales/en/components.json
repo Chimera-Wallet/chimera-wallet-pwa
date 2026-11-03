@@ -147,7 +147,7 @@
         "tryAgain": "Try again",
         "restorePhrase": "Restore from secret phrase",
         "unlockBio":"Unlock using biometrics",
-        "insPass":"Insert password",
+        "insPass":"Enter password",
         "pass": "password",
         "unlock": "Unlock wallet",
         "forgot": "Forgot password? Restore with private key",
@@ -162,7 +162,7 @@
         "save": "Save password",
         "charMin": "8 characters minimum",
         "num": "contain at least 1 number",
-        "special": "contain at least 1 special characte",
+        "special": "contain at least 1 special character",
         "pass": "Password",
         "confirm": "Confirm password"
     },
@@ -189,7 +189,7 @@
         "descr": "Lock your CEXT and watch your rewards grow over time, with annual returns of up to 15%, paid directly in CEXT to your wallet.",
         "live": "Live now!",
         "launch": "Launching in",
-        "joinComm": "Join The Community"
+        "joinComm": "Join the Community"
     },
   "assetTrust": {
     "unverified": "Unverified",

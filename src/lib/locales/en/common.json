@@ -15,7 +15,7 @@
         "townName": "Town",
         "postCode": "Postal Code"
     },
-    "orderHistory": "View order History",
+    "orderHistory": "View Order History",
     "notifications": {
         "send":{
             "invoiceDeets": "Invoice Details",
@@ -51,7 +51,7 @@
             "sendInfo": "{{value}} {{ticker}} sent on {{name}}",
             "destination": "Destination {{name}} address",
             "timeSensitive": "Send your wrapped {{ticker}} on Arkade to the treasury address below before the quote expires.",
-            "payout": "`Payout: {{amount}} {{ticker}}`",
+            "payout": "Payout: {{amount}} {{ticker}}",
             "sendHeader": "Send {{ticker}} to {{name}}"
         },
         "wrapService": {
@@ -103,7 +103,7 @@
             "minLightning": "{{amount}} sats min for Lightning",
             "bank": {
                 "bankDeposit": "Bank Deposit", 
-                "orderHistory": "View order History",
+                "orderHistory": "View Order History",
                 "sendTransfer": "Send Bank Transfer",
                 "madeTransfer": "I've Made the Transfer",
                 "orderStatus": "View Order Status",
@@ -232,7 +232,7 @@
             "paymentReceived": "Your payment has been received. We are processing your withdrawal and will send the funds to your bank account.",
             "awaitingTransfer": "Awaiting Bank Transfer", 
             "withdrawalSubmit": "Withdrawal Submitted",
-            "waitingForTransfer": "Waiting for your bank transfer. Once received, your order will be processed",
+            "waitingForTransfer": "Waiting for your bank transfer. Once received, your order will be processed.",
             "withdrawalProcessing": "Your withdrawal is being processed. You will receive {{fiat}} in your bank account once confirmed.",
             "transferMethod": "Transfer Method",
             "sepaDetails": "SEPA Bank Details",

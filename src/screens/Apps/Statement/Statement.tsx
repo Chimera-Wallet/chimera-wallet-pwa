@@ -87,7 +87,7 @@ export default function Statement() {
               <InfoContainer>
                 <InfoLine
                   compact
-                  text={t('apps.statement.transFound',{len1: filteredData.length , len2: filteredData.length === 1 ? '' : 's'})}
+                  text={t('apps.statement.transFound', { count: filteredData.length })}
                 />
               </InfoContainer>
             )}
