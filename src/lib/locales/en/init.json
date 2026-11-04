@@ -49,7 +49,15 @@
         "restoringWallet": "Restoring Wallet...",
         "pk": "private-key",
         "recoveryPhraseKey": "Recovery phrase or private key",
-        "phraseEntry": "Enter your 12-word recovery phrase, or a private key starting with 'nsec' or a raw hex key. Do not share it with anyone."
+        "phraseEntry": "Enter your 12-word recovery phrase, or a private key starting with 'nsec' or a raw hex key. Do not share it with anyone.",
+        "wordSuggestions": "Word suggestions",
+        "inputHint": "Type or paste your recovery phrase or private key.",
+        "wordCount_one": "{{count}} word entered",
+        "wordCount_other": "{{count}} words entered",
+        "wordError": "Word {{number}} isn’t recognized. Check its spelling.",
+        "wordCountError": "Enter the complete recovery phrase: 12, 15, 18, 21 or 24 words.",
+        "checksumError": "This recovery phrase isn’t valid. Check the words and their order.",
+        "keyError": "Enter a valid nsec private key or a 64-character hexadecimal private key."
     },
     "success": {
         "walletRestore": "Wallet restored!",
