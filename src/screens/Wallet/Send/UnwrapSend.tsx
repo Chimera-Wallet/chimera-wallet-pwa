@@ -28,7 +28,6 @@ import { getReceivingAddresses, sendAssets } from '../../../lib/asp'
 import { extractError } from '../../../lib/error'
 import { consoleError } from '../../../lib/logs'
 import {
-  BALANCE_DISPLAY_DECIMALS,
   centsToUnits,
   getWrappedAssetId,
   prettyAssetAmount,
@@ -36,26 +35,21 @@ import {
   type AssetSymbol,
 } from '../../../lib/assets'
 import { requireSourceChain } from '../../../lib/sourceChains'
-import { formatBaseUnits } from '../../../lib/format'
 import { saveTransactionActivityMetadata } from '../../../lib/storage'
 import {
   SERVICE_FEE_PERCENT,
   createUnwrapQuote,
   getWrapQuote,
   isTerminalWrapStatus,
+  prettyMinAmount,
+  prettyQuoteAmount,
+  quoteLimitUnits,
   type WrapQuote,
 } from '../../../lib/arkadeWrap'
 
 const POLL_INTERVAL = 8000
 
 const statusLabel = (status: WrapQuote['status']): string => `common.notifications.unwrapService.${status}`
-
-const minAmountOf = (quote?: WrapQuote): bigint => (quote?.min_amount ? BigInt(quote.min_amount) : BigInt(0))
-
-const prettyMinAmount = (minAmount: bigint, precision: number): string => {
-  const step = BigInt(10) ** BigInt(Math.max(0, precision - BALANCE_DISPLAY_DECIMALS))
-  return prettyAssetAmount(((minAmount + step - BigInt(1)) / step) * step, precision)
-}
 
 export default function UnwrapSend() {
   const { t } = useTranslation()
@@ -237,7 +231,7 @@ export default function UnwrapSend() {
       updateFunding({ quote: fundingQuote })
       if (fundingQuote.status !== 'pending' || fundingQuote.deposit_tx_hash) return
       if (fundingQuote.expiry <= Date.now()) throw new Error(t('common.notifications.unwrapService.expired'))
-      const fundingMinAmount = minAmountOf(fundingQuote)
+      const fundingMinAmount = quoteLimitUnits(fundingQuote.min_amount, precision)
       if (amount < fundingMinAmount) {
         return setError(
           t('errors.send.unwrap.belowMinimum', {
@@ -273,7 +267,7 @@ export default function UnwrapSend() {
   }
 
   if (quote?.status === 'completed') {
-    const payout = formatBaseUnits(quote.payout_amount, assetConfig.precision)
+    const payout = prettyQuoteAmount(quote.payout_amount, assetConfig.precision)
     return (
       <>
         <Header text={t('common.general.success')} />
@@ -300,7 +294,7 @@ export default function UnwrapSend() {
 
   const enteringAddress = step === 'address' && !depositStarted
   const insufficientFunds = amount > availableBalance
-  const minAmount = minAmountOf(quote)
+  const minAmount = quoteLimitUnits(quote?.min_amount, precision)
   const belowMinimum = amount > BigInt(0) && amount < minAmount
 
   return (
@@ -408,22 +402,24 @@ export default function UnwrapSend() {
                   ) : null}
                   <InfoLine
                     compact
-                    text={t('common.notifications.wrapService.feeRate', { rate: SERVICE_FEE_PERCENT })}
+                    text={
+                      quote?.fee_amount
+                        ? t('common.notifications.wrapService.serviceFee', {
+                            rate: SERVICE_FEE_PERCENT,
+                            amount: prettyQuoteAmount(quote.fee_amount, assetConfig.precision),
+                            ticker: unwrapSendInfo.ticker,
+                          })
+                        : t('common.notifications.wrapService.feeRate', { rate: SERVICE_FEE_PERCENT })
+                    }
                   />
                   {quote?.network_fee_amount ? (
                     <InfoLine
                       compact
                       text={t('common.notifications.unwrapService.networkFee', {
-                        amount: formatBaseUnits(quote.network_fee_amount, assetConfig.precision),
-                        ticker: unwrapSendInfo.ticker,
-                      })}
-                    />
-                  ) : null}
-                  {quote?.fee_amount ? (
-                    <InfoLine
-                      compact
-                      text={t('common.notifications.wrapService.bridgeFee', {
-                        amount: formatBaseUnits(quote.fee_amount, assetConfig.precision),
+                        amount: prettyAssetAmount(
+                          quoteLimitUnits(quote.network_fee_amount, assetConfig.precision),
+                          assetConfig.precision,
+                        ),
                         ticker: unwrapSendInfo.ticker,
                       })}
                     />
@@ -432,7 +428,7 @@ export default function UnwrapSend() {
                     <InfoLine
                       compact
                       text={t('common.notifications.unwrapService.payout', {
-                        amount: formatBaseUnits(quote.payout_amount, assetConfig.precision),
+                        amount: prettyQuoteAmount(quote.payout_amount, assetConfig.precision),
                         ticker: unwrapSendInfo.ticker,
                       })}
                     />
