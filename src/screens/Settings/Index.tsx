@@ -19,7 +19,6 @@ import Logs from './Logs'
 import { SettingsOptions } from '../../lib/types'
 import Advanced from './Advanced'
 import General from './General'
-import Theme from './Theme'
 import Fiat from './Fiat'
 import Display from './Display'
 import Password from './Password'
@@ -79,8 +78,6 @@ function settingsContent(option: SettingsOptions): JSX.Element {
       return <Vtxos />
     case SettingsOptions.Contracts:
       return <Contracts />
-    case SettingsOptions.Theme:
-      return <Theme />
     case SettingsOptions.Fiat:
       return <Fiat />
     case SettingsOptions.Display:

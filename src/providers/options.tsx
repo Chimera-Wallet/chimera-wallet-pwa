@@ -126,11 +126,6 @@ export const options: Option[] = [
   },
   {
     icon: <></>,
-    option: SettingsOptions.Theme,
-    section: SettingsSections.Config,
-  },
-  {
-    icon: <></>,
     option: SettingsOptions.Fiat,
     section: SettingsSections.Config,
   },
