@@ -157,7 +157,6 @@ export default function Wirex() {
         onRetry: (msg) => setBusy(`Deploying wallet: ${msg}`),
       })
 
-      // Wirex's backend checks the on-chain registration, which it may not have indexed yet.
       setBusy('Creating Wirex user…')
       const created = await withRetry(
         () => ensureWirexUser({ userAddress, email: email.trim(), country, isPep }),
