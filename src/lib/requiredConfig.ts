@@ -54,9 +54,6 @@ export const getMissingRequiredConfig = (): string[] => {
     if (env.VITE_WIREX_SDK_ENV !== 'dev' && env.VITE_WIREX_SDK_ENV !== 'uat' && env.VITE_WIREX_SDK_ENV !== 'prod') {
       missing.push('VITE_WIREX_SDK_ENV')
     }
-    if (!env.VITE_WIREX_COMPANY_ID || env.VITE_WIREX_COMPANY_ID.trim() === '') {
-      missing.push('VITE_WIREX_COMPANY_ID')
-    }
   }
   return missing
 }

@@ -5,9 +5,6 @@ exports.resolveBearerToken = resolveBearerToken;
 exports.buildForwardedHeaders = buildForwardedHeaders;
 exports.isValidWebhookSecret = isValidWebhookSecret;
 // Shared authentication logic for the Wirex integration's two HTTP endpoints
-// (proxy.ts, webhook.ts): verifying an inbound Wirex webhook, and resolving
-// which Wirex bearer token (partner or "Login as User") a proxied request
-// should run under.
 const crypto_1 = require("crypto");
 const token_1 = require("./token");
 exports.USER_WALLET_HEADER = 'x-wirex-user-wallet';
@@ -25,16 +22,6 @@ class ProxyAuthError extends Error {
 exports.ProxyAuthError = ProxyAuthError;
 /**
  * Resolve which bearer token a proxied Wirex call should run under.
- * `claimedWallet` (the EOA/user_address) comes from the proxy's
- * USER_WALLET_HEADER. With no claimed wallet, the call runs under the
- * partner token; with one, a user-scoped "Login as User" token is minted
- * directly for it, identified by wallet rather than email — see token.ts's
- * header comment for why.
- *
- * `claimedWallet` is trusted as-is, not verified against any prior session —
- * the app's KYC flow no longer runs through a provider we can check a wallet
- * address against here, so this is a deliberately reduced trust model versus
- * verifying ownership first. Revisit if a stronger guarantee is needed.
  */
 async function resolveBearerToken(claimedWallet, chainId) {
     if (!claimedWallet)
@@ -64,12 +51,7 @@ function buildForwardedHeaders(requestHeaders, token, chainId) {
 }
 /**
  * Verify a Wirex webhook call by comparing a URL-path secret rather than a
- * signature. TODO (to be determined): Wirex's own docs
- * (partner.wirexpaychain.com/docs/webhooks-1) state outright that "No
- * authentication headers are added to webhook requests" — there is no
- * signature to check. This URL-secret scheme (configure Wirex's webhook URL
- * as .../wirex/webhook/{WIREX_WEBHOOK_SECRET}) is a stand-in until a proper
- * verification method (IP allowlisting, most likely) is decided on.
+ * signature.
  */
 function isValidWebhookSecret(providedSecret, expectedSecret) {
     if (!providedSecret)

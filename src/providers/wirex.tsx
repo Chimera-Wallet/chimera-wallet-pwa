@@ -2,7 +2,8 @@
  * Wirex card/wallet onboarding state.
  *
  * KYC is Wirex's own hosted flow (see docs.wirexapp.com/docs/retail-kyc-hosted):
- * a user is registered with minimal data (see WirexProfileInput below),
+ * a user is registered with email, residence country and PEP status (see
+ * WirexProfileInput below; without a country Wirex creates no KYC applicant),
  * startWirexVerification() opens a Sumsub-hosted redirect for them to
  * complete verification, and refreshWirexUser()/wirexVerificationStatus
  * reflect Wirex's own KYC state once they return.
@@ -30,11 +31,19 @@ export const isWirexEnabled = (): boolean => import.meta.env.VITE_WIREX_ENABLED 
 const WALLET_INDEXING_POLL_INTERVAL_MS = 30_000
 const WALLET_INDEXING_MAX_ATTEMPTS = 10
 
-/** Minimal contact info to register a Wirex user — collected directly (not sourced from any other session), right before starting Wirex's hosted KYC. */
+/**
+ * Info required to register a Wirex user — collected directly (not sourced from any other session), right before starting Wirex's hosted KYC.
+ * The collecting UI must ask for email, a residence country (emitting ISO 3166-1 alpha-2 codes) and a PEP yes/no.
+ * The country cannot be changed after the user is created.
+ */
 export interface WirexProfileInput {
   email: string
-  firstName: string
-  lastName: string
+  /** ISO 3166-1 alpha-2 residence country, e.g. "GB". */
+  country: string
+  /** Whether the user is a Politically Exposed Person. */
+  isPep: boolean
+  firstName?: string
+  lastName?: string
 }
 
 type WirexContextProps = {
@@ -162,6 +171,8 @@ export const WirexProvider = ({ children }: { children: ReactNode }) => {
           user = await ensureWirexUser({
             userAddress,
             email: profile.email,
+            country: profile.country,
+            isPep: profile.isPep,
             firstName: profile.firstName,
             lastName: profile.lastName,
           })

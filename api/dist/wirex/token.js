@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getPartnerToken = getPartnerToken;
+exports.getPartnerCompanyId = getPartnerCompanyId;
 exports.getUserToken = getUserToken;
 // Wirex BaaS authentication — server-side only.
 //
@@ -11,14 +12,7 @@ exports.getUserToken = getUserToken;
 //     Wirex BaaS call, not a separate Auth0 tenant (the docs' own example
 //     body is just client_id/client_secret/grant_type; no audience).
 //  2. User token ("Login as User"): takes no body, just the partner token
-//     plus a header identifying which user to issue a token for — exactly
-//     one of X-User-Wallet / X-User-Email / X-User-Id — and X-Chain-Id, at
-//     POST {WIREX_API_BASE}/api/v1/user/authorize. We identify by wallet
-//     (the EOA/user_address, not the Smart Wallet address) since that's the
-//     one guaranteed to be linked the moment the on-chain account exists —
-//     authorizing by email returned "No wallets found for user" against the
-//     sandbox even for a fully-registered user, presumably because Wirex
-//     hadn't yet linked that wallet to the email lookup path.
+//     plus a header identifying which user to issue a token for.
 //
 // Neither token is ever returned to the browser — proxy.ts calls these
 // helpers server-side and attaches whichever token an upstream call needs.
@@ -56,6 +50,27 @@ async function getPartnerToken() {
     const body = (await res.json());
     partnerTokenCache = { accessToken: body.access_token, expiresAt: now + body.expires_at * 1000 };
     return partnerTokenCache.accessToken;
+}
+/**
+ * The partner's own Wirex company id, read from the partner token's
+ * `company_id` claim (e.g. "00000000-0000-0000-1000-000000000005").
+ *
+ * This is the company the SDK must register user wallets under on-chain —
+ * Wirex's POST /api/v2/user checks the Accounts contract for *this* company,
+ * not the remote config's shared `defaultCompanyId`. The token comes straight
+ * from Wirex over TLS, so its payload is decoded without verifying the
+ * signature.
+ */
+async function getPartnerCompanyId() {
+    const token = await getPartnerToken();
+    const payload = token.split('.')[1];
+    if (!payload)
+        throw new Error('Wirex partner token is not a JWT');
+    const claims = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    if (typeof claims.company_id !== 'string' || claims.company_id === '') {
+        throw new Error('Wirex partner token has no company_id claim');
+    }
+    return claims.company_id;
 }
 const USER_IDENTIFIER_HEADER = {
     wallet: 'X-User-Wallet',

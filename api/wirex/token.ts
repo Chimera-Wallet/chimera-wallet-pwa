@@ -63,6 +63,17 @@ export async function getPartnerToken(): Promise<string> {
   return partnerTokenCache.accessToken
 }
 
+export async function getPartnerCompanyId(): Promise<string> {
+  const token = await getPartnerToken()
+  const payload = token.split('.')[1]
+  if (!payload) throw new Error('Wirex partner token is not a JWT')
+  const claims = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as { company_id?: unknown }
+  if (typeof claims.company_id !== 'string' || claims.company_id === '') {
+    throw new Error('Wirex partner token has no company_id claim')
+  }
+  return claims.company_id
+}
+
 export type WirexUserIdentifier =
   | { type: 'wallet'; value: string }
   | { type: 'email'; value: string }

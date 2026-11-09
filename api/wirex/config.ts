@@ -11,6 +11,9 @@
 // (no CORS enforcement here), swaps out just the rpcUrl fields for
 // rpcProxy.ts below, and hands the rest back unmodified.
 //
+// `defaultCompanyId` is also replaced with our own partner company id (from
+// the partner token, see token.ts getPartnerCompanyId).
+//
 // Only rpcUrl is rewritten. bundlerUrl/paymasterUrl/rpcWsUrl point at the
 // same kind of Wirex-hosted infrastructure and could hit the same CORS wall
 // once account deployment gets further (submitting the actual
@@ -19,6 +22,7 @@
 // one.
 
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
+import { getPartnerCompanyId } from './token'
 
 interface ChainConfig {
   rpcUrl: string
@@ -27,6 +31,7 @@ interface ChainConfig {
 
 interface RemoteConfig {
   defaultChain?: ChainConfig
+  defaultCompanyId?: string
   chains?: Record<string, ChainConfig>
   [key: string]: unknown
 }
@@ -51,6 +56,13 @@ export async function wirexConfigProxy(request: HttpRequest, context: Invocation
   }
 
   const config = (await upstream.json()) as RemoteConfig
+
+  try {
+    config.defaultCompanyId = await getPartnerCompanyId()
+  } catch (err) {
+    context.error('Failed to resolve Wirex partner company id', err)
+    return { status: 502, body: 'Failed to resolve Wirex partner company id' }
+  }
 
   if (config.defaultChain) config.defaultChain = proxyChain(config.defaultChain)
   if (config.chains) {

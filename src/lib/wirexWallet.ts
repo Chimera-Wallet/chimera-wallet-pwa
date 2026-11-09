@@ -87,15 +87,35 @@ const getWirexSdkEnv = (): SDKEnvironment => {
   return env
 }
 
-const getWirexCompanyId = (): string => {
-  const companyId = import.meta.env.VITE_WIREX_COMPANY_ID
-  if (!companyId) throw new Error('Missing VITE_WIREX_COMPANY_ID configuration')
-  return companyId
+const WIREX_CONFIG_URL = '/api/wirex-config'
+
+/**
+ * The company id the SDK registers this wallet under on-chain (Accounts
+ * contract `createUserAccountWithWallet(companyId)` / `getUserAccount`).
+ * Read from `/api/wirex-config`'s `defaultCompanyId`, which our backend
+ * overwrites with the partner's own company id (from the partner token — see
+ * api/wirex/config.ts). It must be the partner's company: Wirex's
+ * POST /api/v2/user rejects wallets registered under any other.
+ */
+const getWirexCompanyId = async (): Promise<string> => {
+  const res = await fetch(WIREX_CONFIG_URL, { headers: { Accept: 'application/json' } })
+  if (!res.ok) throw new Error(`Failed to load Wirex config: ${res.status}`)
+  const config = (await res.json().catch(() => ({}))) as { defaultCompanyId?: unknown }
+  if (typeof config.defaultCompanyId !== 'string' || config.defaultCompanyId === '') {
+    throw new Error('Wirex config did not include a defaultCompanyId')
+  }
+  return toBytes16CompanyId(config.defaultCompanyId)
+}
+
+export const toBytes16CompanyId = (companyId: string): `0x${string}` => {
+  const hex = companyId.trim().replace(/^0x/i, '').replace(/-/g, '').toLowerCase()
+  if (!/^[0-9a-f]{32}$/.test(hex)) throw new Error(`Invalid Wirex company id: ${companyId}`)
+  return `0x${hex}`
 }
 
 export interface WirexKernelAccountDeployment {
   walletAddress: `0x${string}`
-  /** null when this call only finished already-in-progress steps rather than submitting a new UserOperation. */
+  /** Hash of the onboarding or Accounts-registration UserOperation's tx; null when no registration was needed this call. */
   transactionHash: Hex | null
 }
 
@@ -103,15 +123,18 @@ export interface WirexKernelAccountDeployment {
 export const deployWirexKernelAccount = async (password: string): Promise<WirexKernelAccountDeployment> => {
   const account = await deriveEthAccount(password)
 
+  const env = getWirexSdkEnv()
+  const companyId = await getWirexCompanyId()
+
   const sdk = await createSDK({
-    env: getWirexSdkEnv(),
-    companyId: getWirexCompanyId(),
+    env,
+    companyId,
     // Wirex's own RPC nodes (e.g. node-base.wirexapp.tech) send no CORS
     // headers for our origin, so the SDK's on-chain reads fail if it fetches
     // its remote config directly. Route that fetch (and the RPC calls it
     // configures) through our backend instead — see api/wirex/config.ts and
     // api/wirex/rpcProxy.ts.
-    configUrl: '/api/wirex-config',
+    configUrl: WIREX_CONFIG_URL,
     getMainWalletClient: () => ({
       address: account.address,
       getEthereumProvider: async () => buildEip1193Provider(account),
@@ -124,19 +147,37 @@ export const deployWirexKernelAccount = async (password: string): Promise<WirexK
     sdk.crypto.accountAbstraction.isExecutorInstalled(),
   ])
 
+  let transactionHash: Hex | null = null
+
   if (!isPolicyInstalled && !isExecutorInstalled) {
     const receipt = await sdk.crypto.onboarding.allInOneStepOnboarding()
-    return { walletAddress, transactionHash: receipt.receipt.transactionHash }
+    transactionHash = receipt.receipt.transactionHash
+  } else {
+    // A prior attempt got partway through — finish whatever steps remain
+    // rather than re-running allInOneStepOnboarding (which assumes neither
+    // step is installed yet).
+    if (!isExecutorInstalled) await sdk.crypto.accountAbstraction.signInExecutor()
+    if (!isPolicyInstalled) await sdk.crypto.accountAbstraction.signInPolicy()
+    if (!(await sdk.crypto.accountContract.isWalletInAccounts())) {
+      // The SDK only checks that *a* receipt came back, not that the
+      // UserOperation succeeded, so a reverted registration would otherwise
+      // pass silently.
+      const receipt = await sdk.crypto.accountContract.registerInAccounts()
+      if (receipt && receipt.success === false) {
+        throw new Error(
+          `Wirex Accounts registration UserOperation failed: tx=${receipt.receipt?.transactionHash}, reason=${receipt.reason ?? 'unknown'}`,
+        )
+      }
+      transactionHash = receipt?.receipt?.transactionHash ?? null
+    }
   }
 
-  // A prior attempt got partway through — finish whatever steps remain
-  // rather than re-running allInOneStepOnboarding (which assumes neither
-  // step is installed yet).
-  if (!isExecutorInstalled) await sdk.crypto.accountAbstraction.signInExecutor()
-  if (!isPolicyInstalled) await sdk.crypto.accountAbstraction.signInPolicy()
+  // Wirex's POST /api/v2/user rejects a wallet that isn't registered in the
+  // Accounts contract under the partner's company id, so confirm that here
+  // rather than letting user creation fail later with a less obvious error.
   if (!(await sdk.crypto.accountContract.isWalletInAccounts())) {
-    await sdk.crypto.accountContract.registerInAccounts()
+    throw new Error(`Wallet ${account.address} is not registered in the Wirex Accounts contract for company ${companyId}`)
   }
 
-  return { walletAddress, transactionHash: null }
+  return { walletAddress, transactionHash }
 }

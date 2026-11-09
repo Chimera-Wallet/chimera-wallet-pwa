@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest'
 import { setMnemonic } from '../../lib/mnemonic'
-import { getWirexEvmAddress, deployWirexKernelAccount } from '../../lib/wirexWallet'
+import { getWirexEvmAddress, deployWirexKernelAccount, toBytes16CompanyId } from '../../lib/wirexWallet'
 import { createSDK } from '@wirexapp/wpay-baas-sdk'
 
 vi.mock('@wirexapp/wpay-baas-sdk', () => ({
@@ -20,6 +20,7 @@ const makeSdk = (overrides: {
   isWalletInAccounts?: boolean
   walletAddress?: string
   transactionHash?: string
+  registerTransactionHash?: string
 } = {}) => ({
   crypto: {
     wallet: {
@@ -38,7 +39,9 @@ const makeSdk = (overrides: {
     },
     accountContract: {
       isWalletInAccounts: vi.fn().mockResolvedValue(overrides.isWalletInAccounts ?? true),
-      registerInAccounts: vi.fn().mockResolvedValue(undefined),
+      registerInAccounts: vi
+        .fn()
+        .mockResolvedValue({ success: true, receipt: { transactionHash: overrides.registerTransactionHash ?? '0xRegister' } }),
     },
   },
 })
@@ -91,12 +94,16 @@ describe('wirexWallet.ts', () => {
     beforeEach(async () => {
       vi.mocked(createSDK).mockReset()
       vi.stubEnv('VITE_WIREX_SDK_ENV', 'uat')
-      vi.stubEnv('VITE_WIREX_COMPANY_ID', 'test-company-id')
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(new Response(JSON.stringify({ defaultCompanyId: '00000000-0000-0000-0000-000000000004' }), { status: 200 })),
+      )
       await setMnemonic(testMnemonic, testPassword)
     })
 
     afterEach(() => {
       vi.unstubAllEnvs()
+      vi.unstubAllGlobals()
     })
 
     it('throws when VITE_WIREX_SDK_ENV is missing or invalid', async () => {
@@ -105,20 +112,32 @@ describe('wirexWallet.ts', () => {
       expect(createSDK).not.toHaveBeenCalled()
     })
 
-    it('throws when VITE_WIREX_COMPANY_ID is missing', async () => {
-      vi.stubEnv('VITE_WIREX_COMPANY_ID', '')
-      await expect(deployWirexKernelAccount(testPassword)).rejects.toThrow('VITE_WIREX_COMPANY_ID')
+    it('throws when the remote config has no defaultCompanyId', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({}), { status: 200 }))
+      await expect(deployWirexKernelAccount(testPassword)).rejects.toThrow('defaultCompanyId')
       expect(createSDK).not.toHaveBeenCalled()
     })
 
-    it('initializes the SDK with the configured env, company id, and our config proxy', async () => {
+    it('throws when the remote config defaultCompanyId is not a valid 16-byte id', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ defaultCompanyId: 'not-an-id' }), { status: 200 }))
+      await expect(deployWirexKernelAccount(testPassword)).rejects.toThrow('Invalid Wirex company id')
+      expect(createSDK).not.toHaveBeenCalled()
+    })
+
+    it('throws when the remote config request fails', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce(new Response('boom', { status: 502 }))
+      await expect(deployWirexKernelAccount(testPassword)).rejects.toThrow('Failed to load Wirex config: 502')
+      expect(createSDK).not.toHaveBeenCalled()
+    })
+
+    it('initializes the SDK with the configured env, the remote config company id, and our config proxy', async () => {
       vi.mocked(createSDK).mockResolvedValue(makeSdk() as never)
       await deployWirexKernelAccount(testPassword)
 
       expect(createSDK).toHaveBeenCalledWith(
         expect.objectContaining({
           env: 'uat',
-          companyId: 'test-company-id',
+          companyId: '0x00000000000000000000000000000004',
           configUrl: '/api/wirex-config',
         }),
       )
@@ -137,12 +156,14 @@ describe('wirexWallet.ts', () => {
       expect(result).toEqual({ walletAddress: '0xSmartWallet', transactionHash: '0xAllInOne' })
     })
 
-    it('finishes only the remaining steps, and returns a null transaction hash, when onboarding is partially complete', async () => {
+    it('finishes only the remaining steps, and returns the registration tx hash, when onboarding is partially complete', async () => {
       const sdk = makeSdk({
         isPolicyInstalled: false,
         isExecutorInstalled: true,
         isWalletInAccounts: false,
       })
+      // Not registered before, registered after registerInAccounts.
+      sdk.crypto.accountContract.isWalletInAccounts.mockResolvedValueOnce(false).mockResolvedValueOnce(true)
       vi.mocked(createSDK).mockResolvedValue(sdk as never)
 
       const result = await deployWirexKernelAccount(testPassword)
@@ -151,7 +172,28 @@ describe('wirexWallet.ts', () => {
       expect(sdk.crypto.accountAbstraction.signInExecutor).not.toHaveBeenCalled()
       expect(sdk.crypto.accountAbstraction.signInPolicy).toHaveBeenCalledTimes(1)
       expect(sdk.crypto.accountContract.registerInAccounts).toHaveBeenCalledTimes(1)
-      expect(result).toEqual({ walletAddress: '0xSmartWallet', transactionHash: null })
+      expect(result).toEqual({ walletAddress: '0xSmartWallet', transactionHash: '0xRegister' })
+    })
+
+    it('throws when the Accounts registration UserOperation reverts', async () => {
+      const sdk = makeSdk({ isWalletInAccounts: false })
+      sdk.crypto.accountContract.registerInAccounts.mockResolvedValueOnce({
+        success: false,
+        reason: 'AA reverted',
+        receipt: { transactionHash: '0xBad' },
+      })
+      vi.mocked(createSDK).mockResolvedValue(sdk as never)
+
+      await expect(deployWirexKernelAccount(testPassword)).rejects.toThrow('registration UserOperation failed')
+    })
+
+    it('throws when the wallet is still not registered for the company after onboarding', async () => {
+      const sdk = makeSdk({ isPolicyInstalled: false, isExecutorInstalled: false, isWalletInAccounts: false })
+      vi.mocked(createSDK).mockResolvedValue(sdk as never)
+
+      await expect(deployWirexKernelAccount(testPassword)).rejects.toThrow(
+        'not registered in the Wirex Accounts contract for company 0x00000000000000000000000000000004',
+      )
     })
 
     it('skips registerInAccounts when the wallet is already registered', async () => {
@@ -187,5 +229,17 @@ describe('wirexWallet.ts', () => {
         'does not support RPC method',
       )
     })
+  })
+})
+
+describe('toBytes16CompanyId', () => {
+  it('converts a UUID to 0x-prefixed bytes16 hex', () => {
+    expect(toBytes16CompanyId('00000000-0000-0000-0000-000000000004')).toBe('0x00000000000000000000000000000004')
+  })
+  it('accepts an id that is already 0x-prefixed hex', () => {
+    expect(toBytes16CompanyId('0xABCDEF00000000000000000000000004')).toBe('0xabcdef00000000000000000000000004')
+  })
+  it.each(['', '0x1234', 'not-a-uuid'])('rejects %j', (id) => {
+    expect(() => toBytes16CompanyId(id)).toThrow('Invalid Wirex company id')
   })
 })

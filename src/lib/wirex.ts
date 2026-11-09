@@ -147,21 +147,38 @@ export interface CreateWirexUserPayload {
   /** This wallet's EVM signer address.*/
   userAddress: string
   email: string
-  firstName: string
-  lastName: string
+  /** Residence country as an ISO 3166-1 alpha-2 code (e.g. "GB"). Cannot be changed after creation. */
+  country: string
+  /** Whether the user is a Politically Exposed Person. */
+  isPep: boolean
+  firstName?: string
+  lastName?: string
+}
+
+const ISO_ALPHA2 = /^[A-Z]{2}$/
+
+export const normalizeWirexCountry = (country: string): string => {
+  const normalized = country.trim().toUpperCase()
+  if (!ISO_ALPHA2.test(normalized)) {
+    throw new Error(`Invalid residence country "${country}": expected an ISO 3166-1 alpha-2 code (e.g. "GB")`)
+  }
+  return normalized
 }
 
 export const createWirexUser = async (payload: CreateWirexUserPayload): Promise<WirexUser | null> => {
+  const country = normalizeWirexCountry(payload.country)
   const raw = await request<WirexUserApiResponse>('/api/v2/user', {
     method: 'POST',
     body: JSON.stringify({
       user_address: payload.userAddress,
+      is_pep: payload.isPep,
       initial_data: {
         profile: {
-          first_name: payload.firstName,
-          last_name: payload.lastName,
           email: payload.email,
+          ...(payload.firstName && { first_name: payload.firstName }),
+          ...(payload.lastName && { last_name: payload.lastName }),
         },
+        residence_address: { country },
       },
     }),
   })
@@ -190,12 +207,13 @@ export interface WirexWallet {
 export const getWirexWallet = (userAddress: string): Promise<WirexWallet | null> =>
   request<WirexWallet>('/api/v1/wallet', { method: 'GET', headers: userAuthHeaders(userAddress) })
 export const getWirexVerificationLink = async (userAddress: string): Promise<string> => {
-  const raw = await request<{ url: string }>('/api/v1/user/verification-link', {
+  const raw = await request<{ redirect_uri?: string; url?: string }>('/api/v1/user/verification-link', {
     method: 'POST',
     headers: userAuthHeaders(userAddress),
   })
-  if (!raw?.url) throw new Error('Wirex did not return a verification link')
-  return raw.url
+  const link = raw?.redirect_uri ?? raw?.url
+  if (!link) throw new Error('Wirex did not return a verification link')
+  return link
 }
 
 // Cards 

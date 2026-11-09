@@ -12,6 +12,13 @@
 // (no CORS enforcement here), swaps out just the rpcUrl fields for
 // rpcProxy.ts below, and hands the rest back unmodified.
 //
+// `defaultCompanyId` is also replaced with our own partner company id (from
+// the partner token, see token.ts getPartnerCompanyId): the SDK registers the
+// user's wallet in the on-chain Accounts contract under whatever company id
+// the client passes, and Wirex's POST /api/v2/user only accepts wallets
+// registered under the partner's company — the remote config's default is a
+// shared sandbox company, not ours.
+//
 // Only rpcUrl is rewritten. bundlerUrl/paymasterUrl/rpcWsUrl point at the
 // same kind of Wirex-hosted infrastructure and could hit the same CORS wall
 // once account deployment gets further (submitting the actual
@@ -21,6 +28,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.wirexConfigProxy = wirexConfigProxy;
 const functions_1 = require("@azure/functions");
+const token_1 = require("./token");
 // A relative path resolves against the SPA's own origin once viem's http
 // transport calls fetch() on it — the same trick ../../src/lib/wirex.ts's
 // request() already relies on for its own proxy calls.
@@ -37,6 +45,15 @@ async function wirexConfigProxy(request, context) {
         return { status: upstream.status, body: await upstream.text() };
     }
     const config = (await upstream.json());
+    // Fail closed: handing the client the shared default would register the
+    // wallet under the wrong company, which can't be undone.
+    try {
+        config.defaultCompanyId = await (0, token_1.getPartnerCompanyId)();
+    }
+    catch (err) {
+        context.error('Failed to resolve Wirex partner company id', err);
+        return { status: 502, body: 'Failed to resolve Wirex partner company id' };
+    }
     if (config.defaultChain)
         config.defaultChain = proxyChain(config.defaultChain);
     if (config.chains) {

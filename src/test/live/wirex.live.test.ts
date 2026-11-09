@@ -45,6 +45,12 @@ const WIREX_MINT_API_BASE = 'https://ramc.wirexapp.tech'
 const PROXY_BASE = process.env.WIREX_LIVE_PROXY_BASE ?? 'http://localhost:7071'
 const TEST_EMAIL = process.env.WIREX_LIVE_EMAIL
 const TEST_USER_ADDRESS = process.env.WIREX_LIVE_USER_ADDRESS
+// Residence country (ISO alpha-2) sent on user creation. NOTE: the user behind
+// WIREX_LIVE_USER_ADDRESS / WIREX_LIVE_EMAIL must have been created WITH a
+// country — Wirex creates no KYC applicant otherwise and the country can't be
+// added later, so step 2b can never get a link for such a user. Use a fresh
+// address + email if the existing sandbox user predates this.
+const TEST_COUNTRY = process.env.WIREX_LIVE_COUNTRY ?? 'GB'
 
 const WIREX_API_BASE = process.env.WIREX_API_BASE
 const WIREX_CLIENT_ID = process.env.WIREX_CLIENT_ID
@@ -86,6 +92,8 @@ describe.skipIf(!TEST_EMAIL || !TEST_USER_ADDRESS)(
         const user = await ensureWirexUser({
           userAddress: TEST_USER_ADDRESS!,
           email: TEST_EMAIL!,
+          country: TEST_COUNTRY,
+          isPep: false,
           firstName: 'Live',
           lastName: 'Test',
         })

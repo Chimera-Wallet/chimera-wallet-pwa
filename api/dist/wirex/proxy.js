@@ -4,19 +4,6 @@
 // whichever bearer token (partner or user) the call needs, so the SPA never
 // holds a Wirex client_secret or bearer token itself.
 //
-// The SPA calls /api/wirex/<wirex path>, optionally sending
-// X-Wirex-User-Wallet (the EOA/user_address) to indicate "act as this user"
-// (Wirex's "Login as User" flow, see token.ts::getUserToken) — that header is
-// consumed here and never forwarded upstream. Without it, calls run under the
-// partner token (e.g. user lookup/creation, which precede a user having any
-// token of their own).
-//
-// X-Wirex-User-Wallet is trusted as a claim, not verified proof of ownership
-// — the app no longer has a KYC session of its own to check it against (see
-// ./auth.ts::resolveBearerToken, shared with webhook.ts's auth check, and
-// kept free of @azure/functions so it's unit-testable on its own). This is a
-// deliberately reduced trust model; revisit if a stronger guarantee is needed.
-//
 // Route note: this is registered on the wildcard `wirex/{*restOfPath}` while
 // webhook.ts registers the more specific `wirex/webhook/{secret}`. Azure
 // Functions' routing (built on ASP.NET Core routing) matches more specific

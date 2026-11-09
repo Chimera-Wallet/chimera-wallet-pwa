@@ -82,6 +82,8 @@ describe('wirex.ts REST client', () => {
   const samplePayload = {
     userAddress: '0xabc',
     email: 'alice@example.com',
+    country: 'GB',
+    isPep: false,
     firstName: 'Alice',
     lastName: 'Smith',
   }
@@ -138,14 +140,40 @@ describe('wirex.ts REST client', () => {
       expect(init?.method).toBe('POST')
       expect(lastCallBody()).toEqual({
         user_address: '0xabc',
+        is_pep: false,
         initial_data: {
           profile: {
             first_name: 'Alice',
             last_name: 'Smith',
             email: 'alice@example.com',
           },
+          residence_address: { country: 'GB' },
         },
       })
+    })
+
+    it('omits first/last name when not provided (hosted-KYC minimal body)', async () => {
+      fetchMocker.mockResponseOnce(JSON.stringify(sampleUserApiResponse))
+      await createWirexUser({ userAddress: '0xabc', email: 'alice@example.com', country: 'GB', isPep: true })
+      expect(lastCallBody()).toEqual({
+        user_address: '0xabc',
+        is_pep: true,
+        initial_data: {
+          profile: { email: 'alice@example.com' },
+          residence_address: { country: 'GB' },
+        },
+      })
+    })
+
+    it('normalises the residence country to uppercase alpha-2', async () => {
+      fetchMocker.mockResponseOnce(JSON.stringify(sampleUserApiResponse))
+      await createWirexUser({ ...samplePayload, country: ' gb ' })
+      expect(lastCallBody().initial_data.residence_address).toEqual({ country: 'GB' })
+    })
+
+    it.each(['GBR', '', 'G1'])('rejects invalid residence country %j without calling Wirex', async (country) => {
+      await expect(createWirexUser({ ...samplePayload, country })).rejects.toThrow('Invalid residence country')
+      expect(fetchMocker.mock.calls.length).toBe(0)
     })
 
     it('ensureWirexUser returns the existing user without creating one', async () => {
@@ -179,9 +207,9 @@ describe('wirex.ts REST client', () => {
 
   describe('verification link — docs.wirexapp.com/docs/retail-kyc-hosted', () => {
     it('fetches a hosted verification link via POST /api/v1/user/verification-link', async () => {
-      fetchMocker.mockResponseOnce(JSON.stringify({ url: 'https://verify.sumsub.com/abc' }))
+      fetchMocker.mockResponseOnce(JSON.stringify({ redirect_uri: 'https://in.sumsub.com/idensic/l/#/abc' }))
       const result = await getWirexVerificationLink('0xabc')
-      expect(result).toBe('https://verify.sumsub.com/abc')
+      expect(result).toBe('https://in.sumsub.com/idensic/l/#/abc')
       const [url, init] = lastCall()
       expect(url).toBe(`${PROXY_BASE}/api/v1/user/verification-link`)
       expect(init?.method).toBe('POST')

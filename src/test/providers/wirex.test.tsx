@@ -36,6 +36,8 @@ const testPassword = 'testpassword'
 
 const testProfile: WirexProfileInput = {
   email: 'user@test.com',
+  country: 'GB',
+  isPep: false,
   firstName: 'Ada',
   lastName: 'Lovelace',
 }
@@ -87,6 +89,19 @@ describe('WirexProvider deployWirexWallet', () => {
     const deployOrder = vi.mocked(deployWirexKernelAccount).mock.invocationCallOrder[0]
     const ensureUserOrder = vi.mocked(ensureWirexUser).mock.invocationCallOrder[0]
     expect(deployOrder).toBeLessThan(ensureUserOrder)
+  })
+
+  it('passes residence country and PEP status through to ensureWirexUser', async () => {
+    const { result } = renderHook(() => useWirex(), { wrapper: WirexProvider })
+    vi.mocked(getWirexWallet).mockResolvedValueOnce(testWallet)
+
+    await act(async () => {
+      await result.current.deployWirexWallet(testPassword, testProfile)
+    })
+
+    expect(ensureWirexUser).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'user@test.com', country: 'GB', isPep: false }),
+    )
   })
 
   it('throws when no Wirex user exists yet and no profile is given', async () => {
