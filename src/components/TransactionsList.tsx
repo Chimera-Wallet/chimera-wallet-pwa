@@ -1,4 +1,6 @@
-import { useContext, useRef } from 'react'
+import { useContext, useRef, useSyncExternalStore } from 'react'
+import { getWrapDeposits, getWrapDepositTxs, subscribeWrapDeposits } from '../lib/wrapDeposits'
+import { sortLocalTxs } from '../lib/transactionHistory'
 import { WalletContext } from '../providers/wallet'
 import { TextLabel, TextSecondary } from './Text'
 import { Tx } from '../lib/types'
@@ -9,24 +11,28 @@ import { ConfigContext } from '../providers/config'
 import { FiatContext } from '../providers/fiat'
 import Focusable from './Focusable'
 import { hapticSubtle } from '../lib/haptics'
-import { ASSETS, getWrappedAssetId, prettyAssetAmount, prettyAssetAmountHide } from '../lib/assets'
-import { getTxStatus, TxStatus } from '../lib/txStatus'
+import {
+  ASSETS,
+  getAssetSymbolByAssetId,
+  getWrappedAssetId,
+  prettyAssetAmount,
+  prettyAssetAmountHide,
+  requireAssetConfig,
+  wrappedAmountToNumber,
+} from '../lib/assets'
+import { AssetPricesContext } from '../providers/assetPrices'
+
+const abs = (n: bigint): bigint => (n < BigInt(0) ? -n : n)
+import { getTxStatus, TX_STATUS_DISPLAY } from '../lib/txStatus'
 import { AspContext } from '../providers/asp'
 import { useTranslation } from 'react-i18next'
 import SwapRouteIcon from './SwapRouteIcon'
 import { swapRouteLabel, swapStatusLabel, swapFiatAmount } from '../lib/swapDisplay'
 
-const STATUS_STYLE: Record<TxStatus, { text: string; color: string }> = {
-  Settled: { text: 'lib.transactions.confirmed', color: 'var(--green)' },
-  Preconfirmed: { text: 'lib.transactions.confirmed', color: 'var(--green)' },
-  'Pending boarding': { text: 'lib.transactions.pending', color: 'var(--orange)' },
-  Unconfirmed: { text: 'lib.transactions.pending', color: 'var(--orange)' },
-  Expired: { text: 'lib.transactions.failed', color: 'var(--red)' },
-}
-
 const TransactionLine = ({ tx, onClick, isFirst }: { tx: Tx; onClick: () => void; isFirst?: boolean }) => {
   const { config } = useContext(ConfigContext)
   const { toFiat } = useContext(FiatContext)
+  const { getPriceData } = useContext(AssetPricesContext)
   const { aspInfo } = useContext(AspContext)
   const { assetMetadataCache } = useContext(WalletContext)
   const boardingExitDelay = Number(aspInfo?.boardingExitDelay || 0)
@@ -51,10 +57,26 @@ const TransactionLine = ({ tx, onClick, isFirst }: { tx: Tx; onClick: () => void
   if (assetEntry) {
     const decimals = assetMeta?.decimals ?? 8
     assetLabel = assetMeta?.ticker ?? assetMeta?.name ?? `${assetEntry.assetId.slice(0, 8)}…`
+    // The SDK signs asset amounts (a send is negative), and the row adds its
+    // own sign, so print the magnitude or a send reads "- -1 USDT".
+    const magnitude = abs(assetEntry.amount)
     formattedAmount = config.showBalance
-      ? `${prefix} ${prettyAssetAmount(assetEntry.amount, decimals)} ${assetLabel}`
-      : prettyAssetAmountHide(assetEntry.amount, assetLabel)
-    formattedFiat = ''
+      ? `${prefix} ${prettyAssetAmount(magnitude, decimals)} ${assetLabel}`
+      : prettyAssetAmountHide(magnitude, assetLabel)
+    // Fiat only for listed assets with a price. CX wrapped assets map 1-to-1
+    // with the original, so value the raw amount with the original asset's
+    // precision, as the home balance and asset list do.
+    const symbol = getAssetSymbolByAssetId(assetEntry.assetId)
+    const rate = symbol ? getPriceData(symbol).rate : 0
+    if (symbol && rate) {
+      const units = wrappedAmountToNumber(abs(assetEntry.amount), requireAssetConfig(symbol).precision)
+      const fiatValue = units * rate
+      formattedFiat = config.showBalance
+        ? `${prefix} ${prettyFiatAmount(fiatValue, config.fiat)}`
+        : prettyFiatHide(fiatValue, config.fiat)
+    } else {
+      formattedFiat = ''
+    }
   } else {
     assetLabel = ASSETS.BTC.symbol
     const btcAmount = fromSatoshis(tx.amount)
@@ -68,7 +90,7 @@ const TransactionLine = ({ tx, onClick, isFirst }: { tx: Tx; onClick: () => void
   }
 
   const statusKey = getTxStatus(tx, boardingExitDelay)
-  const status = STATUS_STYLE[statusKey] ?? { text: statusKey, color: 'var(--grey)' }
+  const status = TX_STATUS_DISPLAY[statusKey] ??{ text: statusKey, color: 'var(--grey)' }
   const date = tx.createdAt ? prettyDate(tx.createdAt) : 'Unknown date'
   const action = tx.type === 'sent' ? t('lib.transactions.sentAss', {ass: assetLabel}) : t('lib.transactions.rcvAss', {ass: assetLabel})
 
@@ -197,11 +219,15 @@ export default function TransactionsList({
 } = {}) {
   const { setTxInfo } = useContext(FlowContext)
   const { navigate } = useContext(NavigationContext)
-  const { txs: allTxs } = useContext(WalletContext)
+  const { txs: walletTxs } = useContext(WalletContext)
+  const wrapDeposits = useSyncExternalStore(subscribeWrapDeposits, getWrapDeposits)
   const {t} = useTranslation()
 
   const txs = (() => {
-    let list = allTxs
+    // Bridge deposits still on their way in have no wallet tx yet; list them
+    // as pending alongside the rest, by date.
+    const wrapTxs = getWrapDepositTxs(wrapDeposits)
+    let list = wrapTxs.length ? sortLocalTxs([...walletTxs, ...wrapTxs]) : walletTxs
     if (filterAsset) {
       // `filterAsset` is an app symbol (e.g. 'ETH'); BTC matches native txs,
       // wrapped assets match by their Arkade asset ID.
@@ -222,7 +248,9 @@ export default function TransactionsList({
   const focusedIndexRef = useRef(0)
 
   const key = (tx: Tx, index: number) =>
-    [tx.roundTxid, tx.redeemTxid, tx.boardingTxid].filter(Boolean).join('-') || `tx-${index}`
+    (tx.wrap && `wrap-${tx.wrap.quoteId}`) ||
+    [tx.roundTxid, tx.redeemTxid, tx.boardingTxid].filter(Boolean).join('-') ||
+    `tx-${index}`
 
   const focusRow = (index: number) => {
     if (index < 0 || index >= txs.length) return

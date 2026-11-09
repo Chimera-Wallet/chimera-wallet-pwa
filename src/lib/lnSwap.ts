@@ -25,7 +25,7 @@
 import { hex } from '@scure/base'
 import { sideLimits, type DiscoveredMarket, type Side } from '@arkade-os/solver-discovery'
 import type { NetworkName, RestIndexerProvider } from '@arkade-os/sdk'
-import { isRfqTerminal, requestLightningSend, type InvoiceFacts, type RfqTransport } from '@arkade-os/swap'
+import { isRfqTerminal, marketCorridor, requestLightningSend, type InvoiceFacts, type RfqTransport } from '@arkade-os/swap'
 import { sleep as defaultSleep } from './sleep'
 import { decodeInvoice, invoiceMatchesNetwork, isInvoiceExpired, type DecodedInvoice } from './bolt11'
 import type { LnSendSpend } from './types'
@@ -176,8 +176,7 @@ export const lnSendRendezvous = (
  * A side's bounds are what the SOLVER pays out on it, so the Lightning corridor's
  * two directions live on the two sides of one market: quote (Lightning) is the
  * send leg, base (arkade) the receive leg. A card whose base side is disabled
- * advertises no receive corridor, which is the current published state — see
- * arkade-os/lightning-swap-service#64.
+ * advertises no receive corridor.
  */
 export const lnReceiveRendezvous = (
   markets: DiscoveredMarket[],
@@ -191,7 +190,11 @@ const lnRendezvous = (
 ): LnSendRendezvous | undefined => {
   const pinned = fallbackEmulatorPubkey ? hex.encode(fallbackEmulatorPubkey) : undefined
   for (const market of markets) {
-    if (market.quote_corridor !== 'lightning') continue
+    // Classified by the package rather than by `quote_corridor`: a card in the
+    // registry's asset-id form (`bolt11:bitcoin/slip44:0`, as the bundled
+    // mainnet card is) carries no `quote_corridor` at all.
+    if (marketCorridor(market, 'quote') !== 'bolt11') continue
+    if (marketCorridor(market, 'base') !== 'arkade') continue
     const transports = {
       nostr: {
         relays: market.transports?.nostr?.relays ?? [],

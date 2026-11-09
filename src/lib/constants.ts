@@ -9,8 +9,6 @@ export const defaultPassword = 'noah'
 export const minSatsToNudge = 100_000
 export const maxPercentage = import.meta.env.VITE_MAX_PERCENTAGE ?? 10
 export const psaMessage = import.meta.env.VITE_PSA_MESSAGE ?? ''
-export const enableChainSwapsReceive = import.meta.env.VITE_CHAIN_SWAPS_RECEIVE_ENABLED === 'true'
-export const lnurlServerUrl: string | undefined = import.meta.env.VITE_LNURL_SERVER_URL
 
 // Hostnames used to detect a non-production (test/staging) deployment when
 // selecting environment-specific app and KYC URLs. These are Chimera app hosts,
@@ -72,6 +70,34 @@ const serviceUrlForNetwork = (
 export const getSolverRegistryUrl = (network: NetworkName): string | undefined =>
   serviceUrlForNetwork(import.meta.env.VITE_SOLVER_REGISTRY_URL, SOLVER_REGISTRY_URL, network)
 
+// Verified asset lists: each registry is a JSON array of asset ids per network,
+// and an asset is verified if any registry lists it. Assets outside them, and
+// outside this build's own wrapped asset ids, are shown with an "Unverified"
+// badge — never hidden or blocked.
+// Arkade's registry (see ArkLabsHQ/asset-registry)
+const ARKADE_ASSET_REGISTRY_URL: Record<NetworkName, string | null> = {
+  bitcoin: 'https://arklabshq.github.io/asset-registry/mainnet.json',
+  mutinynet: 'https://arklabshq.github.io/asset-registry/mutinynet.json',
+  signet: 'https://arklabshq.github.io/asset-registry/signet.json',
+  regtest: null,
+  testnet: null,
+}
+
+// Chimera's own registry, for assets Arkade's doesn't list
+const CHIMERA_ASSET_REGISTRY_URL: Record<NetworkName, string | null> = {
+  bitcoin: null,
+  mutinynet: null,
+  signet: null,
+  regtest: null,
+  testnet: null,
+}
+
+export const getAssetRegistryUrls = (network: NetworkName): string[] =>
+  [
+    serviceUrlForNetwork(import.meta.env.VITE_ARKADE_ASSET_REGISTRY_URL, ARKADE_ASSET_REGISTRY_URL, network),
+    serviceUrlForNetwork(import.meta.env.VITE_CHIMERA_ASSET_REGISTRY_URL, CHIMERA_ASSET_REGISTRY_URL, network),
+  ].filter((url): url is string => url !== undefined)
+
 // The x-only key of the arkade signer co-signing swap covenants (a separate
 // service from arkd). This is a fact about the SOLVER's deployment, not a
 // value the client may look up: clients have no network path to the emulator,
@@ -101,6 +127,8 @@ const EMULATOR_PUBKEY: Record<NetworkName, string | null> = {
   testnet: null,
 }
 
+const COMPRESSED_PUBKEY_HEX = /^0[23][0-9a-f]{64}$/
+
 /** The configured co-signer key as configured — compressed hex for every pin
  * above, which is the shape `@arkade-os/swap` takes as its override. Since
  * 0.0.3 the package resolves the key from its own per-network pin, so this is
@@ -124,4 +152,9 @@ export const getEmulatorPubkeyForNetwork = (network: NetworkName): Uint8Array | 
   } catch {
     return undefined
   }
+}
+
+export const getEmulatorPubkeyOverrideForNetwork = (network: NetworkName): string | undefined => {
+  const configured = getEmulatorPubkeyHexForNetwork(network)
+  return configured && COMPRESSED_PUBKEY_HEX.test(configured) ? configured : undefined
 }

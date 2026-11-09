@@ -85,7 +85,7 @@ export default function Biometric() {
         <Padded>
           <FlexCol gap='1.5rem'>
             {!biometricsSupported ? (
-              <TextSecondary>{t('settings.biometric.bioUnsupported')}</TextSecondary>
+              <TextSecondary>{t('settings.biometric.bioAuthUnsupported')}</TextSecondary>
             ) : (
               <Toggle
                 checked={biometricsEnabled}

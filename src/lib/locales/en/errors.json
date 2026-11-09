@@ -1,7 +1,7 @@
 {
     "funds":{
         "insufficient": "Insufficient funds",
-        "insufficientExtra":"Insufficient funds, you just have {{balance}} BTC",
+        "insufficientExtra":"Insufficient funds, you only have {{balance}} BTC",
         "insufficientFees": "Insufficient funds to cover fees"
     },
     "LNURL": {
@@ -23,18 +23,19 @@
     },
     "general": {
             "server": "Server unreachable",
-            "swap": "Unable to create swap",
             "missingAddress": "Missing address",
             "missingAsset": "Missing asset amount",
             "missingAmount": "Missing amount",
             "missingAssetList": "Missing assets list",
             "missingTotal": "Missing total amount",
-            "missingSats": "Missing satoshis amount", 
-            "swapAddUnavailable": "Swap address not available"
+            "missingSats": "Missing satoshis amount"
 
 
     },
     "send": {
+        "unwrap": {
+            "belowMinimum": "The minimum unwrap amount is {{amount}} {{ticker}}"
+        },
         "bitcoin": {
             "address": "Selected method requires a Bitcoin address",
             "type": "Selected method requires a different address type",
@@ -52,8 +53,7 @@
         },
         "lightning": {
             "address": "Selected method requires a Lightning invoice address",
-            "type": "Selected method requires a different address type",
-            "swaps": "Lightning swaps not enabled"
+            "type": "Selected method requires a different address type"
         },
         "bank": {
             "transfer": "Bank transfers are handled in Transfers",
@@ -69,7 +69,7 @@
             "notConfigured": "Withdrawal wallet not configured"
         },
         "parsing": {
-            "bip21": "Unable to parse bip21",
+            "bip21": "Unable to parse BIP21 URI",
             "recipientAddress": "Invalid recipient address"   
         },
         "chain": {
@@ -92,7 +92,6 @@
             "amount": "Invalid amount",
             "faucetFail": "Faucet failed",
             "pendingSwap": "Failed to create reverse swap",
-            "chainSwap": "Failed to create chain swap",
             "reverseSwap": "Failed to create reverse swap",
             "getAddress": "Failed to get address: {{address}}"
             
@@ -104,9 +103,6 @@
             "noOrderInfo": "No order information available",
             "failedLoad": "Failed to load order",
             "failedRefresh": "Failed to refresh order"
-        },
-        "lightning": {
-            "tempUnavailable": "Lightning is temporarily unavailable. This QR code only supports Arkade and on-chain payments."
         },
         "wrapService": {
             "validAddress": "Enter a valid {{name}} address",
@@ -139,7 +135,7 @@
         "missingAddress": "Missing delegate address",
         "invalidAddress": "Invalid delegate address",
         "invalidServerKey": "Invalid delegate server key",
-        "invalidJSONResp": "Invalid json in delegate response"
+        "invalidJSONResp": "Invalid JSON in delegate response"
     },
     "password": {
         "failedUpdate": "Failed to update password"
@@ -166,36 +162,28 @@
     },
     "addressBook": {
         "enterAdd": "Please enter an address",
-        "invalidAdd": "Invalid {{name}}}",
+        "invalidAdd": "Invalid {{name}}",
         "contactName": "Please enter a contact name"
     },
     "assets":{
         "positive": "Amount must be a positive number" ,
         "idNF": "Asset ID is required",
-        "balance": "Cannot burn more than your balance {{amount}} {{tick}})",
+        "balance": "Cannot burn more than your balance ({{amount}} {{tick}})",
         "idHex": "Asset ID must be a 68-character hex string",
         "assNF": "Asset not found",
         "range": "Decimals must be an integer between 0 and {{max}}"
-    },
-    "boltz":{
-        "swapsRestore": "Error restoring swaps: {{error}}",
-        "integration": "Boltz integration is not ready yet. Try again in a moment.",
-        "integrationSimple": "Boltz integration is not ready yet",
-        "scan": "Could not scan: {{err}}",
-        "recover": "Recovered {{swept}} VTXO{{out}}}",
-        "noSweep": "Nothing was swept; try again later."
     },
     "lendasat": {
         "walletNot": "Wallet not initialized",
         "unableSending": "Unable to send bitcoin",
         "unsuppAddress": "Unsupported address {{addr}}",
-        "unableSendNonBtc": "Unable to send non btc assets",
+        "unableSendNonBtc": "Unable to send non-BTC assets",
         "unableFiat": "Unable to send fiat",
         "arkAddrLoad": "Arkade address not yet loaded",
         "boardAddrLoad": "Boarding address not yet loaded",
         "unsuppAddr": "Unsupported address type: {{addr}}",
         "unkownAddr": "Unknown address type: {{addr}}",
-        "npubSupp": "NPubs are not supported"
+        "npubSupp": "Npubs are not supported"
     },
     "satora": {
         "satora": "Satora",

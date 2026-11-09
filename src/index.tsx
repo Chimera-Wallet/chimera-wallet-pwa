@@ -6,6 +6,7 @@ import App from './App'
 import { AspProvider } from './providers/asp'
 import { ConfigProvider } from './providers/config'
 import { FiatProvider } from './providers/fiat'
+import { AssetPricesProvider } from './providers/assetPrices'
 import { FlowProvider } from './providers/flow'
 import { NavigationProvider } from './providers/navigation'
 import { NotificationsProvider } from './providers/notifications'
@@ -14,8 +15,6 @@ import { OptionsProvider } from './providers/options'
 import { LimitsProvider } from './providers/limits'
 import { NudgeProvider } from './providers/nudge'
 import * as Sentry from '@sentry/react'
-import { SwapsProvider } from './providers/swaps'
-import { LnurlProvider } from './providers/lnurl'
 import { LnReceiveProvider } from './providers/lnReceive'
 import { AssetSwapsProvider } from './providers/assetSwaps'
 import { BackupProvider } from './providers/backup'
@@ -104,37 +103,35 @@ root.render(
             <AspProvider>
               <NotificationsProvider>
                 <FiatProvider>
-                  <FlowProvider>
-                    <WalletProvider>
-                      <AssetSwapsProvider>
-                        <SwapsProvider>
-                          <LnurlProvider>
-                            <LnReceiveProvider>
-                              <LimitsProvider>
-                                <FeesProvider>
-                                  <OptionsProvider>
-                                    <NudgeProvider>
-                                      <AnnouncementProvider>
-                                        <WirexProvider>
-                                          <ToastProvider>
-                                            <TxResultProvider>
-                                              <ErrorBoundary>
-                                                <App />
-                                              </ErrorBoundary>
-                                            </TxResultProvider>
-                                          </ToastProvider>
-                                        </WirexProvider>
-                                      </AnnouncementProvider>
-                                    </NudgeProvider>
-                                  </OptionsProvider>
-                                </FeesProvider>
-                              </LimitsProvider>
-                            </LnReceiveProvider>
-                          </LnurlProvider>
-                        </SwapsProvider>
-                      </AssetSwapsProvider>
-                    </WalletProvider>
-                  </FlowProvider>
+                  <AssetPricesProvider>
+                    <FlowProvider>
+                      <WalletProvider>
+                        <AssetSwapsProvider>
+                          <LnReceiveProvider>
+                            <LimitsProvider>
+                              <FeesProvider>
+                                <OptionsProvider>
+                                  <NudgeProvider>
+                                    <AnnouncementProvider>
+                                      <WirexProvider>
+                                      <ToastProvider>
+                                        <TxResultProvider>
+                                          <ErrorBoundary>
+                                             <App />
+                                           </ErrorBoundary>
+                                         </TxResultProvider>
+                                        </ToastProvider>
+                                      </WirexProvider>
+                                    </AnnouncementProvider>
+                                  </NudgeProvider>
+                                </OptionsProvider>
+                              </FeesProvider>
+                            </LimitsProvider>
+                          </LnReceiveProvider>
+                        </AssetSwapsProvider>
+                      </WalletProvider>
+                    </FlowProvider>
+                  </AssetPricesProvider>
                 </FiatProvider>
               </NotificationsProvider>
             </AspProvider>

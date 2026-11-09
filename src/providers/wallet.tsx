@@ -1,4 +1,4 @@
-import { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react'
+import { ReactNode, createContext, useContext, useEffect, useReducer, useRef, useState } from 'react'
 import {
   ArkNote,
   ServiceWorkerWallet,
@@ -26,7 +26,8 @@ import {
 } from '../lib/storage'
 import { NavigationContext, Pages } from './navigation'
 import { getRestApiExplorerURL } from '../lib/explorers'
-import { getBalance, getTxHistory, getVtxos, settleVtxos } from '../lib/asp'
+import { getBalance, getTxHistory, getVtxos, settleBoardingUtxos, settleVtxos } from '../lib/asp'
+import { boardingAwareTotal } from '../lib/boardingBalance'
 import { AspContext } from './asp'
 import { NotificationsContext } from './notifications'
 import { FlowContext } from './flow'
@@ -36,7 +37,7 @@ import { parseKycDeepLink } from '../lib/kyc'
 import { consoleError } from '../lib/logs'
 import { Tx, Vtxo, Wallet } from '../lib/types'
 import { nsecToPrivateKey, getPrivateKey, noUserDefinedPassword } from '../lib/privateKey'
-import { hasMnemonic, getMnemonic, deriveNostrKeyFromMnemonic } from '../lib/mnemonic'
+import { hasMnemonic, getMnemonic } from '../lib/mnemonic'
 import { calcBatchLifetimeMs, calcNextRollover } from '../lib/wallet'
 import { hex } from '@scure/base'
 import * as secp from '@noble/secp256k1'
@@ -45,6 +46,7 @@ import { defaultPassword, getDelegateUrl, isDelegationEnabled, maxPercentage } f
 import { setLoadingStatus } from '../lib/loadingStatus'
 import { assetSwapRepository, type WalletAssetSwap } from '../lib/swapRepository'
 import { assetSwapResolver } from '../lib/activity/assetSwapResolver'
+import { fetchRegistryIds, getCachedRegistryIds, mergeVerifiedIds } from '../lib/assetRegistry'
 
 
 // Thrown by initWallet when we refuse to boot the service worker because the
@@ -62,12 +64,14 @@ export class ArkadeUnreachableError extends Error {
 import { AssetIconApprovalManager } from '../lib/assetIconApproval'
 import { IndexedDBStorageAdapter } from '@arkade-os/sdk/adapters/indexedDB'
 import { Indexer } from '../lib/indexer'
-import { IndexedDbSwapRepository, migrateToSwapRepository, Network } from '@arkade-os/boltz-swap'
 import { useTranslation } from 'react-i18next'
 import { createRequestGeneration } from '../lib/requestGeneration'
 
 const SERVICE_WORKER_ACTIVATION_TIMEOUT_MS = 5_000
 const MESSAGE_BUS_INIT_TIMEOUT_MS = 30_000
+// While the explorer lags a boarding batch: re-read every 3s for up to a minute
+const BOARDING_RECHECK_MS = 3_000
+const MAX_BOARDING_RECHECKS = 20
 
 interface InitSvcWorkerWalletParams {
   arkServerUrl: string
@@ -108,6 +112,7 @@ interface WalletContextProps {
   lockWallet: () => Promise<void>
   resetWallet: () => Promise<void>
   settlePreconfirmed: () => Promise<void>
+  boardDeposits: () => Promise<void>
   unlockWallet: (password: string) => Promise<void>
   refreshAuthState: () => Promise<void>
   updateWallet: (w: Wallet | ((prev: Wallet) => Wallet)) => void
@@ -129,6 +134,7 @@ interface WalletContextProps {
   assetMetadataCache: Map<string, CachedAssetDetails>
   setCacheEntry: (assetId: string, details: AssetDetails) => CachedAssetDetails
   iconApprovalManager: AssetIconApprovalManager
+  isAssetVerified: (assetId?: string) => boolean
   dataReady: boolean
   loadError: string | null
   dismissLoadError: () => void
@@ -142,6 +148,7 @@ export const WalletContext = createContext<WalletContextProps>({
   lockWallet: () => Promise.resolve(),
   resetWallet: () => Promise.resolve(),
   settlePreconfirmed: () => Promise.resolve(),
+  boardDeposits: () => Promise.resolve(),
   unlockWallet: () => Promise.resolve(),
   refreshAuthState: () => Promise.resolve(),
   updateWallet: () => {},
@@ -157,6 +164,7 @@ export const WalletContext = createContext<WalletContextProps>({
   assetMetadataCache: new Map(),
   setCacheEntry: () => ({ cachedAt: 0 }) as CachedAssetDetails,
   iconApprovalManager: new AssetIconApprovalManager(),
+  isAssetVerified: () => true,
   dataReady: false,
   loadError: null,
   dismissLoadError: () => {},
@@ -171,7 +179,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const { aspInfo } = useContext(AspContext)
   const { config, updateConfig } = useContext(ConfigContext)
   const { navigate } = useContext(NavigationContext)
-  const { setNoteInfo, noteInfo, setDeepLinkInfo, deepLinkInfo, setKycAuthParams, setLnurlInfo } = useContext(FlowContext)
+  const { setNoteInfo, noteInfo, setDeepLinkInfo, deepLinkInfo, setKycAuthParams } = useContext(FlowContext)
   const { notifyTxSettled } = useContext(NotificationsContext)
 
   const [txs, setTxs] = useState<Tx[]>([])
@@ -187,23 +195,27 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [vtxos, setVtxos] = useState<{ spendable: Vtxo[]; spent: Vtxo[] }>({ spendable: [], spent: [] })
   const [assetBalances, setAssetBalances] = useState<WalletBalance['assets']>([])
   const [assetSwaps, setAssetSwaps] = useState<WalletAssetSwap[]>([])
+  // Bumped whenever the verified set changes, so consumers of isAssetVerified re-render.
+  const [, bumpVerifiedAssets] = useReducer((n: number) => n + 1, 0)
 
 
   const [vtxoManager, setVtxoManager] = useState<IVtxoManager>()
 
   const hasLoadedOnce = useRef(false)
+  const boardingRecheckRef = useRef<ReturnType<typeof setTimeout>>()
+  const boardingRechecks = useRef(0)
   const listeningForServiceWorker = useRef(false)
   const syncedRef = useRef(false)
 
   // read wallet from storage
   const assetMetadataCache = useRef<Map<string, CachedAssetDetails>>(readAssetMetadataFromStorage() ?? new Map())
   const iconApprovalManager = useRef(new AssetIconApprovalManager()).current
-  const verifiedAssetsFetched = useRef(false)
   const statusPingInterval = useRef<ReturnType<typeof setInterval>>()
   const reloadTimerRef = useRef<ReturnType<typeof setTimeout>>()
   const reloadGenerationRef = useRef(createRequestGeneration())
   const swMessageHandlerRef = useRef<(event: MessageEvent) => void>()
   const reinitInProgress = useRef(false)
+  const boardingInFlight = useRef(false)
   const initAbortRef = useRef<AbortController | null>(null)
   const reinitSvcWalletRef = useRef<((identity: Identity) => Promise<void>) | null>(null)
   const {t} = useTranslation()
@@ -346,26 +358,29 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     computeThresholds()
   }, [initialized, vtxos, svcWallet, aspInfo])
 
-  // fetch verified assets list once on startup
+  // Verified asset ids: this build's wrapped assets plus the asset registries.
+  // Seeded synchronously from the built-in ids and the last cached registries so
+  // our own assets never flash "Unverified", then refreshed from the network.
   useEffect(() => {
-    const verifiedUrl = import.meta.env.VITE_VERIFIED_ASSETS_URL
-    if (!verifiedUrl || verifiedAssetsFetched.current) return
-    if (!initialized) return
-    verifiedAssetsFetched.current = true
+    const network = aspInfo.network as NetworkName | undefined
+    if (!network) return
+    let cancelled = false
+    const apply = (registryIds: string[]) => {
+      iconApprovalManager.setVerifiedAssets(mergeVerifiedIds(registryIds))
+      bumpVerifiedAssets()
+    }
+    apply(getCachedRegistryIds(network))
+    fetchRegistryIds(network)
+      .then((ids) => {
+        if (!cancelled) apply(ids)
+      })
+      .catch((err) => consoleError(err, 'Failed to fetch verified asset registry'))
+    return () => {
+      cancelled = true
+    }
+  }, [aspInfo.network])
 
-    fetch(verifiedUrl)
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json()
-      })
-      .then((data) => {
-        if (!Array.isArray(data) || !data.every((id) => typeof id === 'string')) {
-          throw new Error('Invalid verified assets response')
-        }
-        iconApprovalManager.setVerifiedAssets(data)
-      })
-      .catch((err) => consoleError(err, 'Failed to fetch verified assets'))
-  }, [initialized])
+  const isAssetVerified = (assetId?: string): boolean => !assetId || iconApprovalManager.isVerified(assetId)
 
   // if ark note is present in the URL, decode it and set the note info
   useEffect(() => {
@@ -400,9 +415,6 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     // if app url is present, navigate to it
     if (!deepLinkInfo?.appId) return
     switch (deepLinkInfo?.appId) {
-      case 'boltz':
-        navigate(Pages.AppBoltz)
-        break
       case 'lendasat':
         navigate(Pages.AppLendasat)
         break
@@ -430,11 +442,19 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     if (isFirstLoad) setLoadError(null)
     try {
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.fetchCoins'))
-      const [vtxos, txs, { total, assets }] = await Promise.all([
+      const [vtxos, txs, sdkBalance] = await Promise.all([
         getVtxos(swWallet),
         getTxHistory(swWallet, assetSwaps),
         getBalance(swWallet),
       ])
+      const { assets } = sdkBalance
+      // Don't count a deposit twice while the explorer lags the batch that
+      // boarded it (see lib/boardingBalance).
+      const { total, lagging } = await boardingAwareTotal(
+        sdkBalance,
+        vtxos.spendable,
+        getRestApiExplorerURL(aspInfo.network as NetworkName),
+      )
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.fetchTrans'))
       if (isFirstLoad) setLoadingStatus(t('lib.wallet.updBal'))
       // prefetch asset metadata before triggering re-renders
@@ -455,6 +475,16 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       }
       setBalance(total)
       setAssetBalances(assets)
+      // Re-read until the explorer catches up. Usually the explorer seeing the
+      // boarding spend fires a UTXO_UPDATE that reloads anyway, but a batch
+      // that didn't board this deposit never touches the boarding address.
+      clearTimeout(boardingRecheckRef.current)
+      if (lagging && boardingRechecks.current < MAX_BOARDING_RECHECKS) {
+        boardingRechecks.current++
+        boardingRecheckRef.current = setTimeout(() => reloadWallet(swWallet), BOARDING_RECHECK_MS)
+      } else if (!lagging) {
+        boardingRechecks.current = 0
+      }
       if (assets.length > 0 && !config.apps.assets.enabled) {
         updateConfig({ ...config, apps: { ...config.apps, assets: { enabled: true } } })
       }
@@ -572,7 +602,6 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                 throw err
               }
             }
-            await migrateToSwapRepository(oldStorage, new IndexedDbSwapRepository())
           }
         } catch (err) {
           consoleError(err, 'Error migrating wallet repository')
@@ -598,6 +627,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
       // Cancel any pending reload from a previous wallet instance
       clearTimeout(reloadTimerRef.current)
+      clearTimeout(boardingRecheckRef.current)
+      boardingRechecks.current = 0
 
       // handle messages from the service worker
       // we listen for UTXO/VTXO updates to refresh the tx history and balance
@@ -652,6 +683,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       if (!(config.delegate && isDelegationEnabled())) {
         vtxoMgr.renewVtxos().catch(() => {})
       }
+      boardDeposits(svcWallet)
       return true
     } catch (err) {
       if (signal.aborted) return false
@@ -710,13 +742,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       const mnemonicIdentity = MnemonicIdentity.fromMnemonic(credentials.mnemonic, { isMainnet: isMainnet(network) })
       identity = mnemonicIdentity
       pubkey = hex.encode(await mnemonicIdentity.compressedPublicKey())
-      const secret = deriveNostrKeyFromMnemonic(credentials.mnemonic, isMainnet(network))
-      setLnurlInfo(secret)
       updateConfig({ ...config, pubkey })
     } else if (credentials.privateKey) {
       identity = SingleKey.fromPrivateKey(credentials.privateKey)
       pubkey = hex.encode(secp.getPublicKey(credentials.privateKey))
-      setLnurlInfo(credentials.privateKey)
       updateConfig({ ...config, pubkey })
     } else {
       throw new Error('Either mnemonic or privateKey must be provided')
@@ -883,6 +912,26 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     notifyTxSettled()
   }
 
+  // Chimera requirement: confirmed on-chain deposits (peg-ins) board
+  // automatically on app start and on pull-to-refresh, so users never meet a
+  // "Complete boarding" button. Upstream Arkade dropped its equivalent and an
+  // upstream merge silently carried that over — keep this when merging.
+  // Never throws: a failed attempt is retried on the next start or refresh.
+  const boardDeposits = async (swWallet = svcWallet) => {
+    if (!swWallet || boardingInFlight.current) return
+    boardingInFlight.current = true
+    try {
+      if (await settleBoardingUtxos(swWallet, aspInfo.dust)) {
+        notifyTxSettled()
+        await reloadWallet(swWallet)
+      }
+    } catch (err) {
+      consoleError(err, 'Error boarding deposits')
+    } finally {
+      boardingInFlight.current = false
+    }
+  }
+
   const updateWallet = (data: Wallet | ((prev: Wallet) => Wallet)) => {
     setWallet((prev) => {
       const next = typeof data === 'function' ? (data as (prev: Wallet) => Wallet)(prev) : data
@@ -910,6 +959,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         initialized,
         resetWallet,
         settlePreconfirmed,
+        boardDeposits: () => boardDeposits(),
         unlockWallet,
         refreshAuthState,
         updateWallet,
@@ -926,6 +976,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         assetMetadataCache: assetMetadataCache.current,
         setCacheEntry,
         iconApprovalManager,
+        isAssetVerified,
         dataReady,
         loadError,
         dismissLoadError,

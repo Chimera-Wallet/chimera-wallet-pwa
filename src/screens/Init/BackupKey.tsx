@@ -91,7 +91,7 @@ export default function InitBackupKey() {
                   </FlexRow>
                   <FlexRow gap='0.5rem'>
                     <XIcon />
-                    <TextSecondary>{t('init.ley.lossWarning')}</TextSecondary>
+                    <TextSecondary>{t('init.key.lossWarning')}</TextSecondary>
                   </FlexRow>
                 </div>
 
@@ -209,7 +209,7 @@ export default function InitBackupKey() {
 
                 <Button
                   onClick={handleCopy}
-                  label={isMnemonic ? t('init.key.copyPhrase') : t('init.key.copyKey')}
+                  label={isMnemonic ? t('init.key.copyPhrase') : t('init.key.copykey')}
                   icon={<CopyIcon />}
                 />
               </div>

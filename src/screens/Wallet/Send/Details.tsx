@@ -17,9 +17,7 @@ import { extractError } from '../../../lib/error'
 import Loading from '../../../components/Loading'
 import { consoleError } from '../../../lib/logs'
 import { LimitsContext } from '../../../providers/limits'
-import { SwapsContext } from '../../../providers/swaps'
 import Text from '../../../components/Text'
-import { isPendingChainSwap, isPendingSubmarineSwap } from '@arkade-os/boltz-swap'
 import { FeesContext } from '../../../providers/fees'
 import { prettyAssetAmount } from '../../../lib/assets'
 import { TxResultContext } from '../../../providers/txResult'
@@ -29,6 +27,7 @@ import { saveTransactionActivityMetadata } from '../../../lib/storage'
 import type { LnSendActivity } from '../../../lib/types'
 import { TRANSFER_METHOD } from '../../../lib/transferMethods'
 import { calculateCollaborativeExitOutput } from '../../../lib/collaborativeExit'
+import UnverifiedAssetNotice from '../../../components/UnverifiedAssetNotice'
 
 
 export default function SendDetails() {
@@ -36,9 +35,8 @@ export default function SendDetails() {
   const { sendInfo, setSendInfo } = useContext(FlowContext)
   const { calcOnchainOutputFee } = useContext(FeesContext)
   const isAssetSend = Boolean(sendInfo.assets?.length)
-  const { lnSwapsAllowed, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
-  const { payInvoice, payBtc } = useContext(SwapsContext)
-  const { assetMetadataCache, balance, svcWallet } = useContext(WalletContext)
+  const { utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
+  const { assetMetadataCache, balance, svcWallet, isAssetVerified } = useContext(WalletContext)
   const { notifyResult } = useContext(TxResultContext)
 
   const assetId = sendInfo.assets?.[0]?.assetId
@@ -53,7 +51,7 @@ export default function SendDetails() {
   const [sending, setSending] = useState(false)
   const [sendDone, setSendDone] = useState(false)
 
-  const { address, arkAddress, invoice, method, pendingSwap, pendingLnSend, satoshis } = sendInfo
+  const { address, arkAddress, invoice, method, pendingLnSend, satoshis } = sendInfo
   const { t } = useTranslation()
   
 
@@ -79,36 +77,26 @@ export default function SendDetails() {
       method === TRANSFER_METHOD.ark
         ? arkAddress && vtxoTxsAllowed() ? arkAddress : ''
         : method === TRANSFER_METHOD.lightning
-          ? invoice && (pendingSwap || pendingLnSend) && lnSwapsAllowed() ? invoice : ''
+          ? invoice && pendingLnSend ? invoice : ''
           : method === TRANSFER_METHOD.bitcoin
             ? address && utxoTxsAllowed() ? address : ''
             : arkAddress && vtxoTxsAllowed()
               ? arkAddress
-              : invoice && (pendingSwap || pendingLnSend) && lnSwapsAllowed()
+              : invoice && pendingLnSend
                 ? invoice
                 : address && utxoTxsAllowed()
                   ? address
                   : ''
-    const isCollaborativeExit = destination === address && !pendingSwap
+    const isCollaborativeExit = destination === address
     const direction =
       destination === arkAddress
-        ? t('common.directions.arkade')
+        ? t('common.general.directions.arkade')
         : destination === invoice
-          ? t('common.directions.lightningSwap')
-          : pendingSwap?.type === 'chain'
-            ? t('common.directions.mainnetSwap')
-            : destination === address
-              ? t('common.directions.mainnetPay')
-              : ''
-    const total = pendingSwap
-      ? pendingSwap.type === 'chain'
-        ? pendingSwap.response.lockupDetails.amount
-        : pendingSwap.type === 'submarine'
-          ? pendingSwap.response.expectedAmount
-          : satoshis
-      : pendingLnSend
-        ? pendingLnSend.fundAmount
-        : satoshis
+          ? t('common.general.directions.lightningSwap')
+          : destination === address
+            ? t('common.general.directions.mainnetPay')
+            : ''
+    const total = pendingLnSend ? pendingLnSend.fundAmount : satoshis
     let amount = satoshis
     if (isCollaborativeExit) {
       try {
@@ -121,7 +109,7 @@ export default function SendDetails() {
       }
     }
     const fees = total - amount > 0 ? total - amount : 0
-    const swapId = pendingSwap?.id ?? pendingLnSend?.rfqId
+    const swapId = pendingLnSend?.rfqId
     setDetails({
       destination,
       direction,
@@ -140,10 +128,6 @@ export default function SendDetails() {
       setButtonLabel(t('common.general.tapSign'))
     }
   }, [sendInfo, balance])
-
-  const handlePreimage = ({ txid }: { preimage: string; txid: string }) => {
-    handleTxid(txid)
-  }
 
   const handleTxid = (txid: string, lnSend? : LnSendActivity) => {
     if (!txid) return handleError(t('errors.send.general.errorSend'))
@@ -164,7 +148,7 @@ export default function SendDetails() {
   useEffect(() => {
     if (!sendDone) return
     if (error) {
-      notifyResult(false, t('common.notifications.failedTransaction')).then(() => setSending(false))
+      notifyResult(false, t('common.notifications.bank.failedTransaction')).then(() => setSending(false))
       return
     }
     navigate(Pages.SendSuccess)
@@ -226,12 +210,6 @@ export default function SendDetails() {
       sendOffChain(svcWallet, details.total, arkAddress)
         .then((txId: string) => handleTxid(txId))
         .catch(handleError)
-    } else if (invoice && pendingSwap && isPendingSubmarineSwap(pendingSwap)) {
-      const swapAddress = pendingSwap.response.address
-      if (!swapAddress) return handleError(t('errors.general.swapAddUnavailable'))
-      payInvoice(pendingSwap)
-        .then(({ preimage, txid }) => handlePreimage({ preimage, txid }))
-        .catch(handleError)
     } else if (invoice && pendingLnSend) {
       // RFQ Lightning send. The address below is the wallet's OWN derivation
       // of the lockup covenant (the client refuses a mismatched quote), so
@@ -243,17 +221,11 @@ export default function SendDetails() {
       }
       payLightning(pendingLnSend).catch(handleError)
     } else if (address) {
-      if (pendingSwap && isPendingChainSwap(pendingSwap)) {
-        payBtc(pendingSwap)
-          .then(({ txid }) => handleTxid(txid))
-          .catch(handleError)
-      } else {
-        if (!details.total) return handleError(t('errors.general.missingTotal'))
-        if (!details.satoshis) return handleError(t('errors.general.missingSats'))
-        collaborativeExitWithFees(svcWallet, details.total, details.satoshis, address)
-          .then((txId: string) => handleTxid(txId))
-          .catch(handleError)
-      }
+      if (!details.total) return handleError(t('errors.general.missingTotal'))
+      if (!details.satoshis) return handleError(t('errors.general.missingSats'))
+      collaborativeExitWithFees(svcWallet, details.total, details.satoshis, address)
+        .then((txId: string) => handleTxid(txId))
+        .catch(handleError)
     }
   }
 
@@ -263,11 +235,11 @@ export default function SendDetails() {
       <Content>
         {sending ? (
           details?.destination === invoice ? (
-            <Loading text={t('common.directions.lightningPay')} />
+            <Loading text={t('common.general.directions.lightningPay')} />
           ) : details?.destination === arkAddress ? (
-            <Loading text={t('common.directions.arkade')} />
+            <Loading text={t('common.general.directions.arkade')} />
           ) : (
-            <Loading text={t('common.directions.mainnetPay')} />
+            <Loading text={t('common.general.directions.mainnetPay')} />
           )
         ) : (
           <Padded>
@@ -281,6 +253,7 @@ export default function SendDetails() {
                   <Text bold testId='send-details-asset-amount'>
                     {prettyAssetAmount(assetAmountValue, assetMeta?.metadata?.decimals ?? 8)} {assetTicker}
                   </Text>
+                  {assetId && !isAssetVerified(assetId) ? <UnverifiedAssetNotice assetId={assetId} /> : null}
                 </FlexCol>
               ) : null}
               <Details details={details} />

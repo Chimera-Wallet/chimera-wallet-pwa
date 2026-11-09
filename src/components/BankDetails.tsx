@@ -14,11 +14,16 @@ import CopyIcon from '../icons/Copy'
 import CheckMarkIcon from '../icons/CheckMark'
 import { copyToClipboard } from '../lib/clipboard'
 import {
+  BANK_FIELDS,
   type BankCircuit,
   type BankCurrency,
+  type BankDetailsFields,
   getBankTransferConfigSync,
   getSupportedCircuits,
+  SWIFT_SEND_FEE,
 } from '../lib/bankTransferConfig'
+import Info from './Info'
+import { termsIcon } from './TermsInfo'
 import SelectSheet from './SelectSheet'
 import { useTranslation } from 'react-i18next'
 
@@ -65,8 +70,8 @@ export function BankFieldBox({
   required = false,
   multiline = false,
 }: BankFieldBoxProps) {
+  const { t } = useTranslation()
   if (!value) return null
-  const {t} = useTranslation()
   return (
     <Shadow fat>
       <FlexCol gap='0.25rem'>
@@ -189,8 +194,8 @@ interface TransferReferenceBoxProps {
 }
 
 export function TransferReferenceBox({ reference }: TransferReferenceBoxProps) {
+  const { t } = useTranslation()
   if (!reference) return null
-  const {t} = useTranslation()
   return ( 
     <Shadow fat border>
       <FlexCol gap='0.5rem'>
@@ -221,6 +226,7 @@ interface BankCircuitSelectorProps {
 
 export function BankCircuitSelector({ currency, selectedCircuit, onSelect }: BankCircuitSelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const { t } = useTranslation()
   const config = getBankTransferConfigSync()
   const circuits = getSupportedCircuits(currency)
 
@@ -232,7 +238,6 @@ export function BankCircuitSelector({ currency, selectedCircuit, onSelect }: Ban
       </Shadow>
     )
   }
-  const {t} = useTranslation()
 
   return (
     <>
@@ -270,6 +275,7 @@ interface BankCurrencySelectorProps {
 
 export function BankCurrencySelector({ selectedCurrency, onSelect, currencies }: BankCurrencySelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const { t } = useTranslation()
   const config = getBankTransferConfigSync()
   const availableCurrencies = currencies ?? config.supportedReceiveCurrencies
 
@@ -281,7 +287,6 @@ export function BankCurrencySelector({ selectedCurrency, onSelect, currencies }:
       </Shadow>
     )
   }
-  const {t} = useTranslation()
 
   return (
     <>
@@ -303,6 +308,89 @@ export function BankCurrencySelector({ selectedCurrency, onSelect, currencies }:
         title={t('components.bankDet.selCurr')}
       />
     </>
+  )
+}
+
+// ============================================
+// Bank Data Form (payout account entry)
+// ============================================
+
+const bankInputStyle: React.CSSProperties = {
+  width: '100%',
+  background: 'transparent',
+  border: 'none',
+  color: 'var(--white)',
+  fontSize: '1rem',
+  outline: 'none',
+}
+
+interface BankInputFieldProps {
+  label: string
+  value: string
+  placeholder: string
+  uppercase?: boolean
+  onChange: (value: string) => void
+}
+
+function BankInputField({ label, value, placeholder, uppercase, onChange }: BankInputFieldProps) {
+  return (
+    <FlexCol gap='0.5rem'>
+      <Shadow input>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
+          <Text tiny color='neutral-500'>
+            {label}
+          </Text>
+          <input
+            type='text'
+            value={value}
+            onChange={(e) => onChange(uppercase ? e.target.value.toUpperCase() : e.target.value)}
+            placeholder={placeholder}
+            style={bankInputStyle}
+          />
+        </div>
+      </Shadow>
+    </FlexCol>
+  )
+}
+
+interface BankDataFormProps {
+  circuit: BankCircuit
+  value: BankDetailsFields
+  onChange: (value: BankDetailsFields) => void
+}
+
+/**
+ * Inputs for the account a withdrawal pays out to, for the selected circuit
+ * (fields from BANK_FIELDS). Validate with `toBankData` from bankTransferConfig.
+ */
+export function BankDataForm({ circuit, value, onChange }: BankDataFormProps) {
+  const { t } = useTranslation()
+  return (
+    <>
+      {BANK_FIELDS[circuit].map(({ key, label, placeholder, uppercase }) => (
+        <BankInputField
+          key={key}
+          label={t(label)}
+          value={value[key]}
+          placeholder={placeholder}
+          uppercase={uppercase}
+          onChange={(v) => onChange({ ...value, [key]: v })}
+        />
+      ))}
+    </>
+  )
+}
+
+// ============================================
+// SWIFT fee notice (withdrawals)
+// ============================================
+
+export function SwiftSendFeeNotice({ currency }: { currency: BankCurrency }) {
+  const { t } = useTranslation()
+  return (
+    <Info color='orange' icon={termsIcon('info')} title={`SWIFT Transfer Fee: ${SWIFT_SEND_FEE} ${currency}`}>
+      <TextSecondary>{t('common.notifications.bank.swiftFee', { fee: SWIFT_SEND_FEE, currency })}</TextSecondary>
+    </Info>
   )
 }
 

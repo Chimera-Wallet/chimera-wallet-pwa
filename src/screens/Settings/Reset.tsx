@@ -9,7 +9,6 @@ import { Checkbox } from '../../components/ui/checkbox'
 import { consoleError } from '../../lib/logs'
 import FlexCol from '../../components/FlexCol'
 import FlexRow from '../../components/FlexRow'
-import { SwapsContext } from '../../providers/swaps'
 import { OptionsContext } from '../../providers/options'
 import {useTranslation} from 'react-i18next'
 
@@ -25,7 +24,6 @@ function WarningTriangle() {
 
 export default function Reset() {
   const { resetWallet } = useContext(WalletContext)
-  const { arkadeSwaps } = useContext(SwapsContext)
   const { goBack } = useContext(OptionsContext)
 
   const {t} = useTranslation()
@@ -36,11 +34,7 @@ export default function Reset() {
   const handleReset = async () => {
     setLoading(true)
     try {
-      await Promise.all([
-        resetWallet(),
-        // stop swap manager polling and clear swap data
-        arkadeSwaps?.reset(),
-      ])
+      await resetWallet()
       location.reload()
     } catch (err) {
       consoleError(err)

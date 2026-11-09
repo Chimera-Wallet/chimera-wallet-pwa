@@ -18,7 +18,6 @@ substitute() {
 }
 
 substitute "__VITE_ARK_SERVER__"                "$VITE_ARK_SERVER"
-substitute "__VITE_BOLTZ_URL__"                 "$VITE_BOLTZ_URL"
 substitute "__VITE_SENTRY_DSN__"                "$VITE_SENTRY_DSN"
 substitute "__VITE_NOSTR_RELAY_URL__"           "$VITE_NOSTR_RELAY_URL"
 substitute "__VITE_CHATWOOT_WEBSITE_TOKEN__"    "$VITE_CHATWOOT_WEBSITE_TOKEN"

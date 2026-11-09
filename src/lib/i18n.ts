@@ -208,6 +208,4 @@ i18n.use(initReactI18next).init({
   },
 })
 
-console.log(i18n.t('key')); 
-
 export default i18n

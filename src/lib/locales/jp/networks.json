@@ -44,6 +44,7 @@
     "boardingExpired": "ボーディング取引の有効期限が切れました。",
     "onchainUnconfirmed": "オンチェーン取引は未承認です。承認をお待ちください。",
     "onboardConfirmed": "ボーディング取引がオンチェーンで承認されました。",
+    "boardingAutomatically": "入金はオンチェーンで承認され、自動的にウォレットに追加されています。",
     "transactionSettledSucc": "取引が正常に確定しました",
     "resend": "再送信",
     "reminder": "リマインダーを追加",

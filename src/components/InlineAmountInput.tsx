@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { ConfigContext } from '../providers/config'
 import { FiatContext } from '../providers/fiat'
 import { prettyNumber } from '../lib/format'
@@ -16,6 +16,7 @@ interface InlineAmountInputProps {
   displayValue?: string
   placeholder?: string
   ticker?: string
+  ariaLabel?: string
   bankCurrency?: string // Optional: for bank transfers (EUR/CHF) - enables BTC<->bankCurrency swap
 }
 
@@ -37,6 +38,7 @@ export default function InlineAmountInput({
   displayValue: initialDisplayValue,
   placeholder = '0',
   ticker,
+  ariaLabel,
   bankCurrency,
 }: InlineAmountInputProps) {
   const { config } = useContext(ConfigContext)
@@ -55,6 +57,19 @@ export default function InlineAmountInput({
   // For bank transfers: value is in fiat cents/units, not satoshis
   const activeCurrency = bankCurrency || config.fiat
   const assetPrecision = precision ?? assetInfo.precision
+
+  // A balance shortcut can replace the amount while the user is typing. Keep
+  // their decimal text only while it still represents the controlled amount.
+  useEffect(() => {
+    if (initialDisplayValue === undefined) return
+    setInputString((current) =>
+      unitsToCents(current && current !== '.' ? current : '0', assetPrecision) ===
+      unitsToCents(initialDisplayValue, assetPrecision)
+        ? current
+        : '',
+    )
+  }, [initialDisplayValue, assetPrecision])
+
   const cryptoValue = isBankTransfer
     ? fromCurrency(value, activeCurrency) / Math.pow(10, assetPrecision)
     : value / Math.pow(10, assetPrecision)
@@ -151,6 +166,7 @@ export default function InlineAmountInput({
           type='number'
           step='any'
           inputMode='decimal'
+          aria-label={ariaLabel}
           value={displayValue}
           onChange={handleChange}
           onKeyDown={handleKeyDown}

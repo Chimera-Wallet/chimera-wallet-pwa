@@ -1,5 +1,5 @@
-import { BoltzReverseSwap, BoltzSubmarineSwap } from '@arkade-os/boltz-swap'
 import { Asset, NetworkName, type ExtendedVirtualCoin } from '@arkade-os/sdk'
+import type { WrapStatus } from './arkadeWrap'
 
 export type Addresses = {
   boardingAddr: string
@@ -11,9 +11,6 @@ export type Config = {
   apps: {
     assets: {
       enabled: boolean
-    }
-    boltz: {
-      connected: boolean
     }
   }
   aspUrl: string
@@ -54,8 +51,6 @@ export enum Fiats {
   GBP = 'GBP',
   CNY = 'CNY',
 }
-
-export type PendingSwap = BoltzReverseSwap | BoltzSubmarineSwap
 
 export type Satoshis = number
 
@@ -110,6 +105,8 @@ export enum Themes {
  * fill/cancel collapsed into one, rather than two unrelated sent/received
  * rows. See `buildAssetSwapActivityTx` in `lib/swapDisplay.ts`. */
 export interface TxAssetSwap {
+  /** The swap record's id (its funding txid) — what `cancelSwap` takes. */
+  id: string
   fromAssetId: string
   fromTicker: string
   fromDecimals: number
@@ -122,6 +119,15 @@ export interface TxAssetSwap {
   fiatCurrency?: string
   feeBps?: number
   status: 'pending' | 'completed' | 'cancelled' | 'recoverable'
+}
+
+/** A bridge deposit still on its way in, shown before the minted asset
+ * arrives as a real Arkade transaction. See `lib/wrapDeposits.ts`. */
+export interface TxWrap {
+  /** Source chain the deposit was made on, e.g. 'ethereum'. */
+  chain: string
+  quoteId: string
+  status: WrapStatus
 }
 
 export type Tx = {
@@ -139,6 +145,8 @@ export type Tx = {
   roundTxid: string
   settled: boolean
   type: string
+  /** Present only on a pending bridge deposit, which has no Arkade tx yet. */
+  wrap?: TxWrap
 }
 
 export enum Unit {

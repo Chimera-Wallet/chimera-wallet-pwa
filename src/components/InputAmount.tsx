@@ -4,7 +4,6 @@ import InputContainer from './InputContainer'
 import { ConfigContext } from '../providers/config'
 import { prettyNumber } from '../lib/format'
 import { FIAT_SYMBOLS } from '../lib/fiat'
-import { LimitsContext } from '../providers/limits'
 import Focusable from './Focusable'
 import { AssetOption } from '../lib/types'
 import { TextSecondary } from './Text'
@@ -44,7 +43,6 @@ export default function InputAmount({
 }: InputAmountProps) {
   const { config, useFiat } = useContext(ConfigContext)
   const { toFiat, fromFiat, fiatDecimals } = useContext(FiatContext)
-  const { minSwapAllowed, maxSwapAllowed } = useContext(LimitsContext)
 
   const [error, setError] = useState('')
   const [otherValue, setOtherValue] = useState('')
@@ -71,8 +69,8 @@ export default function InputAmount({
     setSatsValue(useFiat ? fromFiat(value) : value)
   }
 
-  const minimumSats = min ? Math.max(min, minSwapAllowed()) : 0
-  const maximumSats = max ? Math.min(max, maxSwapAllowed()) : 0
+  const minimumSats = min ?? 0
+  const maximumSats = max ?? 0
 
   const fiatSymbol = FIAT_SYMBOLS[config.fiat]
   const fiatLabel = fiatSymbol ?? config.fiat

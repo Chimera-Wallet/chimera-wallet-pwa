@@ -193,7 +193,7 @@ export default function Vtxos() {
     ),
     swept: (
       <Text color='orange' smaller>
-         {t('settings.vtxo.swpt')}
+         {t('settings.vtxo.swept')}
       </Text>
     ),
     unconfirmed: (

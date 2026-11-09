@@ -1,8 +1,14 @@
-import { useContext, useEffect, useState } from 'react'
+import { useContext } from 'react'
 import AssetRow from './AssetRow'
-import { ASSET_LIST, getHomeAssetList, getDisplayTicker, type AssetSymbol } from '../lib/assets'
-import { CoinGeckoConversionService, type ConversionRateResult } from '../lib/coingecko/service'
-import { consoleError } from '../lib/logs'
+import {
+  getHomeAssetList,
+  getDisplayTicker,
+  truncatedAssetId,
+  wrappedAmountToNumber,
+  type AssetSymbol,
+  type UnlistedAsset,
+} from '../lib/assets'
+import { AssetPricesContext } from '../providers/assetPrices'
 import { ConfigContext } from '../providers/config'
 import { useTranslation } from 'react-i18next'
 
@@ -21,55 +27,31 @@ interface AssetBalance {
 interface AssetListProps {
   balances?: AssetBalance[]
   onAssetClick?: (symbol: AssetSymbol) => void
+  /** Held assets with no ASSET_LIST row (see getUnlistedHeldAssets). */
+  otherAssets?: UnlistedAsset[]
+  isAssetVerified?: (assetId: string) => boolean
+  onOtherAssetClick?: (assetId: string) => void
 }
 
-export default function AssetList({ balances = [], onAssetClick }: AssetListProps) {
+export default function AssetList({
+  balances = [],
+  onAssetClick,
+  otherAssets = [],
+  isAssetVerified = () => false,
+  onOtherAssetClick,
+}: AssetListProps) {
   const { config } = useContext(ConfigContext)
-  const currency = config.fiat.toLowerCase()
   const {t} = useTranslation()
-
-  const [prices, setPrices] = useState<ConversionRateResult>({})
-  const [loading, setLoading] = useState(true)
+  const { getPriceData, loading } = useContext(AssetPricesContext)
 
   const balancesBySymbol = Object.fromEntries(balances.map((b) => [b.symbol, b.balance])) as Partial<
     Record<AssetSymbol, number>
   >
   const homeAssetList = getHomeAssetList(balancesBySymbol)
 
-  useEffect(() => {
-    const fetchPrices = async () => {
-      try {
-        const symbols = ASSET_LIST.map((a) => a.symbol)
-        const rates = await CoinGeckoConversionService.getBulkConversionRates(symbols, {
-          vsCurrencies: [currency],
-          include24hChange: true,
-        })
-        setPrices(rates)
-      } catch (error) {
-        consoleError(error, 'Failed to fetch asset prices')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchPrices()
-
-    // Refresh prices every 60 seconds
-    const interval = setInterval(fetchPrices, 60000)
-    return () => clearInterval(interval)
-  }, [currency])
-
   const getBalance = (symbol: AssetSymbol): number => {
     const found = balances.find((b) => b.symbol === symbol)
     return found?.balance || 0
-  }
-
-  const getPriceData = (symbol: string) => {
-    const data = prices[symbol] as unknown as Record<string, number> | undefined
-    return {
-      rate: data?.[currency] || 0,
-      change: data?.[`${currency}_24h_change`],
-    }
   }
 
   return (
@@ -155,11 +137,33 @@ export default function AssetList({ balances = [], onAssetClick }: AssetListProp
                 percentChange={asset.noMarketData ? undefined : priceData.change}
                 badge={asset.comingSoon ? 'Coming Soon' : undefined}
                 onClick={!asset.comingSoon && onAssetClick ? () => onAssetClick(symbol) : undefined}
-                isLast={index === homeAssetList.length - 1}
+                isLast={index === homeAssetList.length - 1 && otherAssets.length === 0}
               />
             )
           })
         )}
+        {/* Assets this build has no row for: anything the wallet received. Shown
+            from their own metadata, with no price — there is no trusted feed for
+            them, and borrowing one by ticker would let a lookalike token show a
+            real token's value. */}
+        {!loading
+          ? otherAssets.map((asset, index) => {
+              const ticker = asset.ticker ?? asset.assetId.slice(0, 6)
+              return (
+                <AssetRow
+                  key={asset.assetId}
+                  symbol={ticker}
+                  ticker={ticker}
+                  name={asset.name ?? truncatedAssetId(asset.assetId)}
+                  balance={wrappedAmountToNumber(asset.amount, asset.decimals)}
+                  unlisted={{ icon: asset.icon, decimals: asset.decimals }}
+                  unverified={!isAssetVerified(asset.assetId)}
+                  onClick={onOtherAssetClick ? () => onOtherAssetClick(asset.assetId) : undefined}
+                  isLast={index === otherAssets.length - 1}
+                />
+              )
+            })
+          : null}
       </div>
     </div>
   )

@@ -62,7 +62,6 @@ describe('Trans renders the send-screen nudges as real links', () => {
 
   it.each([
     ['common.notifications.send.rollOverVTXO', 'roll over your VTXOs'],
-    ['common.notifications.send.lightningSwaps', 'Lightning swaps'],
   ])('%s wraps its label in the supplied anchor', async (key, label) => {
     const i18n = await makeI18n()
     const { container } = render(

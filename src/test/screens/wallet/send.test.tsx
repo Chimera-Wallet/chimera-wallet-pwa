@@ -7,7 +7,6 @@ import {
   mockConfigContextValue,
   mockFiatContextValue,
   mockFlowContextValue,
-  mockSwapsContextValue,
   mockLimitsContextValue,
   mockNavigationContextValue,
   mockOptionsContextValue,
@@ -20,7 +19,6 @@ import { NavigationContext } from '../../../providers/navigation'
 import SendForm from '../../../screens/Wallet/Send/Form'
 import { ConfigContext } from '../../../providers/config'
 import { FiatContext } from '../../../providers/fiat'
-import { SwapsContext } from '../../../providers/swaps'
 import { OptionsContext } from '../../../providers/options'
 
 describe('Send screen', () => {
@@ -30,17 +28,15 @@ describe('Send screen', () => {
         <AspContext.Provider value={mockAspContextValue}>
           <ConfigContext.Provider value={mockConfigContextValue as any}>
             <FiatContext.Provider value={mockFiatContextValue as any}>
-              <SwapsContext.Provider value={mockSwapsContextValue as any}>
-                <OptionsContext.Provider value={mockOptionsContextValue as any}>
-                  <FlowContext.Provider value={mockFlowContextValue as any}>
-                    <WalletContext.Provider value={mockWalletContextValue}>
-                      <LimitsContext.Provider value={mockLimitsContextValue}>
-                        <SendForm />
-                      </LimitsContext.Provider>
-                    </WalletContext.Provider>
-                  </FlowContext.Provider>
-                </OptionsContext.Provider>
-              </SwapsContext.Provider>
+              <OptionsContext.Provider value={mockOptionsContextValue as any}>
+                <FlowContext.Provider value={mockFlowContextValue as any}>
+                  <WalletContext.Provider value={mockWalletContextValue}>
+                    <LimitsContext.Provider value={mockLimitsContextValue}>
+                      <SendForm />
+                    </LimitsContext.Provider>
+                  </WalletContext.Provider>
+                </FlowContext.Provider>
+              </OptionsContext.Provider>
             </FiatContext.Provider>
           </ConfigContext.Provider>
         </AspContext.Provider>
@@ -55,17 +51,15 @@ describe('Send screen', () => {
         <AspContext.Provider value={mockAspContextValue}>
           <ConfigContext.Provider value={mockConfigContextValue as any}>
             <FiatContext.Provider value={mockFiatContextValue as any}>
-              <SwapsContext.Provider value={mockSwapsContextValue as any}>
-                <OptionsContext.Provider value={mockOptionsContextValue as any}>
-                  <FlowContext.Provider value={mockFlowContextValue as any}>
-                    <WalletContext.Provider value={{ ...mockWalletContextValue, svcWallet: mockSvcWallet as any }}>
-                      <LimitsContext.Provider value={mockLimitsContextValue}>
-                        <SendForm />
-                      </LimitsContext.Provider>
-                    </WalletContext.Provider>
-                  </FlowContext.Provider>
-                </OptionsContext.Provider>
-              </SwapsContext.Provider>
+              <OptionsContext.Provider value={mockOptionsContextValue as any}>
+                <FlowContext.Provider value={mockFlowContextValue as any}>
+                  <WalletContext.Provider value={{ ...mockWalletContextValue, svcWallet: mockSvcWallet as any }}>
+                    <LimitsContext.Provider value={mockLimitsContextValue}>
+                      <SendForm />
+                    </LimitsContext.Provider>
+                  </WalletContext.Provider>
+                </FlowContext.Provider>
+              </OptionsContext.Provider>
             </FiatContext.Provider>
           </ConfigContext.Provider>
         </AspContext.Provider>

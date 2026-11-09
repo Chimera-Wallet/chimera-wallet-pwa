@@ -113,6 +113,15 @@
   --cream: var(--purple-700);
   --logo-color: var(--purple-700);
 
+  /* Asset colours (lib/assets.ts `color`), as in the asset page designs.
+     Same in both themes: they are brand colours. */
+  --asset-btc: #f69a2b;
+  --asset-usdt: #4fad94;
+  --asset-eth: #5b7de5;
+  --asset-trx: #fd060a;
+  --asset-matic: #8247e2;
+  --asset-cext: var(--blue-primary); /* no design yet; Chimera blue */
+
   /* Neutral ramp — solid grays via color-mix(fg, bg). Replaces the old
      opacity-based --darkXX scale. Numeric = fg-mix percentage. */
   --neutral-50: color-mix(in oklab, var(--fg) 5%, var(--bg));

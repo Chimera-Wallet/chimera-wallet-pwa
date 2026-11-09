@@ -1,6 +1,6 @@
 import AssetIcon from '../icons/AssetIcon'
 import PriceChart from './PriceChart'
-import { getAssetConfig, getDisplayTicker, type AssetSymbol } from '../lib/assets'
+import { formatBalanceDisplay, getAssetConfig, getDisplayTicker, type AssetSymbol } from '../lib/assets'
 
 interface AssetBalanceViewProps {
   symbol: AssetSymbol | string
@@ -13,13 +13,8 @@ export default function AssetBalanceView({ symbol, balance }: AssetBalanceViewPr
   const precision = config?.precision || 8
   const ticker = getDisplayTicker(symbol)
 
-  // Format balance using asset's configured precision
-  const formatBalance = (value: number): string => {
-    return value.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: precision,
-    })
-  }
+  // Same decimal cap as BTC for every asset, whatever its on-chain precision
+  const formatBalance = (value: number): string => formatBalanceDisplay(value, precision, 'en-US')
 
   return (
     <div style={{ width: '100%' }}>

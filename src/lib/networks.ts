@@ -14,14 +14,14 @@ export interface NetworkConfig {
 export const NETWORKS: Record<TransferMethod, NetworkConfig> = {
   [TRANSFER_METHOD.ark]: {
     id: TRANSFER_METHOD.ark,
-    name: 'Arkade',
+    name: 'networks.arkade.name',
     description: 'networks.arkade.description',
     icon: '/images/icons/network-ark.svg',
     addressPlaceholder: 'placeholders.arkade.address',
   },
   [TRANSFER_METHOD.lightning]: {
     id: TRANSFER_METHOD.lightning,
-    name: 'Lightning',
+    name: 'networks.lightning.name',
     description: 'networks.lightning.description',
     icon: '/images/icons/network-lightning.svg',
     addressPlaceholder: 'placeholders.lightning.address',

@@ -4,16 +4,23 @@ on:
   push:
     branches:
       - master
+      - beta
       - staging
+  # PRs are built as a check but never deployed: deploying a pull_request
+  # event makes Azure create a preview environment per PR. Only the three
+  # long-lived branches get an environment, on push.
   pull_request:
-    types: [opened, synchronize, reopened, closed]
     branches:
       - master
+      - beta
       - staging
+
+# The branch being deployed: the pushed branch, or a PR's target branch.
+env:
+  TARGET_BRANCH: ${{ github.base_ref || github.ref_name }}
 
 jobs:
   build_and_deploy:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy
 
@@ -46,11 +53,27 @@ jobs:
 
       - name: Build application
         run: |
-          BRANCH="${{ github.ref_name }}"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BRANCH="${{ github.base_ref }}"
-          fi
-          MODE=$([[ "$BRANCH" == "master" || "$BRANCH" == "main" ]] && echo "production" || echo "staging")
+          case "$TARGET_BRANCH" in
+            master|main)
+              MODE=production
+              ;;
+            beta)
+              # A production build with only .env.beta's overrides on top:
+              # exported vars take precedence over Vite's .env files, so beta
+              # can't drift from what ships.
+              MODE=production
+              set -a
+              source .env.beta
+              set +a
+              ;;
+            staging)
+              MODE=staging
+              ;;
+            *)
+              echo "No build mode for branch '$TARGET_BRANCH'" >&2
+              exit 1
+              ;;
+          esac
           pnpm git-info
           pnpm exec vite build -c vite.worker.config.ts --mode $MODE
           pnpm exec vite build --mode $MODE
@@ -64,6 +87,7 @@ jobs:
         working-directory: api
 
       - name: Deploy to Azure Static Web Apps
+        if: github.event_name == 'push'
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ASHY_WAVE_06A45EB03 }}
@@ -74,15 +98,3 @@ jobs:
           output_location: ""
           skip_app_build: true   # We already built above
           production_branch: "master"
-
-  close_pull_request:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
-    runs-on: ubuntu-latest
-    name: Close Pull Request
-
-    steps:
-      - name: Close pull request environment
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ASHY_WAVE_06A45EB03 }}
-          action: "close"

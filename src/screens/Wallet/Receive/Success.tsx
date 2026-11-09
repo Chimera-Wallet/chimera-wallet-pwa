@@ -84,7 +84,7 @@ export default function ReceiveSuccess() {
   useEffect(() => {
     if (handled.current) return
     handled.current = true
-    const detail = isAssetReceive ? undefined : t('common.notifications.receive.bank.successAmount', {amount: displayAmount})
+    const detail = isAssetReceive ? undefined : t('common.notifications.receive.successAmount', {amount: displayAmount})
     notifyResult(true, t('common.notifications.receive.paymentReceived'), detail).then(() => navigate(Pages.Wallet))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

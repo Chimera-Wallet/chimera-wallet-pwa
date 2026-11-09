@@ -18,10 +18,28 @@ interface HeaderProps {
   auxIcon?: JSX.Element
   back?: (() => void) | boolean
   heading?: boolean
+  /** Show the tips of the Chimera logo emerging from the top of the
+   * screen in place of the title (home screen). `text` stays the accessible name. */
+  logo?: boolean
   text: string
 }
 
-export default function Header({ auxAriaLabel, auxFunc, auxText, back, text, auxIcon }: HeaderProps) {
+// The logo is 134x317. Its bottom quarter shows within the header, hanging from
+// the top edge: just the blade tips, not the body above them. Sized so that
+// quarter fills the header's 4rem; at 180px tall it read as "comically small".
+const LOGO_HEIGHT = 256
+const LOGO_WIDTH = Math.round((LOGO_HEIGHT * 134) / 317)
+const LOGO_VISIBLE = Math.round(LOGO_HEIGHT / 4)
+
+// On iPhone the page starts below the status bar / notch (`.page` sits at
+// `top: env(safe-area-inset-top)`), so a logo cut off at the header's top edge
+// hung under an empty band and looked smaller than on Android, where the
+// browser draws the status bar outside the page. The clip window reaches up
+// through that band so the logo grows from the screen's real top edge; where
+// there's no inset (most Android) this changes nothing.
+const SAFE_AREA_TOP = 'env(safe-area-inset-top, 0px)'
+
+export default function Header({ auxAriaLabel, auxFunc, auxText, back, logo, text, auxIcon }: HeaderProps) {
   const { goBack } = useContext(NavigationContext)
 
   const handleBack = back
@@ -87,7 +105,30 @@ export default function Header({ auxAriaLabel, auxFunc, auxText, back, text, aux
   }
 
   return (
-    <div className='header'>
+    <div className='header' style={logo ? { position: 'relative' } : undefined}>
+      {logo ? (
+        <div
+          aria-hidden='true'
+          style={{
+            position: 'absolute',
+            top: `calc(-1 * ${SAFE_AREA_TOP})`,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: LOGO_WIDTH,
+            height: `calc(${LOGO_VISIBLE}px + ${SAFE_AREA_TOP})`,
+            overflow: 'hidden',
+            pointerEvents: 'none',
+          }}
+        >
+          {/* Anchored to the bottom, so the tips stay where they were and any
+              extra height reveals more of the logo above them */}
+          <img
+            src='/images/chimera_logo_claw.png'
+            alt=''
+            style={{ position: 'absolute', bottom: 0, left: 0, display: 'block', width: LOGO_WIDTH, height: LOGO_HEIGHT }}
+          />
+        </div>
+      ) : null}
       <FlexRow between>
         <div style={{ minWidth: '4rem', marginLeft: '0.5rem' }}>
           {handleBack ? (
@@ -104,7 +145,7 @@ export default function Header({ auxAriaLabel, auxFunc, auxText, back, text, aux
             </Focusable>
           )}
         </div>
-        <p className='title'>{text}</p>
+        {logo ? <h1 className='sr-only'>{text}</h1> : <p className='title'>{text}</p>}
         <div style={style} onClick={auxFunc} aria-label={auxAriaLabel} data-testid='header-aux-btn'>
           {auxText || auxIcon ? (
             <Focusable onEnter={auxFunc} fit round>

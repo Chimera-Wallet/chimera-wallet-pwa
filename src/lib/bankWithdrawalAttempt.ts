@@ -7,6 +7,8 @@ export interface BankWithdrawalAttempt {
   fundingAddress: string
   amountSats: number
   fundingState: BankWithdrawalFundingState
+  /** The funding payment's Arkade txid, kept so it can be reported again. */
+  txid?: string
 }
 
 const STORAGE_KEY = 'pending_bank_withdrawal'

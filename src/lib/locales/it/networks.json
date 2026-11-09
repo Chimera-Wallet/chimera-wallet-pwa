@@ -47,6 +47,7 @@
     "boardingExpired": "La transazione di boarding è scaduta.",
     "onchainUnconfirmed": "Transazione on-chain non confermata. Attendi la conferma.",
     "onboardConfirmed": "Transazione di onboarding confermata on-chain.",
+    "boardingAutomatically": "Il tuo deposito è confermato on-chain e viene aggiunto automaticamente al tuo wallet.",
     "transactionSettledSucc": "Transazione regolata con successo",
     "resend": "Invia di nuovo",
     "reminder": "Aggiungi promemoria",

@@ -14,9 +14,9 @@
         },
         "lightning": 
         {
-        "address": "Please send only using a Lighting network invoice. Any other address will cause the assets to be forever lost, and there is no option to recover it.",
+        "address": "Please send only using a Lightning network invoice. Any other address will cause the assets to be forever lost, and there is no option to recover it.",
         "time": "The transfer time for the lightning network depends on several factors and is, on average, a few seconds.",
-        "fees": "Fees are dynamic on lightning, usually less than 0.01$."
+        "fees": "Fees are dynamic on lightning, usually less than $0.01."
         },
         "bank": 
         {
@@ -40,10 +40,10 @@
         },
         "lightning": 
         {
-        "address": "Please send only Bitcoin using the Lighting network. Any other asset sent will be forever lost, and there is no option to recover it.",
+        "address": "Please send only Bitcoin using the Lightning network. Any other asset sent will be forever lost, and there is no option to recover it.",
         "info": "To receive the funds you need to stay in the app until the transaction is completed.",
         "time": "The transfer time for the lightning network depends on several factors and is, on average, a few seconds.",
-        "fees": "Fees are dynamic on lightning, usually less than 0.01$."
+        "fees": "Fees are dynamic on lightning, usually less than $0.01."
         },
         "bank": 
         {

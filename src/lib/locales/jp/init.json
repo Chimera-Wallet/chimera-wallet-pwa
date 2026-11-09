@@ -34,8 +34,6 @@
   },
   "connection": {
     "missingCreds": "認証情報がありません",
-    "restoringSwaps": "スワップを復元中...",
-    "swapsInfo": "ネットワークから {{num}} 件のスワップを復元しました",
     "connectionFailed": "接続に失敗しました",
     "serverConnection": "サーバーに接続中"
   },
@@ -50,7 +48,14 @@
     "restoringWallet": "ウォレットを復元中...",
     "pk": "秘密鍵",
     "recoveryPhraseKey": "リカバリーフレーズまたは秘密鍵",
-    "phraseEntry": "12単語のリカバリーフレーズ、または「nsec」で始まる秘密鍵、もしくは生の16進形式の鍵を入力してください。誰にも共有しないでください。"
+    "phraseEntry": "12単語のリカバリーフレーズ、または「nsec」で始まる秘密鍵、もしくは生の16進形式の鍵を入力してください。誰にも共有しないでください。",
+    "wordSuggestions": "単語の候補",
+    "inputHint": "リカバリーフレーズまたは秘密鍵を入力するか貼り付けてください。",
+    "wordCount_other": "{{count}} 単語入力済み",
+    "wordError": "{{number}} 番目の単語が認識できません。綴りを確認してください。",
+    "wordCountError": "リカバリーフレーズをすべて入力してください（12・15・18・21・24 単語）。",
+    "checksumError": "このリカバリーフレーズは無効です。単語とその順序を確認してください。",
+    "keyError": "有効な nsec 秘密鍵、または 64 文字の 16 進数の秘密鍵を入力してください。"
   },
   "success": {
     "walletRestore": "ウォレットを復元しました！",

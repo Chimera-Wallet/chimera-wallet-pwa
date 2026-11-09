@@ -109,6 +109,7 @@ export default function Apps() {
         <Padded>
           <div style={gridStyle}>
             <App name={t('apps.swap.swap')} image='/images/apps/Transfer.svg' page={Pages.AppSwap} />
+            <App name={t('apps.pos.name')} image='/images/apps/POS.svg' page={Pages.AppPos} />
             <App name={t('apps.addressBook.addressBook')} image='/images/apps/AddressBook.svg' page={Pages.AppAddressBook} />
             <App name={t('common.general.statement')} image='/images/apps/Statement.svg' page={Pages.AppStatement} />
             <App name={t('apps.referral.referral')} image='/images/apps/Referral.svg' page={Pages.AppReferral} />

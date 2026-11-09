@@ -72,7 +72,7 @@ function ContractCard({ contract }: { contract: Contract }) {
               {contract.state}
             </Text>
             <Text tiny color='neutral-500'>
-              {contract.createdAt ? prettyAgo(contract.createdAt) : t('common.genral.unkown')}
+              {contract.createdAt ? prettyAgo(contract.createdAt) : t('common.general.unkown')}
             </Text>
           </FlexCol>
         </FlexRow>

@@ -14,6 +14,7 @@ import FlexCol from './FlexCol'
 import SwapIcon from '../icons/Swap'
 import { AssetOption } from '../lib/types'
 import { prettyAssetAmount, unitsToCents } from '../lib/assets'
+import { applyKeypadKey, KEYPAD_ROWS } from '../lib/keypad'
 
 interface KeyboardProps {
   asset?: AssetOption
@@ -63,30 +64,7 @@ export default function Keyboard({ asset, back, hideBalance, onSave }: KeyboardP
   }
 
   const handleKeyPress = (k: string) => {
-    // Handle decimal point
-    if (k === '.') {
-      const maxDecimals = getMaxDecimals()
-      if (maxDecimals === 0) return // No decimals for sats
-      if (textValue.includes('.')) return // Already has decimal point
-      return setTextValue((prev) => (prev === '' ? '0.' : prev + '.'))
-    }
-
-    // Handle backspace
-    if (k === 'x') {
-      if (textValue.length === 0) return // nothing to delete
-      return setTextValue(textValue.slice(0, -1))
-    }
-
-    // Handle number input with decimal validation
-    const newText = textValue + k
-    const parts = newText.split('.')
-    if (parts.length > 1) {
-      const decimalPlaces = parts[1].length
-      const maxDecimals = getMaxDecimals()
-      if (decimalPlaces > maxDecimals) return // Exceeded max decimals
-    }
-
-    setTextValue(newText)
+    setTextValue((prev) => applyKeypadKey(prev, k, getMaxDecimals()))
   }
 
   const handleMaxPress = () => {
@@ -170,13 +148,6 @@ export default function Keyboard({ asset, back, hideBalance, onSave }: KeyboardP
     cursor: 'pointer',
   }
 
-  const keys = [
-    ['1', '2', '3'],
-    ['4', '5', '6'],
-    ['7', '8', '9'],
-    ['.', '0', 'x'],
-  ]
-
   return (
     <>
       <Header
@@ -201,7 +172,7 @@ export default function Keyboard({ asset, back, hideBalance, onSave }: KeyboardP
         </FlexCol>
       </Content>
       <div style={gridStyle}>
-        {keys.map((row) => (
+        {KEYPAD_ROWS.map((row) => (
           <div style={rowStyle} key={row[0]}>
             {row.map((key) => (
               <div style={keyStyle} key={key} onClick={() => handleKeyPress(key)}>

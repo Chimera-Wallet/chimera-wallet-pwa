@@ -1,5 +1,6 @@
 import { useContext } from 'react'
-import { prettyAmount, prettyFiatAmount, prettyFiatHide, prettyHide } from '../lib/format'
+import { fromSatoshis, prettyFiatAmount, prettyFiatHide, prettyHide, prettyNumber } from '../lib/format'
+import { ASSETS } from '../lib/assets'
 import { ConfigContext } from '../providers/config'
 import { FiatContext } from '../providers/fiat'
 import FeesIcon from '../icons/Fees'
@@ -85,7 +86,12 @@ export default function Details({ details }: { details?: DetailsProps }) {
       const fiat = toFiat(amount)
       return config.showBalance ? prettyFiatAmount(fiat, config.fiat) : prettyFiatHide(fiat, config.fiat)
     }
-    return config.showBalance ? prettyAmount(amount) : prettyHide(amount)
+    // Chimera shows bitcoin amounts in BTC, never SATS, matching the balance
+    // and transaction list.
+    const btc = fromSatoshis(amount)
+    return config.showBalance
+      ? `${prettyNumber(btc, ASSETS.BTC.precision)} ${ASSETS.BTC.symbol}`
+      : prettyHide(btc, ASSETS.BTC.symbol)
   }
 
   // Only show explorer link if URL is available (e.g., mainnet for vmempool)

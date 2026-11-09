@@ -3,7 +3,7 @@
  * not own — which registry to ask, which cards ship with the build, and the
  * pre-fee rate the swap composer displays.
  */
-import { discoverMarkets as discover } from '@arkade-os/swap'
+import { BTC_ASSET_ID, discoverMarkets as discover } from '@arkade-os/swap'
 import {
   displayPrice,
   isNetwork,
@@ -13,50 +13,135 @@ import {
 } from '@arkade-os/solver-discovery'
 import type { NetworkName } from '@arkade-os/sdk'
 import betaSolverCard from './beta-solver.card.json'
+import bitcoinSolverCard from './bitcoin-solver.card.json'
+import mutinynetSolverCard from './mutinynet-solver.card.json'
 import { getSolverRegistryUrl } from './constants'
 import { consoleLog } from './logs'
-import { readSolverCardsFromStorage } from './storage'
+import { getStorageItem, readSolverCardsFromStorage } from './storage'
 import { assetSwapRepository } from './swapRepository'
 
 /**
  * Solver cards shipped with the wallet.
  *
- * The Arkade Labs Lightning solver is the counterparty for the RFQ send leg
- * (`arkade:BTC -> lightning:BTC`) and is not published in the solver registry
- * yet, so without this the corridor simply does not exist and Lightning send
- * is unavailable. Bundled rather than configured because the card carries its
- * own rendezvous (pubkey + nostr relays) — there is no URL to point at.
+ * Mainnet (bitcoin) ships two:
+ * - Chimera's own solver, serving the `BTC/USDT` asset-swap market with the
+ *   mainnet asset ids from .env.beta (production and beta both run on
+ *   `bitcoin`). It carries no Lightning market.
+ * - The Arkade Labs beta solver, the counterparty for the Lightning RFQ legs
+ *   (`arkade:BTC <-> bolt11:BTC`). It is not published in the mainnet solver
+ *   registry yet, so without it the corridor does not exist and Lightning
+ *   send/receive is unavailable. Same card arkade-os/wallet ships,
+ *   byte-identical: the solver's own `cli card` output, signature included.
  *
- * The card is the solver's own `cli card` output, signature included — it
- * signs the current `transports.nostr.relays` shape. This client never
- * verifies the signature (pinning a card is the user's own trust decision),
- * but carrying the real one keeps the bundle byte-identical to what the
- * registry will list.
+ * This client never verifies card signatures (pinning a card is the user's own
+ * trust decision).
  *
- * Scoped to mainnet on purpose: the pubkey and relay in the card are the
- * production solver's, and offering it on regtest/signet would quote a
- * mainnet counterparty for testnet coins.
+ * Staging (mutinynet): the card the staging asset swaps run on — the
+ * `BTC/USDT-CX`, `ETH-CX/BTC` and `ETH-CX/USDT-CX` markets, whose asset ids are
+ * the staging deployment's. It carries no Lightning market: on mutinynet the
+ * Lightning (and onchain) corridors come from the solver registry, as in
+ * arkade-os/wallet, which bundles nothing for this network.
+ *
+ * Each card is scoped to its own network on purpose: a card's pubkey and relay
+ * belong to one deployment, and offering it on another network would quote
+ * that counterparty for the wrong coins. Bundled rather than configured
+ * because a card carries its own rendezvous (pubkey + nostr relays) — there is
+ * no URL to point at.
  */
 // Exported so the Solvers settings screen can show built-in cards — a pinned
 // solver invisible in Settings reads as "no solver at all".
-export const BUNDLED_CARDS: LocalCardInput[] = [{ card: betaSolverCard as LocalCardInput['card'], network: 'bitcoin' }]
+export const BUNDLED_CARDS: LocalCardInput[] = [
+  { card: bitcoinSolverCard as LocalCardInput['card'], network: 'bitcoin' },
+  { card: betaSolverCard as LocalCardInput['card'], network: 'bitcoin' },
+  { card: mutinynetSolverCard as LocalCardInput['card'], network: 'mutinynet' },
+]
+
+const BUNDLED_PUBKEYS = new Set(
+  BUNDLED_CARDS.map((input) => (input.card as { discovery_pubkey?: string }).discovery_pubkey?.toLowerCase()).filter(
+    (pubkey): pubkey is string => Boolean(pubkey),
+  ),
+)
+
+/** Whether a solver discovery pubkey belongs to a card shipped with the build. */
+export const isBundledPubkey = (pubkey: string | undefined): boolean =>
+  Boolean(pubkey && BUNDLED_PUBKEYS.has(pubkey.toLowerCase()))
+
+/**
+ * Where a market's solver came from. Registry and bundled solvers are the
+ * trusted defaults; `custom` is a card the user added themselves, which the
+ * wallet still uses but labels — Chimera has not vouched for it.
+ *
+ * Bundled and user cards both arrive as `sourceType: 'local'`, so the bundled
+ * ones are told apart by discovery pubkey.
+ */
+export type SolverOrigin = 'registry' | 'bundled' | 'custom'
+
+export const getSolverOrigin = (market: Pick<DiscoveredMarket, 'sourceType' | 'discovery_pubkey'>): SolverOrigin => {
+  if (market.sourceType === 'registry') return 'registry'
+  return isBundledPubkey(market.discovery_pubkey) ? 'bundled' : 'custom'
+}
+
+// Short, stable hash of the local cards. The package's markets cache is keyed
+// by network + registry only, so without this a changed card set (a new build
+// shipping a new bundled card) would keep serving stale markets for an hour.
+const cardsFingerprint = (cards: LocalCardInput[]): string => {
+  const text = JSON.stringify(cards)
+  let hash = 5381
+  for (let i = 0; i < text.length; i++) hash = ((hash << 5) + hash + text.charCodeAt(i)) | 0
+  return (hash >>> 0).toString(36)
+}
+
+const cardsFingerprintKey = (network: string) => `solverCardsFingerprint:${network}`
 
 /**
  * Markets from the network's solver registry; [] when none is configured.
  * Caching (one hour, with a stale fallback for an unreachable registry) lives
- * in the repository the package writes through.
+ * in the repository the package writes through; a change in the local card
+ * set bypasses it.
  */
 export const discoverMarkets = async (network: NetworkName, useCache = true): Promise<DiscoveredMarket[]> => {
   if (!isNetwork(network)) return []
-  return discover({
+  const localCards = [...BUNDLED_CARDS, ...readSolverCardsFromStorage()].filter((c) => c.network === network)
+  const fingerprint = cardsFingerprint(localCards)
+  const cardsChanged = getStorageItem(cardsFingerprintKey(network), '', (val) => val) !== fingerprint
+  const markets = await discover({
     network,
     registryUrl: getSolverRegistryUrl(network),
     repository: assetSwapRepository,
-    localCards: [...BUNDLED_CARDS, ...readSolverCardsFromStorage()].filter((c) => c.network === network),
+    localCards,
     logger: (...args) => consoleLog('solver discovery:', ...args),
-    useCache,
+    useCache: useCache && !cardsChanged,
   })
+  try {
+    localStorage.setItem(cardsFingerprintKey(network), fingerprint)
+  } catch {
+    // storage unavailable: the next call just skips the cache again
+  }
+  return markets
 }
+
+const ARKADE_BTC_ID = /^arkade:[^/]+\/slip44:[01]$/
+const ARKADE_ASSET_ID = /^arkade:[^/]+\/asset:([0-9a-f]{68})$/
+
+/** An Arkade-corridor asset id in the wallet's own form: `btc` for BTC, the
+ * bare 68-hex id for an issued asset. Cards may spell either side CAIP-style
+ * (`arkade:bitcoin/slip44:0`, `arkade:bitcoin/asset:<hex>`), and discovery
+ * passes that through untouched — but everything downstream compares against
+ * `VITE_ARKADE_*` ids and `BTC_ASSET_ID`, and funds with the plan's asset id. */
+const toWalletAssetId = (id: string): string => {
+  if (ARKADE_BTC_ID.test(id)) return BTC_ASSET_ID
+  return ARKADE_ASSET_ID.exec(id)?.[1] ?? id
+}
+
+/** A market with both sides' ids in the wallet's form (see
+ * {@link toWalletAssetId}). Only for markets already known to settle on the
+ * Arkade corridor: the corridor is read off the CAIP namespace, so normalizing
+ * first would make a `bolt11:` side look like an Arkade one. */
+export const withWalletAssetIds = (market: DiscoveredMarket): DiscoveredMarket => ({
+  ...market,
+  base_asset: { ...market.base_asset, id: toWalletAssetId(market.base_asset.id) },
+  quote_asset: { ...market.quote_asset, id: toWalletAssetId(market.quote_asset.id) },
+})
 
 /** The market feed's pre-fee price oriented give→receive, in whole display
  * units. Derived from the plan's exact price rational — plan.priceDisplay

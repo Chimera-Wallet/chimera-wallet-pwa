@@ -1,0 +1,40 @@
+{
+  "version": 0,
+  "name": "my-solver",
+  "discovery_pubkey": "25d7bbb0d90766592957e017c157deed4c853c5768df62d707008d01cc079f98",
+  "transports": {
+    "nostr": {
+      "relays": [
+        "wss://nostr.arkade.sh"
+      ]
+    }
+  },
+  "markets": [
+    {
+      "base_asset": {
+        "id": "arkade:bitcoin/slip44:0",
+        "name": "Bitcoin",
+        "ticker": "BTC",
+        "decimals": 8
+      },
+      "quote_asset": {
+        "id": "arkade:bitcoin/asset:d4e095d6e9003607655a65936057a4db37e9cf2b3003d522ea121df5793f76a00000",
+        "name": "Arkade asset d4e095d6",
+        "ticker": "d4e095d6",
+        "decimals": 6
+      },
+      "fee_bps": 100,
+      "price_feed": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
+      "price_feed_schema": {
+        "type": "json",
+        "price_path": "/bitcoin/usd"
+      },
+      "price_decimals": 2,
+      "min_base_amount": "1000",
+      "max_base_amount": "5000000",
+      "min_quote_amount": "1000000",
+      "max_quote_amount": "5000000000"
+    }
+  ],
+  "sig": "a68529d92e972d3bbcff7233866202f649fd6e666a80e6d02c9258cccce9cfa1b042522b6a41cca49592c1271f133f6e8d751016e613e46176a3063c1cfe14e5"
+}

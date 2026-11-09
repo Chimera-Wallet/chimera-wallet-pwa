@@ -74,6 +74,7 @@ export const buildAssetSwapActivityTx = (swap: WalletAssetSwap, members: Tx[]): 
     settled: status !== 'pending',
     type: 'swap',
     assetSwap: {
+      id: swap.id,
       fromAssetId: swap.fromAsset,
       fromTicker: quote?.fromTicker ?? derivedTicker(swap.fromAsset),
       fromDecimals: quote?.fromDecimals ?? derivedDecimals(swap.fromAsset),

@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from 'react'
 import Balance from '../../components/Balance'
+import BalanceChart from '../../components/BalanceChart'
 import ErrorMessage from '../../components/Error'
 import TransactionsList from '../../components/TransactionsList'
 import AssetList from '../../components/AssetList'
@@ -7,21 +8,20 @@ import AssetBalanceView from '../../components/AssetBalanceView'
 import { WalletContext } from '../../providers/wallet'
 import { AspContext } from '../../providers/asp'
 import { ConfigContext } from '../../providers/config'
+import { FiatContext } from '../../providers/fiat'
+import { AssetPricesContext } from '../../providers/assetPrices'
 import Padded from '../../components/Padded'
 import Content from '../../components/Content'
 import FlexCol from '../../components/FlexCol'
 import Button from '../../components/Button'
 import SendIcon from '../../icons/Send'
 import ReceiveIcon from '../../icons/Receive'
-import SwapIcon from '../../icons/Swap'
 import FlexRow from '../../components/FlexRow'
-import { emptyRecvInfo, emptySendInfo, FlowContext } from '../../providers/flow'
+import { emptyRecvInfo, emptySendInfo, FlowContext, type RecvInfo, type SendInfo } from '../../providers/flow'
 import { NavigationContext, Pages } from '../../providers/navigation'
-import { AssetSwapsContext } from '../../providers/assetSwaps'
-import { BTC_ASSET_ID } from '@arkade-os/swap'
 import { NudgeContext } from '../../providers/nudge'
-import { pwaCanInstall, usePwaInstalled, canPromptInstall, promptPwaInstall } from '../../lib/pwa'
-import { isIOS, isAndroid, getIOSBrowser } from '../../lib/browser'
+import { usePwaInstalled, canPromptInstall, promptPwaInstall } from '../../lib/pwa'
+import { isIOS, getIOSBrowser } from '../../lib/browser'
 import { InfoBox } from '../../components/AlertBox'
 import { psaMessage } from '../../lib/constants'
 import { AnnouncementContext } from '../../providers/announcements'
@@ -31,6 +31,7 @@ import {
   ASSETS,
   ASSET_LIST,
   getDisplayTicker,
+  getUnlistedHeldAssets,
   getWrappedAssetId,
   requireAssetConfig,
   wrappedAmountToNumber,
@@ -52,15 +53,16 @@ export default function Wallet() {
   const { aspInfo } = useContext(AspContext)
   const { announcement } = useContext(AnnouncementContext)
   const { config, updateConfig } = useContext(ConfigContext)
-  const { setRecvInfo, setSendInfo, setWrapRecvInfo, setUnwrapSendInfo, setAssetSwapFromAssetId } = useContext(FlowContext)
+  const { setRecvInfo, setSendInfo, setWrapRecvInfo, setUnwrapSendInfo, setAssetInfo } =
+    useContext(FlowContext)
   const { isInitialLoad, navigate, navigationCount, screen } = useContext(NavigationContext)
-  const { balance, dataReady, txs, assetBalances } = useContext(WalletContext)
-  const { nudge, nudgeVisible, nudgeCheckComplete } = useContext(NudgeContext)
-  const { swapAvailable } = useContext(AssetSwapsContext)
+  const { balance, dataReady, txs, assetBalances, assetMetadataCache, isAssetVerified } = useContext(WalletContext)
+  const { toFiat } = useContext(FiatContext)
+  const { getPriceData } = useContext(AssetPricesContext)
+  const { nudge } = useContext(NudgeContext)
 
   const pwaInstalled = usePwaInstalled()
   const dismissed = (config?.dismissedBanners ?? []).includes('pwa-install')
-  const showPwaBanner = pwaCanInstall() && (isIOS() || isAndroid()) && !pwaInstalled && !dismissed
   
   const {t} = useTranslation()
 
@@ -84,11 +86,21 @@ export default function Wallet() {
     : t('networks.browser.installDescr')
 
   const [showInstallBanner, setShowInstallBanner] = useState(Boolean(!dismissed && !pwaInstalled))
-  const dismissPwaBanner = () => {
+  const [showStakingBanner, setShowStakingBanner] = useState(
+    !(config?.dismissedBanners ?? []).includes('staking'),
+  )
+  const dismissBanner = (id: string) => {
     if (!config) return
-    const dismissedBanners = [...(config.dismissedBanners ?? []), 'pwa-install']
+    const dismissedBanners = [...(config.dismissedBanners ?? []), id]
     updateConfig({ ...config, dismissedBanners })
+  }
+  const dismissPwaBanner = () => {
+    dismissBanner('pwa-install')
     setShowInstallBanner(false)
+  }
+  const dismissStakingBanner = () => {
+    dismissBanner('staking')
+    setShowStakingBanner(false)
   }
 
   const [error, setError] = useState(false)
@@ -147,6 +159,18 @@ export default function Wallet() {
     }
   }
 
+  // The send and receive screens show whichever asset the flow carries and
+  // fall back to BTC when it carries none. Navigating there without the asset
+  // picked here (or the asset page the user came from) showed Bitcoin even
+  // after choosing Tether, and people sent the wrong asset.
+  const sendAssetSeed = (symbol: AssetSymbol): Pick<SendInfo, 'assets'> => {
+    const assetId = symbol === ASSETS.BTC.symbol ? undefined : getWrappedAssetId(symbol)
+    return { assets: assetId ? [{ assetId, amount: BigInt(0) }] : undefined }
+  }
+  const recvAssetSeed = (symbol: AssetSymbol): Pick<RecvInfo, 'assetId'> => ({
+    assetId: symbol === ASSETS.BTC.symbol ? undefined : getWrappedAssetId(symbol),
+  })
+
   const handleAssetSelected = (asset: AssetSymbol) => {
     setSelectedFlowAsset(asset)
     setShowAssetSelector(false)
@@ -161,7 +185,7 @@ export default function Wallet() {
 
     // Update flow context and navigate based on mode and network
     if (flowMode === 'send') {
-      setSendInfo({ ...emptySendInfo, method: network })
+      setSendInfo({ ...emptySendInfo, ...sendAssetSeed(selectedFlowAsset), method: network })
 
       if (network === TRANSFER_METHOD.bank) {
         navigate(Pages.BankSend)
@@ -169,7 +193,7 @@ export default function Wallet() {
         navigate(Pages.SendForm)
       }
     } else {
-      setRecvInfo({ ...emptyRecvInfo, method: network })
+      setRecvInfo({ ...emptyRecvInfo, ...recvAssetSeed(selectedFlowAsset), method: network })
 
       if (network === TRANSFER_METHOD.bank) {
         navigate(Pages.BankReceive)
@@ -202,10 +226,10 @@ export default function Wallet() {
 
     if (choice === TRANSFER_METHOD.ark) {
       if (flowMode === 'send') {
-        setSendInfo({ ...emptySendInfo, method: TRANSFER_METHOD.ark })
+        setSendInfo({ ...emptySendInfo, ...sendAssetSeed(selectedFlowAsset), method: TRANSFER_METHOD.ark })
         navigate(Pages.SendForm)
       } else {
-        setRecvInfo({ ...emptyRecvInfo, method: TRANSFER_METHOD.ark })
+        setRecvInfo({ ...emptyRecvInfo, ...recvAssetSeed(selectedFlowAsset), method: TRANSFER_METHOD.ark })
         navigate(Pages.ReceiveAmount)
       }
       setFlowMode(null)
@@ -268,13 +292,33 @@ export default function Wallet() {
     balance: getAssetBalance(asset.symbol as AssetSymbol),
   }))
 
+  // Headline total: the whole wallet in fiat. BTC at the wallet's own rate, every
+  // other listed asset at the price the asset list shows. Assets with no price
+  // source (and unlisted ones) add nothing, as they show no fiat value there.
+  const totalFiat = assetBalancesForList.reduce(
+    (sum, { symbol, balance: units }) =>
+      symbol === ASSETS.BTC.symbol ? sum : sum + units * getPriceData(symbol).rate,
+    toFiat(balance),
+  )
+
+  // Held assets with no ASSET_LIST row (received tokens this build doesn't
+  // offer). They open the generic asset detail screen, which can send them.
+  const otherAssets = getUnlistedHeldAssets(assetBalances, assetMetadataCache)
+
+  const handleOtherAssetClick = (assetId: string) => {
+    setAssetInfo({ assetId, supply: BigInt(0) })
+    navigate(Pages.AppAssetDetail)
+  }
+
   // Render asset detail view
   if (selectedAsset) {
     return (
       <>
         <Header text={getDisplayTicker(selectedAsset)} back={handleBackToAll} />
         {announcement}
-        <Content>
+        {/* keyed per view: the asset page and home share this spot in the tree,
+            so without a key React reuses the scroll area and keeps its scroll */}
+        <Content key={`asset-${selectedAsset}`}>
           <Padded>
             <FlexCol>
               <AssetBalanceView symbol={selectedAsset} balance={getAssetBalance(selectedAsset)} />
@@ -323,18 +367,22 @@ export default function Wallet() {
     <>
       <Header
         text={t('common.general.wallet')}
+        logo
         auxIcon={<TransactionsIcon />}
         auxFunc={handleTransactions}
         auxAriaLabel={t('networks.transactions.viewAll')}
       />
       {announcement}
-      <Content>
+      <Content key='home'>
         <Padded>
           <WalletStaggerContainer animate={shouldStagger}>
             <FlexCol>
               <FlexCol gap='0'>
                 <WalletStaggerChild animate={shouldStagger}>
-                  <Balance amount={balance} centered usdOnly />
+                  <Balance amount={balance} fiatTotal={totalFiat} centered usdOnly />
+                </WalletStaggerChild>
+                <WalletStaggerChild animate={shouldStagger}>
+                  <BalanceChart />
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
                   <ErrorMessage error={error} text={t('errors.send.arkade.server')} />
@@ -346,9 +394,11 @@ export default function Wallet() {
                   </FlexRow>
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
+                {showInstallBanner || showStakingBanner ? (
                 <div style={{ display: 'flex', flexDirection: 'column', paddingTop: 'var(--banner-padding-top)' }}>
+                  {/* Install first: saving the app to the home screen matters
+                      more than the token promo, which comes second. */}
                   <BannerCarousel>
-                    <StakingBanner variant='home' />
                     {showInstallBanner ? (
                       <InstallBanner
                         description={pwaDescription}
@@ -366,8 +416,12 @@ export default function Wallet() {
                         onDismiss={dismissPwaBanner}
                       />
                     ) : null}
+                    {showStakingBanner ? (
+                      <StakingBanner variant='home' onDismiss={dismissStakingBanner} />
+                    ) : null}
                   </BannerCarousel>
                 </div>
+                ) : null}
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
                   {nudge ? nudge : psaMessage ? <InfoBox html={psaMessage} /> : null}
@@ -399,6 +453,9 @@ export default function Wallet() {
                 <AssetList
                   balances={assetBalancesForList}
                   onAssetClick={handleAssetClick}
+                  otherAssets={otherAssets}
+                  isAssetVerified={isAssetVerified}
+                  onOtherAssetClick={handleOtherAssetClick}
                 />
               </WalletStaggerChild>
             </FlexCol>

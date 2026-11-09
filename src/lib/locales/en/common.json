@@ -6,13 +6,21 @@
     "accountName": "Account Holder Name",
     "accountNumber": "Account Number",
     "routingNumber": "Routing Number",
-    "orderHistory": "View order History",
+    "bankFields": {
+        "iban": "IBAN",
+        "bicSwift": "BIC/SWIFT",
+        "country": "Country (ISO code)",
+        "streetName": "Street Name",
+        "buildingNumber": "Building Number",
+        "townName": "Town",
+        "postCode": "Postal Code"
+    },
+    "orderHistory": "View Order History",
     "notifications": {
         "send":{
             "invoiceDeets": "Invoice Details",
             "feesDeduction": "Fees will be deducted from the amount sent",
-            "rollOverVTXO":  "Did you mean <a>roll over your VTXOs</a>?",
-            "lightningSwaps": "Enable <a>Lightning swaps</a> to pay"
+            "rollOverVTXO":  "Did you mean <a>roll over your VTXOs</a>?"
 
         },
         "bank": {
@@ -26,6 +34,11 @@
             "paymentAmount": "{{displayed}} sent successfully"   
         },
         "unwrapService":{
+            "availableBalance": "{{amount}} {{ticker}} available",
+            "minAmount": "Minimum: {{amount}} {{ticker}}",
+            "belowMinimum": "Below minimum",
+            "networkFee": "Network fee: {{amount}} {{ticker}}",
+            "confirming": "Deposit sent, waiting for confirmation…",
             "pending": "Waiting for your Arkade deposit…",
             "deposited": "Deposit detected, confirming…",
             "processing": "Sending your payout…",
@@ -38,7 +51,7 @@
             "sendInfo": "{{value}} {{ticker}} sent on {{name}}",
             "destination": "Destination {{name}} address",
             "timeSensitive": "Send your wrapped {{ticker}} on Arkade to the treasury address below before the quote expires.",
-            "payout": "`Payout: {{amount}} {{ticker}}`",
+            "payout": "Payout: {{amount}} {{ticker}}",
             "sendHeader": "Send {{ticker}} to {{name}}"
         },
         "wrapService": {
@@ -51,6 +64,7 @@
             "expiry": "Send {{ticker}} on {{name}} to the address below before the quote expires.",
             "depositDetected": "Deposit detected {{amount}} {{ticker}}",
             "bridgeFee": "Bridge fee: {{amount}} {{ticker}}",
+            "feeRate": "Service fee: {{rate}}%",
             "getDepositAddress": "Get deposit address",
             "pending": "Waiting for your deposit...",
             "deposited": "Deposit detected, confirming…",
@@ -76,9 +90,6 @@
             "bitcoin":{
                 "bitcoinAddress": "Bitcoin address"
             },
-            "lnurl": {
-                "lnurlAddress": "LNURL address"
-            },
             "invalidAmount": "No valid payment methods available for this amount",
             "depositCreated": "Deposit order created",
             "editAmount": "Edit amount",
@@ -92,7 +103,7 @@
             "minLightning": "{{amount}} sats min for Lightning",
             "bank": {
                 "bankDeposit": "Bank Deposit", 
-                "orderHistory": "View order History",
+                "orderHistory": "View Order History",
                 "sendTransfer": "Send Bank Transfer",
                 "madeTransfer": "I've Made the Transfer",
                 "orderStatus": "View Order Status",
@@ -117,6 +128,7 @@
         "continue": "Continue",
         "success": "Success",
         "receive": "Receive",
+        "sent": "Sent",
         "received": "Received",
         "fauceting": "Fauceting", 
         "faucet": "Faucet",
@@ -138,7 +150,7 @@
         "created": "Created",
         "refreshing": "Refreshing...",
         "wallet": "Wallet", 
-        "unkown": "Unkown",
+        "unkown": "Unknown",
         "unconfirmed": "Unconfirmed",
         "confirm": "confirm",
         "settled": "Settled",
@@ -193,7 +205,6 @@
             "arkade": "Paying inside Arkade",
             "lightningSwap": "Swapping to Lightning",
             "lightningPay": "Paying to Lightning", 
-            "mainnetSwap": "Swapping to mainnet",
             "mainnetPay": "Paying to mainnet"
 
         },
@@ -221,7 +232,7 @@
             "paymentReceived": "Your payment has been received. We are processing your withdrawal and will send the funds to your bank account.",
             "awaitingTransfer": "Awaiting Bank Transfer", 
             "withdrawalSubmit": "Withdrawal Submitted",
-            "waitingForTransfer": "Waiting for your bank transfer. Once received, your order will be processed",
+            "waitingForTransfer": "Waiting for your bank transfer. Once received, your order will be processed.",
             "withdrawalProcessing": "Your withdrawal is being processed. You will receive {{fiat}} in your bank account once confirmed.",
             "transferMethod": "Transfer Method",
             "sepaDetails": "SEPA Bank Details",

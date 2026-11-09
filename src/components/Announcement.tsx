@@ -5,7 +5,6 @@ import FlexRow from './FlexRow'
 import OkIcon from '../icons/Ok'
 import { useContext, useState } from 'react'
 import NostrIcon from '../icons/Nostr'
-import BoltzIcon from '../icons/Boltz'
 import Text, { TextSecondary } from './Text'
 import { ConfigContext } from '../providers/config'
 import { OptionsContext } from '../providers/options'
@@ -149,26 +148,6 @@ export default function Announcement({
   )
 }
 
-export function BoltzAnnouncement({ close }: { close: () => void }) {
-  const {t} = useTranslation()
-
-  return (
-    <Announcement
-      close={close}
-      title='Boltz'
-      color='#ffe96d'
-      page={Pages.AppBoltz}
-      icon={<BoltzIcon big />}
-      message={t('components.announcements.lightWork')}
-      bulletPoints={[
-        [t('components.announcements.bridge'), t('components.announcements.bridgeDescr')],
-        [t('components.announcements.fast'), t('components.announcements.fastDescr')],
-        [t('components.announcements.safe'), t('components.announcements.safeDescr')],
-      ]}
-    />
-  )
-}
-
 export function LendaSatAnnouncement({ close }: { close: () => void }) {
   const {t} = useTranslation()
 
@@ -231,7 +210,6 @@ export function NostrBackupsAnnouncement({ close }: { close: () => void }) {
       message={t('components.announcements.nostrMsg')}
       bulletPoints={[
         [t('components.announcements.backSett'), t('components.announcements.backMsg')],
-        [t('components.announcements.boltzSw'), t('components.announcements.boltzMsg')],
         [t('components.announcements.secure'), t('components.announcements.secureMsg')],
       ]}
     />

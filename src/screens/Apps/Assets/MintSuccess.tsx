@@ -22,7 +22,7 @@ export default function AppAssetMintSuccess() {
 
   const fromCache = assetMetadataCache.get(assetInfo.assetId)
   const details = fromCache ?? assetInfo
-  const name = details.metadata?.name ?? t('common.generla.unkown')
+  const name = details.metadata?.name ?? t('common.general.unkown')
   const ticker = details.metadata?.ticker ?? ''
   const decimals = details.metadata?.decimals ?? 8
   const icon = details.metadata?.icon

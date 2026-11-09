@@ -29,7 +29,7 @@ interface AssetListItem {
 
 export default function AppAssets() {
   const { navigate } = useContext(NavigationContext)
-  const { assetBalances, balance, svcWallet, assetMetadataCache, setCacheEntry } = useContext(WalletContext)
+  const { assetBalances, balance, svcWallet, assetMetadataCache, setCacheEntry, isAssetVerified } = useContext(WalletContext)
   const { config } = useContext(ConfigContext)
   const { setAssetInfo } = useContext(FlowContext)
   const { aspInfo } = useContext(AspContext)
@@ -114,6 +114,7 @@ export default function AppAssets() {
                     ticker={asset.ticker}
                     icon={asset.icon}
                     decimals={asset.decimals}
+                    unverified={!isAssetVerified(asset.assetId)}
                     onClick={() => handleAssetClick(asset.assetId)}
                     darkPurple
                   />

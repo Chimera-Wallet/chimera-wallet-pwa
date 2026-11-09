@@ -4,11 +4,10 @@ import { Config, CurrencyDisplay, Fiats, Themes, Unit } from '../lib/types'
 import { BackupProvider } from '../lib/backup'
 import { consoleError } from '../lib/logs'
 import { setHapticsEnabled } from '../lib/haptics'
-import { IndexedDbSwapRepository } from '@arkade-os/boltz-swap'
 
 const defaultConfig: Config = {
   announcementsSeen: [],
-  apps: { assets: { enabled: false }, boltz: { connected: true } },
+  apps: { assets: { enabled: false } },
   // Placeholder only: the real value comes from VITE_ARK_SERVER via the loader
   // below, and the startup config gate blocks the app if it is missing.
   aspUrl: import.meta.env.VITE_ARK_SERVER ?? '',
@@ -70,7 +69,6 @@ const updateDefaultConfig = (config: Partial<Config>): Config => {
     importedAssets: [...importedAssets],
     apps: {
       assets: { enabled: config.apps?.assets?.enabled ?? defaultConfig.apps.assets.enabled },
-      boltz: { connected: config.apps?.boltz?.connected ?? defaultConfig.apps.boltz.connected },
     },
   }
 }
@@ -93,7 +91,7 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
   const [systemTheme, setSystemTheme] = useState<Themes.Dark | Themes.Light>(() => resolveTheme(Themes.Auto))
 
   const backupConfig = async (config: Config) => {
-    const backupProvider = new BackupProvider({ pubkey: config.pubkey }, new IndexedDbSwapRepository())
+    const backupProvider = new BackupProvider({ pubkey: config.pubkey })
     await backupProvider.backupConfig(config).catch((error) => {
       consoleError(error, 'Backup to Nostr failed')
     })

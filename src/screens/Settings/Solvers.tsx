@@ -15,6 +15,8 @@ import { AssetSwapsContext } from '@/providers/assetSwaps'
 import { consoleError } from '@/lib/logs'
 import { BackupContext } from '@/providers/backup'
 import { BUNDLED_CARDS } from '@/lib/swapMarkets'
+import UnverifiedBadge from '@/components/UnverifiedBadge'
+import { useTranslation } from 'react-i18next'
 
 const addSolverCard = (input: LocalCardInput) => {
   const existingCards = readSolverCardsFromStorage()
@@ -146,6 +148,7 @@ function BundledCardLine({ input }: { input: LocalCardInput }) {
 }
 
 function CardLine({ input, onChange }: { input: LocalCardInput; onChange: () => void }) {
+  const { t } = useTranslation()
   const [confirmRemove, setConfirmRemove] = useState(false)
   const [showEditor, setShowEditor] = useState(false)
   const [error, setError] = useState<string>('')
@@ -198,7 +201,10 @@ function CardLine({ input, onChange }: { input: LocalCardInput; onChange: () => 
       <FlexCol padding='8px' gap='8px'>
         <FlexRow between>
           <FlexCol gap='4px'>
-            <Text>{input.label}</Text>
+            <FlexRow gap='6px'>
+              <Text>{input.label}</Text>
+              <UnverifiedBadge label={t('settings.solvers.custom')} />
+            </FlexRow>
             <TextSecondary>{pairs}</TextSecondary>
           </FlexCol>
           <FlexRow end>
@@ -213,6 +219,7 @@ function CardLine({ input, onChange }: { input: LocalCardInput; onChange: () => 
 }
 
 export default function Solvers() {
+  const { t } = useTranslation()
   const { aspInfo } = useContext(AspContext)
   const { runDiscovery } = useContext(AssetSwapsContext)
   const { backupSolverCards } = useContext(BackupContext)
@@ -272,6 +279,7 @@ export default function Solvers() {
             ) : null}
             {localCards && localCards.length > 0 ? (
               <FlexCol>
+                <TextSecondary>{t('settings.solvers.customNote')}</TextSecondary>
                 {localCards.map((input) => (
                   <CardLine key={input.label} input={input} onChange={handleChange} />
                 ))}

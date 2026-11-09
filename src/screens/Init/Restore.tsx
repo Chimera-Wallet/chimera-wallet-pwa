@@ -1,29 +1,23 @@
-import { invalidPrivateKey, nsecToPrivateKey } from '../../lib/privateKey'
 import { NavigationContext, Pages } from '../../providers/navigation'
 import ButtonsOnBottom from '../../components/ButtonsOnBottom'
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 import { ConfigContext } from '../../providers/config'
 import { BackupProvider } from '../../lib/backup'
 import { defaultArkServer, defaultPassword } from '../../lib/constants'
 import { FlowContext } from '../../providers/flow'
 import type { Config } from '../../lib/types'
-import ErrorMessage from '../../components/Error'
 import Content from '../../components/Content'
 import FlexCol from '../../components/FlexCol'
-import { extractError } from '../../lib/error'
 import Loading from '../../components/Loading'
 import { consoleError, consoleLog } from '../../lib/logs'
 import Button from '../../components/Button'
 import Header from '../../components/Header'
 import Padded from '../../components/Padded'
-import Input from '../../components/Input'
+import InputRecovery from '../../components/InputRecovery'
 import { TextSecondary } from '../../components/Text'
-import { hex } from '@scure/base'
-import { IndexedDbSwapRepository } from '@arkade-os/boltz-swap'
 import { OnboardStaggerContainer, OnboardStaggerChild } from '../../components/OnboardLoadIn'
-import { validateMnemonic } from '@scure/bip39'
-import { wordlist } from '@scure/bip39/wordlists/english'
 import { deriveNostrKeyFromMnemonic } from '../../lib/mnemonic'
+import { getRecoveryWord, parseRecoveryInput } from '../../lib/recoveryInput'
 import { AspContext } from '../../providers/asp'
 import {useTranslation} from 'react-i18next'
 
@@ -56,59 +50,43 @@ export default function InitRestore() {
 
   const buttonLabel = t('common.general.continue')
 
-  const [error, setError] = useState('')
-  const [label, setLabel] = useState(buttonLabel)
-  const [mnemonic, setMnemonic] = useState<string>()
-  const [privateKey, setPrivateKey] = useState<Uint8Array>()
+  const [input, setInput] = useState<{ value: string; cursor: number | null }>({ value: '', cursor: null })
+  const [submitted, setSubmitted] = useState(false)
   const [restoring, setRestoring] = useState(false)
   const [restoreDone, setRestoreDone] = useState(false)
-  const [someKey, setSomeKey] = useState<string>()
+  const parsed = useMemo(() => parseRecoveryInput(input.value), [input.value])
+  const mnemonic = parsed.kind === 'phrase' ? parsed.mnemonic : undefined
+  const privateKey = parsed.kind === 'key' ? parsed.privateKey : undefined
+  const activeWord = getRecoveryWord(input.value, input.cursor)
 
-  useEffect(() => {
-    const trimmed = someKey?.trim() ?? ''
-    if (!trimmed) {
-      setMnemonic(undefined)
-      setPrivateKey(undefined)
-      setLabel(buttonLabel)
-      setError('')
-      return
+  // Stay quiet while the user is still typing: an unknown word is flagged once
+  // the caret has left it, and the remaining errors only on Continue.
+  let error = ''
+  if (parsed.kind === 'phrase' && parsed.error === 'word') {
+    if (submitted || activeWord?.index !== parsed.wordIndex) {
+      error = t('init.restore.wordError', { number: parsed.wordIndex! + 1 })
     }
+  } else if (submitted && parsed.kind !== 'empty' && parsed.error) {
+    if (parsed.error === 'count') error = t('init.restore.wordCountError')
+    if (parsed.error === 'checksum') error = t('init.restore.checksumError')
+    if (parsed.error === 'key') error = t('init.restore.keyError')
+  }
 
-    // Detect mnemonic (input contains spaces)
-    if (trimmed.includes(' ')) {
-      if (validateMnemonic(trimmed, wordlist)) {
-        setMnemonic(trimmed)
-        setPrivateKey(undefined)
-        setLabel(buttonLabel)
-        setError('')
-      } else {
-        setMnemonic(undefined)
-        setPrivateKey(undefined)
-        setLabel(t('init.restore.invalidPhrase'))
-        setError(t('init.restore.invalidPhrase'))
-      }
-      return
-    }
+  const helperText =
+    parsed.kind === 'phrase'
+      ? t('init.restore.wordCount', { count: parsed.count })
+      : t('init.restore.inputHint')
 
-    // Otherwise try nsec/hex private key
-    setMnemonic(undefined)
-    let pk = undefined
-    try {
-      if (trimmed.match(/^nsec/)) pk = nsecToPrivateKey(trimmed)
-      else pk = hex.decode(trimmed)
-      const invalid = invalidPrivateKey(pk)
-      setLabel(invalid ? t('init.restore.validationUnable') : buttonLabel)
-      setError(invalid)
-    } catch (err) {
-      setLabel( t('init.restore.validationUnableSimple'))
-      setError(extractError(err))
-    }
-    setPrivateKey(pk)
-  }, [someKey])
+  const handleChange = (value: string, cursor: number | null) => {
+    if (value !== input.value) setSubmitted(false)
+    setInput({ value, cursor })
+  }
 
   const handleCancel = () => navigate(Pages.Init)
 
   const handleProceed = () => {
+    setSubmitted(true)
+    if ((!mnemonic && !privateKey) || restoring) return
     setRestoring(true)
     let seckey: Uint8Array
     if (mnemonic) {
@@ -123,7 +101,7 @@ export default function InitRestore() {
       setInitInfo({ privateKey, password: defaultPassword, restoring: true })
       seckey = privateKey!
     }
-    new BackupProvider({ seckey }, new IndexedDbSwapRepository())
+    new BackupProvider({ seckey })
       .restore((conf) => {
         // A recovery phrase is network-agnostic and the same one is legitimately
         // used on more than one network. The Nostr backup is keyed by the phrase,
@@ -147,10 +125,7 @@ export default function InitRestore() {
       .finally(() => setRestoreDone(true))
   }
 
-  const handleExitComplete = () => {
-    if (error) return setRestoring(false)
-    else navigate(Pages.InitConnect)
-  }
+  const handleExitComplete = () => navigate(Pages.InitConnect)
 
   // Navigate once restore is done (no exit animation with chimera Loading)
   useEffect(() => {
@@ -158,7 +133,7 @@ export default function InitRestore() {
     handleExitComplete()
   }, [restoreDone])
 
-  const disabled = Boolean((!privateKey && !mnemonic) || error)
+  const disabled = !input.value.trim()
 
   if (restoring)
     return <Loading text={t('init.restore.restoringWallet')} />
@@ -171,10 +146,14 @@ export default function InitRestore() {
           <OnboardStaggerContainer>
             <OnboardStaggerChild>
               <FlexCol between>
-                <FlexCol>
-                  <Input name={t('init.restore.pk')} label={t('init.restore.recoveryPhraseKey')} onChange={setSomeKey} />
-                  <ErrorMessage error={Boolean(error)} text={error} />
-                </FlexCol>
+                <InputRecovery
+                  value={input.value}
+                  cursor={input.cursor}
+                  onChange={handleChange}
+                  onSubmit={handleProceed}
+                  error={error}
+                  helperText={helperText}
+                />
                 <TextSecondary wrap>
                   {t('init.restore.phraseEntry')}
                 </TextSecondary>
@@ -184,7 +163,7 @@ export default function InitRestore() {
         </Padded>
       </Content>
       <ButtonsOnBottom>
-        <Button onClick={handleProceed} label={label} disabled={disabled} />
+        <Button onClick={handleProceed} label={buttonLabel} disabled={disabled} />
         <Button onClick={handleCancel} label={t('common.general.cancel')} secondary />
       </ButtonsOnBottom>
     </>

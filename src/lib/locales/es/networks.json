@@ -46,6 +46,7 @@
     "boardingExpired": "La transacción de incorporación ha expirado.",
     "onchainUnconfirmed": "La transacción en cadena no está confirmada. Por favor, espera la confirmación.",
     "onboardConfirmed": "La transacción de incorporación fue confirmada en cadena.",
+    "boardingAutomatically": "Tu depósito está confirmado en cadena y se está añadiendo a tu billetera automáticamente.",
     "transactionSettledSucc": "Transacción liquidada correctamente",
     "resend": "Reenviar",
     "reminder": "Añadir recordatorio",

@@ -28,12 +28,9 @@ import Wallet from '../screens/Wallet/Index'
 import Settings from '../screens/Settings/Index'
 
 import Apps from '../screens/Apps/Index'
-import AppBoltz from '../screens/Apps/Boltz/Index'
-import AppBoltzSettings from '../screens/Apps/Boltz/Settings'
 import InitSuccess from '../screens/Init/Success'
 import InitBackupKey from '../screens/Init/BackupKey'
 import InitBackupWarning from '../screens/Init/BackupWarning'
-import AppBoltzSwap from '../screens/Apps/Boltz/Swap'
 import AppLendasat from '../screens/Apps/Lendasat/Index'
 import AppSatora from '../screens/Apps/Satora/Index'
 import AppAssets from '../screens/Apps/Assets/Index'
@@ -44,7 +41,6 @@ import AppAssetMintSuccess from '../screens/Apps/Assets/MintSuccess'
 import AppAssetReissue from '../screens/Apps/Assets/Reissue'
 import AppAssetBurn from '../screens/Apps/Assets/Burn'
 import AppAssetsSettings from '../screens/Apps/Assets/Settings'
-import InAppBrowser from '../screens/Wallet/InAppBrowser'
 import AppStatement from '../screens/Apps/Statement/Index'
 import AppReferral from '../screens/Apps/Referral/Index'
 import AppGiftCards from '../screens/Apps/GiftCards/Index'
@@ -56,16 +52,17 @@ import AppSwapOrderDetails from '../screens/Apps/Swap/OrderDetails'
 import AppAddressBook from '../screens/Apps/AddressBook/Index'
 import AppAddressBookForm from '../screens/Apps/AddressBook/Form'
 import AppAddressBookContact from '../screens/Apps/AddressBook/ContactDetail'
+import AppPos, { AppPosPayout } from '../screens/Apps/Pos/Index'
+import AppPosPayment from '../screens/Apps/Pos/Payment'
+import AppPosStatus from '../screens/Apps/Pos/Status'
+import AppPosHistory from '../screens/Apps/Pos/History'
+import AppPosSettings from '../screens/Apps/Pos/Settings'
 import Unavailable from '../screens/Wallet/Unavailable'
-import Verification from '../screens/Settings/Verification'
 import { trackPageView } from '../lib/analytics'
 
 export type NavigationDirection = 'forward' | 'back' | 'none'
 
 export enum Pages {
-  AppBoltz,
-  AppBoltzSettings,
-  AppBoltzSwap,
   AppLendasat,
   AppSatora,
   AppAssets,
@@ -87,6 +84,12 @@ export enum Pages {
   AppAddressBook,
   AppAddressBookForm,
   AppAddressBookContact,
+  AppPos,
+  AppPosPayout,
+  AppPosPayment,
+  AppPosStatus,
+  AppPosHistory,
+  AppPosSettings,
   Apps,
   Init,
   InitRestore,
@@ -133,9 +136,6 @@ export enum Tabs {
 }
 
 const pageTab: Record<Pages, Tabs> = {
-  [Pages.AppBoltz]: Tabs.Apps,
-  [Pages.AppBoltzSettings]: Tabs.Apps,
-  [Pages.AppBoltzSwap]: Tabs.Apps,
   [Pages.AppLendasat]: Tabs.Apps,
   [Pages.AppSatora]: Tabs.Apps,
   [Pages.AppAssets]: Tabs.Apps,
@@ -157,6 +157,12 @@ const pageTab: Record<Pages, Tabs> = {
   [Pages.AppAddressBook]: Tabs.Apps,
   [Pages.AppAddressBookForm]: Tabs.Apps,
   [Pages.AppAddressBookContact]: Tabs.Apps,
+  [Pages.AppPos]: Tabs.Apps,
+  [Pages.AppPosPayout]: Tabs.Apps,
+  [Pages.AppPosPayment]: Tabs.Apps,
+  [Pages.AppPosStatus]: Tabs.Apps,
+  [Pages.AppPosHistory]: Tabs.Apps,
+  [Pages.AppPosSettings]: Tabs.Apps,
   [Pages.Apps]: Tabs.Apps,
   [Pages.Init]: Tabs.None,
   [Pages.InitRestore]: Tabs.None,
@@ -213,12 +219,6 @@ export const subNavHandler = {
 
 export const pageComponent = (page: Pages, navigationData?: Record<string, unknown>): JSX.Element => {
   switch (page) {
-    case Pages.AppBoltz:
-      return <AppBoltz />
-    case Pages.AppBoltzSettings:
-      return <AppBoltzSettings />
-    case Pages.AppBoltzSwap:
-      return <AppBoltzSwap />
     case Pages.AppLendasat:
       return <AppLendasat />
     case Pages.AppSatora:
@@ -261,6 +261,18 @@ export const pageComponent = (page: Pages, navigationData?: Record<string, unkno
       return <AppAddressBookForm />
     case Pages.AppAddressBookContact:
       return <AppAddressBookContact />
+    case Pages.AppPos:
+      return <AppPos />
+    case Pages.AppPosPayout:
+      return <AppPosPayout />
+    case Pages.AppPosPayment:
+      return <AppPosPayment />
+    case Pages.AppPosStatus:
+      return <AppPosStatus />
+    case Pages.AppPosHistory:
+      return <AppPosHistory />
+    case Pages.AppPosSettings:
+      return <AppPosSettings />
     case Pages.Apps:
       return <Apps />
     case Pages.Init:
@@ -333,7 +345,8 @@ export const pageComponent = (page: Pages, navigationData?: Record<string, unkno
 }
 
 interface NavigationContextProps {
-  navigate: (arg0: Pages, data?: Record<string, unknown>) => void
+  /** `replace` swaps out the current page instead of stacking on top of it, so back skips it. */
+  navigate: (arg0: Pages, data?: Record<string, unknown>, options?: { replace?: boolean }) => void
   navigationData?: Record<string, unknown>
   direction: NavigationDirection
   goBack: () => void
@@ -442,14 +455,17 @@ export const NavigationProvider = ({ children }: { children: ReactNode }) => {
       const idx = stack.lastIndexOf(page)
       if (idx === -1) return // target not in stack; do nothing
 
-      const steps = stack.length - 1 - idx
-      if (steps <= 0) return
+      // The stack holds the pages *behind* the current one, so returning to
+      // stack[idx] pops it and everything above it — one history entry each.
+      const steps = stack.length - idx
 
       // Unwind internal stack
-      backStack.current = stack.slice(0, idx + 1)
+      backStack.current = stack.slice(0, idx)
 
-      // Update UI
-      previousPage.current = screen
+      // Update UI. screenRef must follow too — navigate() pushes it as the page
+      // being left, so a stale value would put the wrong page on the back stack.
+      previousPage.current = screenRef.current
+      screenRef.current = page
       setDirection('back')
       setTab(pageTab[page])
       setScreen(page)
@@ -460,10 +476,10 @@ export const NavigationProvider = ({ children }: { children: ReactNode }) => {
       ignorePops.current = 1
       history.go(-steps)
     },
-    [screen],
+    [],
   )
 
-  const navigate = (page: Pages, data?: Record<string, unknown>) => {
+  const navigate = (page: Pages, data?: Record<string, unknown>, options?: { replace?: boolean }) => {
     const isRootNavigation = ROOT_PAGES.has(page)
 
     previousPage.current = screenRef.current
@@ -482,6 +498,10 @@ export const NavigationProvider = ({ children }: { children: ReactNode }) => {
       const isSameTab = pageTab[page] === pageTab[screenRef.current]
       const isFromRoot = ROOT_PAGES.has(screenRef.current)
       setDirection(isFromRoot || !isSameTab ? 'none' : 'back')
+    } else if (options?.replace) {
+      // forward, but taking the current page's place in the back stack and history
+      history.replaceState({}, '', '')
+      setDirection('forward')
     } else {
       // forward navigation: push to back stack AND browser history
       backStack.current.push(screenRef.current)

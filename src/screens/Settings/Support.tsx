@@ -8,7 +8,6 @@ import Button from '../../components/Button'
 import { WalletContext } from '../../providers/wallet'
 import { ConfigContext } from '../../providers/config'
 import { AspContext } from '../../providers/asp'
-import { SwapsContext } from '../../providers/swaps'
 import { getReceivingAddresses } from '../../lib/asp'
 import { Addresses } from '../../lib/types'
 import { getWebExplorerURL } from '../../lib/explorers'
@@ -24,7 +23,6 @@ import {useTranslation} from 'react-i18next'
 export default function Support() {
   const { aspInfo } = useContext(AspContext)
   const { config } = useContext(ConfigContext)
-  const { getApiUrl } = useContext(SwapsContext)
   const { wallet, svcWallet } = useContext(WalletContext)
 
   const {t} = useTranslation()
@@ -92,7 +90,6 @@ export default function Support() {
       location_origin: window.location.origin,
       default_address: defaultAddress,
       ark_address: addresses.offchainAddr || t('errors.support.unavailable'),
-      boltz_url: getApiUrl() || t('errors.support.unavailable'),
       indexer_url: aspInfo.url || config.aspUrl || t('errors.support.unavailable'),
       btc_boarding_address: addresses.boardingAddr || t('errors.support.unavailable'),
       ark_server_url: aspInfo.url || config.aspUrl || t('errors.support.unavailable'),
@@ -124,7 +121,7 @@ export default function Support() {
             <ErrorMessage error={Boolean(error)} text={error} />
             <Section
               title={t('settings.support.custSupp')}
-              text={t('settings.support.custSuppText')}
+              text={t('settings.support.helpText')}
             />
             <Section
               title={t('settings.support.secure')}
@@ -147,7 +144,7 @@ export default function Support() {
           <Button
             onClick={handleOpenChat}
             disabled={!supportChatLoaded}
-            label={supportChatLoaded ? t('settings.support.openSupp') : t('common.settings.loading')}
+            label={supportChatLoaded ? t('settings.support.openSupp') : t('common.general.loading')}
           />
         )}
       </ButtonsOnBottom>

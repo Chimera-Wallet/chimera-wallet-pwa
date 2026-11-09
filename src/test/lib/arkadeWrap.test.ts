@@ -67,8 +67,17 @@ describe('arkadeWrap API client', () => {
       receiver: 'TSomeTronAddress',
     })
     expect(result.type).toBe('unwrap')
-    const [url] = fetchMocker.mock.calls[0]
+    const [url, init] = fetchMocker.mock.calls[0]
     expect(url).toBe(`${STAGING_URL}/unwrap`)
+    // unwrap names the wrapped Arkade asset, not the native one
+    expect(JSON.parse(init?.body as string)).toMatchObject({ chain: 'tron', ticker: 'USDT-CX' })
+  })
+
+  it('does not double-suffix an already wrapped unwrap ticker', async () => {
+    fetchMocker.mockResponseOnce(JSON.stringify({ ...sampleQuote, type: 'unwrap' }))
+    await createUnwrapQuote({ chain: 'ethereum', ticker: 'ETH-CX', sender: sampleQuote.receiver, receiver: '0x0' })
+    const [, init] = fetchMocker.mock.calls[0]
+    expect(JSON.parse(init?.body as string)).toMatchObject({ ticker: 'ETH-CX' })
   })
 
   it('polls a quote via GET /quote/{id}', async () => {

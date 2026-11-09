@@ -595,7 +595,7 @@ export default function Verification() {
             <Padded>
               <FlexCol gap='1.5rem' centered>
                 <div style={{ fontSize: '3rem' }}>⏱️</div>
-                <Text>{t('settings.verification.veriTimeout')}</Text>
+                <Text>{t('settings.verification.verifTimeout')}</Text>
                 <TextSecondary>{t('settings.verification.noClick')}</TextSecondary>
                 {sendError ? <ErrorMessage error text={sendError} /> : null}
                 <Button onClick={handleTryAgain} label={t('settings.verification.tryAg')} />

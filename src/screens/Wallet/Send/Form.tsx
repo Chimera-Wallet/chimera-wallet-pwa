@@ -35,7 +35,6 @@ import { ArkNote, type NetworkName } from '@arkade-os/sdk'
 import { LimitsContext } from '../../../providers/limits'
 import { checkLnUrlConditions, fetchInvoice, fetchArkAddress, isValidLnUrl } from '../../../lib/lnurl'
 import { extractError } from '../../../lib/error'
-import { SwapsContext } from '../../../providers/swaps'
 import { decodeBip21, isBip21 } from '../../../lib/bip21'
 import { FeesContext } from '../../../providers/fees'
 import { InfoLine } from '../../../components/Info'
@@ -53,13 +52,8 @@ import AssetSelector from '../../../components/AssetSelector'
 import NetworkSelector from '../../../components/NetworkSelector'
 import AssetNetworkSelector, { type AssetNetworkChoice } from '../../../components/AssetNetworkSelector'
 import InlineAmountInput from '../../../components/InlineAmountInput'
-import WhenIcon from '../../../icons/When'
-import FeesIcon from '../../../icons/Fees'
-import InfoIcon from '../../../icons/Info'
-import { TERMS_AND_CONDITIONS, TRANSFER_METHOD, type InfoItemIcon } from '../../../lib/transferMethods'
-import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
-import clockIcon from '../../../../public/images/icons/ Clock.svg'
-import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
+import { TERMS_AND_CONDITIONS, TRANSFER_METHOD } from '../../../lib/transferMethods'
+import { TermsLines, termsIcon } from '../../../components/TermsInfo'
 import checkMarkIcon from '../../../../public/images/icons/ CheckCheckMark.png'
 import {useTranslation, Trans} from 'react-i18next'
 import { decodeInvoice } from '../../../lib/bolt11'
@@ -67,6 +61,7 @@ import { lnSendRendezvous, requestLnSend } from '../../../lib/lnSwap'
 import { withRfqTransport } from '../../../lib/nostrRfq'
 import { getEmulatorPubkeyForNetwork } from '../../../lib/constants'
 import { discoverMarkets } from '../../../lib/swapMarkets'
+import UnverifiedAssetNotice from '../../../components/UnverifiedAssetNotice'
 
 
 
@@ -76,11 +71,10 @@ export default function SendForm() {
   const { calcOnchainOutputFee } = useContext(FeesContext)
   const { toFiat } = useContext(FiatContext)
   const { sendInfo, setNoteInfo, setSendInfo, setUnwrapSendInfo } = useContext(FlowContext)
-  const { createSubmarineSwap, connected, calcSubmarineSwapFee, getApiUrl } = useContext(SwapsContext)
   const { amountIsAboveMaxLimit, amountIsBelowMinLimit, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
   const { setOption } = useContext(OptionsContext)
   const { navigate } = useContext(NavigationContext)
-  const { assetBalances, assetMetadataCache, balance, svcWallet } = useContext(WalletContext)
+  const { assetBalances, assetMetadataCache, balance, svcWallet, isAssetVerified } = useContext(WalletContext)
 
   const seededAssetId = sendInfo.assets?.[0]?.assetId
   const seededAssetSymbol = seededAssetId ? getAssetSymbolByAssetId(seededAssetId) : undefined
@@ -101,7 +95,6 @@ export default function SendForm() {
   const [focus, setFocus] = useState('recipient')
   const [label, setLabel] = useState('')
   const [lnUrlLimits, setLnUrlLimits] = useState<{ min: number; max: number }>({ min: 0, max: 0 })
-  const [nudgeBoltz, setNudgeBoltz] = useState(false)
   const [proceed, setProceed] = useState(false)
   const [processing, setProcessing] = useState(false)
   // Seeded from the flow rather than filled in by an effect on mount: the parse
@@ -117,7 +110,13 @@ export default function SendForm() {
   // Asset and network can be changed, initialized from wallet flow or defaults
   const [selectedAsset, setSelectedAsset] = useState<AssetSymbol>(seededAssetSymbol ?? 'BTC')
   const assetTicker = selectedAssetMetadata?.ticker ?? selectedAsset
-  const selectedMethod: TransferMethod = sendInfo.method ?? (isAssetSend ? TRANSFER_METHOD.ark : TRANSFER_METHOD.bitcoin)
+  // An asset with no ASSET_LIST entry can only move over Arkade, and the form
+  // shows no network selector for it — so a method seeded from elsewhere (e.g.
+  // emptySendInfo's 'bitcoin') must not stick, or the send can never enable.
+  const selectedMethod: TransferMethod =
+    isAssetSend && !seededAssetSymbol
+      ? TRANSFER_METHOD.ark
+      : (sendInfo.method ?? (isAssetSend ? TRANSFER_METHOD.ark : TRANSFER_METHOD.bitcoin))
 
   // Onchain sends deduct this fee from the amount (see SendDetails). If the
   // amount doesn't cover it, the send can't produce a positive output, so we
@@ -161,7 +160,6 @@ export default function SendForm() {
   useEffect(() => {
     smartSetError('')
     const parseRecipient = async () => {
-      setNudgeBoltz(false)
       // Bank transfers are handled by a separate screen
       if (selectedMethod === TRANSFER_METHOD.bank) return
       if (!recipient) {
@@ -178,7 +176,6 @@ export default function SendForm() {
                 invoice: '',
                 lnUrl: undefined,
                 pendingLnSend: undefined,
-                pendingSwap: undefined,
                 recipient: '',
               }
             : prev,
@@ -195,12 +192,23 @@ export default function SendForm() {
       if (isBip21(lowerCaseData)) {
         const { address, arkAddress, invoice, lnUrl, satoshis, assetId, assetAmount } = decodeBip21(lowerCaseData)
         if (!address && !arkAddress && !invoice) return setError(t('errors.send.parsing.bip21'))
+        // A requested amount (e.g. a POS payment QR) is shown and locked, like
+        // an invoice amount, so the payer can't re-price it by typing a value.
+        // The requested amount is in sats, so it can't price an asset send;
+        // a recipient kept across a switch to an asset mustn't lock its field.
+        const applyRequestedAmount = () => {
+          if (isAssetSend) return setAmountIsReadOnly(false)
+          if (satoshis) setAmount(satoshis)
+          setAmountIsReadOnly(Boolean(satoshis))
+        }
         if (selectedMethod === TRANSFER_METHOD.bitcoin) {
           if (!address) return setError(t('errors.send.bitcoin.address'))
+          applyRequestedAmount()
           return setState({ ...sendInfo, address, arkAddress: '', invoice: '', lnUrl: undefined, recipient, satoshis })
         }
         if (selectedMethod === TRANSFER_METHOD.ark) {
           if (!arkAddress) return setError(t('errors.send.arkade.address'))
+          applyRequestedAmount()
           return setState({ ...sendInfo, address: '', arkAddress, invoice: '', lnUrl: undefined, recipient, satoshis })
         }
         if (selectedMethod === TRANSFER_METHOD.lightning) {
@@ -232,10 +240,6 @@ export default function SendForm() {
       if (isLightningInvoice(lowerCaseData)) {
         if (selectedMethod !== TRANSFER_METHOD.lightning) {
           return setError(t('errors.send.lightning.type'))
-        }
-        if (!connected) {
-          setError(t('errors.send.lightning.swaps'))
-          return setNudgeBoltz(true)
         }
         // Amount from the wallet's own decoder; expiry and chain are re-checked
         // by the RFQ client before any solver sees the invoice.
@@ -386,17 +390,14 @@ export default function SendForm() {
 
     // proceed to next step
   useEffect(() => {
-    const lowerCaseData = recipient.toLowerCase().replace(/^lightning:/, '')
-
     if (!proceed) return
     if (!sendInfo.address && !sendInfo.arkAddress && !sendInfo.invoice) return
-    if (!sendInfo.arkAddress && sendInfo.invoice && !sendInfo.pendingLnSend && isLightningInvoice(lowerCaseData)) {
+    if (!sendInfo.arkAddress && sendInfo.invoice && !sendInfo.pendingLnSend) {
       // RFQ Lightning send: negotiate a quote over Nostr, derive the covenant
       // locally, verify, and carry the address+amount to the pay screen. The
       // negotiation is the only interactive step — funding IS acceptance.
-      // This is the primary Lightning-send path; the legacy Boltz submarine
-      // swap below only runs for invoices this branch's guard excludes, and
-      // is otherwise superseded now that RFQ is in place.
+      // The only Lightning-send path, whatever carried the invoice: a pasted
+      // invoice, a BIP21 `lightning=` param, or one fetched from an LNURL.
       const negotiate = async () => {
         if (!svcWallet) return handleError('Wallet not ready')
         const network = aspInfo.network as NetworkName
@@ -426,15 +427,8 @@ export default function SendForm() {
         })
       }
       negotiate().catch(handleError)
-    } else if (!sendInfo.arkAddress && sendInfo.invoice && !sendInfo.pendingLnSend && !sendInfo.pendingSwap) {
-      createSubmarineSwap(sendInfo.invoice)
-        .then((pendingSwap) => {
-          if (!pendingSwap) return setError(t('errors.general.swap'))
-          setState({ ...sendInfo, pendingSwap })
-        })
-        .catch(handleError)
     } else navigate(Pages.SendDetails)
-  }, [proceed, sendInfo.address, sendInfo.arkAddress, sendInfo.invoice, sendInfo.pendingSwap, sendInfo.pendingLnSend])
+  }, [proceed, sendInfo.address, sendInfo.arkAddress, sendInfo.invoice, sendInfo.pendingLnSend])
 
   // deal with fees deduction from amount
   useEffect(() => {
@@ -447,10 +441,6 @@ export default function SendForm() {
   }, [availableBalance, sendInfo.satoshis, sendInfo.address, sendInfo.arkAddress, sendInfo.invoice])
 
   if (!svcWallet) return <Loading text={t('common.general.loading')} />
-
-  const gotoBoltzApp = () => {
-    navigate(Pages.AppBoltzSettings)
-  }
 
   const gotoRollover = () => {
     setOption(SettingsOptions.Vtxos)
@@ -486,10 +476,34 @@ export default function SendForm() {
     setAmount(amount)
   }
 
+  // Switching the asset or network keeps what the user typed in the recipient
+  // field: it says who the payment is for, which neither choice changes. Only
+  // what was parsed out of it is dropped when the method changes, since the
+  // parse depends on the method; the parse effect re-runs on that change and
+  // re-derives it (or explains why the address doesn't fit the new network).
+  const switchMethod = (method: TransferMethod, extra: Partial<SendInfo> = {}) => {
+    if (method === selectedMethod) {
+      setState({ ...sendInfo, ...extra })
+      return
+    }
+    setAmountIsReadOnly(false)
+    setLnUrlLimits({ min: 0, max: 0 })
+    setState({
+      ...sendInfo,
+      ...extra,
+      method,
+      address: '',
+      arkAddress: '',
+      invoice: '',
+      lnUrl: undefined,
+      pendingLnSend: undefined,
+    })
+  }
+
   const handleAssetSelect = (symbol: AssetSymbol) => {
-    setSelectedAsset(symbol)
-    setAmount(0)
     if (symbol === 'BTC') {
+      setSelectedAsset(symbol)
+      setAmount(0)
       setState({ ...sendInfo, assets: undefined, satoshis: 0 })
       return
     }
@@ -498,20 +512,10 @@ export default function SendForm() {
       setError(`Asset ${symbol} is not configured`)
       return
     }
-    setRecipient('')
-    setState({
-      ...sendInfo,
-      assets: [{ assetId, amount: BigInt(0) }],
-      satoshis: 0,
-      method: TRANSFER_METHOD.ark,
-      address: '',
-      arkAddress: '',
-      invoice: '',
-      lnUrl: undefined,
-      pendingSwap: undefined,
-      pendingLnSend: undefined,
-      recipient: '',
-    })
+    setSelectedAsset(symbol)
+    setAmount(0)
+    // Wrapped assets only move over Arkade on this screen
+    switchMethod(TRANSFER_METHOD.ark, { assets: [{ assetId, amount: BigInt(0) }], satoshis: 0 })
   }
 
   const handleRecipientChange = (recipient: string) => {
@@ -596,7 +600,9 @@ export default function SendForm() {
 
   const methodFee = (() => {
     if (!satoshis) return undefined
-    if (resolvedMethod === TRANSFER_METHOD.lightning) return calcSubmarineSwapFee(satoshis) 
+    // the solver's fee is only known once a quote is negotiated
+    if (resolvedMethod === TRANSFER_METHOD.lightning)
+      return sendInfo.pendingLnSend ? Math.max(0, sendInfo.pendingLnSend.fundAmount - satoshis) : undefined
     if (resolvedMethod === TRANSFER_METHOD.bitcoin) return calcOnchainOutputFee()
     if (resolvedMethod === TRANSFER_METHOD.ark) return 0
     return undefined
@@ -606,28 +612,6 @@ export default function SendForm() {
 
   // Get T&Cs for current method
   const termsAndConditions = TERMS_AND_CONDITIONS.send[resolvedMethod]
-
-  // Helper to get icon component
-  const getIconComponent = (iconType?: InfoItemIcon) => {
-    switch (iconType) {
-      case 'time':
-        return <WhenIcon />
-      case 'fees':
-        return <FeesIcon />
-      case 'warning':
-        return undefined
-      case 'instruction':
-        return undefined
-      case 'info':
-        return <img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />
-      case 'receipt': 
-        return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} /> 
-      case 'clock':
-        return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(0.7)'}} /> 
-      default:
-        return <InfoIcon />
-    }
-  }
 
   const assetSendDisabled =
     !arkAddress || selectedMethod !== TRANSFER_METHOD.ark || !assetAmount || assetAmount > selectedAssetBalance
@@ -759,7 +743,12 @@ export default function SendForm() {
             ) : null}
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100', gap:'1rem'}}>
              {isAssetSend && !seededAssetSymbol ? (
-               <Text centered>Arkade</Text>
+               <>
+                 <Text centered>Arkade</Text>
+                 {selectedAssetId && !isAssetVerified(selectedAssetId) ? (
+                   <UnverifiedAssetNotice assetId={selectedAssetId} />
+                 ) : null}
+               </>
              ) : assetSupportsWrap(requireAssetConfig(selectedAsset).symbol) ? (
               <AssetNetworkSelector
                 assetSymbol={requireAssetConfig(selectedAsset).symbol}
@@ -777,28 +766,21 @@ export default function SendForm() {
                     return
                   }
                   if (choice === TRANSFER_METHOD.ark) {
-                    setRecipient('')
-                    setSendInfo({
-                      ...sendInfo,
-                      method: TRANSFER_METHOD.ark,
-                      address: '',
-                      arkAddress: '',
-                      invoice: '',
-                      lnUrl: undefined,
-                      pendingSwap: undefined,
-                      recipient: '',
-                    })
+                    switchMethod(TRANSFER_METHOD.ark)
                     return
                   }
-                  // Native destination chain selected -> Arkade Unwrap flow
+                  // Native destination chain selected -> Arkade Unwrap flow.
+                  // A destination already pasted here carries over when it's
+                  // an address on that chain.
                   const symbol = requireAssetConfig(selectedAsset).symbol
                   const option = requireAssetChainOption(symbol, choice as SourceChainId)
+                  const pasted = recipient.trim()
                   setUnwrapSendInfo({
                     assetSymbol: symbol,
                     chainId: choice as SourceChainId,
                     ticker: option.ticker,
                     sender: '',
-                    receiver: '',
+                    receiver: option.chain.isValidAddress(pasted) ? pasted : '',
                   })
                   navigate(Pages.UnwrapSend)
                 }}
@@ -816,17 +798,7 @@ export default function SendForm() {
                   navigate(Pages.BankSend)
                   return
                 }
-                setRecipient('')
-                setSendInfo({
-                  ...sendInfo,
-                  method: network,
-                  address: '',
-                  arkAddress: '',
-                  invoice: '',
-                  lnUrl: undefined,
-                  pendingSwap: undefined,
-                  recipient: '',
-                })
+                switchMethod(network)
               }}
               style = {{
                 borderRadius : '2.5rem',
@@ -852,20 +824,12 @@ export default function SendForm() {
                 <InfoLine
                   compact
                   color='neutral'
-                  icon={getIconComponent('info')}
+                  icon={termsIcon('info')}
                   text= {t('placeholders.lightning.invoice')}
                 />
               ) : null}{' '}
-              {termsAndConditions.map((item) => (
-                <InfoLine
-                  key={item.text}
-                  compact
-                  color={item.color}
-                  icon={getIconComponent(item.icon)}
-                  text={t(item.text)}
-                />
-              ))}
-              {methodFeeText ? <InfoLine compact color='orange' icon={getIconComponent('receipt')} text={methodFeeText} /> : null}
+              <TermsLines items={termsAndConditions} />
+              {methodFeeText ? <InfoLine compact color='orange' icon={termsIcon('receipt')} text={methodFeeText} /> : null}
               {deductFromAmount ? (
                 <InfoLine compact color='orange' text={t('common.notifications.send.feesDeduction')}/>
               ) : null}
@@ -883,18 +847,6 @@ export default function SendForm() {
                     i18nKey="common.notifications.send.rollOverVTXO"
                     components={{
                       a: <a onClick={gotoRollover} />
-                    }}
-                  />
-                </Text>
-              </div>
-            ) : null}
-            {nudgeBoltz && getApiUrl() ? (
-              <div style={{ width: '100%' }}>
-                <Text centered small>
-                  <Trans
-                    i18nKey="common.notifications.send.lightningSwaps"
-                    components={{
-                      a: <a onClick={gotoBoltzApp} />
                     }}
                   />
                 </Text>

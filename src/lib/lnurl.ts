@@ -1,6 +1,5 @@
 import { bech32, hex, utf8 } from '@scure/base'
 import { sha256 } from '@noble/hashes/sha2.js'
-import { hmac } from '@noble/hashes/hmac.js'
 import type { NetworkName } from '@arkade-os/sdk'
 import { decodeInvoice, type DecodedInvoice, invoiceMatchesNetwork, isInvoiceExpired } from './bolt11'
 
@@ -127,17 +126,6 @@ export const fetchInvoice = (lnurl: string, sats: number, note: string, network:
       .then(resolve)
       .catch(reject)
   })
-}
-
-export interface LnurlSessionCredentials {
-  token: string
-}
-
-export const deriveLnurlCredentials = (privateKeyHex: string): LnurlSessionCredentials => {
-  const key = hex.decode(privateKeyHex)
-  const tag = new TextEncoder().encode('lnurl-session')
-  const token = hex.encode(hmac(sha256, key, tag))
-  return { token }
 }
 
 export const fetchArkAddress = (lnurl: string): Promise<ArkMethodResponse> => {

@@ -15,8 +15,8 @@ import { TextSecondary } from '../../../components/Text'
 import Button from '../../../components/Button'
 import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import ErrorMessage from '../../../components/Error'
-import Info, { InfoLine } from '../../../components/Info'
-import InfoContainer from '../../../components/InfoContainer'
+import Info from '../../../components/Info'
+import TermsInfo from '../../../components/TermsInfo'
 import AssetSelector from '../../../components/AssetSelector'
 import NetworkSelector from '../../../components/NetworkSelector'
 import InlineAmountInput from '../../../components/InlineAmountInput'
@@ -26,12 +26,8 @@ import {
   TRANSFER_METHOD,
   TERMS_AND_CONDITIONS,
   type TransferMethod,
-  type InfoItemIcon,
 } from '../../../lib/transferMethods'
 import { prettyNumber } from '../../../lib/format'
-import WhenIcon from '../../../icons/When'
-import FeesIcon from '../../../icons/Fees'
-import InfoIcon from '../../../icons/Info'
 import TransactionsIcon from '../../../icons/Transactions'
 import { SepaDataView, SwiftDataView, TransferReferenceBox, BankCurrencySelector } from '../../../components/BankDetails'
 import { NavigationContext, Pages } from '../../../providers/navigation'
@@ -48,9 +44,6 @@ import {
   type BankCurrency,
 } from '../../../lib/bankTransferConfig'
 import { getUserEmailForBankTransfer } from '../../../lib/kyc'
-import receiptIcon from '../../../../public/images/icons/ ReceiptReceipt.png'
-import clockIcon from '../../../../public/images/icons/ Clock.svg'
-import infoIcon from '../../../../public/images/icons/IconInfoIcon.png'
 import rightIcon from '../../../../public/images/icons/ Right.png'
 import i18n from '../../../lib/i18n'
 import { useTranslation } from 'react-i18next'
@@ -271,29 +264,7 @@ export default function BankReceive() {
 
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' , width: '100', marginTop: '1rem'}}>
             {/* Bank Transfer Terms & Conditions */}
-            <InfoContainer>
-              {TERMS_AND_CONDITIONS.receive.bank.map((item) => {
-                const getIcon = (iconType?: InfoItemIcon) => {
-                  switch (iconType) {
-                    case 'time':
-                      return <WhenIcon />
-                    case 'fees':
-                      return <FeesIcon />
-                    case 'info':
-                      return <img src = {infoIcon} alt = 'info' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />
-                    case 'receipt':
-                      return <img src = {receiptIcon} alt = 'receipt' style = {{width: '16px', height: '16px', filter: 'brightness(0) invert(0.7)'}} />
-                    case 'clock':
-                      return <img src = {clockIcon} alt = 'clock' style = {{width: '16px', height: '16px',filter: 'brightness(0) invert(0.7)'}} />
-                    default:
-                      return <InfoIcon />
-                  }
-                }
-                return (
-                  <InfoLine key={item.text} compact color={item.color} icon={getIcon(item.icon)} text={t(item.text)} />
-                )
-              })}
-            </InfoContainer>
+            <TermsInfo items={TERMS_AND_CONDITIONS.receive.bank} />
             </div>
             </div>
 

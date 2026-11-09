@@ -2,7 +2,7 @@
     "about":{
         "serverURL": "Server URL",
         "serverPubkey": "Server pubkey",
-        "forfeitAddress": "Forfet address",
+        "forfeitAddress": "Forfeit address",
         "sessionDur": "Session duration",
         "boardingDelay": "Boarding exit delay",
         "unilateralDelay": "Unilateral exit delay",
@@ -36,7 +36,7 @@
         "bioAuth": "Biometric Authentication",
         "bioAuthUnsupported":"Biometric authentication is not supported on this device",
         "useBio": "Use Biometrics",
-        "disableWarn": "Biometric authentication is active. Disabling it will remove your current lock — you can then set a password from Advanced Settings",
+        "disableWarn": "Biometric authentication is active. Disabling it will remove your current lock — you can then set a password from Advanced Settings.",
         "enableFingerFace": "Enable fingerprint or face recognition to unlock your wallet. This will replace your current password.",
         "noContractFound": "No contracts found"
     },
@@ -102,7 +102,7 @@
     "notifications": {
         "notifications": "Notifications",
         "update": "Get notified when an update is available or a payment is received. You'll need to grant permission if asked.",
-        "unsupported": "Your browser does not support the Notifications API. If on iOS you'll need to 'Add to homescreen' and be running iOS 16.4 or higher." ,
+        "unsupported": "Your browser does not support the Notifications API. If on iOS you'll need to 'Add to Home Screen' and be running iOS 16.4 or higher." ,
         "allow": "Allow notifications"
     },
     "password": {
@@ -112,7 +112,7 @@
         "passChanged": "Password changed"
     },
     "reset": {
-        "removeSeed": "Definitively removes your seed from this device. Be extremely careful, after deletion it will be impossible to retrieve your key from Chimera Wallet.",
+        "removeSeed": "Permanently removes your seed from this device. Be extremely careful: after deletion it will be impossible to retrieve your key from Chimera Wallet.",
         "removeMnemonic": "Clicking on \"Delete\" will delete your mnemonic on this device. Be sure to back it up!",
         "deleteAccount": "I understand and delete my account",
         "deleteMnemConf": "YES DELETE MNEMONIC",
@@ -122,7 +122,7 @@
         "server": "Server",
         "serverURL": "Server URL",
         "found": "Server found",
-        "walletReset": "Your wallet will be reset. Make sure you backup your wallet first.",
+        "walletReset": "Your wallet will be reset. Make sure you back up your wallet first.",
         "connect": "Connect to server"
     },
     "support": {
@@ -148,7 +148,7 @@
         "r&a": "Review & Accept",
         "reviewText": "Before we send your verification email, please review and accept the following.",
         "acceptPP": "Accept privacy policy",
-        "agreed": "I have read and agreed to the",
+        "agreed": "I have read and agree to the",
         "PP": "Privacy Policy",
         "accTS": "Accept terms of service",
         "TS": "Terms of Service",
@@ -161,7 +161,7 @@
         "noClick": "We didn't detect a link click within 2 minutes. Please try again.",
         "tryAg": "Try Again",
         "checkInb": "Check your inbox",
-        "sentVerif": " We've sent a verification link to <strong>{{email}}</strong>. Click the link to continue.",
+        "sentVerif": "We've sent a verification link to <strong>{{email}}</strong>. Click the link to continue.",
         "waiting": "Waiting for verification…",
         "idVerified": "Your identity has been verified!",
         "fullAccess": "You have full access to all features.",
@@ -184,13 +184,13 @@
         "swept": "swept",
         "unconfirmed": "unconfirmed",
         "expSoon": "expiring soon",
-        "vc": "Vitual Coins",
+        "vc": "Virtual Coins",
         "renewal": "Next Renewal",
         "renewVCs": "Renewing your virtual coins. This may take a few moments.",
         "renewing": "Renewing",
         "coinsRenewdSucc": "Coins renewed successfully",
         "VClist": "Your virtual coins with amount and expiration",
-        "utxoList": "Your boarding utxos with amount and expiration",
+        "utxoList": "Your boarding UTXOs with amount and expiration",
         "nextren": "Next renewal",
         "firstExpt": "First virtual coin expiration: {{exp}}",
         "autoRen": "Automatic renewal occurs for virtual coins expiring within",
@@ -199,5 +199,11 @@
         "addRem": "Add reminder",
         "vcRenewal": "Virtual Coin Renewal"
 
-    } 
+    },
+  "solvers": {
+    "custom": "Custom",
+    "customNote": "Solvers you add yourself are not verified by Chimera Wallet. Only add cards from sources you trust.",
+    "solver": "Solver",
+    "customSolverNotice": "This quote comes from a custom solver you added. It is not verified by Chimera Wallet."
+  }
 }

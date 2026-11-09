@@ -32,13 +32,6 @@
         "whatDo": "What you can do:",
         "try": "Try {{title}}",
         "later": "Maybe later",
-        "lightWork": "Lightning that works",
-        "bridge": "Bridge",
-        "bridgeDescr": "Swap between different Bitcoin layers while staying in full control.",
-        "fast": "Fast",
-        "fastDescr": "Boltz utilizes Layer 2 scaling technologies like the Lightning Network.",
-        "safe": "Safe",
-        "safeDescr": "Swaps on Boltz are atomic, cryptography ensures that users are always in control of their money.",
         "lendaMess": "Take loans with Bitcoin as collateral. Receive USDC or USDT in 2 minutes.",
         "chooseLoan": "Choose a loan",
         "chooseLoanDescr": "Pick your preferred loan terms from a list of offers or post your own loan request. We will find you the right match.",
@@ -57,8 +50,6 @@
         "nostrMsg": "Backup to Nostr.",
         "backSett": "Backup settings",
         "backMsg": "Have your Chimera wallet settings safely backed up on Nostr.",
-        "boltzSw":"Boltz swaps",
-        "boltzMsg": "Easily restore your Boltz swap history if you switch devices.",
         "secure": "Secure",
         "secureMsg": "All backups are encrypted and stored securely on the Nostr network."
     },
@@ -156,7 +147,7 @@
         "tryAgain": "Try again",
         "restorePhrase": "Restore from secret phrase",
         "unlockBio":"Unlock using biometrics",
-        "insPass":"Insert password",
+        "insPass":"Enter password",
         "pass": "password",
         "unlock": "Unlock wallet",
         "forgot": "Forgot password? Restore with private key",
@@ -171,7 +162,7 @@
         "save": "Save password",
         "charMin": "8 characters minimum",
         "num": "contain at least 1 number",
-        "special": "contain at least 1 special characte",
+        "special": "contain at least 1 special character",
         "pass": "Password",
         "confirm": "Confirm password"
     },
@@ -198,6 +189,19 @@
         "descr": "Lock your CEXT and watch your rewards grow over time, with annual returns of up to 15%, paid directly in CEXT to your wallet.",
         "live": "Live now!",
         "launch": "Launching in",
-        "joinComm": "Join The Community"
-    }
+        "joinComm": "Join the Community"
+    },
+  "assetTrust": {
+    "unverified": "Unverified",
+    "notice": "This asset is not in Chimera's verified list. Anyone can create a token with any name, so confirm the asset ID with the sender or issuer.",
+    "assetId": "Asset ID"
+  },
+  "note": {
+    "title": "Note",
+    "add": "Add note",
+    "edit": "Edit note",
+    "save": "Save note",
+    "clear": "Remove note",
+    "txPlaceholder": "Add a reference for this transaction"
+  }
 }

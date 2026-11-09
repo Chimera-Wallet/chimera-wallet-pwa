@@ -34,8 +34,6 @@
   },
   "connection": {
     "missingCreds": "缺少凭据",
-    "restoringSwaps": "正在恢复兑换...",
-    "swapsInfo": "已从网络恢复 {{num}} 个兑换",
     "connectionFailed": "连接失败",
     "serverConnection": "正在连接服务器"
   },
@@ -50,7 +48,14 @@
     "restoringWallet": "正在恢复钱包...",
     "pk": "私钥",
     "recoveryPhraseKey": "恢复短语或私钥",
-    "phraseEntry": "输入您的 12 个单词恢复短语，或以 'nsec' 开头的私钥或原始十六进制密钥。请勿与任何人分享。"
+    "phraseEntry": "输入您的 12 个单词恢复短语，或以 'nsec' 开头的私钥或原始十六进制密钥。请勿与任何人分享。",
+    "wordSuggestions": "单词建议",
+    "inputHint": "输入或粘贴您的恢复短语或私钥。",
+    "wordCount_other": "已输入 {{count}} 个单词",
+    "wordError": "无法识别第 {{number}} 个单词，请检查拼写。",
+    "wordCountError": "请输入完整的恢复短语：12、15、18、21 或 24 个单词。",
+    "checksumError": "此恢复短语无效，请检查单词及其顺序。",
+    "keyError": "请输入有效的 nsec 私钥或 64 位十六进制私钥。"
   },
   "success": {
     "walletRestore": "钱包已恢复！",
