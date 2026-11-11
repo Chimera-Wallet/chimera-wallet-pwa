@@ -46,6 +46,10 @@ interface ImportMetaEnv {
   // @wirexapp/wpay-baas-sdk config — required only when VITE_WIREX_ENABLED is 'true'.
   // Client-visible (unlike WIREX_CLIENT_ID/SECRET, which are server-only — see api/wirex/).
   readonly VITE_WIREX_SDK_ENV?: string
+  // Card top-up from Chimera balances ('true' to enable). Requires
+  // VITE_WIREX_DEPOSIT_CHAIN: the Arkade Wrap chain id the payout lands on (Base).
+  readonly VITE_WIREX_TOPUP_ENABLED?: string
+  readonly VITE_WIREX_DEPOSIT_CHAIN?: string
 }
 
 interface ImportMeta {

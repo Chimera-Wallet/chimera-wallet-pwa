@@ -54,6 +54,10 @@ export const getMissingRequiredConfig = (): string[] => {
     if (env.VITE_WIREX_SDK_ENV !== 'dev' && env.VITE_WIREX_SDK_ENV !== 'uat' && env.VITE_WIREX_SDK_ENV !== 'prod') {
       missing.push('VITE_WIREX_SDK_ENV')
     }
+    // Card top-up bridges Ark USDT to the Wirex wallet via Arkade Wrap.
+    if (env.VITE_WIREX_TOPUP_ENABLED === 'true' && !env.VITE_WIREX_DEPOSIT_CHAIN?.trim()) {
+      missing.push('VITE_WIREX_DEPOSIT_CHAIN')
+    }
   }
   return missing
 }

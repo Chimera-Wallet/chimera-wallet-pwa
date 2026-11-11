@@ -120,7 +120,11 @@ export interface WirexKernelAccountDeployment {
 }
 
 
-export const deployWirexKernelAccount = async (password: string): Promise<WirexKernelAccountDeployment> => {
+type WirexSdk = Awaited<ReturnType<typeof createSDK>>
+
+export const getWirexSdk = async (password: string): Promise<WirexSdk> => (await buildWirexSdk(password)).sdk
+
+const buildWirexSdk = async (password: string) => {
   const account = await deriveEthAccount(password)
 
   const env = getWirexSdkEnv()
@@ -140,6 +144,11 @@ export const deployWirexKernelAccount = async (password: string): Promise<WirexK
       getEthereumProvider: async () => buildEip1193Provider(account),
     }),
   })
+  return { sdk, account, companyId }
+}
+
+export const deployWirexKernelAccount = async (password: string): Promise<WirexKernelAccountDeployment> => {
+  const { sdk, account, companyId } = await buildWirexSdk(password)
 
   const walletAddress = await sdk.crypto.wallet.getSmartWalletAddress()
   const [isPolicyInstalled, isExecutorInstalled] = await Promise.all([
@@ -180,4 +189,59 @@ export const deployWirexKernelAccount = async (password: string): Promise<WirexK
   }
 
   return { walletAddress, transactionHash }
+}
+
+/** Wirex's unified-balance USD token; unwraps to its base token (USDC) on withdrawal. */
+export const WIREX_WUSD_SYMBOL = 'WUSD'
+
+export interface WirexWithdrawParams {
+  /** Base-chain address that receives the unwrapped base token. */
+  recipient: `0x${string}`
+  /** Decimal amount of WUSD to withdraw (e.g. 10.5). */
+  amount: number
+  /** Synthetic token to withdraw; defaults to WUSD. */
+  symbol?: string
+}
+
+export interface WirexWithdrawResult {
+  txHash: Hex
+  /** What actually arrives at the recipient (the synthetic's base token). */
+  baseToken: { symbol: string; address: `0x${string}`; decimals: number }
+}
+
+/**
+ * Move unified balance out of the Wirex smart wallet: unwrap WUSD to its base
+ * token and transfer it to `recipient`, in one call.
+ *
+ * Outflows are time-locked by Wirex's Execution Delay Policy: the SDK submits
+ * `request(...)`, waits until it is due, then executes. This promise stays
+ * pending for that whole delay. Gas is paid by Wirex's paymaster.
+ */
+export const withdrawFromWirexWallet = async (
+  password: string,
+  { recipient, amount, symbol = WIREX_WUSD_SYMBOL }: WirexWithdrawParams,
+): Promise<WirexWithdrawResult> => {
+  if (!(amount > 0)) throw new Error('Amount must be greater than zero')
+  const sdk = await getWirexSdk(password)
+  const token = sdk.crypto.getToken(symbol)
+  if (!token) throw new Error(`${symbol} is not in Wirex's token registry`)
+  if (!token.isSynthetic || !token.baseToken) throw new Error(`${symbol} has no base token to withdraw to`)
+  const txHash = await sdk.crypto.transfer.makeErc20TransferFull({
+    tokenAddress: token.address,
+    recipientAddress: recipient,
+    amount,
+  })
+  const { symbol: baseSymbol, address, decimals } = token.baseToken
+  return { txHash, baseToken: { symbol: baseSymbol, address, decimals } }
+}
+
+/**
+ * Execute a withdrawal requested earlier (e.g. by a closed tab) once its
+ * Execution Delay Policy delay has passed. `callData` is the request's
+ * `call_data` from GET /api/v1/withdrawal/requests (hex, with or without 0x).
+ */
+export const finishWirexWithdrawal = async (password: string, callData: string): Promise<Hex> => {
+  const sdk = await getWirexSdk(password)
+  // The SDK prefixes 0x itself.
+  return (await sdk.crypto.transfer.makeErc20TransferFinal(callData.replace(/^0x/i, ''))) as unknown as Hex
 }

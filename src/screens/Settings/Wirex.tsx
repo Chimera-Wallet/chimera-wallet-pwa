@@ -19,12 +19,15 @@ import { defaultPassword } from '../../lib/constants'
 import {
   WirexCard,
   WirexUser,
+  WirexWallet,
   canIssueVirtualCard,
   ensureWirexUser,
   getWirexCards,
   getWirexUserByAddress,
   getWirexVerificationLink,
+  getWirexWallet,
   issueVirtualCard,
+  mintWirexTestUsdt,
 } from '../../lib/wirex'
 import { deployWirexKernelAccount, getWirexEvmAddress } from '../../lib/wirexWallet'
 
@@ -44,6 +47,34 @@ const storeAddress = (address: string) => {
     // non-fatal
   }
 }
+
+// Wirex's Base Sepolia test tokens decimals read on-chain.
+const SANDBOX_TOKENS = [
+  { symbol: 'USDC', address: '0x7Af7cDbd557eD302F7538Db1e3d094C8BBcA665c', decimals: 6 },
+  { symbol: 'USDT', address: '0x2C6c7c00ACa9B9D8446d107367485079b0471706', decimals: 18 },
+]
+// Through our CORS proxy (api/wirex/rpcProxy.ts), which only allows Wirex hosts.
+const SANDBOX_RPC = `/api/wirex-rpc-proxy?target=${encodeURIComponent('https://node-base.wirexapp.tech')}`
+
+/** ERC-20 balanceOf via a raw eth_call, as a decimal string. */
+const readErc20Balance = async (token: string, owner: string, decimals: number): Promise<string> => {
+  const data = `0x70a08231${owner.replace(/^0x/i, '').toLowerCase().padStart(64, '0')}`
+  const res = await fetch(SANDBOX_RPC, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: token, data }, 'latest'] }),
+  })
+  const body = (await res.json()) as { result?: string; error?: { message?: string } }
+  if (!body.result) throw new Error(body.error?.message ?? `eth_call failed: ${res.status}`)
+  const raw = BigInt(body.result)
+  const unit = BigInt(10) ** BigInt(decimals)
+  const frac = (raw % unit).toString().padStart(decimals, '0').replace(/0+$/, '')
+  return `${raw / unit}${frac ? `.${frac}` : ''}`
+}
+
+// Wirex's Base Sepolia test USDT has 18 decimals: 100 USDT.
+const TEST_MINT_AMOUNT = (BigInt(100) * BigInt(10) ** BigInt(18)).toString()
+const isSandbox = import.meta.env.VITE_WIREX_SDK_ENV !== 'prod'
 
 const errorText = (err: unknown) => (err instanceof Error ? err.message : String(err))
 
@@ -87,6 +118,8 @@ export default function Wirex() {
   const [user, setUser] = useState<WirexUser | null>(null)
   const [cards, setCards] = useState<WirexCard[]>([])
   const [kycUrl, setKycUrl] = useState('')
+  const [wirexWallet, setWirexWallet] = useState<WirexWallet | null>(null)
+  const [signerBalances, setSignerBalances] = useState<{ symbol: string; balance: string }[]>([])
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
 
@@ -180,6 +213,39 @@ export default function Wirex() {
       await showUser(await getWirexUserByAddress(user.user_address))
     })
 
+  const loadWallet = () =>
+    run('Loading wallet…', async () => {
+      if (!user) return
+      setWirexWallet(await getWirexWallet(user.user_address))
+      // Withdrawals (card -> Move assets) land on the signer address, which
+      // is the Wirex user_address.
+      if (isSandbox) {
+        setSignerBalances(
+          await Promise.all(
+            SANDBOX_TOKENS.map(async (tk) => ({
+              symbol: tk.symbol,
+              balance: await readErc20Balance(tk.address, user.user_address, tk.decimals),
+            })),
+          ),
+        )
+      }
+    })
+
+  // Staging check for the card top-up's Wirex leg: does a plain USDT deposit to
+  // the Wirex wallet become WUSD (card balance).
+  const mintTestUsdt = () =>
+    run('Minting 100 test USDT…', async () => {
+      if (!user) return
+      const w = await getWirexWallet(user.user_address)
+      if (!w?.wallet_address) throw new Error('No Wirex wallet yet')
+      await mintWirexTestUsdt(w.wallet_address, TEST_MINT_AMOUNT)
+      for (let i = 1; i <= 10; i++) {
+        setBusy(`Minted — waiting for Wirex to see it (${i}/10)…`)
+        await sleep(6_000)
+        setWirexWallet(await getWirexWallet(user.user_address))
+      }
+    })
+
   const disabled = Boolean(busy)
 
   return (
@@ -265,6 +331,34 @@ export default function Wirex() {
                   ) : (
                     <TextSecondary>None reported</TextSecondary>
                   )}
+                </FlexCol>
+
+                <FlexCol gap='0.5rem'>
+                  <Text bold>Wallet balances</Text>
+                  {wirexWallet ? (
+                    <>
+                      <TextSecondary wrap>Wallet: {wirexWallet.wallet_address}</TextSecondary>
+                      {(wirexWallet.balances ?? []).map((b) => (
+                        <TextSecondary key={b.token_address} wrap>
+                          {b.token_symbol}: {b.balance}
+                        </TextSecondary>
+                      ))}
+                    </>
+                  ) : null}
+                  {signerBalances.length ? (
+                    <>
+                      <TextSecondary wrap>Signer (withdrawal destination): {user.user_address}</TextSecondary>
+                      {signerBalances.map((b) => (
+                        <TextSecondary key={b.symbol}>
+                          {b.symbol}: {b.balance}
+                        </TextSecondary>
+                      ))}
+                    </>
+                  ) : null}
+                  <Button label='Load wallet' onClick={loadWallet} disabled={disabled} secondary />
+                  {isSandbox ? (
+                    <Button label='Mint 100 test USDT (sandbox)' onClick={mintTestUsdt} disabled={disabled} />
+                  ) : null}
                 </FlexCol>
 
                 <FlexCol gap='0.5rem'>

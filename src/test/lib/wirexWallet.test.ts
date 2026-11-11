@@ -1,6 +1,12 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest'
 import { setMnemonic } from '../../lib/mnemonic'
-import { getWirexEvmAddress, deployWirexKernelAccount, toBytes16CompanyId } from '../../lib/wirexWallet'
+import {
+  getWirexEvmAddress,
+  deployWirexKernelAccount,
+  finishWirexWithdrawal,
+  toBytes16CompanyId,
+  withdrawFromWirexWallet,
+} from '../../lib/wirexWallet'
 import { createSDK } from '@wirexapp/wpay-baas-sdk'
 
 vi.mock('@wirexapp/wpay-baas-sdk', () => ({
@@ -241,5 +247,79 @@ describe('toBytes16CompanyId', () => {
   })
   it.each(['', '0x1234', 'not-a-uuid'])('rejects %j', (id) => {
     expect(() => toBytes16CompanyId(id)).toThrow('Invalid Wirex company id')
+  })
+})
+
+describe('Wirex wallet withdrawals', () => {
+  const WUSD = {
+    symbol: 'WUSD',
+    address: '0x0774164DC20524Bb239b39D1DC42573C3E4C6976',
+    decimals: 18,
+    isSynthetic: true,
+    baseToken: { symbol: 'USDC', address: '0x7Af7cDbd557eD302F7538Db1e3d094C8BBcA665c', decimals: 6, isSynthetic: false },
+  }
+  const recipient = '0x1111111111111111111111111111111111111111'
+  const makeWithdrawSdk = (token: unknown = WUSD) => ({
+    crypto: {
+      getToken: vi.fn().mockReturnValue(token ?? undefined),
+      transfer: {
+        makeErc20TransferFull: vi.fn().mockResolvedValue('0xFinalTx'),
+        makeErc20TransferFinal: vi.fn().mockResolvedValue('0xFinishTx'),
+      },
+    },
+  })
+
+  beforeEach(async () => {
+    localStorage.clear()
+    vi.mocked(createSDK).mockReset()
+    vi.stubEnv('VITE_WIREX_SDK_ENV', 'uat')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(
+        async () =>
+          new Response(JSON.stringify({ defaultCompanyId: '00000000-0000-0000-0000-000000000004' }), { status: 200 }),
+      ),
+    )
+    await setMnemonic(testMnemonic, testPassword)
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
+  })
+
+  it('unwraps WUSD and sends its base token to the recipient through the delayed transfer', async () => {
+    const sdk = makeWithdrawSdk()
+    vi.mocked(createSDK).mockResolvedValue(sdk as never)
+
+    const result = await withdrawFromWirexWallet(testPassword, { recipient, amount: 10.5 })
+
+    expect(sdk.crypto.getToken).toHaveBeenCalledWith('WUSD')
+    expect(sdk.crypto.transfer.makeErc20TransferFull).toHaveBeenCalledWith({
+      tokenAddress: WUSD.address,
+      recipientAddress: recipient,
+      amount: 10.5,
+    })
+    expect(result).toEqual({ txHash: '0xFinalTx', baseToken: { symbol: 'USDC', address: WUSD.baseToken.address, decimals: 6 } })
+  })
+
+  it('refuses a token that is missing or has no base token', async () => {
+    vi.mocked(createSDK).mockResolvedValue(makeWithdrawSdk(null) as never)
+    await expect(withdrawFromWirexWallet(testPassword, { recipient, amount: 1 })).rejects.toThrow('token registry')
+
+    vi.mocked(createSDK).mockResolvedValue(makeWithdrawSdk({ ...WUSD, isSynthetic: false, baseToken: undefined }) as never)
+    await expect(withdrawFromWirexWallet(testPassword, { recipient, amount: 1 })).rejects.toThrow('no base token')
+  })
+
+  it('refuses a non-positive amount before touching the SDK', async () => {
+    await expect(withdrawFromWirexWallet(testPassword, { recipient, amount: 0 })).rejects.toThrow('greater than zero')
+    expect(createSDK).not.toHaveBeenCalled()
+  })
+
+  it('finishes a pending request with its call data, without a 0x prefix', async () => {
+    const sdk = makeWithdrawSdk()
+    vi.mocked(createSDK).mockResolvedValue(sdk as never)
+    await expect(finishWirexWithdrawal(testPassword, '0xabcdef')).resolves.toBe('0xFinishTx')
+    expect(sdk.crypto.transfer.makeErc20TransferFinal).toHaveBeenCalledWith('abcdef')
   })
 })

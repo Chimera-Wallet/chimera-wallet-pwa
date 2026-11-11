@@ -240,8 +240,19 @@ export interface WirexCard {
   created_at: string
   updated_at: string
   allowed_actions: { type: string; relative_path: string }[]
-  // balances (Gen1 cards only), limit, and delivery_address vary by card and
-  // are unconfirmed in exact shape — extend once verified against sandbox.
+  /**
+   * Card-level balances: Gen1 cards only (SDK CardResponse.balances). Gen2
+   * cards spend straight from the Wirex wallet's unified balance.
+   */
+  balances?: WirexCardBalance[]
+}
+
+export interface WirexCardBalance {
+  balance: number
+  is_active: boolean
+  reference_balance: number
+  reference_currency: string
+  token_address: string
 }
 
 export interface GetWirexCardsOptions {
@@ -394,3 +405,87 @@ export const transferToCard = (payload: TransferToCardPayload): Promise<{ id: st
     headers: userAuthHeaders(payload.userAddress),
     body: JSON.stringify({ estimation_id: payload.estimationId, token_address: payload.tokenAddress }),
   })
+
+// Sandbox test funds
+
+/**
+ * SANDBOX ONLY: mint Wirex's Base Sepolia test USDT (18 decimals) to a Wirex
+ * wallet through api/wirex/devMint.ts (404s unless the API is on Wirex's
+ * sandbox). Lets staging test a USDT deposit turning into WUSD card balance.
+ */
+export const mintWirexTestUsdt = async (walletAddress: string, amountBaseUnits: string): Promise<void> => {
+  const res = await fetch('/api/wirex-dev-mint', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ to: walletAddress, amount: amountBaseUnits }),
+  })
+  if (!res.ok) throw new Error(`Test mint failed: ${res.status} ${await res.text().catch(() => '')}`)
+}
+
+// Card withdrawal (card balance -> wallet). Only meaningful for cards that hold
+// their own balance (Gen1); paths from @wirexapp/wpay-baas-sdk CardsApi.
+
+export interface EstimateCardWithdrawalPayload {
+  userAddress: string
+  cardId: string
+  amount: number
+  currency: string
+  /** Where the withdrawn funds go (normally the user's Wirex wallet). */
+  destinationAddress: string
+  /** Idempotency key for this withdrawal. */
+  correlationId: string
+}
+
+export interface CardWithdrawalEstimate {
+  amount: number
+  currency: string
+  estimation_id: string
+  expires_at: number
+  fee_amount: number
+}
+
+export const estimateCardWithdrawal = (p: EstimateCardWithdrawalPayload): Promise<CardWithdrawalEstimate | null> =>
+  request<CardWithdrawalEstimate>(`/api/v1/cards/${encodeURIComponent(p.cardId)}/withdraw/estimate`, {
+    method: 'POST',
+    headers: userAuthHeaders(p.userAddress),
+    body: JSON.stringify({
+      amount: p.amount,
+      currency: p.currency,
+      correlation_id: p.correlationId,
+      destinationAddress: p.destinationAddress,
+    }),
+  })
+
+export const executeCardWithdrawal = (
+  userAddress: string,
+  cardId: string,
+  estimationId: string,
+): Promise<{ id: string } | null> =>
+  request<{ id: string }>(`/api/v1/cards/${encodeURIComponent(cardId)}/withdraw/execute`, {
+    method: 'POST',
+    headers: userAuthHeaders(userAddress),
+    body: JSON.stringify({ estimation_id: estimationId }),
+  })
+
+// Time-locked wallet withdrawals (Execution Delay Policy) that Wirex has seen
+// requested on-chain but which haven't executed yet.
+
+export interface WirexWithdrawalRequest {
+  call_data: string
+  /** When the request can be executed (date string). */
+  valid_after: string
+  to_address: string
+  token_address: string
+  hash: string
+  amount: number
+  account_address: string
+}
+
+export const getWirexWithdrawalRequests = async (userAddress: string): Promise<WirexWithdrawalRequest[]> => {
+  const res = await request<WirexWithdrawalRequest[] | { data?: WirexWithdrawalRequest[] }>(
+    '/api/v1/withdrawal/requests',
+    { method: 'GET', headers: userAuthHeaders(userAddress) },
+  )
+  if (!res) return []
+  return Array.isArray(res) ? res : (res.data ?? [])
+}

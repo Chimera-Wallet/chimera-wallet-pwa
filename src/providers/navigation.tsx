@@ -47,6 +47,10 @@ import AppGiftCards from '../screens/Apps/GiftCards/Index'
 import AppGiftCardPurchase from '../screens/Apps/GiftCards/Purchase'
 import AppGiftCardRedeem from '../screens/Apps/GiftCards/Redeem'
 import AppCardReservation from '../screens/Apps/CardReservation/Index'
+import AppWirexCard from '../screens/Apps/WirexCard/Index'
+import AppWirexMoveAssets from '../screens/Apps/WirexCard/MoveAssets'
+import AppWirexTopUp from '../screens/Apps/WirexCard/TopUp'
+import { isWirexEnabled } from './wirex'
 import AppSwap from '../screens/Apps/Swap/Index'
 import AppSwapOrderDetails from '../screens/Apps/Swap/OrderDetails'
 import AppAddressBook from '../screens/Apps/AddressBook/Index'
@@ -79,6 +83,8 @@ export enum Pages {
   AppGiftCardPurchase,
   AppGiftCardRedeem,
   AppCardReservation,
+  AppWirexMoveAssets,
+  AppWirexTopUp,
   AppSwap,
   AppSwapOrderDetails,
   AppAddressBook,
@@ -152,6 +158,8 @@ const pageTab: Record<Pages, Tabs> = {
   [Pages.AppGiftCardPurchase]: Tabs.Apps,
   [Pages.AppGiftCardRedeem]: Tabs.Apps,
   [Pages.AppCardReservation]: Tabs.Card,
+  [Pages.AppWirexMoveAssets]: Tabs.Card,
+  [Pages.AppWirexTopUp]: Tabs.Card,
   [Pages.AppSwap]: Tabs.Trade,
   [Pages.AppSwapOrderDetails]: Tabs.Trade,
   [Pages.AppAddressBook]: Tabs.Apps,
@@ -250,7 +258,12 @@ export const pageComponent = (page: Pages, navigationData?: Record<string, unkno
     case Pages.AppGiftCardRedeem:
       return <AppGiftCardRedeem />
     case Pages.AppCardReservation:
-      return <AppCardReservation />
+      // Wirex card UI replaces the card reservation app when enabled.
+      return isWirexEnabled() ? <AppWirexCard /> : <AppCardReservation />
+    case Pages.AppWirexMoveAssets:
+      return <AppWirexMoveAssets />
+    case Pages.AppWirexTopUp:
+      return <AppWirexTopUp />
     case Pages.AppSwap:
       return <AppSwap />
     case Pages.AppSwapOrderDetails:

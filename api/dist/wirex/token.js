@@ -51,16 +51,6 @@ async function getPartnerToken() {
     partnerTokenCache = { accessToken: body.access_token, expiresAt: now + body.expires_at * 1000 };
     return partnerTokenCache.accessToken;
 }
-/**
- * The partner's own Wirex company id, read from the partner token's
- * `company_id` claim (e.g. "00000000-0000-0000-1000-000000000005").
- *
- * This is the company the SDK must register user wallets under on-chain —
- * Wirex's POST /api/v2/user checks the Accounts contract for *this* company,
- * not the remote config's shared `defaultCompanyId`. The token comes straight
- * from Wirex over TLS, so its payload is decoded without verifying the
- * signature.
- */
 async function getPartnerCompanyId() {
     const token = await getPartnerToken();
     const payload = token.split('.')[1];

@@ -308,5 +308,54 @@
             "history": "Payment history",
             "notSet": "Not set"
         }
+    },
+    "wirexCard": {
+        "title": "Card",
+        "card": "Card",
+        "cardBalance": "Card Balance",
+        "topUp": "Top up",
+        "lockCard": "Lock card",
+        "unlockCard": "Unlock card",
+        "moveAssets": "Move assets",
+        "transactions": "Transactions",
+        "noTransactions": "No transactions yet",
+        "available": "Available",
+        "confirm": "Confirm",
+        "amount": "Amount",
+        "selectToken": "Select asset",
+        "noAssets": "No assets in wallet",
+        "insufficient": "Insufficient balance",
+        "transferSent": "Transfer submitted",
+        "comingSoon": "Coming soon",
+        "support": "Support",
+        "info": "Info",
+        "fee": "Fee",
+        "topUpPending": "Top-up of {{amount}} {{ticker}} in progress",
+        "withdraw": {
+            "fromCard": "Moving funds from the card to your Wirex wallet…",
+            "delay": "Waiting for Wirex's security delay. Keep this screen open, or finish it later from the card screen.",
+            "sent": "Withdrawal complete: {{ticker}} sent to your Base address",
+            "pending": "Withdrawal of {{amount}} pending",
+            "readyIn": "ready in {{minutes}} min",
+            "finish": "Finish withdrawal",
+            "noWallet": "Your Wirex wallet hasn't loaded yet",
+            "noCard": "Card not found",
+            "wrongPassword": "Wrong password"
+        },
+        "topUpFlow": {
+            "title": "Top up from wallet",
+            "from": "Amount from your wallet",
+            "youReceive": "Card receives about {{amount}} USD",
+            "belowMinimum": "Minimum top-up is {{amount}} {{ticker}}",
+            "noWallet": "Your card wallet isn't ready yet. Please try again later.",
+            "bridging": "Sending your funds to {{name}}…",
+            "crediting": "Funds sent, waiting for the card balance to update…",
+            "stillProcessing": "Still processing. Your card balance will update shortly; you can leave this screen.",
+            "failed": "The top-up failed. Please contact support with the reference below.",
+            "reference": "Reference: {{id}}",
+            "viewPayout": "View transaction",
+            "done": "Card topped up!",
+            "doneInfo": "{{amount}} {{ticker}} added to your card"
+        }
     }
 }

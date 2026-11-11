@@ -13,11 +13,7 @@
 // rpcProxy.ts below, and hands the rest back unmodified.
 //
 // `defaultCompanyId` is also replaced with our own partner company id (from
-// the partner token, see token.ts getPartnerCompanyId): the SDK registers the
-// user's wallet in the on-chain Accounts contract under whatever company id
-// the client passes, and Wirex's POST /api/v2/user only accepts wallets
-// registered under the partner's company — the remote config's default is a
-// shared sandbox company, not ours.
+// the partner token, see token.ts getPartnerCompanyId).
 //
 // Only rpcUrl is rewritten. bundlerUrl/paymasterUrl/rpcWsUrl point at the
 // same kind of Wirex-hosted infrastructure and could hit the same CORS wall
@@ -45,8 +41,6 @@ async function wirexConfigProxy(request, context) {
         return { status: upstream.status, body: await upstream.text() };
     }
     const config = (await upstream.json());
-    // Fail closed: handing the client the shared default would register the
-    // wallet under the wrong company, which can't be undone.
     try {
         config.defaultCompanyId = await (0, token_1.getPartnerCompanyId)();
     }
