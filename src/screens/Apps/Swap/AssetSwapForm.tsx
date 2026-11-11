@@ -26,6 +26,7 @@ import { AspContext } from '../../../providers/asp'
 import { WalletContext } from '../../../providers/wallet'
 import { FlowContext } from '../../../providers/flow'
 import { FiatContext } from '../../../providers/fiat'
+import { AssetPricesContext } from '../../../providers/assetPrices'
 import { ConfigContext } from '../../../providers/config'
 import {
   ASSET_LIST,
@@ -78,6 +79,7 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
   const { balance, assetBalances } = useContext(WalletContext)
   const { assetSwapFromAssetId, setAssetSwapFromAssetId } = useContext(FlowContext)
   const { toFiat } = useContext(FiatContext)
+  const { getPriceData } = useContext(AssetPricesContext)
   const { config } = useContext(ConfigContext)
 
   // The assets this wallet actually knows how to swap: every enabled,
@@ -137,6 +139,14 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
   const [completed, setCompleted] = useState<CompletedSwap | undefined>()
 
   const fromAsset = resolveAsset(fromSymbol)
+
+  const fiatValueOf = (asset: ResolvedAsset, displayAmount: string): number | undefined => {
+    if (asset.assetId === BTC_ASSET_ID) return toFiat(Number(unitsToCents(displayAmount, 8)))
+    const rate = getPriceData(asset.symbol).rate
+    if (!rate) return undefined
+    const units = Number(displayAmount)
+    return Number.isFinite(units) ? units * rate : undefined
+  }
 
   // Assets the current "from" side can actually swap into, via a real market.
   const toOptions = useMemo<AssetConfig[]>(() => {
@@ -285,15 +295,14 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
     setConfirmError('')
     setConfirming(true)
     try {
+      const fromFiatAmount = fiatValueOf(fromAsset, currentPlan.deposit.display)
       const quoteSnapshot: AssetSwapQuoteSnapshot = {
         fromTicker: fromAsset.ticker,
         fromDecimals: fromAsset.decimals,
         toTicker: toAsset.ticker,
         toDecimals: toAsset.decimals,
         feeBps: currentPlan.market.fee_bps,
-        ...(fromAsset.assetId === BTC_ASSET_ID
-          ? { fiatCurrency: config.fiat, fromFiatAmount: toFiat(Number(currentPlan.deposit.atomic)) }
-          : {}),
+        ...(fromFiatAmount !== undefined ? { fiatCurrency: config.fiat, fromFiatAmount } : {}),
       }
       await createSwap(currentPlan, quoteSnapshot)
       hapticLight()
@@ -358,6 +367,8 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
       </>
     )
   }
+
+  const amountFiat = hasPositiveAmount ? fiatValueOf(fromAsset, amount) : undefined
 
   const reviewData: TableData = currentPlan
     ? [
@@ -464,9 +475,9 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
               title={t('apps.swap.selectTo')}
             />
 
-            {fromAsset.assetId === BTC_ASSET_ID && hasPositiveAmount ? (
+            {amountFiat !== undefined ? (
               <TextSecondary centered>
-                {prettyAssetNumber(toFiat(Number(unitsToCents(amount, 8))), 2)} {config.fiat}
+                {prettyAssetNumber(amountFiat, 2)} {config.fiat}
               </TextSecondary>
             ) : null}
 
