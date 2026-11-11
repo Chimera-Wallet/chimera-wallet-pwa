@@ -6,16 +6,21 @@ import { WalletContext } from '../../../providers/wallet'
 import { WalletProvider, type LoanAsset, AddressType } from '@lendasat/lendasat-wallet-bridge'
 import { collaborativeExit, getReceivingAddresses } from '../../../lib/asp'
 import { isArkAddress, isBTCAddress } from '../../../lib/address'
-import {useTranslation} from 'react-i18next'
+import { useTranslation } from 'react-i18next'
+import { useBridgeApproval } from '../../../hooks/useBridgeApproval'
 
 const IFRAME_URL = import.meta.env.VITE_SATORA_IFRAME_URL || 'https://app.satora.io'
+// The bridge matches messages against exact origins, so pass the origin, not
+// the URL (a path or trailing slash would never match).
+const IFRAME_ORIGIN = new URL(IFRAME_URL).origin
 const DEFAULT_SWAP_PATH = '/arkade:BTC/polygon:USDC'
 
 export default function AppSatora() {
   const { svcWallet } = useContext(WalletContext)
   const [arkAddress, setArkAddress] = useState<string | null>(null)
+  const { requestApproval, approvalModal } = useBridgeApproval('Satora')
 
-  const {t} = useTranslation()
+  const { t } = useTranslation()
 
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
@@ -80,6 +85,10 @@ export default function AppSatora() {
           switch (asset) {
             case 'bitcoin':
               if (isArkAddress(address)) {
+                await requestApproval({
+                  title: 'Approve Arkade payment',
+                  details: `${IFRAME_ORIGIN} is asking to send ${amount.toLocaleString()} sats (BTC, Arkade) to ${address}.`,
+                })
                 const txId = await svcWallet?.send({ amount, address })
                 if (txId) {
                   return txId
@@ -87,9 +96,13 @@ export default function AppSatora() {
                   throw new Error(t('errors.satora.unableSending'))
                 }
               } else if (isBTCAddress(address)) {
+                await requestApproval({
+                  title: 'Approve Bitcoin payment',
+                  details: `${IFRAME_ORIGIN} is asking to send ${amount.toLocaleString()} sats (BTC, on-chain) to ${address}.`,
+                })
                 return await collaborativeExit(svcWallet, amount, address)
               } else {
-                throw Error(t('errors.satora.unsuppAddress', {addr:address}))
+                throw Error(t('errors.satora.unsuppAddress', { addr: address }))
               }
             case 'UsdcPol':
             case 'UsdtPol':
@@ -109,7 +122,7 @@ export default function AppSatora() {
           }
         },
       },
-      [IFRAME_URL],
+      [IFRAME_ORIGIN],
     )
 
     provider.listen(iframeRef.current)
@@ -117,7 +130,7 @@ export default function AppSatora() {
     return () => {
       provider.destroy()
     }
-  }, [svcWallet, arkAddress])
+  }, [svcWallet, arkAddress, requestApproval])
 
   return (
     <>
@@ -136,6 +149,7 @@ export default function AppSatora() {
           </div>
         </Padded>
       </Content>
+      {approvalModal}
     </>
   )
 }

@@ -36,7 +36,8 @@
     "bioAuth": "Autenticazione biometrica",
     "bioAuthUnsupported": "L'autenticazione biometrica non è supportata su questo dispositivo",
     "useBio": "Usa biometria",
-    "disableWarn": "L'autenticazione biometrica è attiva. Disattivandola verrà rimosso il blocco attuale: potrai quindi impostare una password dalle Impostazioni avanzate",
+    "disableWarn": "L'autenticazione biometrica è attiva. Per disattivarla sceglierai una password che la sostituisca, così il wallet resta bloccato.",
+    "choosePass": "Scegli una password che sostituisca l'autenticazione biometrica. D'ora in poi la userai per sbloccare il wallet.",
     "enableFingerFace": "Abilita il riconoscimento tramite impronta digitale o volto per sbloccare il wallet. Questo sostituirà la password attuale.",
     "noContractFound": "Nessun contratto trovato"
   },
