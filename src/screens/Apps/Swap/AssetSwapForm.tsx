@@ -26,9 +26,11 @@ import { AspContext } from '../../../providers/asp'
 import { WalletContext } from '../../../providers/wallet'
 import { FlowContext } from '../../../providers/flow'
 import { FiatContext } from '../../../providers/fiat'
+import { AssetPricesContext } from '../../../providers/assetPrices'
 import { ConfigContext } from '../../../providers/config'
 import {
   ASSET_LIST,
+  BALANCE_DISPLAY_DECIMALS,
   centsToUnits,
   getAssetSymbolByAssetId,
   getDisplayTicker,
@@ -68,6 +70,19 @@ interface CompletedSwap {
 
 const DEBOUNCE_MS = 600
 
+/** Fraction digits shown for a quoted amount or rate: the asset's precision,
+ * capped like balances are, so an 18-decimal token doesn't print 18 digits. */
+const displayDecimals = (decimals: number) => Math.min(decimals, BALANCE_DISPLAY_DECIMALS)
+
+/** Font size for a big swap amount: full size for short values, scaled down
+ * as the text grows so it stays inside the card. */
+const AMOUNT_FULL_SIZE_CHARS = 9
+const amountFontSize = (text: string): string => {
+  const length = Math.max(text.length, 1)
+  if (length <= AMOUNT_FULL_SIZE_CHARS) return '2rem'
+  return `${Math.max(1, (2 * AMOUNT_FULL_SIZE_CHARS) / length).toFixed(3)}rem`
+}
+
 const assetIdForSymbol = (symbol: AssetSymbol): string | undefined =>
   symbol === 'BTC' ? BTC_ASSET_ID : getWrappedAssetId(symbol)
 
@@ -78,6 +93,7 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
   const { balance, assetBalances } = useContext(WalletContext)
   const { assetSwapFromAssetId, setAssetSwapFromAssetId } = useContext(FlowContext)
   const { toFiat } = useContext(FiatContext)
+  const { getPriceData } = useContext(AssetPricesContext)
   const { config } = useContext(ConfigContext)
 
   // The assets this wallet actually knows how to swap: every enabled,
@@ -137,6 +153,14 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
   const [completed, setCompleted] = useState<CompletedSwap | undefined>()
 
   const fromAsset = resolveAsset(fromSymbol)
+
+  const fiatValueOf = (asset: ResolvedAsset, displayAmount: string): number | undefined => {
+    if (asset.assetId === BTC_ASSET_ID) return toFiat(Number(unitsToCents(displayAmount, 8)))
+    const rate = getPriceData(asset.symbol).rate
+    if (!rate) return undefined
+    const units = Number(displayAmount)
+    return Number.isFinite(units) ? units * rate : undefined
+  }
 
   // Assets the current "from" side can actually swap into, via a real market.
   const toOptions = useMemo<AssetConfig[]>(() => {
@@ -285,21 +309,20 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
     setConfirmError('')
     setConfirming(true)
     try {
+      const fromFiatAmount = fiatValueOf(fromAsset, currentPlan.deposit.display)
       const quoteSnapshot: AssetSwapQuoteSnapshot = {
         fromTicker: fromAsset.ticker,
         fromDecimals: fromAsset.decimals,
         toTicker: toAsset.ticker,
         toDecimals: toAsset.decimals,
         feeBps: currentPlan.market.fee_bps,
-        ...(fromAsset.assetId === BTC_ASSET_ID
-          ? { fiatCurrency: config.fiat, fromFiatAmount: toFiat(Number(currentPlan.deposit.atomic)) }
-          : {}),
+        ...(fromFiatAmount !== undefined ? { fiatCurrency: config.fiat, fromFiatAmount } : {}),
       }
       await createSwap(currentPlan, quoteSnapshot)
       hapticLight()
       setDrawer(null)
       setCompleted({
-        toAmount: prettyAssetNumber(currentPlan.receive.display, toAsset.decimals),
+        toAmount: prettyAssetNumber(currentPlan.receive.display, displayDecimals(toAsset.decimals)),
         toTicker: toAsset.ticker,
       })
     } catch (error) {
@@ -359,19 +382,21 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
     )
   }
 
+  const amountFiat = hasPositiveAmount ? fiatValueOf(fromAsset, amount) : undefined
+
   const reviewData: TableData = currentPlan
     ? [
         [
           t('common.general.from'),
-          `${prettyAssetNumber(currentPlan.deposit.display, fromAsset.decimals)} ${fromAsset.ticker}`,
+          `${prettyAssetNumber(currentPlan.deposit.display, displayDecimals(fromAsset.decimals))} ${fromAsset.ticker}`,
         ],
         [
           t('common.general.to'),
-          `${prettyAssetNumber(currentPlan.receive.display, toAsset?.decimals ?? 0)} ${toAsset?.ticker ?? ''}`,
+          `${prettyAssetNumber(currentPlan.receive.display, displayDecimals(toAsset?.decimals ?? 0))} ${toAsset?.ticker ?? ''}`,
         ],
         [
           t('apps.swap.rate'),
-          toAsset ? `1 ${fromAsset.ticker} ≈ ${prettyAssetNumber(preFeeDisplayRate(currentPlan), toAsset.decimals)} ${toAsset.ticker}` : '',
+          toAsset ? `1 ${fromAsset.ticker} ≈ ${prettyAssetNumber(preFeeDisplayRate(currentPlan), displayDecimals(toAsset.decimals))} ${toAsset.ticker}` : '',
         ],
         [t('apps.swap.fee'), `${(currentPlan.market.fee_bps / 100).toFixed(2)}%`],
         ...(customSolver ? ([[t('settings.solvers.solver'), t('settings.solvers.custom')]] as TableData) : []),
@@ -397,9 +422,7 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
                     onSublabelClick={useMaxBalance}
                     sublabel={`${prettyAssetNumber(centsToUnits(fromAsset.balanceAtomic, fromAsset.decimals), fromAsset.decimals)} ${fromAsset.ticker} ${t('apps.swap.available')}`}
                     amount={
-                      <FlexRow>
-                      
-                        <input
+                      <input
                           type='text'
                           inputMode='decimal'
                           placeholder='0'
@@ -412,13 +435,13 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
                             background: 'transparent',
                             border: 'none',
                             color: 'var(--white)',
-                            fontSize: '2rem',
+                            fontSize: amountFontSize(amount),
                             fontWeight: 'bold',
                             outline: 'none',
                             textAlign: 'right',
+                            padding: 0,
                           }}
                         />
-                      </FlexRow>
                     }
                     tickerLabel={fromAsset.ticker}
                   />
@@ -435,9 +458,13 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
                     onClick={toOptions.length > 0 ? () => setToPickerOpen(true) : undefined}
                     sublabel={toAsset ? toAsset.ticker : t('apps.swap.noMarket')}
                     amount={
-                      <Text bigger bold color='white50'>
-                        {toAsset && currentPlan ? prettyAssetNumber(currentPlan.receive.display, toAsset.decimals) : '0'}
-                      </Text>
+                      <SwapAmountText
+                        value={
+                          toAsset && currentPlan
+                            ? prettyAssetNumber(currentPlan.receive.display, displayDecimals(toAsset.decimals))
+                            : '0'
+                        }
+                      />
                     }
                     tickerLabel={toAsset?.ticker}
                   />
@@ -464,9 +491,9 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
               title={t('apps.swap.selectTo')}
             />
 
-            {fromAsset.assetId === BTC_ASSET_ID && hasPositiveAmount ? (
+            {amountFiat !== undefined ? (
               <TextSecondary centered>
-                {prettyAssetNumber(toFiat(Number(unitsToCents(amount, 8))), 2)} {config.fiat}
+                {prettyAssetNumber(amountFiat, 2)} {config.fiat}
               </TextSecondary>
             ) : null}
 
@@ -476,7 +503,7 @@ export default function AssetSwapForm({ onBack }: SwapFormProps) {
                   <FlexRow between>
                     <TextSecondary>{t('apps.swap.rate')}</TextSecondary>
                     <Text bold>
-                      1 {fromAsset.ticker} ≈ {prettyAssetNumber(preFeeDisplayRate(currentPlan), toAsset.decimals)} {toAsset.ticker}
+                      1 {fromAsset.ticker} ≈ {prettyAssetNumber(preFeeDisplayRate(currentPlan), displayDecimals(toAsset.decimals))} {toAsset.ticker}
                     </Text>
                   </FlexRow>
                   <FlexRow between>
@@ -553,8 +580,10 @@ function SwapAssetRow({
   tickerLabel?: string
 }) {
   return (
-    <FlexRow between>
-      <FlexRow gap='0.75rem'>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', width: '100%' }}>
+      {/* Both sides may shrink (minWidth 0) so a long amount can't push the
+          row, and the card, past the screen edge. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: '0 1 auto', minWidth: 0 }}>
         <div
           style={{
             width: '40px',
@@ -569,7 +598,7 @@ function SwapAssetRow({
         >
           {icon}
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0 }}>
           <div onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined}>
             <FlexRow gap='0.25rem'>
               <Text bold>{name}</Text>
@@ -586,16 +615,48 @@ function SwapAssetRow({
             </Text>
           </div>
         </div>
-      </FlexRow>
-      <FlexCol gap='0' end>
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          flex: '1 1 0',
+          minWidth: '5rem',
+          overflow: 'hidden',
+        }}
+      >
         {amount}
         {tickerLabel ? (
           <Text smaller color='neutral-500'>
             {tickerLabel}
           </Text>
         ) : null}
-      </FlexCol>
-    </FlexRow>
+      </div>
+    </div>
+  )
+}
+
+/** The quoted "to" amount: shrinks with its length like the input does, and
+ * truncates with an ellipsis (full value on hover) if it still can't fit. */
+function SwapAmountText({ value }: { value: string }) {
+  return (
+    <p
+      title={value}
+      style={{
+        color: 'var(--white50)',
+        fontSize: amountFontSize(value),
+        fontWeight: 'bold',
+        lineHeight: 1.2,
+        margin: 0,
+        maxWidth: '100%',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {value}
+    </p>
   )
 }
 
