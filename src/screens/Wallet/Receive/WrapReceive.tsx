@@ -28,10 +28,17 @@ import { TxResultContext } from '../../../providers/txResult'
 import { getReceivingAddresses } from '../../../lib/asp'
 import { extractError } from '../../../lib/error'
 import { consoleError } from '../../../lib/logs'
-import { requireAssetConfig } from '../../../lib/assets'
+import { prettyAssetAmount, requireAssetConfig } from '../../../lib/assets'
 import { requireSourceChain } from '../../../lib/sourceChains'
-import { formatBaseUnits } from '../../../lib/format'
-import { createWrapQuote, type WrapQuote } from '../../../lib/arkadeWrap'
+import {
+  SERVICE_FEE_PERCENT,
+  createWrapQuote,
+  isTerminalWrapStatus,
+  prettyMinAmount,
+  prettyQuoteAmount,
+  quoteLimitUnits,
+  type WrapQuote,
+} from '../../../lib/arkadeWrap'
 import { getWrapDeposit, saveWrapDeposit, subscribeWrapDeposits } from '../../../lib/wrapDeposits'
 import { useTranslation } from 'react-i18next'
 
@@ -136,8 +143,11 @@ export default function WrapReceive() {
     }
   }
 
+  const minAmount = quoteLimitUnits(quote?.min_amount, precision)
+  const remainingAmount = quoteLimitUnits(quote?.remaining_amount, precision)
+
   if (completed) {
-    const amount = formatBaseUnits(quote?.payout_amount ?? null, precision)
+    const amount = prettyQuoteAmount(quote?.payout_amount ?? null, precision)
     return (
       <>
         <Header text= {t('common.general.success')} />
@@ -180,11 +190,57 @@ export default function WrapReceive() {
                     color='orange'
                     text={t('common.notifications.wrapService.expiry', {ticker: wrapRecvInfo.ticker, name: chain.name})}
                   />
-                  {quote.amount ? (
-                    <InfoLine compact text={t('common.notifications.wrapService.depositDetected', {amount: formatBaseUnits(quote.amount, precision), ticker: wrapRecvInfo.ticker})} />
+                  {minAmount > BigInt(0) ? (
+                    <InfoLine
+                      compact
+                      text={t('common.notifications.wrapService.minAmount', {
+                        amount: prettyMinAmount(minAmount, precision),
+                        ticker: wrapRecvInfo.ticker,
+                      })}
+                    />
                   ) : null}
-                  {quote.fee_amount ? (
-                    <InfoLine compact text={t('common.notifications.wrapService.bridgeFee' ,{amount: formatBaseUnits(quote.fee_amount, precision), ticker: wrapRecvInfo.ticker})} />
+                  {quote.amount ? (
+                    <InfoLine compact text={t('common.notifications.wrapService.depositDetected', {amount: prettyQuoteAmount(quote.amount, precision), ticker: wrapRecvInfo.ticker})} />
+                  ) : null}
+                  {remainingAmount > BigInt(0) && !isTerminalWrapStatus(quote.status) ? (
+                    <InfoLine
+                      compact
+                      color='orange'
+                      text={t('common.notifications.wrapService.remaining', {
+                        amount: prettyMinAmount(remainingAmount, precision),
+                        ticker: wrapRecvInfo.ticker,
+                      })}
+                    />
+                  ) : null}
+                  <InfoLine
+                    compact
+                    text={
+                      quote.fee_amount
+                        ? t('common.notifications.wrapService.serviceFee', {
+                            rate: SERVICE_FEE_PERCENT,
+                            amount: prettyQuoteAmount(quote.fee_amount, precision),
+                            ticker: wrapRecvInfo.ticker,
+                          })
+                        : t('common.notifications.wrapService.feeRate', { rate: SERVICE_FEE_PERCENT })
+                    }
+                  />
+                  {quote.network_fee_amount ? (
+                    <InfoLine
+                      compact
+                      text={t('common.notifications.wrapService.networkFee', {
+                        amount: prettyAssetAmount(quoteLimitUnits(quote.network_fee_amount, precision), precision),
+                        ticker: wrapRecvInfo.ticker,
+                      })}
+                    />
+                  ) : null}
+                  {quote.payout_amount ? (
+                    <InfoLine
+                      compact
+                      text={t('common.notifications.wrapService.payout', {
+                        amount: prettyQuoteAmount(quote.payout_amount, precision),
+                        ticker: wrapRecvInfo.ticker,
+                      })}
+                    />
                   ) : null}
                 </InfoContainer>
                 <ReceiveAddress value={quote.treasury} />

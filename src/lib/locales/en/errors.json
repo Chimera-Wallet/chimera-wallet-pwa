@@ -1,7 +1,7 @@
 {
     "funds":{
         "insufficient": "Insufficient funds",
-        "insufficientExtra":"Insufficient funds, you just have {{balance}} BTC",
+        "insufficientExtra":"Insufficient funds, you only have {{balance}} BTC",
         "insufficientFees": "Insufficient funds to cover fees"
     },
     "LNURL": {
@@ -33,6 +33,9 @@
 
     },
     "send": {
+        "unwrap": {
+            "belowMinimum": "The minimum unwrap amount is {{amount}} {{ticker}}"
+        },
         "bitcoin": {
             "address": "Selected method requires a Bitcoin address",
             "type": "Selected method requires a different address type",
@@ -66,8 +69,9 @@
             "notConfigured": "Withdrawal wallet not configured"
         },
         "parsing": {
-            "bip21": "Unable to parse bip21",
-            "recipientAddress": "Invalid recipient address"   
+            "bip21": "Unable to parse BIP21 URI",
+            "recipientAddress": "Invalid recipient address",
+            "amountMismatch": "This payment request is inconsistent: its amount doesn't match its Lightning invoice. Ask the recipient for a new one."
         },
         "chain": {
             "on": "Sending onchain not allowed",
@@ -132,7 +136,7 @@
         "missingAddress": "Missing delegate address",
         "invalidAddress": "Invalid delegate address",
         "invalidServerKey": "Invalid delegate server key",
-        "invalidJSONResp": "Invalid json in delegate response"
+        "invalidJSONResp": "Invalid JSON in delegate response"
     },
     "password": {
         "failedUpdate": "Failed to update password"
@@ -174,13 +178,13 @@
         "walletNot": "Wallet not initialized",
         "unableSending": "Unable to send bitcoin",
         "unsuppAddress": "Unsupported address {{addr}}",
-        "unableSendNonBtc": "Unable to send non btc assets",
+        "unableSendNonBtc": "Unable to send non-BTC assets",
         "unableFiat": "Unable to send fiat",
         "arkAddrLoad": "Arkade address not yet loaded",
         "boardAddrLoad": "Boarding address not yet loaded",
         "unsuppAddr": "Unsupported address type: {{addr}}",
         "unkownAddr": "Unknown address type: {{addr}}",
-        "npubSupp": "NPubs are not supported"
+        "npubSupp": "Npubs are not supported"
     },
     "satora": {
         "satora": "Satora",

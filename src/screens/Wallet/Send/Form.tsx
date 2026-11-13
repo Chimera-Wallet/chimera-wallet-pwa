@@ -192,6 +192,25 @@ export default function SendForm() {
       if (isBip21(lowerCaseData)) {
         const { address, arkAddress, invoice, lnUrl, satoshis, assetId, assetAmount } = decodeBip21(lowerCaseData)
         if (!address && !arkAddress && !invoice) return setError(t('errors.send.parsing.bip21'))
+        // The invoice's own amount is what a Lightning payment actually costs.
+        // A URI whose `amount` disagrees with it is refused outright, whichever
+        // method is selected: showing one amount while paying the other passed
+        // the difference off as "network fees" (CertiK pentest CWP-02).
+        let invoiceSats: number | undefined
+        let invoiceUndecodable = false
+        if (invoice) {
+          try {
+            const { amountMsats, amountSats } = decodeInvoice(invoice)
+            if (amountMsats > 0) {
+              if (satoshis !== undefined && Math.abs(amountMsats - satoshis * 1000) >= 1000) {
+                return setError(t('errors.send.parsing.amountMismatch'))
+              }
+              invoiceSats = amountSats
+            }
+          } catch {
+            invoiceUndecodable = true
+          }
+        }
         // A requested amount (e.g. a POS payment QR) is shown and locked, like
         // an invoice amount, so the payer can't re-price it by typing a value.
         // The requested amount is in sats, so it can't price an asset send;
@@ -213,6 +232,11 @@ export default function SendForm() {
         }
         if (selectedMethod === TRANSFER_METHOD.lightning) {
           if (!invoice && !lnUrl) return setError(t('errors.send.lightning.address'))
+          if (invoice && invoiceUndecodable) return setError('Unable to decode invoice')
+          if (invoiceSats && !assetId) {
+            setAmount(invoiceSats)
+            setAmountIsReadOnly(true)
+          }
           return setState((prev) => {
             const assets = assetId
               ? [{ assetId, amount: unitsToCents(assetAmount ?? '0') }]
@@ -221,7 +245,7 @@ export default function SendForm() {
               ...prev,
               invoice,
               recipient,
-              satoshis: satoshis,
+              satoshis: invoiceSats ?? satoshis,
               assets,
               lnUrl,
               pendingLnSend: invoice === prev.invoice ? prev.pendingLnSend : undefined,

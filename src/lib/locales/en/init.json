@@ -21,7 +21,7 @@
         "warning": "⚠ WARNING",
         "lossFunds": "If you deposit funds to your wallet <bold>without backing up your keys</bold> you are at constant risk of <danger>TOTAL AND IRREVERSIBLE loss of funds</danger>.",
         "nonCustodial": "Chimera Wallet is a <bold>fully non-custodial wallet</bold>. <strongWarning>NO ONE</strongWarning> can help you recover your funds if you don't have your key.",
-        "understood": "I understood, proceed",
+        "understood": "I understand, proceed",
         "goBack": "Go back"
     },
     "biometrics": {
@@ -43,13 +43,21 @@
         "restoreWallet": "Restore Wallet"
     },
     "restore": {
-        "invalidPhrase": "Invalid Recovery phrase",
+        "invalidPhrase": "Invalid recovery phrase",
         "validationUnable": "Unable to validate private key format",
         "validationUnableSimple": "Unable to validate key format",
         "restoringWallet": "Restoring Wallet...",
         "pk": "private-key",
         "recoveryPhraseKey": "Recovery phrase or private key",
-        "phraseEntry": "Enter your 12-word recovery phrase, or a private key starting with 'nsec' or a raw hex key. Do not share it with anyone."
+        "phraseEntry": "Enter your 12-word recovery phrase, or a private key starting with 'nsec' or a raw hex key. Do not share it with anyone.",
+        "wordSuggestions": "Word suggestions",
+        "inputHint": "Type or paste your recovery phrase or private key.",
+        "wordCount_one": "{{count}} word entered",
+        "wordCount_other": "{{count}} words entered",
+        "wordError": "Word {{number}} isn’t recognized. Check its spelling.",
+        "wordCountError": "Enter the complete recovery phrase: 12, 15, 18, 21 or 24 words.",
+        "checksumError": "This recovery phrase isn’t valid. Check the words and their order.",
+        "keyError": "Enter a valid nsec private key or a 64-character hexadecimal private key."
     },
     "success": {
         "walletRestore": "Wallet restored!",

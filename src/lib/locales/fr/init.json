@@ -48,7 +48,16 @@
     "restoringWallet": "Restauration du portefeuille...",
     "pk": "clé-privée",
     "recoveryPhraseKey": "Phrase de récupération ou clé privée",
-    "phraseEntry": "Saisissez votre phrase de récupération de 12 mots ou une clé privée commençant par « nsec » ou une clé hexadécimale brute. Ne la partagez avec personne."
+    "phraseEntry": "Saisissez votre phrase de récupération de 12 mots ou une clé privée commençant par « nsec » ou une clé hexadécimale brute. Ne la partagez avec personne.",
+    "wordSuggestions": "Suggestions de mots",
+    "inputHint": "Saisissez ou collez votre phrase de récupération ou votre clé privée.",
+    "wordCount_one": "{{count}} mot saisi",
+    "wordCount_many": "{{count}} mots saisis",
+    "wordCount_other": "{{count}} mots saisis",
+    "wordError": "Le mot {{number}} n’est pas reconnu. Vérifiez son orthographe.",
+    "wordCountError": "Saisissez la phrase de récupération complète : 12, 15, 18, 21 ou 24 mots.",
+    "checksumError": "Cette phrase de récupération n’est pas valide. Vérifiez les mots et leur ordre.",
+    "keyError": "Saisissez une clé privée nsec valide ou une clé privée hexadécimale de 64 caractères."
   },
   "success": {
     "walletRestore": "Portefeuille restauré !",

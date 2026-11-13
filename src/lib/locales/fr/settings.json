@@ -36,7 +36,8 @@
     "bioAuth": "Authentification biométrique",
     "bioAuthUnsupported": "L'authentification biométrique n'est pas prise en charge sur cet appareil",
     "useBio": "Utiliser la biométrie",
-    "disableWarn": "L'authentification biométrique est active. La désactiver supprimera votre verrouillage actuel — vous pourrez ensuite définir un mot de passe dans les paramètres avancés",
+    "disableWarn": "L'authentification biométrique est active. Pour la désactiver, vous choisirez un mot de passe qui la remplace, afin que votre portefeuille reste verrouillé.",
+    "choosePass": "Choisissez un mot de passe pour remplacer l'authentification biométrique. Vous l'utiliserez désormais pour déverrouiller votre portefeuille.",
     "enableFingerFace": "Activez l'empreinte digitale ou la reconnaissance faciale pour déverrouiller votre portefeuille. Cela remplacera votre mot de passe actuel.",
     "noContractFound": "Aucun contrat trouvé"
   },

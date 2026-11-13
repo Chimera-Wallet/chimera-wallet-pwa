@@ -1,11 +1,9 @@
-import { useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import Padded from '../../../components/Padded'
 import Header from '../../../components/Header'
 import Content from '../../../components/Content'
-import Button from '../../../components/Button'
-import Modal from '../../../components/Modal'
-import Text from '../../../components/Text'
 import { WalletContext } from '../../../providers/wallet'
+import { useBridgeApproval } from '../../../hooks/useBridgeApproval'
 import { AddressType, type LoanAsset, WalletProvider } from '@lendasat/lendasat-wallet-bridge'
 import { sha256 } from '@noble/hashes/sha2.js'
 import * as utils from '@noble/hashes/utils.js'
@@ -16,16 +14,11 @@ import { collaborativeExit, getReceivingAddresses } from '../../../lib/asp'
 import { Transaction } from '@arkade-os/sdk'
 import { isArkAddress, isBTCAddress } from '../../../lib/address'
 import { NavigationContext, Pages } from '../../../providers/navigation'
-import {useTranslation} from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 
 const { bytesToHex, hexToBytes } = utils
 const LENDASAT_IFRAME_URL = import.meta.env.VITE_LENDASAT_IFRAME_URL || 'https://iframe.lendasat.com'
 const LENDASAT_IFRAME_ORIGIN = new URL(LENDASAT_IFRAME_URL).origin
-
-interface ApprovalRequest {
-  title: string
-  details: string
-}
 
 const describePsbt = (tx: Transaction): string => {
   const outputs = Array.from({ length: tx.outputsLength }, (_, index) => {
@@ -56,10 +49,9 @@ export default function AppLendasat() {
 
   const [arkAddress, setArkAddress] = useState<string | null>(null)
   const [boardingAddress, setBoardingAddress] = useState<string | null>(null)
-  const [approvalRequest, setApprovalRequest] = useState<ApprovalRequest | null>(null)
-  const approvalResolver = useRef<((approved: boolean) => void) | null>(null)
+  const { requestApproval, approvalModal } = useBridgeApproval('LendaSat')
 
-  const {t} = useTranslation()
+  const { t } = useTranslation()
   useEffect(() => {
     const loadAddress = async () => {
       if (svcWallet) {
@@ -72,30 +64,6 @@ export default function AppLendasat() {
   }, [svcWallet])
 
   const iframeRef = useRef<HTMLIFrameElement>(null)
-
-  const requestApproval = useCallback((request: ApprovalRequest): Promise<void> => {
-    if (approvalResolver.current) {
-      return Promise.reject(new Error('Another LendaSat request is awaiting approval'))
-    }
-
-    setApprovalRequest(request)
-    return new Promise((resolve, reject) => {
-      approvalResolver.current = (approved) => {
-        approvalResolver.current = null
-        setApprovalRequest(null)
-        if (approved) resolve()
-        else reject(new Error('Request rejected'))
-      }
-    })
-  }, [])
-
-  const resolveApproval = useCallback((approved: boolean) => {
-    approvalResolver.current?.(approved)
-  }, [])
-
-  useEffect(() => {
-    return () => approvalResolver.current?.(false)
-  }, [])
 
   useEffect(() => {
     if (!iframeRef.current || !arkAddress || !boardingAddress) return
@@ -150,7 +118,7 @@ export default function AppLendasat() {
                 })
                 return await collaborativeExit(svcWallet, amount, address)
               } else {
-                throw Error(t('errors.lendasat.unsuppAddress', {addr: address}))
+                throw Error(t('errors.lendasat.unsuppAddress', { addr: address }))
               }
             case 'UsdcPol':
             case 'UsdtPol':
@@ -195,10 +163,10 @@ export default function AppLendasat() {
               return boardingAddress
 
             case AddressType.LOAN_ASSET:
-              throw new Error(t('errors.lendasat.unsuppAddr', {addr:addressType}))
+              throw new Error(t('errors.lendasat.unsuppAddr', { addr: addressType }))
 
             default:
-              throw new Error(t('errors.lendasat.unkownAddr', {addr: addressType}))
+              throw new Error(t('errors.lendasat.unkownAddr', { addr: addressType }))
           }
         },
         onGetNpub: () => {
@@ -272,22 +240,7 @@ export default function AppLendasat() {
           </div>
         </Padded>
       </Content>
-      <Modal open={Boolean(approvalRequest)} onOpenChange={(open) => !open && resolveApproval(false)}>
-        {approvalRequest ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <Text bold large wrap>
-              {approvalRequest.title}
-            </Text>
-            <Text small wrap>
-              {approvalRequest.details}
-            </Text>
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <Button label='Reject' onClick={() => resolveApproval(false)} secondary style={{ flex: 1 }} />
-              <Button label='Approve' onClick={() => resolveApproval(true)} style={{ flex: 1 }} />
-            </div>
-          </div>
-        ) : null}
-      </Modal>
+      {approvalModal}
     </>
   )
 }

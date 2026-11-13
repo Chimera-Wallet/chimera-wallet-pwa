@@ -1,0 +1,32 @@
+{
+  "routes": [
+    {
+      "route": "/",
+      "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" }
+    },
+    {
+      "route": "/index.html",
+      "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" }
+    },
+    {
+      "route": "/wallet-service-worker.mjs",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Service-Worker-Allowed": "/"
+      }
+    },
+    {
+      "route": "/assets/*",
+      "headers": { "Cache-Control": "public, max-age=31536000, immutable" }
+    },
+    {
+      "route": "/manifest.json",
+      "headers": { "Cache-Control": "public, max-age=86400" }
+    }
+  ],
+  "globalHeaders": {
+    "Content-Security-Policy": "frame-ancestors 'self'; object-src 'none'; base-uri 'self'",
+    "X-Frame-Options": "SAMEORIGIN",
+    "X-Content-Type-Options": "nosniff"
+  }
+}
