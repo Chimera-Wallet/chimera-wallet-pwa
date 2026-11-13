@@ -22,26 +22,8 @@ export const getArkadeWrapBaseUrl = (): string => {
 
 export const SERVICE_FEE_PERCENT = 0.3
 
-/**
- * The bridge reports its configured limits (min_amount, remaining_amount,
- * network_fee_amount) at 18 decimals whatever the asset's precision, unlike
- * the observed amounts (amount, fee_amount, payout_amount), which are in the
- * asset's own base units.
- */
-const BRIDGE_LIMIT_DECIMALS = 18
-
-/**
- * Convert one of the bridge's 18-decimal limit fields into the asset's base
- * units, rounding up so a converted minimum is never understated. 0 when absent.
- */
-export const quoteLimitUnits = (value: string | null | undefined, precision: number): bigint => {
-  if (!value) return BigInt(0)
-  const raw = BigInt(value)
-  const shift = BRIDGE_LIMIT_DECIMALS - precision
-  if (shift <= 0) return raw * BigInt(10) ** BigInt(-shift)
-  const step = BigInt(10) ** BigInt(shift)
-  return (raw + step - BigInt(1)) / step
-}
+/** Parse an optional quote amount. Every amount returned by the bridge uses the asset's base units. */
+export const quoteBaseUnits = (value: string | null | undefined): bigint => (value ? BigInt(value) : BigInt(0))
 
 /** Format a quote's base-unit amount with digit grouping, the same way as balances. Empty when absent. */
 export const prettyQuoteAmount = (value: string | null | undefined, precision: number): string =>
@@ -88,13 +70,13 @@ export interface WrapQuote {
   fee_amount: string | null
   /** Net payout (amount - fee) credited to the receiver, in base units. */
   payout_amount: string | null
-  /** Minimum accepted deposit for this wrap or unwrap quote, at 18 decimals (see quoteLimitUnits). */
+  /** Minimum accepted deposit for this wrap or unwrap quote, in base units. */
   min_amount?: string | null
-  /** Extra deposit still needed to reach the minimum, at 18 decimals; zero once it does. */
+  /** Extra base-unit amount still needed to reach the minimum; zero once it does. */
   remaining_amount?: string | null
   /**
-   * Fixed network charge deducted from the payout, at 18 decimals: unwrap
-   * delivery on the destination chain, or sweeping a wrap deposit to treasury.
+   * Fixed base-unit network charge deducted from the payout: unwrap delivery
+   * on the destination chain, or sweeping a wrap deposit to treasury.
    */
   network_fee_amount?: string | null
   deposit_tx_hash: string | null

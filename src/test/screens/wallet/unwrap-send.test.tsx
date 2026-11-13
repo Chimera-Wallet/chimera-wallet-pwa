@@ -156,7 +156,7 @@ describe('Send to chains', () => {
   })
 
   it('shows the bridge minimum and blocks amounts below it', async () => {
-    quote = { ...quote, min_amount: '20000000000000000000', network_fee_amount: '1500000000000000000' }
+    quote = { ...quote, min_amount: '20000000', network_fee_amount: '1500000' }
     render(<Harness />)
     enterDestination()
     expect(await screen.findByText('Minimum: 20 USDT')).toBeInTheDocument()
@@ -175,7 +175,7 @@ describe('Send to chains', () => {
     enterDestination()
     await waitForQuote()
     enterAmount('10')
-    quote = { ...quote, min_amount: '20000000000000000000' }
+    quote = { ...quote, min_amount: '20000000' }
     fireEvent.click(screen.getByRole('button', { name: 'Confirm sending' }))
     await screen.findByText('The minimum unwrap amount is 20 USDT')
     expect(send).not.toHaveBeenCalled()
