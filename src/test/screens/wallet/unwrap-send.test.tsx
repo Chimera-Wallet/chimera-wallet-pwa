@@ -156,7 +156,7 @@ describe('Send to chains', () => {
   })
 
   it('shows the bridge minimum and blocks amounts below it', async () => {
-    quote = { ...quote, min_amount: '20000000000000000000', network_fee_amount: '1500000000000000000' }
+    quote = { ...quote, min_amount: '20000000', network_fee_amount: '1500000' }
     render(<Harness />)
     enterDestination()
     expect(await screen.findByText('Minimum: 20 USDT')).toBeInTheDocument()
@@ -175,7 +175,7 @@ describe('Send to chains', () => {
     enterDestination()
     await waitForQuote()
     enterAmount('10')
-    quote = { ...quote, min_amount: '20000000000000000000' }
+    quote = { ...quote, min_amount: '20000000' }
     fireEvent.click(screen.getByRole('button', { name: 'Confirm sending' }))
     await screen.findByText('The minimum unwrap amount is 20 USDT')
     expect(send).not.toHaveBeenCalled()
@@ -194,7 +194,7 @@ describe('Send to chains', () => {
     ['POL', 'polygon', '0.000000000000000001', BigInt(1)],
     ['TRX', 'tron', '12.345678', BigInt('12345678')],
   ])('sends the exact %s amount from the wallet to the bridge treasury', async (symbol, chainId, value, amount) => {
-    const option = requireAssetChainOption(symbol, chainId)
+    const option = requireAssetChainOption(symbol, chainId, 'unwrap')
     const receiver = chainId === 'tron' ? `T${'1'.repeat(33)}` : destination
     render(
       <Harness
