@@ -34,7 +34,8 @@ const buildOptions = (assetSymbol: string, mode: 'receive' | 'send'): Option[] =
       icon: <NetworkIcon network={TRANSFER_METHOD.ark} size={24} />,
     },
   ]
-  for (const { chain } of getSourceChains(assetSymbol)) {
+  const direction = mode === 'receive' ? 'wrap' : 'unwrap'
+  for (const { chain } of getSourceChains(assetSymbol, direction)) {
     options.push({
       id: chain.id,
       label: chain.name,

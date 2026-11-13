@@ -285,7 +285,7 @@ export default function ReceiveAmount() {
             }} />
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100', gap:'1rem'}}>
 
-            {assetSupportsWrap(requireAssetConfig(selectedAsset).symbol) ? (
+            {assetSupportsWrap(requireAssetConfig(selectedAsset).symbol, 'wrap') ? (
               <AssetNetworkSelector
                 assetSymbol={requireAssetConfig(selectedAsset).symbol}
                 mode='receive'
@@ -309,7 +309,7 @@ export default function ReceiveAmount() {
                   }
                   // Native source chain selected -> Arkade Wrap flow
                   const symbol = requireAssetConfig(selectedAsset).symbol
-                  const option = requireAssetChainOption(symbol, choice as SourceChainId)
+                  const option = requireAssetChainOption(symbol, choice as SourceChainId, 'wrap')
                   setWrapRecvInfo({
                     assetSymbol: symbol,
                     chainId: choice as SourceChainId,
