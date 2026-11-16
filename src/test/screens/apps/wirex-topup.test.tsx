@@ -11,7 +11,7 @@ import { NavigationContext, Pages } from '../../../providers/navigation'
 import { WalletContext } from '../../../providers/wallet'
 import WirexTopUp from '../../../screens/Apps/WirexCard/TopUp'
 import WirexCardHome from '../../../screens/Apps/WirexCard/CardHome'
-import { readPendingTopUps, savePendingTopUp } from '../../../screens/Apps/WirexCard/topUp'
+import { readPendingTopUps, savePendingTopUp } from '../../../lib/wirexTopUp'
 
 vi.mock('../../../lib/wirex', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../../lib/wirex')>()),
@@ -50,8 +50,7 @@ function Harness({ balance = BigInt(50_000_000) }: { balance?: bigint }) {
   )
 }
 
-const enterAmount = (value: string) =>
-  fireEvent.change(screen.getByRole('spinbutton', { name: 'Amount' }), { target: { value } })
+const enterAmount = (value: string) => fireEvent.change(screen.getByTestId('wirex-topup-amount'), { target: { value } })
 
 beforeEach(() => {
   vi.clearAllMocks()

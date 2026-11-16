@@ -1,10 +1,7 @@
-// Move funds between the Wirex card and a wallet token (design: "Card → USDT").
-// Opened from the card home: Top up = toCard, Move assets = fromCard; the
-// round arrow button flips direction.
 
 import { useContext, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowDown, Check, CreditCard, Info } from 'lucide-react'
+import { List } from 'lucide-react'
 import Header from '../../../components/Header'
 import ErrorMessage from '../../../components/Error'
 import SelectSheet from '../../../components/SelectSheet'
@@ -24,19 +21,28 @@ import {
 import { defaultPassword } from '../../../lib/constants'
 import { isValidPassword } from '../../../lib/privateKey'
 import { prettyNumber } from '../../../lib/format'
-import { hapticLight } from '../../../lib/haptics'
-import { AssetRow, FlipButton } from './components/AssetRow'
-import type { MoveAssetsNavData, MoveDirection } from './CardHome'
+import { getAssetConfig } from '../../../lib/assets'
 import {
   CARD_CURRENCY,
   CARD_DECIMALS,
+  type WithdrawStep,
   errorText,
   getWirexCardBalance,
   getWirexTokens,
-} from './lib'
-import { runWirexWithdrawal, type WithdrawStep } from './withdraw'
+  runWirexWithdrawal,
+} from '../../../lib/wirexCard'
+import {
+  CardRowIcon,
+  ConfirmTransferButton,
+  PercentChips,
+  TransferAmount,
+  TransferLayout,
+  TransferRow,
+  TransferRows,
+  type MoveAssetsNavData,
+  type MoveDirection,
+} from './shared'
 
-const PERCENTAGES = [25, 50, 75, 100]
 const ESTIMATE_DEBOUNCE_MS = 400
 
 const fmt = (n: number) => prettyNumber(n, CARD_DECIMALS, true, CARD_DECIMALS)
@@ -44,33 +50,8 @@ const fmt = (n: number) => prettyNumber(n, CARD_DECIMALS, true, CARD_DECIMALS)
 /** Wirex's expires_at unit is unconfirmed — accept unix seconds or ms. */
 const expiresAtMs = (expiresAt: number) => (expiresAt < 1e12 ? expiresAt * 1000 : expiresAt)
 
-const chipStyle: React.CSSProperties = {
-  flex: 1,
-  height: 34,
-  borderRadius: 17,
-  border: 'none',
-  background: 'var(--dark10)',
-  color: 'var(--white)',
-  fontSize: 12,
-  cursor: 'pointer',
-}
-
-const cardIcon = (
-  <span
-    style={{
-      width: 28,
-      height: 28,
-      borderRadius: '50%',
-      background: 'var(--blue-primary)',
-      color: 'var(--white)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    }}
-  >
-    <CreditCard size={14} />
-  </span>
-)
+/** Display name for a Wirex token ("Tether" for USDT), falling back to the symbol. */
+const tokenName = (symbol: string) => getAssetConfig(symbol)?.name ?? symbol
 
 export default function WirexMoveAssets() {
   const { t } = useTranslation()
@@ -155,14 +136,12 @@ export default function WirexMoveAssets() {
   }
 
   const setPercent = (pct: number) => {
-    hapticLight()
     setError('')
     const value = Math.floor(sourceBalance * pct) / 100
     setAmount(value > 0 ? value.toFixed(CARD_DECIMALS).replace(/\.?0+$/, '') : '')
   }
 
   const flip = () => {
-    hapticLight()
     setDirection((d) => (d === 'fromCard' ? 'toCard' : 'fromCard'))
   }
 
@@ -230,70 +209,32 @@ export default function WirexMoveAssets() {
     }
   }
 
-  const amountInput = (unit: string) => (
-    <span style={{ display: 'flex', alignItems: 'baseline', fontSize: '1.75rem', fontWeight: 700 }}>
-      -
-      <input
-        type='text'
-        inputMode='decimal'
-        autoFocus
-        placeholder='0'
-        value={amount}
-        onChange={(ev) => changeAmount(ev.target.value)}
-        aria-label={t('apps.wirexCard.amount')}
-        data-testid='wirex-amount'
-        style={{
-          width: `${Math.max(1, amount.length) + 0.5}ch`,
-          background: 'transparent',
-          border: 'none',
-          outline: 'none',
-          color: 'var(--white)',
-          font: 'inherit',
-          textAlign: 'right',
-          padding: 0,
-        }}
-      />
-      {unit === '$' ? '$' : <span style={{ fontSize: '0.75rem', marginLeft: 4 }}>{unit}</span>}
-    </span>
-  )
-
-  const amountText = (sign: '-' | '+', value: string, unit: string, muted: boolean) => (
-    <span
-      style={{
-        fontSize: '1.75rem',
-        fontWeight: 700,
-        color: muted ? 'var(--grey)' : 'var(--white)',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {sign}
-      {value}
-      {unit === '$' ? '$' : <span style={{ fontSize: '0.75rem', marginLeft: 4 }}>{unit}</span>}
-    </span>
-  )
-
+  const cardTitle = `${t('apps.wirexCard.card')} · ${fmt(cardBalance)} ${CARD_CURRENCY}`
+  const tokenTitle = `${tokenName(token.symbol)} · ${fmt(token.balance)} ${token.symbol}`
   const cardRow = (isSource: boolean) => (
-    <AssetRow
+    <TransferRow
       testId='wirex-row-card'
-      icon={cardIcon}
-      name={t('apps.wirexCard.card')}
-      sublabel={isSource ? `${t('apps.wirexCard.available')}: ${fmt(cardBalance)} ${CARD_CURRENCY}` : undefined}
-      amount={isSource ? amountInput('$') : amountText('+', received ? fmt(received) : '0', '$', true)}
+      icon={<CardRowIcon />}
+      label={t(isSource ? 'apps.wirexCard.transfer.from' : 'apps.wirexCard.transfer.to', {
+        name: t('apps.wirexCard.card'),
+      })}
+      title={cardTitle}
+    />
+  )
+  const tokenRow = (isSource: boolean) => (
+    <TransferRow
+      testId='wirex-row-token'
+      icon={<AssetIcon symbol={token.symbol} size={36} />}
+      label={t(isSource ? 'apps.wirexCard.transfer.from' : 'apps.wirexCard.transfer.to', {
+        name: t('apps.wirexCard.transfer.wallet'),
+      })}
+      title={tokenTitle}
+      onClick={tokens.length > 1 ? () => setPickerOpen(true) : undefined}
     />
   )
 
-  const tokenRow = (isSource: boolean) => (
-    <AssetRow
-      testId='wirex-row-token'
-      icon={<AssetIcon symbol={token.symbol} size={28} />}
-      name={token.symbol}
-      onClick={tokens.length > 1 ? () => setPickerOpen(true) : undefined}
-      sublabel={isSource ? `${t('apps.wirexCard.available')}: ${fmt(token.balance)} ${token.symbol}` : undefined}
-      amount={
-        isSource ? amountInput(token.symbol) : amountText('+', received ? fmt(received) : '0', token.symbol, true)
-      }
-    />
-  )
+  const sourceUnit = fromCard ? CARD_CURRENCY : token.symbol
+  const targetUnit = fromCard ? token.symbol : CARD_CURRENCY
 
   if (needsPassword) {
     return (
@@ -308,94 +249,54 @@ export default function WirexMoveAssets() {
     <>
       <Header
         text={fromCard ? t('apps.wirexCard.moveAssets') : t('apps.wirexCard.topUp')}
+        logo
         back
-        auxIcon={<Info size={20} />}
-        // PLACEHOLDER: the design's info icon has no content specified yet.
+        auxIcon={<List size={20} />}
+        // PLACEHOLDER: the design's list icon (transfer history?) has no content specified yet.
         auxFunc={() => toast(t('apps.wirexCard.comingSoon'))}
-        auxAriaLabel={t('apps.wirexCard.info')}
+        auxAriaLabel={t('apps.wirexCard.transactions')}
       />
-      <div
-        style={{
-          display: 'flex',
-          flex: 1,
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          gap: '0.75rem',
-          minHeight: 0,
-          overflowY: 'auto',
-          padding: '0.25rem 1rem 0.5rem',
-        }}
+      <TransferLayout
+        footer={
+          <>
+            <ConfirmTransferButton
+              testId='wirex-confirm'
+              label={t('apps.wirexCard.transfer.confirm')}
+              onClick={confirm}
+              disabled={!canConfirm}
+              loading={busy}
+            />
+            <PercentChips testIdPrefix='wirex-pct' onSelect={setPercent} disabled={busy} />
+          </>
+        }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <div
-            style={{
-              position: 'relative',
-              background: 'var(--dark10)',
-              borderRadius: 8,
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <div style={{ padding: '1.5rem 1rem' }}>{fromCard ? cardRow(true) : tokenRow(true)}</div>
-            <div style={{ borderTop: '1px solid var(--black)' }} />
-            <div style={{ padding: '1.5rem 1rem' }}>{fromCard ? tokenRow(false) : cardRow(false)}</div>
-            <FlipButton onClick={flip}>
-              <ArrowDown size={16} />
-            </FlipButton>
-          </div>
-          {!fromCard && estimate ? (
-            <TextSecondary>
-              {t('apps.wirexCard.fee')}: {fmt(estimate.fee_amount)} {estimate.currency}
-            </TextSecondary>
-          ) : null}
-          {withdrawStep ? (
-            <TextSecondary testId='wirex-withdraw-step'>
-              {t(withdrawStep === 'card' ? 'apps.wirexCard.withdraw.fromCard' : 'apps.wirexCard.withdraw.delay')}
-            </TextSecondary>
-          ) : null}
-          {overBalance ? <ErrorMessage error text={t('apps.wirexCard.insufficient')} /> : null}
-          <ErrorMessage error={Boolean(error)} text={error} />
-        </div>
-
-        <button
-          type='button'
-          data-testid='wirex-confirm'
-          disabled={!canConfirm}
-          onClick={confirm}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            height: 48,
-            padding: '0 1rem',
-            borderRadius: 8,
-            border: 'none',
-            background: 'var(--blue-primary)',
-            color: 'var(--white)',
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            cursor: canConfirm ? 'pointer' : 'default',
-            opacity: canConfirm ? 1 : 0.5,
-          }}
-        >
-          {t('apps.wirexCard.confirm')}
-          <Check size={18} />
-        </button>
-      </div>
-
-      <div style={{ display: 'flex', gap: 6, padding: '0 6px 6px' }}>
-        {PERCENTAGES.map((pct) => (
-          <button
-            key={pct}
-            type='button'
-            data-testid={`wirex-pct-${pct}`}
-            style={chipStyle}
-            onClick={() => setPercent(pct)}
-          >
-            {pct}%
-          </button>
-        ))}
-      </div>
+        <TransferAmount
+          testId='wirex-amount'
+          ariaLabel={t('apps.wirexCard.amount')}
+          value={amount}
+          onChange={changeAmount}
+          unit={sourceUnit}
+          hint={`≈ ${received ? fmt(received) : '0'} ${targetUnit}`}
+          disabled={busy}
+        />
+        <TransferRows
+          from={fromCard ? cardRow(true) : tokenRow(true)}
+          to={fromCard ? tokenRow(false) : cardRow(false)}
+          onFlip={flip}
+        />
+        {!fromCard && estimate ? (
+          <TextSecondary>
+            {t('apps.wirexCard.fee')}: {fmt(estimate.fee_amount)} {estimate.currency}
+          </TextSecondary>
+        ) : null}
+        {withdrawStep ? (
+          <TextSecondary testId='wirex-withdraw-step'>
+            {t(withdrawStep === 'card' ? 'apps.wirexCard.withdraw.fromCard' : 'apps.wirexCard.withdraw.delay')}
+          </TextSecondary>
+        ) : null}
+        {overBalance ? <ErrorMessage error text={t('apps.wirexCard.insufficient')} /> : null}
+        <ErrorMessage error={Boolean(error)} text={error} />
+      </TransferLayout>
 
       <SelectSheet
         isOpen={pickerOpen}

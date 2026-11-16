@@ -58,6 +58,36 @@ export const getWirexEvmAddress = async (password: string): Promise<string> => {
   return toChecksumAddress(bytesToHex(addressBytes))
 }
 
+/** Wirex actions that are confirmed with a main-wallet signature (POST /api/v1/confirmation/signature/verify). */
+export type WirexConfirmationAction = 'GetCardDetails'
+
+/** Wirex's canonical confirmation message */
+export const wirexConfirmationMessage = (action: WirexConfirmationAction, nonce: number): string =>
+  `By signing this I confirm that I am executing action ${action} at ${nonce}`
+
+export interface WirexActionConfirmation {
+  /** The signer (the Wirex user's main-wallet address). */
+  address: string
+  /** Unix seconds, as Wirex expects. */
+  nonce: number
+  signature: Hex
+}
+
+/**
+ * Signs a Wirex action confirmation with the wallet's Wirex key. The key is
+ * derived and used here only; just the signature leaves this module.
+ */
+export const signWirexActionConfirmation = async (
+  password: string,
+  action: WirexConfirmationAction,
+  now = Date.now(),
+): Promise<WirexActionConfirmation> => {
+  const account = await deriveEthAccount(password)
+  const nonce = Math.floor(now / 1000)
+  const signature = await account.signMessage({ message: wirexConfirmationMessage(action, nonce) })
+  return { address: account.address, nonce, signature }
+}
+
 const buildEip1193Provider = (account: PrivateKeyAccount) => ({
   request: async ({ method, params }: { method: string; params?: unknown[] }): Promise<unknown> => {
     switch (method) {
@@ -97,15 +127,18 @@ const WIREX_CONFIG_URL = '/api/wirex-config'
  * api/wirex/config.ts). It must be the partner's company: Wirex's
  * POST /api/v2/user rejects wallets registered under any other.
  */
-const getWirexCompanyId = async (): Promise<string> => {
+/** The partner company id as `/api/wirex-config` returns it (also the PCI SDK's `clientId`). */
+export const getWirexConfigCompanyId = async (): Promise<string> => {
   const res = await fetch(WIREX_CONFIG_URL, { headers: { Accept: 'application/json' } })
   if (!res.ok) throw new Error(`Failed to load Wirex config: ${res.status}`)
   const config = (await res.json().catch(() => ({}))) as { defaultCompanyId?: unknown }
   if (typeof config.defaultCompanyId !== 'string' || config.defaultCompanyId === '') {
     throw new Error('Wirex config did not include a defaultCompanyId')
   }
-  return toBytes16CompanyId(config.defaultCompanyId)
+  return config.defaultCompanyId
 }
+
+const getWirexCompanyId = async (): Promise<string> => toBytes16CompanyId(await getWirexConfigCompanyId())
 
 export const toBytes16CompanyId = (companyId: string): `0x${string}` => {
   const hex = companyId.trim().replace(/^0x/i, '').replace(/-/g, '').toLowerCase()
@@ -118,7 +151,6 @@ export interface WirexKernelAccountDeployment {
   /** Hash of the onboarding or Accounts-registration UserOperation's tx; null when no registration was needed this call. */
   transactionHash: Hex | null
 }
-
 
 type WirexSdk = Awaited<ReturnType<typeof createSDK>>
 
@@ -185,7 +217,9 @@ export const deployWirexKernelAccount = async (password: string): Promise<WirexK
   // Accounts contract under the partner's company id, so confirm that here
   // rather than letting user creation fail later with a less obvious error.
   if (!(await sdk.crypto.accountContract.isWalletInAccounts())) {
-    throw new Error(`Wallet ${account.address} is not registered in the Wirex Accounts contract for company ${companyId}`)
+    throw new Error(
+      `Wallet ${account.address} is not registered in the Wirex Accounts contract for company ${companyId}`,
+    )
   }
 
   return { walletAddress, transactionHash }

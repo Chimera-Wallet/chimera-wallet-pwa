@@ -1,9 +1,3 @@
-// Wirex onboarding shown on the Card tab until the user has a card:
-// register (on-chain wallet + Wirex user), hosted KYC, capabilities, issue a
-// virtual card. Same flow and UI as the Settings > Wirex (dev) page, which is
-// kept as-is; this copy uses the main Header (no Settings back navigation)
-// and hands over to the card home via onReady() once a card exists.
-
 import { useContext, useState } from 'react'
 import Header from '../../../components/Header'
 import Content from '../../../components/Content'
@@ -28,7 +22,7 @@ import {
   issueVirtualCard,
 } from '../../../lib/wirex'
 import { deployWirexKernelAccount, getWirexEvmAddress } from '../../../lib/wirexWallet'
-import { errorText, pickActiveCard, storeWirexAddress, withRetry } from './lib'
+import { errorText, pickActiveCard, storeWirexAddress, withRetry } from '../../../lib/wirexCard'
 
 interface SetupProps {
   title: string

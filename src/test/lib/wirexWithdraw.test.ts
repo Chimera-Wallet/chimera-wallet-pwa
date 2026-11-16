@@ -13,7 +13,7 @@ import {
   getPendingWirexWithdrawals,
   msUntilDue,
   runWirexWithdrawal,
-} from '../../screens/Apps/WirexCard/withdraw'
+} from '../../lib/wirexCard'
 
 vi.mock('../../lib/wirex', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../lib/wirex')>()),

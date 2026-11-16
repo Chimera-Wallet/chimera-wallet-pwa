@@ -12,7 +12,7 @@ import {
   savePendingTopUp,
   trackWirexTopUp,
   type PendingTopUp,
-} from '../../screens/Apps/WirexCard/topUp'
+} from '../../lib/wirexTopUp'
 
 vi.mock('../../lib/wirex', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../lib/wirex')>()),

@@ -14,13 +14,13 @@
 // No React in here, so it can be unit tested directly.
 
 import type { IWallet } from '@arkade-os/sdk'
-import { createUnwrapQuote, getWrapQuote, isTerminalWrapStatus, type WrapQuote } from '../../../lib/arkadeWrap'
-import { sendAssets } from '../../../lib/asp'
-import { getWrappedAssetId, type AssetSymbol } from '../../../lib/assets'
-import { getWirexDepositChain } from '../../../lib/sourceChains'
-import { getWirexWallet } from '../../../lib/wirex'
-import { isWirexEnabled } from '../../../providers/wirex'
-import { NotImplementedError, getWirexCardBalance } from './lib'
+import { createUnwrapQuote, getWrapQuote, isTerminalWrapStatus, type WrapQuote } from './arkadeWrap'
+import { sendAssets } from './asp'
+import { getWrappedAssetId, type AssetSymbol } from './assets'
+import { getWirexDepositChain } from './sourceChains'
+import { getWirexWallet } from './wirex'
+import { isWirexEnabled } from '../providers/wirex'
+import { NotImplementedError, getWirexCardBalance } from './wirexCard'
 
 export const isWirexTopUpEnabled = (): boolean =>
   isWirexEnabled() && import.meta.env.VITE_WIREX_TOPUP_ENABLED === 'true'

@@ -1,19 +1,13 @@
-// Top up the card from the Chimera wallet: Ark USDT -> Arkade Wrap -> USDT on
-// Base at the Wirex wallet -> WUSD card balance. See ./topUp.ts for the flow.
-// (MoveAssets.tsx handles moves within Wirex: wallet tokens <-> card.)
-
 import { useContext, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Header from '../../../components/Header'
 import Content from '../../../components/Content'
 import Padded from '../../../components/Padded'
 import FlexCol from '../../../components/FlexCol'
-import FlexRow from '../../../components/FlexRow'
 import Text from '../../../components/Text'
 import Button from '../../../components/Button'
 import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import ErrorMessage from '../../../components/Error'
-import InlineAmountInput from '../../../components/InlineAmountInput'
 import InfoContainer from '../../../components/InfoContainer'
 import { InfoLine } from '../../../components/Info'
 import Loading from '../../../components/Loading'
@@ -21,19 +15,26 @@ import Success from '../../../components/Success'
 import { NavigationContext } from '../../../providers/navigation'
 import { WalletContext } from '../../../providers/wallet'
 import { getReceivingAddresses } from '../../../lib/asp'
-import {
-  BALANCE_DISPLAY_DECIMALS,
-  centsToUnits,
-  getWrappedAssetId,
-  prettyAssetAmount,
-  requireAssetConfig,
-} from '../../../lib/assets'
+import { formatUnits, parseUnits } from 'viem'
+import AssetIcon from '../../../icons/AssetIcon'
+import { BALANCE_DISPLAY_DECIMALS, getWrappedAssetId, prettyAssetAmount, requireAssetConfig } from '../../../lib/assets'
 import { SERVICE_FEE_PERCENT, type WrapQuote } from '../../../lib/arkadeWrap'
 import { getWirexDepositChain } from '../../../lib/sourceChains'
 import { getWirexWallet } from '../../../lib/wirex'
 import { saveTransactionActivityMetadata } from '../../../lib/storage'
 import { consoleError } from '../../../lib/logs'
-import { errorText, getWirexCardBalance } from './lib'
+import { prettyNumber } from '../../../lib/format'
+import { CARD_CURRENCY, CARD_DECIMALS, baseTxUrl, errorText, getWirexCardBalance } from '../../../lib/wirexCard'
+import {
+  CardRowIcon,
+  ConfirmTransferButton,
+  PercentChips,
+  TransferAmount,
+  TransferLayout,
+  TransferRow,
+  TransferRows,
+  type TopUpNavData,
+} from './shared'
 import {
   TOP_UP_SOURCES,
   TopUpBelowMinimumError,
@@ -44,17 +45,7 @@ import {
   savePendingTopUp,
   trackWirexTopUp,
   type PendingTopUp,
-} from './topUp'
-
-export interface TopUpNavData {
-  userAddress: string
-  cardId: string
-}
-
-const PERCENTAGES = [25, 50, 75, 100]
-
-export const baseTxUrl = (hash: string) =>
-  `${import.meta.env.VITE_WIREX_SDK_ENV === 'prod' ? 'https://basescan.org' : 'https://sepolia.basescan.org'}/tx/${hash}`
+} from '../../../lib/wirexTopUp'
 
 // Round the minimum up to what the balance display can show.
 const prettyMinAmount = (minAmount: bigint, precision: number): string => {
@@ -83,6 +74,8 @@ export default function WirexTopUp() {
   const [baselineWusd, setBaselineWusd] = useState(0)
   const [quote, setQuote] = useState<WrapQuote>()
   const [amount, setAmount] = useState(BigInt(0))
+  // What the user typed (decimal units); `amount` is the same in base units.
+  const [amountText, setAmountText] = useState('')
   const [sending, setSending] = useState(false)
   const [topUp, setTopUp] = useState<PendingTopUp>()
   const [error, setError] = useState('')
@@ -179,7 +172,24 @@ export default function WirexTopUp() {
     }
   }
 
-  const header = <Header text={t('apps.wirexCard.topUpFlow.title')} back={sending || topUp ? false : goBack} />
+  // Native decimal keyboard: ',' accepted as the separator, at most `precision` places.
+  const changeAmount = (raw: string) => {
+    const next = raw.replace(',', '.')
+    if (!new RegExp(`^\\d*\\.?\\d{0,${precision}}$`).test(next)) return
+    const text = next === '.' ? '0.' : next
+    setError('')
+    setAmountText(text)
+    setAmount(text && text !== '0.' ? parseUnits(text.replace(/\.$/, ''), precision) : BigInt(0))
+  }
+
+  const setPercent = (percent: number) => {
+    const value = (available * BigInt(percent)) / BigInt(100)
+    setError('')
+    setAmount(value)
+    setAmountText(value > BigInt(0) ? formatUnits(value, precision) : '')
+  }
+
+  const header = <Header text={t('apps.wirexCard.topUpFlow.title')} logo back={sending || topUp ? false : goBack} />
 
   if (topUp?.phase === 'credited') {
     return (
@@ -254,97 +264,83 @@ export default function WirexTopUp() {
   return (
     <>
       {header}
-      <Content>
-        <Padded>
-          <FlexCol gap='1.5rem'>
-            <ErrorMessage error={Boolean(error)} text={error} />
-            <Text centered small color='neutral-500'>
-              {t('apps.wirexCard.topUpFlow.from')}
-            </Text>
-            <InlineAmountInput
-              ariaLabel={t('apps.wirexCard.amount')}
-              value={Number(amount)}
-              onChange={(value) => setAmount(BigInt(value))}
-              onAssetAmountChange={setAmount}
-              asset={source.symbol}
-              ticker={source.symbol}
-              precision={precision}
-              displayValue={centsToUnits(amount, precision)}
-              allowFiat={false}
-              disabled={sending}
+      <TransferLayout
+        footer={
+          <>
+            <ConfirmTransferButton
+              testId='wirex-topup-confirm'
+              label={t('apps.wirexCard.transfer.confirm')}
+              onClick={confirm}
+              disabled={!canConfirm}
+              loading={sending}
             />
-            <Text centered small color='neutral-500'>
-              {t('common.notifications.unwrapService.availableBalance', {
-                amount: prettyAssetAmount(available, precision),
+            <PercentChips
+              testIdPrefix='wirex-topup-pct'
+              onSelect={setPercent}
+              disabled={sending || available === BigInt(0)}
+            />
+          </>
+        }
+      >
+        <TransferAmount
+          testId='wirex-topup-amount'
+          ariaLabel={t('apps.wirexCard.amount')}
+          value={amountText}
+          onChange={changeAmount}
+          unit={source.symbol}
+          // The card is credited in WUSD, ~1:1 with what reaches the Wirex wallet.
+          hint={`≈ ${prettyAssetAmount(payout, precision)} ${CARD_CURRENCY}`}
+          disabled={sending}
+        />
+        <TransferRows
+          from={
+            <TransferRow
+              testId='wirex-topup-from'
+              icon={<AssetIcon symbol={source.symbol} size={36} />}
+              label={t('apps.wirexCard.transfer.from', { name: t('apps.wirexCard.transfer.wallet') })}
+              title={`${assetConfig.name} · ${prettyAssetAmount(available, precision)} ${source.symbol}`}
+            />
+          }
+          to={
+            <TransferRow
+              testId='wirex-topup-to'
+              icon={<CardRowIcon />}
+              label={t('apps.wirexCard.transfer.to', { name: t('apps.wirexCard.card') })}
+              title={`${t('apps.wirexCard.card')} · ${prettyNumber(baselineWusd, CARD_DECIMALS, true, CARD_DECIMALS)} ${CARD_CURRENCY}`}
+            />
+          }
+        />
+        <ErrorMessage error={Boolean(error)} text={error} />
+        {insufficient ? <ErrorMessage error text={t('apps.wirexCard.insufficient')} /> : null}
+        <InfoContainer>
+          {!quote && !error ? <InfoLine compact text={t('common.general.loading')} /> : null}
+          {minAmount > BigInt(0) ? (
+            <InfoLine
+              compact
+              text={t('common.notifications.unwrapService.minAmount', {
+                amount: prettyMinAmount(minAmount, precision),
                 ticker: source.symbol,
               })}
-            </Text>
-            {available > BigInt(0) ? (
-              <FlexRow centered gap='0.7rem'>
-                {PERCENTAGES.map((percent) => (
-                  <button
-                    key={percent}
-                    type='button'
-                    data-testid={`wirex-topup-pct-${percent}`}
-                    disabled={sending}
-                    onClick={() => setAmount((available * BigInt(percent)) / BigInt(100))}
-                    style={{
-                      background: 'var(--surface)',
-                      border: '1px solid var(--neutral-100)',
-                      borderRadius: '0.5rem',
-                      color: 'var(--neutral-700)',
-                      cursor: sending ? 'default' : 'pointer',
-                      fontSize: '0.875rem',
-                      fontWeight: 500,
-                      padding: '0.5rem 1rem',
-                    }}
-                  >
-                    {percent}%
-                  </button>
-                ))}
-              </FlexRow>
-            ) : null}
-            {insufficient ? <ErrorMessage error text={t('apps.wirexCard.insufficient')} /> : null}
-            <InfoContainer>
-              {!quote && !error ? <InfoLine compact text={t('common.general.loading')} /> : null}
-              {minAmount > BigInt(0) ? (
-                <InfoLine
-                  compact
-                  text={t('common.notifications.unwrapService.minAmount', {
-                    amount: prettyMinAmount(minAmount, precision),
-                    ticker: source.symbol,
-                  })}
-                />
-              ) : null}
-              <InfoLine compact text={t('common.notifications.wrapService.feeRate', { rate: SERVICE_FEE_PERCENT })} />
-              {quote?.network_fee_amount ? (
-                <InfoLine
-                  compact
-                  text={t('common.notifications.unwrapService.networkFee', {
-                    amount: prettyAssetAmount(BigInt(quote.network_fee_amount), precision),
-                    ticker: source.symbol,
-                  })}
-                />
-              ) : null}
-              <InfoLine
-                compact
-                text={t('apps.wirexCard.topUpFlow.youReceive', {
-                  amount: prettyAssetAmount(payout, precision),
-                })}
-              />
-            </InfoContainer>
-          </FlexCol>
-        </Padded>
-      </Content>
-      <ButtonsOnBottom>
-        <Button
-          label={t('apps.wirexCard.confirm')}
-          onClick={confirm}
-          disabled={!canConfirm}
-          loading={sending}
-          testId='wirex-topup-confirm'
-        />
-      </ButtonsOnBottom>
+            />
+          ) : null}
+          <InfoLine compact text={t('common.notifications.wrapService.feeRate', { rate: SERVICE_FEE_PERCENT })} />
+          {quote?.network_fee_amount ? (
+            <InfoLine
+              compact
+              text={t('common.notifications.unwrapService.networkFee', {
+                amount: prettyAssetAmount(BigInt(quote.network_fee_amount), precision),
+                ticker: source.symbol,
+              })}
+            />
+          ) : null}
+          <InfoLine
+            compact
+            text={t('apps.wirexCard.topUpFlow.youReceive', {
+              amount: prettyAssetAmount(payout, precision),
+            })}
+          />
+        </InfoContainer>
+      </TransferLayout>
     </>
   )
 }

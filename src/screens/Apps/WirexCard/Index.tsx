@@ -9,9 +9,10 @@ import Header from '../../../components/Header'
 import Content from '../../../components/Content'
 import Loading from '../../../components/Loading'
 import { WirexCard, WirexUser, getWirexCards, getWirexUserByAddress } from '../../../lib/wirex'
-import { pickActiveCard, readWirexAddress } from './lib'
+import { pickActiveCard, readWirexAddress } from '../../../lib/wirexCard'
 import WirexSetup from './Setup'
 import WirexCardHome from './CardHome'
+import WirexWalkthrough from './Walkthrough'
 
 type State =
   | { phase: 'loading' }
@@ -26,9 +27,8 @@ const toState = (user: WirexUser | null, cards: WirexCard[]): State => {
 export default function AppWirexCard() {
   const { t } = useTranslation()
   const [state, setState] = useState<State>({ phase: 'loading' })
+  const [walkthroughDone, setWalkthroughDone] = useState(false)
 
-  // Reload a previously used account on mount; any failure drops to setup,
-  // where the user can retry with Refresh / Load existing account.
   useEffect(() => {
     let cancelled = false
     const address = readWirexAddress()
@@ -66,6 +66,7 @@ export default function AppWirexCard() {
   }
 
   if (state.phase === 'setup') {
+    if (!walkthroughDone) return <WirexWalkthrough onDone={() => setWalkthroughDone(true)} />
     return (
       <WirexSetup
         title={title}

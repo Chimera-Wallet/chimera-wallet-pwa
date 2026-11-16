@@ -65,6 +65,9 @@ importers:
       '@tanstack/react-virtual':
         specifier: ^3.13.19
         version: 3.14.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@wirexapp/card-reveal-web':
+        specifier: 1.1.0
+        version: 1.1.0
       '@wirexapp/wpay-baas-sdk':
         specifier: 0.1.11
         version: 0.1.11(@zerodev/webauthn-key@5.5.0(viem@2.56.3(typescript@5.9.3)(zod@3.25.76)))(bare-abort-controller@1.1.2)(bare-buffer@3.7.1)(bare-events@2.9.2(bare-abort-controller@1.1.2))(bare-pipe@4.3.1(bare-abort-controller@1.1.2)(bare-buffer@3.7.1))(bare-tcp@2.6.1(bare-abort-controller@1.1.2)(bare-buffer@3.7.1)(bare-pipe@4.3.1(bare-abort-controller@1.1.2)(bare-buffer@3.7.1)))(bare-url@2.5.4)(typescript@5.9.3)(viem@2.56.3(typescript@5.9.3)(zod@3.25.76))(zod@3.25.76)
@@ -2075,6 +2078,12 @@ packages:
 
   '@vitest/utils@3.2.7':
     resolution: {integrity: sha512-x6BDOd7dyo3PFLY3I9/HJ25X/6OurhGXk2/B9gOZNPF7XDVjeBK4k01lQE5uvDpbuheErh91qYuE1E2OEjK3Rw==}
+
+  '@wirexapp/card-reveal-web@1.1.0':
+    resolution: {integrity: sha512-FgQ3woJ9crVJUXlWZKw6qpKMRhbGB0GUJlEwO3iOzLqFsAbBON1RD55PsQ9rv10VJ1efh9Iw0AhKaq6CR7mTYA==}
+
+  '@wirexapp/card-sdk-core@1.1.0':
+    resolution: {integrity: sha512-PRaNsLO+kY9QaUi/0eqIVex7+gb0ofIovIqbpYgqdmhCzM2Yi7oyaeEz3nljvlT6aAnZMaLv3NQZHlu/lRYe+Q==}
 
   '@wirexapp/wpay-baas-sdk@0.1.11':
     resolution: {integrity: sha512-ggQbjUK6Of4HxguwpBm43AyQ7Ld7YDEta0gPGBYQQzt9lCX1bo5x7oSVYrF48S4qupglNPhGU/jQOG+dPs3bQw==}
@@ -8027,6 +8036,12 @@ snapshots:
       '@vitest/pretty-format': 3.2.7
       loupe: 3.2.1
       tinyrainbow: 2.0.0
+
+  '@wirexapp/card-reveal-web@1.1.0':
+    dependencies:
+      '@wirexapp/card-sdk-core': 1.1.0
+
+  '@wirexapp/card-sdk-core@1.1.0': {}
 
   '@wirexapp/wpay-baas-sdk@0.1.11(@zerodev/webauthn-key@5.5.0(viem@2.56.3(typescript@5.9.3)(zod@3.25.76)))(bare-abort-controller@1.1.2)(bare-buffer@3.7.1)(bare-events@2.9.2(bare-abort-controller@1.1.2))(bare-pipe@4.3.1(bare-abort-controller@1.1.2)(bare-buffer@3.7.1))(bare-tcp@2.6.1(bare-abort-controller@1.1.2)(bare-buffer@3.7.1)(bare-pipe@4.3.1(bare-abort-controller@1.1.2)(bare-buffer@3.7.1)))(bare-url@2.5.4)(typescript@5.9.3)(viem@2.56.3(typescript@5.9.3)(zod@3.25.76))(zod@3.25.76)':
     dependencies:

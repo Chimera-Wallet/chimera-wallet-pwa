@@ -3,11 +3,14 @@ import { setMnemonic } from '../../lib/mnemonic'
 import {
   getWirexEvmAddress,
   deployWirexKernelAccount,
+  signWirexActionConfirmation,
+  wirexConfirmationMessage,
   finishWirexWithdrawal,
   toBytes16CompanyId,
   withdrawFromWirexWallet,
 } from '../../lib/wirexWallet'
 import { createSDK } from '@wirexapp/wpay-baas-sdk'
+import { verifyMessage } from 'viem'
 
 vi.mock('@wirexapp/wpay-baas-sdk', () => ({
   createSDK: vi.fn(),
@@ -20,14 +23,16 @@ const testPassword = 'testpassword'
 // Minimal stand-in for the subset of the SDK's surface deployWirexKernelAccount
 // actually calls, with every step defaulting to "already done" so a test only
 // has to override the specific step(s) it cares about.
-const makeSdk = (overrides: {
-  isPolicyInstalled?: boolean
-  isExecutorInstalled?: boolean
-  isWalletInAccounts?: boolean
-  walletAddress?: string
-  transactionHash?: string
-  registerTransactionHash?: string
-} = {}) => ({
+const makeSdk = (
+  overrides: {
+    isPolicyInstalled?: boolean
+    isExecutorInstalled?: boolean
+    isWalletInAccounts?: boolean
+    walletAddress?: string
+    transactionHash?: string
+    registerTransactionHash?: string
+  } = {},
+) => ({
   crypto: {
     wallet: {
       getSmartWalletAddress: vi.fn().mockResolvedValue(overrides.walletAddress ?? '0xSmartWallet'),
@@ -47,7 +52,10 @@ const makeSdk = (overrides: {
       isWalletInAccounts: vi.fn().mockResolvedValue(overrides.isWalletInAccounts ?? true),
       registerInAccounts: vi
         .fn()
-        .mockResolvedValue({ success: true, receipt: { transactionHash: overrides.registerTransactionHash ?? '0xRegister' } }),
+        .mockResolvedValue({
+          success: true,
+          receipt: { transactionHash: overrides.registerTransactionHash ?? '0xRegister' },
+        }),
     },
   },
 })
@@ -102,7 +110,11 @@ describe('wirexWallet.ts', () => {
       vi.stubEnv('VITE_WIREX_SDK_ENV', 'uat')
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockResolvedValue(new Response(JSON.stringify({ defaultCompanyId: '00000000-0000-0000-0000-000000000004' }), { status: 200 })),
+        vi
+          .fn()
+          .mockResolvedValue(
+            new Response(JSON.stringify({ defaultCompanyId: '00000000-0000-0000-0000-000000000004' }), { status: 200 }),
+          ),
       )
       await setMnemonic(testMnemonic, testPassword)
     })
@@ -125,7 +137,9 @@ describe('wirexWallet.ts', () => {
     })
 
     it('throws when the remote config defaultCompanyId is not a valid 16-byte id', async () => {
-      vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ defaultCompanyId: 'not-an-id' }), { status: 200 }))
+      vi.mocked(fetch).mockResolvedValueOnce(
+        new Response(JSON.stringify({ defaultCompanyId: 'not-an-id' }), { status: 200 }),
+      )
       await expect(deployWirexKernelAccount(testPassword)).rejects.toThrow('Invalid Wirex company id')
       expect(createSDK).not.toHaveBeenCalled()
     })
@@ -223,7 +237,9 @@ describe('wirexWallet.ts', () => {
 
       const mainWalletClient = capturedGetMainWalletClient!() as {
         address: string
-        getEthereumProvider: () => Promise<{ request: (args: { method: string; params?: unknown[] }) => Promise<unknown> }>
+        getEthereumProvider: () => Promise<{
+          request: (args: { method: string; params?: unknown[] }) => Promise<unknown>
+        }>
       }
       expect(mainWalletClient.address).toBe(expectedAddress)
 
@@ -235,6 +251,25 @@ describe('wirexWallet.ts', () => {
         'does not support RPC method',
       )
     })
+  })
+})
+
+describe('signWirexActionConfirmation', () => {
+  it("signs Wirex's canonical message with the Wirex key, nonce in seconds", async () => {
+    await setMnemonic(testMnemonic, testPassword)
+    const result = await signWirexActionConfirmation(testPassword, 'GetCardDetails', 1_800_000_000_999)
+
+    expect(result.nonce).toBe(1_800_000_000)
+    expect(result.address).toBe(await getWirexEvmAddress(testPassword))
+    expect(wirexConfirmationMessage('GetCardDetails', result.nonce)).toBe(
+      'By signing this I confirm that I am executing action GetCardDetails at 1800000000',
+    )
+    const valid = await verifyMessage({
+      address: result.address as `0x${string}`,
+      message: wirexConfirmationMessage('GetCardDetails', result.nonce),
+      signature: result.signature,
+    })
+    expect(valid).toBe(true)
   })
 })
 
@@ -256,7 +291,12 @@ describe('Wirex wallet withdrawals', () => {
     address: '0x0774164DC20524Bb239b39D1DC42573C3E4C6976',
     decimals: 18,
     isSynthetic: true,
-    baseToken: { symbol: 'USDC', address: '0x7Af7cDbd557eD302F7538Db1e3d094C8BBcA665c', decimals: 6, isSynthetic: false },
+    baseToken: {
+      symbol: 'USDC',
+      address: '0x7Af7cDbd557eD302F7538Db1e3d094C8BBcA665c',
+      decimals: 6,
+      isSynthetic: false,
+    },
   }
   const recipient = '0x1111111111111111111111111111111111111111'
   const makeWithdrawSdk = (token: unknown = WUSD) => ({
@@ -275,10 +315,12 @@ describe('Wirex wallet withdrawals', () => {
     vi.stubEnv('VITE_WIREX_SDK_ENV', 'uat')
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockImplementation(
-        async () =>
-          new Response(JSON.stringify({ defaultCompanyId: '00000000-0000-0000-0000-000000000004' }), { status: 200 }),
-      ),
+      vi
+        .fn()
+        .mockImplementation(
+          async () =>
+            new Response(JSON.stringify({ defaultCompanyId: '00000000-0000-0000-0000-000000000004' }), { status: 200 }),
+        ),
     )
     await setMnemonic(testMnemonic, testPassword)
   })
@@ -300,14 +342,19 @@ describe('Wirex wallet withdrawals', () => {
       recipientAddress: recipient,
       amount: 10.5,
     })
-    expect(result).toEqual({ txHash: '0xFinalTx', baseToken: { symbol: 'USDC', address: WUSD.baseToken.address, decimals: 6 } })
+    expect(result).toEqual({
+      txHash: '0xFinalTx',
+      baseToken: { symbol: 'USDC', address: WUSD.baseToken.address, decimals: 6 },
+    })
   })
 
   it('refuses a token that is missing or has no base token', async () => {
     vi.mocked(createSDK).mockResolvedValue(makeWithdrawSdk(null) as never)
     await expect(withdrawFromWirexWallet(testPassword, { recipient, amount: 1 })).rejects.toThrow('token registry')
 
-    vi.mocked(createSDK).mockResolvedValue(makeWithdrawSdk({ ...WUSD, isSynthetic: false, baseToken: undefined }) as never)
+    vi.mocked(createSDK).mockResolvedValue(
+      makeWithdrawSdk({ ...WUSD, isSynthetic: false, baseToken: undefined }) as never,
+    )
     await expect(withdrawFromWirexWallet(testPassword, { recipient, amount: 1 })).rejects.toThrow('no base token')
   })
 

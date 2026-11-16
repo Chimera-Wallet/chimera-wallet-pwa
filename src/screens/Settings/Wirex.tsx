@@ -30,6 +30,8 @@ import {
   mintWirexTestUsdt,
 } from '../../lib/wirex'
 import { deployWirexKernelAccount, getWirexEvmAddress } from '../../lib/wirexWallet'
+import { sleep } from '../../lib/sleep'
+import { errorText, withRetry } from '../../lib/wirexCard'
 
 // The signer address isn't secret; remembering it lets the account reload without a password.
 const ADDRESS_KEY = 'wirexDevUserAddress'
@@ -75,37 +77,6 @@ const readErc20Balance = async (token: string, owner: string, decimals: number):
 // Wirex's Base Sepolia test USDT has 18 decimals: 100 USDT.
 const TEST_MINT_AMOUNT = (BigInt(100) * BigInt(10) ** BigInt(18)).toString()
 const isSandbox = import.meta.env.VITE_WIREX_SDK_ENV !== 'prod'
-
-const errorText = (err: unknown) => (err instanceof Error ? err.message : String(err))
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
-// Errors that no amount of waiting will fix — fail straight away on these.
-const PERMANENT_ERRORS = ['Invalid residence country', 'ErrorAlreadyExists', 'Missing VITE_', 'Invalid Wirex company id']
-const isPermanent = (err: unknown) => PERMANENT_ERRORS.some((p) => errorText(err).includes(p))
-
-/**
- * Wirex lags behind the chain and behind its own writes (a just-registered wallet
- * or just-created user isn't visible for a few seconds), so the steps below are
- * retried with a growing delay instead of failing on the first attempt.
- * Every retried step is idempotent (deploy skips finished steps, ensureWirexUser
- * looks up before creating), so repeating one is safe.
- */
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  { attempts, delayMs, onRetry }: { attempts: number; delayMs: number; onRetry: (msg: string) => void },
-): Promise<T> {
-  for (let attempt = 1; ; attempt++) {
-    try {
-      return await fn()
-    } catch (err) {
-      if (attempt >= attempts || isPermanent(err)) throw err
-      const wait = delayMs * attempt
-      onRetry(`attempt ${attempt}/${attempts} failed (${errorText(err)}), retrying in ${wait / 1000}s…`)
-      await sleep(wait)
-    }
-  }
-}
 
 export default function Wirex() {
   const { wallet } = useContext(WalletContext)

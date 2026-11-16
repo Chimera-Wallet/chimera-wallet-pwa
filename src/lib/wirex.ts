@@ -66,7 +66,6 @@ async function request<T>(path: string, init?: RequestInit, opts: RequestOptions
   return body as T
 }
 
-
 export type WirexVerificationStatus = 'None' | 'Applied' | 'Pending' | 'InReview' | 'Approved' | 'Canceled' | 'Rejected'
 
 export type WirexCapabilityStatus = 'Active' | 'ActivationNotStarted' | 'InProgress' | 'NotFulfilled' | 'NotAvailable'
@@ -100,7 +99,6 @@ export interface WirexUser {
  */
 export const canIssueVirtualCard = (user: WirexUser): boolean =>
   user.capabilities?.some((c) => c.type === VIRTUAL_CARD_CAPABILITY && c.status === 'Active') ?? false
-
 
 interface WirexUserApiResponse {
   user_id: string
@@ -215,14 +213,6 @@ export const getWirexVerificationLink = async (userAddress: string): Promise<str
   if (!link) throw new Error('Wirex did not return a verification link')
   return link
 }
-
-// Cards 
-//
-// Card calls run "as" the Wirex user so a card belongs to a specific user, 
-//
-// PAN/expiry/CVV/PIN are deliberately NOT modeled here: Wirex's PCI-compliant
-// SDK is meant to render those directly inside its own iframe so that data
-// never touches our server or client code (keeping PCI scope off this app).
 
 
 export interface WirexCard {
@@ -355,6 +345,53 @@ export const setWirexCardLimits = async (
       ...(limits.transactionLimit !== undefined ? { transaction_limit: limits.transactionLimit } : {}),
     }),
   })
+}
+
+export const setWirexCardBlocked = async (userAddress: string, cardId: string, blocked: boolean): Promise<void> => {
+  await request<unknown>(`/api/v1/cards/${encodeURIComponent(cardId)}/${blocked ? 'block' : 'unblock'}`, {
+    method: 'PUT',
+    headers: userAuthHeaders(userAddress),
+  })
+}
+
+export interface CardRevealSessionRequest {
+  userAddress: string
+  /** Unix seconds the confirmation message was signed at. */
+  nonce: number
+  /** Main-wallet signature of the GetCardDetails confirmation (lib/wirexWallet.ts). */
+  signature: string
+}
+
+export interface CardRevealSession {
+  /** Wirex user bearer token for the reveal frames. Keep in memory only. */
+  accessToken: string
+  /** Short-lived (~5 min) GetCardDetails action token. Keep in memory only. */
+  actionToken: string
+}
+
+export const createCardRevealSession = async (payload: CardRevealSessionRequest): Promise<CardRevealSession> => {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  try {
+    const res = await fetch('/api/wirex-card-reveal', {
+      method: 'POST',
+      signal: controller.signal,
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    if (!res.ok) throw new Error((await res.text().catch(() => '')) || `Request failed: ${res.status}`)
+    const body = (await res.json()) as Partial<CardRevealSession>
+    if (!body.accessToken || !body.actionToken) throw new Error('Card details are unavailable right now')
+    return { accessToken: body.accessToken, actionToken: body.actionToken }
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error('The request timed out. Please check your connection and try again.')
+    }
+    throw err
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 // Push-to-card

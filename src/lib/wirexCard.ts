@@ -1,14 +1,18 @@
-// Shared helpers for the Wirex card screens (shown in place of the card
-// reservation app when VITE_WIREX_ENABLED is 'true' — see providers/navigation.tsx).
-//
-// Self-contained on purpose, like the Settings > Wirex (dev) page: it talks to
-// ../../../lib/wirex directly rather than through WirexProvider, which can't
-// load an already-registered user.
-//
 // Everything marked PLACEHOLDER is something the designs show but that either
 // isn't specified yet or has no backing endpoint in lib/wirex.ts.
 
-import { WirexCard, WirexWallet } from '../../../lib/wirex'
+import { sleep } from './sleep'
+import {
+  type WirexCard,
+  type WirexWallet,
+  type WirexWithdrawalRequest,
+  estimateCardWithdrawal,
+  executeCardWithdrawal,
+  getWirexCards,
+  getWirexWithdrawalRequests,
+  setWirexCardBlocked,
+} from './wirex'
+import { finishWirexWithdrawal, withdrawFromWirexWallet, type WirexWithdrawResult } from './wirexWallet'
 
 // Address persistence
 
@@ -35,11 +39,7 @@ export const storeWirexAddress = (address: string) => {
   }
 }
 
-// Retry (copied from the dev page)
-
 export const errorText = (err: unknown) => (err instanceof Error ? err.message : String(err))
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 // Errors that no amount of waiting will fix — fail straight away on these.
 const PERMANENT_ERRORS = [
@@ -98,6 +98,16 @@ export const getWirexCardBalance = (wallet: WirexWallet | null): number =>
     .filter((b) => b.token_symbol.toUpperCase() === CARD_BALANCE_TOKEN)
     .reduce((sum, b) => sum + (Number(b.balance) || 0), 0)
 
+export const lockWirexCard = async (userAddress: string, card: WirexCard, lock: boolean): Promise<WirexCard> => {
+  await setWirexCardBlocked(userAddress, card.id, lock)
+  const fresh = ((await getWirexCards(userAddress))?.data ?? []).find((c) => c.id === card.id)
+  return fresh && (fresh.status === 'Blocked') === lock ? fresh : { ...card, status: lock ? 'Blocked' : 'Active' }
+}
+
+/** Base block explorer link for a payout / withdrawal tx. */
+export const baseTxUrl = (hash: string) =>
+  `${import.meta.env.VITE_WIREX_SDK_ENV === 'prod' ? 'https://basescan.org' : 'https://sepolia.basescan.org'}/tx/${hash}`
+
 /* eslint-disable @typescript-eslint/no-unused-vars -- placeholder stubs keep their final signatures */
 
 /**
@@ -135,12 +145,8 @@ export class NotImplementedError extends Error {
   }
 }
 
-/** PLACEHOLDER: no block/unblock card endpoint in lib/wirex.ts. */
-export const lockWirexCard = async (_userAddress: string, _cardId: string, _lock: boolean): Promise<void> => {
-  throw new NotImplementedError('Locking the card')
-}
-
-export type WirexCardTxType = 'withdraw' | 'deposit' | 'swap'
+/** deposit = top-up, payment = card spend, withdraw = move back to the wallet. */
+export type WirexCardTxType = 'deposit' | 'payment' | 'withdraw' | 'swap'
 
 export interface WirexCardTx {
   id: string
@@ -160,3 +166,93 @@ export interface WirexCardTx {
 export const getWirexCardTransactions = async (_userAddress: string, _cardId: string): Promise<WirexCardTx[]> => []
 
 /* eslint-enable @typescript-eslint/no-unused-vars */
+
+// Withdrawal
+//
+// Move Wirex card balance out to a Base address (v1: the user's own EVM signer
+// address, the first hop towards USDT-CX on Ark; see the plan's blockers).
+//
+//   Leg 0 (Gen1 cards only): card balance -> Wirex wallet, via the card
+//          withdraw estimate/execute API.
+//   Leg 1: Wirex wallet WUSD -> unwrapped base token (USDC) -> recipient, via
+//          the SDK. Time-locked by Wirex's Execution Delay Policy: the promise
+//          stays pending until the delay passes.
+//
+// Pending time-locked requests are read back from Wirex
+// (GET /api/v1/withdrawal/requests), not stored locally, so a withdrawal whose
+// tab was closed mid-delay can be finished from any device.
+
+/** Whether the card holds its own balance (Gen1) that must be withdrawn to the wallet first. */
+export const cardHoldsBalance = (card: WirexCard): boolean => (card.balances ?? []).some((b) => b.balance > 0)
+
+export type WithdrawStep = 'card' | 'delay'
+
+export interface RunWithdrawalParams {
+  password: string
+  userAddress: string
+  card: WirexCard
+  wallet: WirexWallet
+  /** Base address receiving the unwrapped base token. */
+  recipient: `0x${string}`
+  /** Decimal amount in CARD_CURRENCY (WUSD is 1:1 USD). */
+  amount: number
+  onStep?: (step: WithdrawStep) => void
+}
+
+/**
+ * Withdraw `amount` from the card to `recipient`. Resolves once the
+ * time-locked on-chain transfer has executed (after Wirex's delay).
+ */
+export const runWirexWithdrawal = async ({
+  password,
+  userAddress,
+  card,
+  wallet,
+  recipient,
+  amount,
+  onStep,
+}: RunWithdrawalParams): Promise<WirexWithdrawResult> => {
+  if (!(amount > 0)) throw new Error('Amount must be greater than zero')
+
+  if (cardHoldsBalance(card)) {
+    onStep?.('card')
+    const estimate = await estimateCardWithdrawal({
+      userAddress,
+      cardId: card.id,
+      amount,
+      currency: CARD_CURRENCY,
+      destinationAddress: wallet.wallet_address,
+      correlationId: crypto.randomUUID(),
+    })
+    if (!estimate) throw new Error('Wirex did not return a card withdrawal estimate')
+    await executeCardWithdrawal(userAddress, card.id, estimate.estimation_id)
+  }
+
+  onStep?.('delay')
+  return withdrawFromWirexWallet(password, { recipient, amount })
+}
+
+/** Ms until a time-locked request can be executed (0 when it's already due). */
+export const msUntilDue = (request: WirexWithdrawalRequest, now = Date.now()): number => {
+  const due = new Date(request.valid_after).getTime()
+  return Number.isFinite(due) ? Math.max(0, due - now) : 0
+}
+
+/** Withdrawals requested on-chain that haven't executed yet. Errors read as none. */
+export const getPendingWirexWithdrawals = async (userAddress: string): Promise<WirexWithdrawalRequest[]> => {
+  try {
+    return await getWirexWithdrawalRequests(userAddress)
+  } catch {
+    return []
+  }
+}
+
+/** Execute a previously requested withdrawal once its delay has passed. */
+export const finishPendingWirexWithdrawal = async (
+  password: string,
+  request: WirexWithdrawalRequest,
+): Promise<`0x${string}`> => {
+  const wait = msUntilDue(request)
+  if (wait > 0) throw new Error(`This withdrawal can be completed in ${Math.ceil(wait / 60_000)} min`)
+  return finishWirexWithdrawal(password, request.call_data)
+}

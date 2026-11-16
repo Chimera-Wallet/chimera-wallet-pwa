@@ -9,6 +9,8 @@ import {
   issueVirtualCard,
   getWirexCardLimits,
   setWirexCardLimits,
+  setWirexCardBlocked,
+  createCardRevealSession,
   estimateCardTransfer,
   transferToCard,
   canIssueVirtualCard,
@@ -324,6 +326,58 @@ describe('wirex.ts REST client', () => {
     })
   })
 
+  describe('card reveal session (api/wirex/cardReveal.ts)', () => {
+    const payload = { userAddress: '0xabc', nonce: 1_800_000_000, signature: '0xsig' }
+
+    it('POSTs the signed confirmation to /api/wirex-card-reveal (not the proxy) and returns both tokens', async () => {
+      fetchMocker.mockResponseOnce(JSON.stringify({ accessToken: 'user-token', actionToken: 'action-1' }))
+      await expect(createCardRevealSession(payload)).resolves.toEqual({
+        accessToken: 'user-token',
+        actionToken: 'action-1',
+      })
+      const [url, init] = lastCall()
+      expect(url).toBe('/api/wirex-card-reveal')
+      expect(init?.method).toBe('POST')
+      expect(init?.cache).toBe('no-store')
+      expect(lastCallBody()).toEqual(payload)
+    })
+
+    it("surfaces the backend's error text", async () => {
+      fetchMocker.mockResponseOnce('Wirex did not accept the signature', { status: 401 })
+      await expect(createCardRevealSession(payload)).rejects.toThrow('Wirex did not accept the signature')
+    })
+
+    it('rejects a response missing a token', async () => {
+      fetchMocker.mockResponseOnce(JSON.stringify({ accessToken: 'user-token' }))
+      await expect(createCardRevealSession(payload)).rejects.toThrow()
+    })
+  })
+
+  describe('card freeze — docs.wirexapp.com/reference/put_api-v1-cards-cardid-block and put_api-v1-cards-cardid-unblock', () => {
+    it('blocks via PUT /api/v1/cards/{cardId}/block with the user-token header and no body', async () => {
+      fetchMocker.mockResponseOnce('')
+      await setWirexCardBlocked('0xabc', 'card-1', true)
+      const [url, init] = lastCall()
+      expect(url).toBe(`${PROXY_BASE}/api/v1/cards/card-1/block`)
+      expect(init?.method).toBe('PUT')
+      expect(init?.body).toBeUndefined()
+      expect(lastCallHeaders().get('X-Wirex-User-Wallet')).toBe('0xabc')
+    })
+
+    it('unblocks via PUT /api/v1/cards/{cardId}/unblock', async () => {
+      fetchMocker.mockResponseOnce('')
+      await setWirexCardBlocked('0xabc', 'card-1', false)
+      const [url, init] = lastCall()
+      expect(url).toBe(`${PROXY_BASE}/api/v1/cards/card-1/unblock`)
+      expect(init?.method).toBe('PUT')
+    })
+
+    it('surfaces Wirex errors', async () => {
+      fetchMocker.mockResponseOnce(JSON.stringify({ error: 'Card cannot be blocked' }), { status: 400 })
+      await expect(setWirexCardBlocked('0xabc', 'card-1', true)).rejects.toThrow('Card cannot be blocked')
+    })
+  })
+
   describe('card transfer — docs.wirexapp.com/reference/post_api-v1-cards-transfer-estimate and post_api-v1-cards-transfer', () => {
     it('estimates a transfer via POST /api/v1/cards/transfer/estimate with the documented body fields', async () => {
       const estimateResponse = {
@@ -357,7 +411,14 @@ describe('wirex.ts REST client', () => {
 
     it('omits currency from the estimate body when not given', async () => {
       fetchMocker.mockResponseOnce(
-        JSON.stringify({ amount: 1, currency: 'USD', estimation_id: 'e', expires_at: 1, fee_amount: 0, estimated_amounts: [] }),
+        JSON.stringify({
+          amount: 1,
+          currency: 'USD',
+          estimation_id: 'e',
+          expires_at: 1,
+          fee_amount: 0,
+          estimated_amounts: [],
+        }),
       )
       await estimateCardTransfer({
         userAddress: '0xabc',

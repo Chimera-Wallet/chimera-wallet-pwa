@@ -317,6 +317,51 @@
         "lockCard": "Lock card",
         "unlockCard": "Unlock card",
         "moveAssets": "Move assets",
+        "details": "Details",
+        "freeze": "Freeze",
+        "unfreeze": "Unfreeze",
+        "cardFrozen": "Card frozen",
+        "frozenToast": "Card frozen",
+        "transfer": {
+            "from": "From · {{name}}",
+            "to": "To · {{name}}",
+            "wallet": "Wallet",
+            "confirm": "Confirm transfer"
+        },
+        "cardDetails": {
+            "title": "Card details",
+            "close": "Close",
+            "loading": "Loading card details…",
+            "error": "Couldn't load card details. Please try again.",
+            "warning": "Never share your CVV. Chimera will never ask for it.",
+            "otherWallet": "This card belongs to a different wallet",
+            "copied": {
+                "number": "Card number copied",
+                "expiry": "Expiry date copied",
+                "cvv": "CVV copied",
+                "cardholder": "Cardholder copied",
+                "pin": "PIN copied"
+            }
+        },
+        "unfrozenToast": "Card unfrozen",
+        "toWallet": "To wallet",
+        "showBalance": "Show balance",
+        "hideBalance": "Hide balance",
+        "filter": "Filter",
+        "viewAll": "View all transactions",
+        "showLess": "Show less",
+        "period": {
+            "today": "Today",
+            "thisWeek": "This week",
+            "earlier": "Earlier"
+        },
+        "status": {
+            "active": "Active",
+            "frozen": "Frozen",
+            "Requested": "Requested",
+            "NotActivated": "Not activated",
+            "Closed": "Closed"
+        },
         "transactions": "Transactions",
         "noTransactions": "No transactions yet",
         "available": "Available",
@@ -331,6 +376,23 @@
         "info": "Info",
         "fee": "Fee",
         "topUpPending": "Top-up of {{amount}} {{ticker}} in progress",
+        "walkthrough": {
+            "continue": "Continue",
+            "getCard": "Get your card",
+            "frozen": "Card frozen",
+            "card": {
+                "title": "Your Chimera Card",
+                "body": "A Visa debit card connected to your Chimera wallet. Pay online and in store, anywhere Visa is accepted."
+            },
+            "topUp": {
+                "title": "Top up in seconds",
+                "body": "Move funds from your wallet to your card whenever you need. Your card balance is always one glance away."
+            },
+            "control": {
+                "title": "Always in control",
+                "body": "Freeze and unfreeze your card in one tap, check your card details and follow every transaction."
+            }
+        },
         "withdraw": {
             "fromCard": "Moving funds from the card to your Wirex wallet…",
             "delay": "Waiting for Wirex's security delay. Keep this screen open, or finish it later from the card screen.",
