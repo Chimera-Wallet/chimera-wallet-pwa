@@ -47,7 +47,7 @@ import {
   type BankData,
   type BankDetailsFields,
 } from '../../../lib/bankTransferConfig'
-import { getUserEmailForBankTransfer } from '../../../lib/kyc'
+import { fetchKycBankData, getUserEmailForBankTransfer, type KycBankData } from '../../../lib/kyc'
 import { AspContext } from '@/providers/asp'
 import rightIcon from '../../../../public/images/icons/ Right.png'
 import {useTranslation} from 'react-i18next'
@@ -114,11 +114,42 @@ export default function BankSend() {
       .catch(smartSetError)
   }, [balance])
 
-  // sepa is the only circuit where bank details can be skipped for a
-  // KYC-verified customer — ramp-system fills in their IBAN from ID-Flow
-  // server-side. swift/us always need the form (BIC/address, or account +
-  // routing number, aren't things KYC provides).
-  const skipBankDetails = validation.kycVerified && circuit === 'sepa'
+  // A KYC-verified customer's IBAN and name, read from ID-Flow. `undefined`
+  // while loading, `null` when unavailable.
+  const [kycBankData, setKycBankData] = useState<KycBankData | null>()
+  useEffect(() => {
+    if (!validation.kycVerified) return
+    let cancelled = false
+    fetchKycBankData().then((data) => {
+      if (cancelled) return
+      setKycBankData(data)
+      // Prefill whatever the form still needs, in case it has to be shown.
+      if (data)
+        setBankFields((fields) => ({
+          ...fields,
+          iban: fields.iban || data.iban || '',
+          accountHolderName: fields.accountHolderName || data.accountHolderName || '',
+        }))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [validation.kycVerified])
+
+  // For SEPA, a KYC-verified customer isn't asked for bank details: the IBAN
+  // and name come from their KYC and are sent with the order. They must be
+  // sent, not left for ramp to fill in: ramp only looks a customer's KYC up
+  // for orders at or above its KYC threshold, and rejects a smaller SEPA order
+  // without an IBAN ("destination_bank_address (IBAN) is required"). Without
+  // a name, ramp would also pay out to the customer's email as beneficiary.
+  // swift/us always need the form (BIC/address, or account + routing number,
+  // aren't things KYC provides).
+  const kycSepaData =
+    kycBankData?.iban && kycBankData.accountHolderName
+      ? toBankData('sepa', { ...emptyBankDetailsFields, iban: kycBankData.iban, accountHolderName: kycBankData.accountHolderName })
+      : null
+  const kycLoading = validation.kycVerified && circuit === 'sepa' && kycBankData === undefined
+  const skipBankDetails = validation.kycVerified && circuit === 'sepa' && kycSepaData !== null
 
   const validateBankDetails = (): BankData | null => {
     const bankData = toBankData(circuit, bankFields)
@@ -181,7 +212,9 @@ export default function BankSend() {
     }
 
     let bankData: BankData | undefined
-    if (!skipBankDetails) {
+    if (skipBankDetails && kycSepaData) {
+      bankData = kycSepaData
+    } else {
       const validated = validateBankDetails()
       if (!validated) return
       bankData = validated
@@ -251,7 +284,11 @@ export default function BankSend() {
   }
 
   const canSubmit =
-    validation.canProceed && (skipBankDetails || toBankData(circuit, bankFields) !== null) && !loading && !sending
+    validation.canProceed &&
+    !kycLoading &&
+    (skipBankDetails || toBankData(circuit, bankFields) !== null) &&
+    !loading &&
+    !sending
 
   if (sending) {
     return (
@@ -333,7 +370,7 @@ export default function BankSend() {
             {circuit === 'swift' ? <SwiftSendFeeNotice currency={currency} /> : null}
 
             {/* Bank Details Section - hidden when KYC email bypasses requirement */}
-            {!skipBankDetails && (
+            {!skipBankDetails && !kycLoading && (
               <FlexCol gap='1rem'>
                 <BankDataForm circuit={circuit} value={bankFields} onChange={setBankFields} />
               </FlexCol>

@@ -39,11 +39,12 @@ import { getReceivingAddresses } from '../../../lib/asp'
 import { addOrderToHistory } from '../../../lib/bankOrderHistory'
 import { useBankTransferValidation } from '../../../hooks/useBankTransferValidation'
 import {
-  getBankTransferConfigSync,
   getSupportedReceiveCurrencies,
+  preferredBankCurrency,
   type BankCurrency,
 } from '../../../lib/bankTransferConfig'
 import { getUserEmailForBankTransfer } from '../../../lib/kyc'
+import { ConfigContext } from '../../../providers/config'
 import rightIcon from '../../../../public/images/icons/ Right.png'
 import i18n from '../../../lib/i18n'
 import { useTranslation } from 'react-i18next'
@@ -53,8 +54,8 @@ export default function BankReceive() {
   const { bankRecvInfo, setBankRecvInfo, recvInfo, setRecvInfo, setCurrentBankOrderType } = useContext(FlowContext)
   const { svcWallet } = useContext(WalletContext)
   const { notifyResult } = useContext(TxResultContext)
+  const { config } = useContext(ConfigContext)
 
-  const bankConfig = getBankTransferConfigSync()
 
   const { t } = useTranslation()
 
@@ -63,7 +64,11 @@ export default function BankReceive() {
   const selectedMethod: TransferMethod = recvInfo.method ?? TRANSFER_METHOD.bank
 
   // Form state
-  const [currency, setCurrency] = useState<BankCurrency>(bankRecvInfo.currency || bankConfig.defaultCurrency)
+  // Start in the wallet's display currency when it can be deposited; a
+  // previous order in this session keeps its own currency.
+  const [currency, setCurrency] = useState<BankCurrency>(
+    bankRecvInfo.order ? bankRecvInfo.currency : preferredBankCurrency(getSupportedReceiveCurrencies(), config.fiat),
+  )
   const [amount, setAmount] = useState<number>(bankRecvInfo.amount || 0)
 
   // API state
