@@ -4,6 +4,7 @@ import Header from '../../../components/Header'
 import Content from '../../../components/Content'
 import { WalletContext } from '../../../providers/wallet'
 import { useBridgeApproval } from '../../../hooks/useBridgeApproval'
+import { AspContext } from '../../../providers/asp'
 import { AddressType, type LoanAsset, WalletProvider } from '@lendasat/lendasat-wallet-bridge'
 import { sha256 } from '@noble/hashes/sha2.js'
 import * as utils from '@noble/hashes/utils.js'
@@ -46,6 +47,11 @@ secp.hashes.hmacSha256 = (key, msg) => hmac(sha256, key, msg)
 export default function AppLendasat() {
   const { navigate } = useContext(NavigationContext)
   const { wallet, svcWallet } = useContext(WalletContext)
+  const { aspInfo } = useContext(AspContext)
+  // The bridge callbacks are created once per wallet; read the server's fee
+  // info through a ref so an exit is priced with the current values.
+  const aspInfoRef = useRef(aspInfo)
+  aspInfoRef.current = aspInfo
 
   const [arkAddress, setArkAddress] = useState<string | null>(null)
   const [boardingAddress, setBoardingAddress] = useState<string | null>(null)
@@ -116,7 +122,7 @@ export default function AppLendasat() {
                   title: 'Approve Bitcoin payment',
                   details: `Send ${amount.toLocaleString()} sats to ${address}?`,
                 })
-                return await collaborativeExit(svcWallet, amount, address)
+                return await collaborativeExit(svcWallet, aspInfoRef.current, amount, address)
               } else {
                 throw Error(t('errors.lendasat.unsuppAddress', { addr: address }))
               }

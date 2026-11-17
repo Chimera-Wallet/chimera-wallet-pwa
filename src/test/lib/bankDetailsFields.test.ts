@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   emptyBankDetailsFields,
   maskBankAccount,
+  preferredBankCurrency,
   toBankData,
   toBankDetailsFields,
   type BankData,
@@ -38,5 +39,18 @@ describe('bank details fields', () => {
   it('masks the account number for display', () => {
     expect(maskBankAccount(swift)).toBe('CH93 •••• 2957')
     expect(maskBankAccount(undefined)).toBe('')
+  })
+})
+
+describe('preferredBankCurrency', () => {
+  it("starts in the wallet's display currency when it can be used", () => {
+    expect(preferredBankCurrency(['EUR', 'CHF', 'USD'], 'CHF')).toBe('CHF')
+    expect(preferredBankCurrency(['EUR', 'CHF', 'USD'], 'usd')).toBe('USD')
+  })
+
+  it('falls back to the default currency when the display currency is not offered', () => {
+    expect(preferredBankCurrency(['EUR'], 'CHF')).toBe('EUR')
+    expect(preferredBankCurrency(['EUR', 'CHF'], 'JPY')).toBe('EUR')
+    expect(preferredBankCurrency(['CHF'], 'JPY')).toBe('CHF')
   })
 })
