@@ -3,6 +3,7 @@ import Padded from '../../../components/Padded'
 import Header from '../../../components/Header'
 import Content from '../../../components/Content'
 import { WalletContext } from '../../../providers/wallet'
+import { AspContext } from '../../../providers/asp'
 import { WalletProvider, type LoanAsset, AddressType } from '@lendasat/lendasat-wallet-bridge'
 import { collaborativeExit, getReceivingAddresses } from '../../../lib/asp'
 import { isArkAddress, isBTCAddress } from '../../../lib/address'
@@ -13,6 +14,11 @@ const DEFAULT_SWAP_PATH = '/arkade:BTC/polygon:USDC'
 
 export default function AppSatora() {
   const { svcWallet } = useContext(WalletContext)
+  const { aspInfo } = useContext(AspContext)
+  // The bridge callbacks are created once per wallet; read the server's fee
+  // info through a ref so an exit is priced with the current values.
+  const aspInfoRef = useRef(aspInfo)
+  aspInfoRef.current = aspInfo
   const [arkAddress, setArkAddress] = useState<string | null>(null)
 
   const {t} = useTranslation()
@@ -87,7 +93,7 @@ export default function AppSatora() {
                   throw new Error(t('errors.satora.unableSending'))
                 }
               } else if (isBTCAddress(address)) {
-                return await collaborativeExit(svcWallet, amount, address)
+                return await collaborativeExit(svcWallet, aspInfoRef.current, amount, address)
               } else {
                 throw Error(t('errors.satora.unsuppAddress', {addr:address}))
               }
