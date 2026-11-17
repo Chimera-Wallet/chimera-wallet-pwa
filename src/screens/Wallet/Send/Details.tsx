@@ -12,13 +12,13 @@ import { defaultFee } from '../../../lib/constants'
 import { prettyNumber, fromSatoshis } from '../../../lib/format'
 import Content from '../../../components/Content'
 import FlexCol from '../../../components/FlexCol'
-import { collaborativeExitWithFees, sendAssets, sendOffChain } from '../../../lib/asp'
+import { planExit, sendAssets, sendOffChain, settleExitPlan } from '../../../lib/asp'
 import { extractError } from '../../../lib/error'
 import Loading from '../../../components/Loading'
 import { consoleError } from '../../../lib/logs'
 import { LimitsContext } from '../../../providers/limits'
 import Text from '../../../components/Text'
-import { FeesContext } from '../../../providers/fees'
+import { AspContext } from '../../../providers/asp'
 import { prettyAssetAmount } from '../../../lib/assets'
 import { TxResultContext } from '../../../providers/txResult'
 import {useTranslation} from 'react-i18next'
@@ -26,14 +26,14 @@ import { type LnSendRequest } from '../../../lib/lnSwap'
 import { saveTransactionActivityMetadata } from '../../../lib/storage'
 import type { LnSendActivity } from '../../../lib/types'
 import { TRANSFER_METHOD } from '../../../lib/transferMethods'
-import { calculateCollaborativeExitOutput } from '../../../lib/collaborativeExit'
+import type { ExitPlan } from '../../../lib/collaborativeExit'
 import UnverifiedAssetNotice from '../../../components/UnverifiedAssetNotice'
 
 
 export default function SendDetails() {
   const { navigate } = useContext(NavigationContext)
   const { sendInfo, setSendInfo } = useContext(FlowContext)
-  const { calcOnchainOutputFee } = useContext(FeesContext)
+  const { aspInfo } = useContext(AspContext)
   const isAssetSend = Boolean(sendInfo.assets?.length)
   const { utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
   const { assetMetadataCache, balance, svcWallet, isAssetVerified } = useContext(WalletContext)
@@ -50,6 +50,9 @@ export default function SendDetails() {
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
   const [sendDone, setSendDone] = useState(false)
+  // The priced on-chain exit. It is settled exactly as shown, so the fee the
+  // user signs for is the fee paid.
+  const [exitPlan, setExitPlan] = useState<ExitPlan>()
 
   const { address, arkAddress, invoice, method, pendingLnSend, satoshis } = sendInfo
   const { t } = useTranslation()
@@ -96,18 +99,46 @@ export default function SendDetails() {
           : destination === address
             ? t('common.general.directions.mainnetPay')
             : ''
-    const total = pendingLnSend ? pendingLnSend.fundAmount : satoshis
-    let amount = satoshis
-    if (isCollaborativeExit) {
-      try {
-        amount = calculateCollaborativeExitOutput(satoshis, calcOnchainOutputFee())
-      } catch (err) {
-        setDetails(undefined)
-        setButtonLabel(t('errors.network.tooLow'))
-        setError(extractError(err))
-        return
+    const showTotal = (total: number) => {
+      if (balance < total) {
+        setButtonLabel(t('errors.funds.insufficient'))
+        setError(t('errors.funds.insufficientExtra', {
+            balance: prettyNumber(fromSatoshis(balance), 8),
+          })
+      )
+      } else {
+        setButtonLabel(t('common.general.tapSign'))
       }
     }
+    setExitPlan(undefined)
+    if (isCollaborativeExit) {
+      // The exit's fees depend on which coins it spends (the server charges
+      // each coin's own intent fee), so price the actual exit before showing
+      // anything signable. The amount entered is what leaves the wallet; the
+      // fees come out of what the destination receives.
+      if (!svcWallet) return
+      setDetails(undefined)
+      setButtonLabel(t('common.general.loading'))
+      let cancelled = false
+      planExit(svcWallet, aspInfo, destination, { debit: satoshis })
+        .then((plan) => {
+          if (cancelled) return
+          setExitPlan(plan)
+          setDetails({ destination, direction, fees: plan.fees, satoshis: plan.deliver, total: plan.debit })
+          showTotal(plan.debit)
+        })
+        .catch((err) => {
+          if (cancelled) return
+          consoleError(err, 'error pricing onchain send')
+          setButtonLabel(t('errors.network.tooLow'))
+          setError(extractError(err))
+        })
+      return () => {
+        cancelled = true
+      }
+    }
+    const total = pendingLnSend ? pendingLnSend.fundAmount : satoshis
+    const amount = satoshis
     const fees = total - amount > 0 ? total - amount : 0
     const swapId = pendingLnSend?.rfqId
     setDetails({
@@ -118,16 +149,8 @@ export default function SendDetails() {
       swapId,
       total,
     })
-    if (balance < total) {
-      setButtonLabel(t('errors.funds.insufficient'))
-      setError(t('errors.funds.insufficientExtra', {
-          balance: prettyNumber(fromSatoshis(balance), 8),
-        })
-    )
-    } else {
-      setButtonLabel(t('common.general.tapSign'))
-    }
-  }, [sendInfo, balance])
+    showTotal(total)
+  }, [sendInfo, balance, svcWallet, aspInfo])
 
   const handleTxid = (txid: string, lnSend? : LnSendActivity) => {
     if (!txid) return handleError(t('errors.send.general.errorSend'))
@@ -223,7 +246,8 @@ export default function SendDetails() {
     } else if (address) {
       if (!details.total) return handleError(t('errors.general.missingTotal'))
       if (!details.satoshis) return handleError(t('errors.general.missingSats'))
-      collaborativeExitWithFees(svcWallet, details.total, details.satoshis, address)
+      if (!exitPlan) return handleError(t('errors.general.missingTotal'))
+      settleExitPlan(svcWallet, exitPlan, 'collaborativeExitWithFees')
         .then((txId: string) => handleTxid(txId))
         .catch(handleError)
     }
