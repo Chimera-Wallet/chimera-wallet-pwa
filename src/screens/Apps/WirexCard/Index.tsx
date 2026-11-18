@@ -1,7 +1,5 @@
 // Card tab when VITE_WIREX_ENABLED is 'true' (see providers/navigation.tsx);
 // otherwise the tab keeps showing ../CardReservation.
-//
-// Shows the onboarding/setup flow until the user has a card, then the card home.
 
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -9,7 +7,7 @@ import Header from '../../../components/Header'
 import Content from '../../../components/Content'
 import Loading from '../../../components/Loading'
 import { WirexCard, WirexUser, getWirexCards, getWirexUserByAddress } from '../../../lib/wirex'
-import { pickActiveCard, readWirexAddress } from '../../../lib/wirexCard'
+import { getSelectableCards, readWirexAddress } from '../../../lib/wirexCard'
 import WirexSetup from './Setup'
 import WirexCardHome from './CardHome'
 import WirexWalkthrough from './Walkthrough'
@@ -17,11 +15,11 @@ import WirexWalkthrough from './Walkthrough'
 type State =
   | { phase: 'loading' }
   | { phase: 'setup'; user: WirexUser | null; cards: WirexCard[] }
-  | { phase: 'home'; user: WirexUser; card: WirexCard }
+  | { phase: 'home'; user: WirexUser; cards: WirexCard[] }
 
 const toState = (user: WirexUser | null, cards: WirexCard[]): State => {
-  const card = pickActiveCard(cards)
-  return user && card ? { phase: 'home', user, card } : { phase: 'setup', user, cards }
+  const selectable = getSelectableCards(cards)
+  return user && selectable.length ? { phase: 'home', user, cards: selectable } : { phase: 'setup', user, cards }
 }
 
 export default function AppWirexCard() {
@@ -77,5 +75,5 @@ export default function AppWirexCard() {
     )
   }
 
-  return <WirexCardHome user={state.user} card={state.card} />
+  return <WirexCardHome user={state.user} cards={state.cards} />
 }

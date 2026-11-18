@@ -72,8 +72,29 @@ export async function withRetry<T>(
 
 // Card helpers
 
-/** PLACEHOLDER: the design shows a single card — use the first one that isn't closed. */
-export const pickActiveCard = (cards: WirexCard[]): WirexCard | undefined => cards.find((c) => c.status !== 'Closed')
+export const getSelectableCards = (cards: WirexCard[]): WirexCard[] => cards.filter((c) => c.status !== 'Closed')
+
+export const pickActiveCard = (cards: WirexCard[], preferredId?: string | null): WirexCard | undefined => {
+  const selectable = getSelectableCards(cards)
+  return selectable.find((c) => c.id === preferredId) ?? selectable[0]
+}
+
+const SELECTED_CARD_KEY = 'wirexSelectedCardId'
+
+export const readSelectedCardId = (): string | null => {
+  try {
+    return localStorage.getItem(SELECTED_CARD_KEY)
+  } catch {
+    return null
+  }
+}
+
+export const storeSelectedCardId = (cardId: string) => {
+  try {
+    localStorage.setItem(SELECTED_CARD_KEY, cardId)
+  } catch {
+  }
+}
 
 /** PLACEHOLDER: USD is assumed as the card currency throughout. */
 export const CARD_CURRENCY = 'USD'

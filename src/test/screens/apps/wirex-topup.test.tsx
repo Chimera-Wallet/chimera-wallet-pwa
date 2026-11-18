@@ -163,7 +163,7 @@ describe('Card home', () => {
       <NavigationContext.Consumer>
         {(defaults) => (
           <NavigationContext.Provider value={{ ...defaults, navigate }}>
-            <WirexCardHome user={user} card={card} />
+            <WirexCardHome user={user} cards={[card]} />
           </NavigationContext.Provider>
         )}
       </NavigationContext.Consumer>,

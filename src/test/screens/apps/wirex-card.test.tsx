@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { NavigationContext, Pages, pageComponent } from '../../../providers/navigation'
 import AppWirexCard from '../../../screens/Apps/WirexCard/Index'
 import AppWirexMoveAssets from '../../../screens/Apps/WirexCard/MoveAssets'
@@ -308,5 +308,58 @@ describe('AppWirexMoveAssets', () => {
     expect(screen.getByTestId('wirex-row-token')).toHaveTextContent(/transfer\.from|From/)
     expect(screen.getByTestId('wirex-row-card')).toHaveTextContent(/transfer\.to|To/)
     expect(amountInput()).toHaveValue('7')
+  })
+})
+
+describe('Card selection', () => {
+  const travel: WirexCard = { ...card, card_data: { ...card.card_data, card_name: 'Travel' } }
+  const shopping: WirexCard = {
+    ...card,
+    id: 'card-2',
+    status: 'Blocked',
+    card_data: { ...card.card_data, card_name: 'Shopping' },
+  }
+
+  const renderHome = async (cards: WirexCard[]) => {
+    localStorage.setItem('wirexUserAddress', '0xUser')
+    vi.mocked(getWirexUserByAddress).mockResolvedValue(user)
+    vi.mocked(getWirexCards).mockResolvedValue({ data: cards })
+    render(<AppWirexCard />)
+    await screen.findByTestId('wirex-card-status')
+  }
+
+  it('hides the picker when the user has a single card', async () => {
+    await renderHome([card, { ...card, id: 'card-closed', status: 'Closed' }])
+    expect(screen.queryByTestId('wirex-card-select')).not.toBeInTheDocument()
+  })
+
+  it('switches card, remembers the choice and acts on the selected card', async () => {
+    await renderHome([travel, shopping])
+    expect(screen.getByTestId('wirex-card-select')).toHaveTextContent('Travel')
+    expect(screen.getByTestId('wirex-card-status')).toHaveTextContent('Active')
+
+    fireEvent.click(screen.getByTestId('wirex-card-select'))
+    fireEvent.click(await screen.findByText('Shopping'))
+
+    await waitFor(() => expect(screen.getByTestId('wirex-card-select')).toHaveTextContent('Shopping'))
+    expect(screen.getByTestId('wirex-card-status')).toHaveTextContent(/Frozen|Blocked/)
+    expect(localStorage.getItem('wirexSelectedCardId')).toBe('card-2')
+
+    vi.mocked(setWirexCardBlocked).mockResolvedValue()
+    vi.mocked(getWirexCards).mockResolvedValue({ data: [travel, { ...shopping, status: 'Active' }] })
+    fireEvent.click(screen.getByTestId('wirex-lock'))
+    await waitFor(() => expect(screen.getByTestId('wirex-card-status')).toHaveTextContent('Active'))
+    expect(setWirexCardBlocked).toHaveBeenLastCalledWith('0xUser', 'card-2', false)
+  })
+
+  it('opens on the remembered card and ignores a remembered card that was closed', async () => {
+    localStorage.setItem('wirexSelectedCardId', 'card-2')
+    await renderHome([travel, shopping])
+    expect(screen.getByTestId('wirex-card-select')).toHaveTextContent('Shopping')
+    cleanup()
+
+    localStorage.setItem('wirexSelectedCardId', 'card-2')
+    await renderHome([travel, { ...shopping, status: 'Closed' }, { ...card, id: 'card-3' }])
+    expect(screen.getByTestId('wirex-card-select')).toHaveTextContent('Travel')
   })
 })

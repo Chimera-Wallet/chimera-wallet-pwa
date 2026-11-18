@@ -1,6 +1,7 @@
 import { useCallback, useContext, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Info, ListFilter, MessagesSquare } from 'lucide-react'
+import type { TFunction } from 'i18next'
+import { ChevronDown, Info, ListFilter, MessagesSquare } from 'lucide-react'
 import Content from '../../../components/Content'
 import Padded from '../../../components/Padded'
 import FlexCol from '../../../components/FlexCol'
@@ -10,6 +11,7 @@ import { useToast } from '../../../components/Toast'
 import Button from '../../../components/Button'
 import Header from '../../../components/Header'
 import NeedsPassword from '../../../components/NeedsPassword'
+import SelectSheet from '../../../components/SelectSheet'
 import { defaultPassword } from '../../../lib/constants'
 import { isValidPassword } from '../../../lib/privateKey'
 import { NavigationContext, Pages } from '../../../providers/navigation'
@@ -39,6 +41,9 @@ import {
   getWirexCardTransactions,
   lockWirexCard,
   msUntilDue,
+  pickActiveCard,
+  readSelectedCardId,
+  storeSelectedCardId,
 } from '../../../lib/wirexCard'
 import { type PendingTopUp, isWirexTopUpEnabled, readPendingTopUps, trackWirexTopUp } from '../../../lib/wirexTopUp'
 import CardDetailsSheet, { type CardDetailsSession } from './CardDetails'
@@ -94,6 +99,10 @@ const cardStatusStyle = (status: WirexCard['status']) => {
   return { labelKey: `apps.wirexCard.status.${status}`, color: 'var(--orange)', background: 'var(--orangebg)' }
 }
 
+/** The card's name, else "Card N" by its position in the list. */
+const cardName = (card: WirexCard, index: number, t: TFunction) =>
+  card.card_data.card_name || t('apps.wirexCard.cardN', { n: index + 1 })
+
 type Period = 'today' | 'thisWeek' | 'earlier'
 
 /** Splits (already date-sorted) transactions into Today / This week / Earlier. */
@@ -111,7 +120,7 @@ const groupByPeriod = (txs: WirexCardTx[], now = new Date()) => {
   return groups
 }
 
-export default function WirexCardHome({ user, card }: { user: WirexUser; card: WirexCard }) {
+export default function WirexCardHome({ user, cards: initialCards }: { user: WirexUser; cards: WirexCard[] }) {
   const { t } = useTranslation()
   const { navigate } = useContext(NavigationContext)
   // The app wallet (key unlock); `wallet` below is the Wirex wallet.
@@ -119,7 +128,9 @@ export default function WirexCardHome({ user, card }: { user: WirexUser; card: W
   const { toast } = useToast()
 
   // Local copy so freeze/unfreeze can update the status without a reload.
-  const [current, setCurrent] = useState(card)
+  const [cards, setCards] = useState(initialCards)
+  const [cardId, setCardId] = useState(() => pickActiveCard(initialCards, readSelectedCardId())?.id)
+  const [pickingCard, setPickingCard] = useState(false)
   const [locking, setLocking] = useState(false)
   const [hidden, setHidden] = useState(false)
   const [showAll, setShowAll] = useState(false)
@@ -136,6 +147,8 @@ export default function WirexCardHome({ user, card }: { user: WirexUser; card: W
   const [openingDetails, setOpeningDetails] = useState(false)
   // Tokens for the card-details frames; in memory only, dropped on close.
   const [detailsSession, setDetailsSession] = useState<CardDetailsSession | null>(null)
+
+  const current = cards.find((c) => c.id === cardId) ?? cards[0]
 
   // Time-locked withdrawals requested earlier (Move assets) but not executed yet.
   useEffect(() => {
@@ -176,13 +189,14 @@ export default function WirexCardHome({ user, card }: { user: WirexUser; card: W
 
   useEffect(() => {
     let cancelled = false
-    getWirexCardTransactions(user.user_address, card.id)
+    setTxs([])
+    getWirexCardTransactions(user.user_address, current.id)
       .then((list) => !cancelled && setTxs(list))
       .catch((err) => !cancelled && setError(errorText(err)))
     return () => {
       cancelled = true
     }
-  }, [user.user_address, card.id])
+  }, [user.user_address, current.id])
 
   const balance = getWirexCardBalance(wallet)
   const locked = current.status === 'Blocked'
@@ -265,12 +279,12 @@ export default function WirexCardHome({ user, card }: { user: WirexUser; card: W
 
   const topUp = () => {
     if (!isWirexTopUpEnabled()) return moveAssets('toCard')
-    const data: TopUpNavData = { userAddress: user.user_address, cardId: card.id }
+    const data: TopUpNavData = { userAddress: user.user_address, cardId: current.id }
     navigate(Pages.AppWirexTopUp, { ...data })
   }
 
   const moveAssets = (direction: MoveDirection) => {
-    const data: MoveAssetsNavData = { direction, userAddress: user.user_address, cardId: card.id }
+    const data: MoveAssetsNavData = { direction, userAddress: user.user_address, cardId: current.id }
     navigate(Pages.AppWirexMoveAssets, { ...data })
   }
 
@@ -280,13 +294,22 @@ export default function WirexCardHome({ user, card }: { user: WirexUser; card: W
     setError('')
     try {
       const updated = await lockWirexCard(user.user_address, current, !locked)
-      setCurrent(updated)
+      setCards((list) => list.map((c) => (c.id === updated.id ? updated : c)))
       toast(updated.status === 'Blocked' ? t('apps.wirexCard.frozenToast') : t('apps.wirexCard.unfrozenToast'))
     } catch (err) {
       setError(errorText(err))
     } finally {
       setLocking(false)
     }
+  }
+
+  const selectCard = (id: string) => {
+    if (id === current.id) return
+    setCardId(id)
+    storeSelectedCardId(id)
+    setShowAll(false)
+    setError('')
+    setDetailsSession(null)
   }
 
   const openSupport = () => {
@@ -329,6 +352,31 @@ export default function WirexCardHome({ user, card }: { user: WirexUser; card: W
           </div>
 
           <div style={{ ...panel, padding: '1.25rem 1.25rem 1.75rem', display: 'flex', flexDirection: 'column' }}>
+            {cards.length > 1 ? (
+              <button
+                type='button'
+                data-testid='wirex-card-select'
+                onClick={() => {
+                  hapticLight()
+                  setPickingCard(true)
+                }}
+                aria-label={t('apps.wirexCard.selectCard')}
+                style={{
+                  ...resetButton,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '0.5rem',
+                  margin: '-0.25rem 0.25rem 1rem',
+                }}
+              >
+                <span style={{ fontSize: 14, fontWeight: 600 }}>{cardName(current, cards.indexOf(current), t)}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--grey)' }}>
+                  {t('apps.wirexCard.cardPosition', { n: cards.indexOf(current) + 1, total: cards.length })}
+                  <ChevronDown size={16} />
+                </span>
+              </button>
+            ) : null}
             <CardArt
               width='100%'
               last4={getCardLast4(current)}
@@ -493,6 +541,28 @@ export default function WirexCardHome({ user, card }: { user: WirexUser; card: W
         </FlexCol>
       </Padded>
       <CardDetailsSheet card={current} session={detailsSession} onClose={closeDetails} />
+      <SelectSheet
+        isOpen={pickingCard}
+        onClose={() => setPickingCard(false)}
+        onSelect={selectCard}
+        selected={current.id}
+        title={t('apps.wirexCard.selectCard')}
+        options={cards.map((c, i) => {
+          const last4 = getCardLast4(c)
+          return {
+            id: c.id,
+            label: cardName(c, i, t),
+            description: [
+              `${c.card_data.payment_system} ${c.card_data.format}`,
+              last4 ? `•• ${last4}` : undefined,
+              t(cardStatusStyle(c.status).labelKey, { defaultValue: c.status }),
+            ]
+              .filter(Boolean)
+              .join(' · '),
+            icon: <CardArt width={48} radius={4} last4={last4} style={{ boxShadow: 'none' }} />,
+          }
+        })}
+      />
     </Content>
   )
 }
