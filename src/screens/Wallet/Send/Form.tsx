@@ -773,7 +773,7 @@ export default function SendForm() {
                    <UnverifiedAssetNotice assetId={selectedAssetId} />
                  ) : null}
                </>
-             ) : assetSupportsWrap(requireAssetConfig(selectedAsset).symbol) ? (
+              ) : assetSupportsWrap(requireAssetConfig(selectedAsset).symbol, 'unwrap') ? (
               <AssetNetworkSelector
                 assetSymbol={requireAssetConfig(selectedAsset).symbol}
                 mode='send'
@@ -797,7 +797,7 @@ export default function SendForm() {
                   // A destination already pasted here carries over when it's
                   // an address on that chain.
                   const symbol = requireAssetConfig(selectedAsset).symbol
-                  const option = requireAssetChainOption(symbol, choice as SourceChainId)
+                  const option = requireAssetChainOption(symbol, choice as SourceChainId, 'unwrap')
                   const pasted = recipient.trim()
                   setUnwrapSendInfo({
                     assetSymbol: symbol,

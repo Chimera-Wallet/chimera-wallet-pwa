@@ -43,7 +43,7 @@ import {
   isTerminalWrapStatus,
   prettyMinAmount,
   prettyQuoteAmount,
-  quoteLimitUnits,
+  quoteBaseUnits,
   type WrapQuote,
 } from '../../../lib/arkadeWrap'
 
@@ -231,7 +231,7 @@ export default function UnwrapSend() {
       updateFunding({ quote: fundingQuote })
       if (fundingQuote.status !== 'pending' || fundingQuote.deposit_tx_hash) return
       if (fundingQuote.expiry <= Date.now()) throw new Error(t('common.notifications.unwrapService.expired'))
-      const fundingMinAmount = quoteLimitUnits(fundingQuote.min_amount, precision)
+      const fundingMinAmount = quoteBaseUnits(fundingQuote.min_amount)
       if (amount < fundingMinAmount) {
         return setError(
           t('errors.send.unwrap.belowMinimum', {
@@ -294,7 +294,7 @@ export default function UnwrapSend() {
 
   const enteringAddress = step === 'address' && !depositStarted
   const insufficientFunds = amount > availableBalance
-  const minAmount = quoteLimitUnits(quote?.min_amount, precision)
+  const minAmount = quoteBaseUnits(quote?.min_amount)
   const belowMinimum = amount > BigInt(0) && amount < minAmount
 
   return (
@@ -417,7 +417,7 @@ export default function UnwrapSend() {
                       compact
                       text={t('common.notifications.unwrapService.networkFee', {
                         amount: prettyAssetAmount(
-                          quoteLimitUnits(quote.network_fee_amount, assetConfig.precision),
+                          quoteBaseUnits(quote.network_fee_amount),
                           assetConfig.precision,
                         ),
                         ticker: unwrapSendInfo.ticker,

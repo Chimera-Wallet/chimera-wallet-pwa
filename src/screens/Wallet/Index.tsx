@@ -237,7 +237,8 @@ export default function Wallet() {
     }
 
     // Native source/destination chain -> Arkade Wrap / Unwrap flow
-    const option = requireAssetChainOption(symbol, choice as SourceChainId)
+    const direction = flowMode === 'send' ? 'unwrap' : 'wrap'
+    const option = requireAssetChainOption(symbol, choice as SourceChainId, direction)
     if (flowMode === 'send') {
       setUnwrapSendInfo({
         assetSymbol: symbol,
@@ -340,7 +341,10 @@ export default function Wallet() {
           />
         ) : null}
         {showNetworkSelector ? (
-          assetSupportsWrap(requireAssetConfig(selectedFlowAsset).symbol) ? (
+          assetSupportsWrap(
+            requireAssetConfig(selectedFlowAsset).symbol,
+            flowMode === 'send' ? 'unwrap' : 'wrap',
+          ) ? (
             <AssetNetworkSelector
               assetSymbol={requireAssetConfig(selectedFlowAsset).symbol}
               mode={flowMode === 'send' ? 'send' : 'receive'}
@@ -472,7 +476,10 @@ export default function Wallet() {
         />
       ) : null}
       {showNetworkSelector ? (
-        assetSupportsWrap(requireAssetConfig(selectedFlowAsset).symbol) ? (
+        assetSupportsWrap(
+          requireAssetConfig(selectedFlowAsset).symbol,
+          flowMode === 'send' ? 'unwrap' : 'wrap',
+        ) ? (
           <AssetNetworkSelector
             assetSymbol={requireAssetConfig(selectedFlowAsset).symbol}
             mode={flowMode === 'send' ? 'send' : 'receive'}

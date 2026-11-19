@@ -7,6 +7,7 @@
 // value is sent to the API.
 
 export type SourceChainId = 'ethereum' | 'tron' | 'polygon'
+export type BridgeDirection = 'wrap' | 'unwrap'
 
 export interface SourceChain {
   /** Chain id as expected by the Arkade Wrap API `chain` field. */
@@ -54,44 +55,55 @@ export interface AssetChainOption {
   /** Native asset ticker on this chain. Wrap sends it as-is; unwrap sends the
    * wrapped `-CX` form, mapped in `arkadeWrap.ts::createUnwrapQuote`. */
   ticker: string
+  /** Bridge operations offered by the wallet for this asset/chain pair. */
+  directions: readonly BridgeDirection[]
 }
 
-// Which native chains each asset can be wrapped/unwrapped over. Assets keyed by
-// their display `symbol` (see ASSETS in ./assets). Assets not listed here (BTC,
-// CEXT) are not bridged through the Arkade Wrap API.
+const WRAP_AND_UNWRAP: readonly BridgeDirection[] = ['wrap', 'unwrap']
+
+// Which native chains each asset can be bridged over and in which direction.
+// Assets are keyed by their display `symbol` (see ASSETS in ./assets). Assets
+// not listed here (BTC, CEXT) are not bridged through the Arkade Wrap API.
 export const ASSET_SOURCE_CHAINS: Record<string, AssetChainOption[]> = {
-  ETH: [{ chain: SOURCE_CHAINS.ethereum, ticker: 'ETH' }],
+  ETH: [{ chain: SOURCE_CHAINS.ethereum, ticker: 'ETH', directions: WRAP_AND_UNWRAP }],
   USDT: [
-    { chain: SOURCE_CHAINS.ethereum, ticker: 'USDT' },
-    // Temporarily disabled: USDT on Tron is hidden from send and receive.
-    // { chain: SOURCE_CHAINS.tron, ticker: 'USDT' },
+    { chain: SOURCE_CHAINS.ethereum, ticker: 'USDT', directions: WRAP_AND_UNWRAP },
+    { chain: SOURCE_CHAINS.tron, ticker: 'USDT', directions: ['wrap'] },
+    { chain: SOURCE_CHAINS.polygon, ticker: 'USDT', directions: ['wrap'] },
   ],
-  TRX: [{ chain: SOURCE_CHAINS.tron, ticker: 'TRX' }],
-  POL: [{ chain: SOURCE_CHAINS.polygon, ticker: 'POL' }],
+  TRX: [{ chain: SOURCE_CHAINS.tron, ticker: 'TRX', directions: WRAP_AND_UNWRAP }],
+  POL: [{ chain: SOURCE_CHAINS.polygon, ticker: 'POL', directions: WRAP_AND_UNWRAP }],
 }
 
-/** Native-chain options available for an asset symbol (empty if not bridged). */
-export const getSourceChains = (symbol: string): AssetChainOption[] => {
-  return ASSET_SOURCE_CHAINS[symbol.toUpperCase()] ?? []
+/** Native-chain options available for an asset and bridge direction. */
+export const getSourceChains = (symbol: string, direction: BridgeDirection): AssetChainOption[] => {
+  return (ASSET_SOURCE_CHAINS[symbol.toUpperCase()] ?? []).filter((option) =>
+    option.directions.includes(direction),
+  )
 }
 
-/** Whether an asset can be bridged to/from a native chain via Arkade Wrap. */
-export const assetSupportsWrap = (symbol: string): boolean => {
-  return getSourceChains(symbol).length > 0
+/** Whether an asset can be bridged in a direction via Arkade Wrap. */
+export const assetSupportsWrap = (symbol: string, direction: BridgeDirection): boolean => {
+  return getSourceChains(symbol, direction).length > 0
 }
 
 /** Find the chain/ticker option for an asset on a given chain. */
 export const getAssetChainOption = (
   symbol: string,
   chainId: SourceChainId,
+  direction: BridgeDirection,
 ): AssetChainOption | undefined => {
-  return getSourceChains(symbol).find((o) => o.chain.id === chainId)
+  return getSourceChains(symbol, direction).find((o) => o.chain.id === chainId)
 }
 
 /** Like `getAssetChainOption` but throws if the combination is not registered. */
-export const requireAssetChainOption = (symbol: string, chainId: SourceChainId): AssetChainOption => {
-  const option = getAssetChainOption(symbol, chainId)
-  if (!option) throw new Error(`No chain option for asset "${symbol}" on chain "${chainId}"`)
+export const requireAssetChainOption = (
+  symbol: string,
+  chainId: SourceChainId,
+  direction: BridgeDirection,
+): AssetChainOption => {
+  const option = getAssetChainOption(symbol, chainId, direction)
+  if (!option) throw new Error(`No ${direction} option for asset "${symbol}" on chain "${chainId}"`)
   return option
 }
 

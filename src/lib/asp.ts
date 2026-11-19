@@ -11,7 +11,12 @@ import {
   IVtxoManager,
   Asset,
   sdkVersion,
+  ArkAddress,
+  getNetwork,
+  NetworkName,
 } from '@arkade-os/sdk'
+import { Address, OutScript } from '@scure/btc-signer'
+import { ExitAnchor, ExitPlan, planCollaborativeExit } from './collaborativeExit'
 import { Addresses, Tx, Vtxo } from './types'
 import { AspInfo } from '../providers/asp'
 import { consoleError } from './logs'
@@ -57,76 +62,57 @@ export const emptyAspInfo: AspInfo = {
   url: '',
 }
 
-export const collaborativeExit = async (wallet: IWallet, amount: number, address: string): Promise<string> => {
-  const vtxos = await wallet.getVtxos()
-  const selectedVtxos = []
-  let selectedAmount = 0
+const onchainScriptHex = (address: string, network: string): string =>
+  hex.encode(OutScript.encode(Address(getNetwork(network as NetworkName)).decode(address)))
 
-  for (const vtxo of vtxos) {
-    if (selectedAmount >= amount) break
-    selectedVtxos.push(vtxo)
-    selectedAmount += vtxo.value
-  }
+/**
+ * Prices a collaborative exit against the Arkade server's intent fees and picks
+ * the coins it spends (see lib/collaborativeExit). Settle the returned plan with
+ * {@link settleExitPlan} so the user pays exactly what the plan shows.
+ */
+export const planExit = async (
+  wallet: IWallet,
+  aspInfo: AspInfo,
+  address: string,
+  anchor: ExitAnchor,
+): Promise<ExitPlan> => {
+  if (aspInfo.unreachable || !aspInfo.network) throw new Error('Arkade server info is unavailable')
+  const dust = Number(aspInfo.dust)
+  if (!dust) throw new Error('Arkade server did not report a dust amount')
+  const [coins, changeAddress] = await Promise.all([wallet.getVtxos(), wallet.getAddress()])
+  return planCollaborativeExit({
+    coins,
+    intentFee: aspInfo.fees?.intentFee ?? {},
+    destination: address,
+    destinationScript: onchainScriptHex(address, aspInfo.network),
+    changeAddress,
+    changeScript: hex.encode(ArkAddress.decode(changeAddress).pkScript),
+    dust,
+    anchor,
+  })
+}
 
-  if (selectedAmount < amount) throw new Error('Insufficient funds')
-
-  const outputs = [{ address, amount: BigInt(amount) }]
-
-  const changeAmount = selectedAmount - amount
-
-  if (changeAmount > 0) {
-    const { offchainAddr } = await getReceivingAddresses(wallet)
-    outputs.push({ address: offchainAddr, amount: BigInt(changeAmount) })
-  }
-
-  outputs.reverse() // fix for exit with assets
-
+export const settleExitPlan = async (wallet: IWallet, plan: ExitPlan, operation: string): Promise<string> => {
   try {
-    return await wallet.settle({ inputs: selectedVtxos, outputs })
+    return await wallet.settle({ inputs: plan.inputs, outputs: plan.outputs })
   } catch (error) {
-    reportSettlementFailure('collaborativeExit')
+    reportSettlementFailure(operation)
     throw error
   }
 }
 
-export const collaborativeExitWithFees = async (
+/**
+ * Pays `amount` sats exactly to an on-chain address, with the exit's fees on
+ * top. Used by embedded apps (Satora, LendaSat) that request a specific amount.
+ */
+export const collaborativeExit = async (
   wallet: IWallet,
-  inputAmount: number,
-  outputAmount: number,
+  aspInfo: AspInfo,
+  amount: number,
   address: string,
 ): Promise<string> => {
-  const vtxos = await wallet.getVtxos()
-  const selectedVtxos = []
-  let selectedAmount = 0
-
-  // sort vtxos by batch expiry ascending
-  const vtxosSorted = vtxos.sort((a, b) => (a.virtualStatus.batchExpiry ?? 0) - (b.virtualStatus.batchExpiry ?? 0))
-
-  for (const vtxo of vtxosSorted) {
-    if (selectedAmount >= inputAmount) break
-    selectedVtxos.push(vtxo)
-    selectedAmount += vtxo.value
-  }
-
-  if (selectedAmount < inputAmount) throw new Error('Insufficient funds')
-
-  const outputs = [{ address, amount: BigInt(outputAmount) }]
-
-  const changeAmount = selectedAmount - inputAmount
-
-  if (changeAmount > 0) {
-    const { offchainAddr } = await getReceivingAddresses(wallet)
-    outputs.push({ address: offchainAddr, amount: BigInt(changeAmount) })
-  }
-
-  outputs.reverse() // fix for exit with assets
-
-  try {
-    return await wallet.settle({ inputs: selectedVtxos, outputs })
-  } catch (error) {
-    reportSettlementFailure('collaborativeExitWithFees')
-    throw error
-  }
+  const plan = await planExit(wallet, aspInfo, address, { deliver: amount })
+  return settleExitPlan(wallet, plan, 'collaborativeExit')
 }
 
 export const getAspInfo = async (url: string): Promise<AspInfo> => {

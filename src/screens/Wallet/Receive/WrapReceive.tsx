@@ -36,7 +36,7 @@ import {
   isTerminalWrapStatus,
   prettyMinAmount,
   prettyQuoteAmount,
-  quoteLimitUnits,
+  quoteBaseUnits,
   type WrapQuote,
 } from '../../../lib/arkadeWrap'
 import { getWrapDeposit, saveWrapDeposit, subscribeWrapDeposits } from '../../../lib/wrapDeposits'
@@ -143,8 +143,8 @@ export default function WrapReceive() {
     }
   }
 
-  const minAmount = quoteLimitUnits(quote?.min_amount, precision)
-  const remainingAmount = quoteLimitUnits(quote?.remaining_amount, precision)
+  const minAmount = quoteBaseUnits(quote?.min_amount)
+  const remainingAmount = quoteBaseUnits(quote?.remaining_amount)
 
   if (completed) {
     const amount = prettyQuoteAmount(quote?.payout_amount ?? null, precision)
@@ -228,7 +228,7 @@ export default function WrapReceive() {
                     <InfoLine
                       compact
                       text={t('common.notifications.wrapService.networkFee', {
-                        amount: prettyAssetAmount(quoteLimitUnits(quote.network_fee_amount, precision), precision),
+                        amount: prettyAssetAmount(quoteBaseUnits(quote.network_fee_amount), precision),
                         ticker: wrapRecvInfo.ticker,
                       })}
                     />
