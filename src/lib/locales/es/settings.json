@@ -36,7 +36,8 @@
     "bioAuth": "Autenticación biométrica",
     "bioAuthUnsupported": "La autenticación biométrica no es compatible con este dispositivo",
     "useBio": "Usar biometría",
-    "disableWarn": "La autenticación biométrica está activa. Al desactivarla se eliminará tu bloqueo actual; después podrás establecer una contraseña desde Configuración avanzada",
+    "disableWarn": "La autenticación biométrica está activa. Para desactivarla elegirás una contraseña que la sustituya, de modo que tu billetera siga bloqueada.",
+    "choosePass": "Elige una contraseña que sustituya la autenticación biométrica. A partir de ahora la usarás para desbloquear tu billetera.",
     "enableFingerFace": "Activa el reconocimiento facial o de huella dactilar para desbloquear tu billetera. Esto reemplazará tu contraseña actual.",
     "noContractFound": "No se encontraron contratos"
   },

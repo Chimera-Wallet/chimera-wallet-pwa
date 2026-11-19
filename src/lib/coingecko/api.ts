@@ -134,50 +134,6 @@ class CoinGeckoApi {
       }
     })
   }
-
-  /**
-   * Get market data for multiple assets
-   */
-  async getMarketData(coinIds: CoinGeckoAssetID[], vsCurrency: string = 'usd'): Promise<CoinGeckoMarketData[]> {
-    try {
-      const ids = coinIds.join(',')
-      const url = `${COINGECKO_API_BASE}/coins/markets?vs_currency=${vsCurrency}&ids=${ids}&order=market_cap_desc&sparkline=false`
-
-      consoleLog(`Fetching market data for: ${ids}`)
-
-      const response = await fetch(url)
-
-      if (!response.ok) {
-        throw new Error(`CoinGecko API error: ${response.status} ${response.statusText}`)
-      }
-
-      return await response.json()
-    } catch (error) {
-      consoleError(error, 'Failed to fetch market data')
-      throw error
-    }
-  }
-
-  /**
-   * Search for coins by query
-   */
-  async searchCoins(query: string): Promise<{ id: string; symbol: string; name: string }[]> {
-    try {
-      const url = `${COINGECKO_API_BASE}/search?query=${encodeURIComponent(query)}`
-
-      const response = await fetch(url)
-
-      if (!response.ok) {
-        throw new Error(`CoinGecko API error: ${response.status} ${response.statusText}`)
-      }
-
-      const data = await response.json()
-      return data.coins || []
-    } catch (error) {
-      consoleError(error, 'Failed to search coins')
-      throw error
-    }
-  }
 }
 
 export default new CoinGeckoApi()

@@ -48,7 +48,16 @@
     "restoringWallet": "Restaurando billetera...",
     "pk": "clave-privada",
     "recoveryPhraseKey": "Frase de recuperación o clave privada",
-    "phraseEntry": "Introduce tu frase de recuperación de 12 palabras o una clave privada que comience por 'nsec' o una clave hexadecimal sin formato. No la compartas con nadie."
+    "phraseEntry": "Introduce tu frase de recuperación de 12 palabras o una clave privada que comience por 'nsec' o una clave hexadecimal sin formato. No la compartas con nadie.",
+    "wordSuggestions": "Sugerencias de palabras",
+    "inputHint": "Escribe o pega tu frase de recuperación o clave privada.",
+    "wordCount_one": "{{count}} palabra introducida",
+    "wordCount_many": "{{count}} palabras introducidas",
+    "wordCount_other": "{{count}} palabras introducidas",
+    "wordError": "No se reconoce la palabra {{number}}. Revisa su escritura.",
+    "wordCountError": "Introduce la frase de recuperación completa: 12, 15, 18, 21 o 24 palabras.",
+    "checksumError": "La frase de recuperación no es válida. Revisa las palabras y su orden.",
+    "keyError": "Introduce una clave privada nsec válida o una clave privada hexadecimal de 64 caracteres."
   },
   "success": {
     "walletRestore": "¡Billetera restaurada!",

@@ -21,11 +21,11 @@
         "lowAddress": "address",
         "lowAddresses": "addresses",
         "scanQR": "Scan QR Code",
-        "addContAddr": "Add contact Address",
+        "addContAddr": "Add Contact Address",
         "addAcc": "Add Account",
         "scanAddr": "Scan address",
         "selAddr": "Select Address",
-        "emptyMess": "No save accounts yet. Add your addresses to easily access them later.",
+        "emptyMess": "No saved accounts yet. Add your addresses to easily access them later.",
         "emptyContMess": "No contacts yet. Add contact addresses to send funds quickly.",
         "addNewAcc": "Add New Account", 
         "addNewCont": "Add New Contact"
@@ -110,7 +110,7 @@
       {
         "title": "What is the Referral Program?",
         "description":
-          "You're at the centre, and the rewards are endless!\n\nEarn 20% of all fees from every friend who signs up with your link—forever.\nNo caps,no limits, no expiration; just continuous rewards. The more you share, the more you earn. Ready?\n\nCopy your link, spread the word, and let the rewards roll in!",
+          "You're at the centre, and the rewards are endless!\n\nEarn 20% of all fees from every friend who signs up with your link—forever.\nNo caps, no limits, no expiration; just continuous rewards. The more you share, the more you earn. Ready?\n\nCopy your link, spread the word, and let the rewards roll in!",
         "image": "/rocket.png"
       }]
     },
@@ -190,7 +190,8 @@
         "start": "Starting Date",
         "end": "Ending Date",
         "noTrans": "No transactions found in selected period",
-        "transFound": "{{len1}} transactions{{len2}} found in selected period",
+        "transFound_one": "{{count}} transaction found in selected period",
+        "transFound_other": "{{count}} transactions found in selected period",
         "genPDF": "Generate PDF",
         "geningPDF": "Generating PDF...",
         "noTransYet": "No transactions available yet",
@@ -212,8 +213,8 @@
             "noWait": "No wait times",
             "noVerification": "No verification",
             "noPersonal": "No personal details",
-            "conversion": "Conversion up to {{limit}} a month without any personal detail or account",
-            "zeroFees": "Unlimited and zero fees Bitcoin payments on Arkade, Lightning and mainnet",
+            "conversion": "Conversion up to {{limit}} a month without any personal details or account",
+            "zeroFees": "Unlimited, zero-fee Bitcoin payments on Arkade, Lightning and mainnet",
             "getStarted": "Get started"
         },
         "payout": {
@@ -286,7 +287,8 @@
             "start": "Start date",
             "end": "End date",
             "empty": "No payments in this period",
-            "found": "{{count}} payments",
+            "found_one": "{{count}} payment",
+            "found_other": "{{count}} payments",
             "total": "Total",
             "exportPdf": "Export PDF",
             "print": "Print",

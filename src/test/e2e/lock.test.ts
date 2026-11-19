@@ -48,7 +48,7 @@ test('should lock and unlock wallet without previous password', async ({ page })
   await page.getByText('Lock wallet').click()
 
   // Verify wallet is locked
-  await expect(page.getByText('Insert password')).toBeVisible()
+  await expect(page.getByText('Enter password')).toBeVisible()
 
   // Unlock wallet
   await page.locator('div[data-testid="password"] input').fill('testpassword')
@@ -68,7 +68,7 @@ test('should lock and unlock wallet with previous password', async ({ page }) =>
   await page.getByText('Lock wallet').click()
 
   // Verify wallet is locked
-  await expect(page.getByText('Insert password')).toBeVisible()
+  await expect(page.getByText('Enter password')).toBeVisible()
 
   // Unlock wallet
   await page.locator('div[data-testid="password"] input').fill('testpassword')

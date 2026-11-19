@@ -16,12 +16,12 @@ import Text, { TextSecondary } from '../../components/Text'
 import CenterScreen from '../../components/CenterScreen'
 import LockIcon from '../../icons/Lock'
 import { hasMnemonic, getMnemonic, setMnemonic } from '../../lib/mnemonic'
-import {useTranslation} from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 
 export default function Password() {
   const { updateWallet, wallet } = useContext(WalletContext)
 
-  const {t} = useTranslation()
+  const { t } = useTranslation()
 
   const [authenticated, setAuthenticated] = useState(false)
   const [oldPassword, setOldPassword] = useState('')
@@ -58,7 +58,7 @@ export default function Password() {
                 {t('settings.password.passUnavailable')}
               </Text>
               <TextSecondary centered wrap>
-               {t('settings.password.bioAuth')}
+                {t('settings.password.bioAuth')}
               </TextSecondary>
             </CenterScreen>
           </Padded>
@@ -68,8 +68,12 @@ export default function Password() {
   }
 
   const saveNewPassword = async (nextPassword: string | null): Promise<boolean> => {
-    if (!oldPassword || nextPassword === null || !authenticated) return false
-    const finalPassword = nextPassword === '' ? defaultPassword : nextPassword
+    // A password can be changed, never removed: "removing" it meant
+    // re-encrypting with `defaultPassword`, a constant anyone can read from the
+    // bundle (CertiK pentest CWP-01). NewPassword only ever emits a valid one.
+    if (!oldPassword || !nextPassword || !authenticated) return false
+    if (nextPassword === defaultPassword) return false
+    const finalPassword = nextPassword
     try {
       setSaving(true)
       if (hasMnemonic()) {
@@ -79,7 +83,7 @@ export default function Password() {
         const privateKey = await getPrivateKey(oldPassword)
         await setPrivateKey(privateKey, finalPassword)
       }
-      setSuccessText(finalPassword === defaultPassword ? t('settings.password.passRemoved') : t('settings.password.passChanged'))
+      setSuccessText(t('settings.password.passChanged'))
       setError('')
       return true
     } catch {

@@ -48,7 +48,16 @@
     "restoringWallet": "Ripristino wallet...",
     "pk": "chiave-privata",
     "recoveryPhraseKey": "Frase di recupero o chiave privata",
-    "phraseEntry": "Inserisci la tua frase di recupero di 12 parole oppure una chiave privata che inizi con 'nsec' o una chiave esadecimale grezza. Non condividerla con nessuno."
+    "phraseEntry": "Inserisci la tua frase di recupero di 12 parole oppure una chiave privata che inizi con 'nsec' o una chiave esadecimale grezza. Non condividerla con nessuno.",
+    "wordSuggestions": "Parole suggerite",
+    "inputHint": "Digita o incolla la tua frase di recupero o chiave privata.",
+    "wordCount_one": "{{count}} parola inserita",
+    "wordCount_many": "{{count}} parole inserite",
+    "wordCount_other": "{{count}} parole inserite",
+    "wordError": "La parola {{number}} non è riconosciuta. Controlla come è scritta.",
+    "wordCountError": "Inserisci la frase di recupero completa: 12, 15, 18, 21 o 24 parole.",
+    "checksumError": "Questa frase di recupero non è valida. Controlla le parole e il loro ordine.",
+    "keyError": "Inserisci una chiave privata nsec valida o una chiave privata esadecimale di 64 caratteri."
   },
   "success": {
     "walletRestore": "Wallet ripristinato!",

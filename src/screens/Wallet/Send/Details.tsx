@@ -21,14 +21,14 @@ import Text from '../../../components/Text'
 import { AspContext } from '../../../providers/asp'
 import { prettyAssetAmount } from '../../../lib/assets'
 import { TxResultContext } from '../../../providers/txResult'
-import {useTranslation} from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 import { type LnSendRequest } from '../../../lib/lnSwap'
 import { saveTransactionActivityMetadata } from '../../../lib/storage'
 import type { LnSendActivity } from '../../../lib/types'
 import { TRANSFER_METHOD } from '../../../lib/transferMethods'
 import type { ExitPlan } from '../../../lib/collaborativeExit'
+import { decodeInvoice } from '../../../lib/bolt11'
 import UnverifiedAssetNotice from '../../../components/UnverifiedAssetNotice'
-
 
 export default function SendDetails() {
   const { navigate } = useContext(NavigationContext)
@@ -56,7 +56,6 @@ export default function SendDetails() {
 
   const { address, arkAddress, invoice, method, pendingLnSend, satoshis } = sendInfo
   const { t } = useTranslation()
-  
 
   useEffect(() => {
     if (!address && !arkAddress && !invoice) return setError(t('errors.general.missingAddress'))
@@ -78,11 +77,17 @@ export default function SendDetails() {
     setError('')
     const destination =
       method === TRANSFER_METHOD.ark
-        ? arkAddress && vtxoTxsAllowed() ? arkAddress : ''
+        ? arkAddress && vtxoTxsAllowed()
+          ? arkAddress
+          : ''
         : method === TRANSFER_METHOD.lightning
-          ? invoice && pendingLnSend ? invoice : ''
+          ? invoice && pendingLnSend
+            ? invoice
+            : ''
           : method === TRANSFER_METHOD.bitcoin
-            ? address && utxoTxsAllowed() ? address : ''
+            ? address && utxoTxsAllowed()
+              ? address
+              : ''
             : arkAddress && vtxoTxsAllowed()
               ? arkAddress
               : invoice && pendingLnSend
@@ -99,6 +104,20 @@ export default function SendDetails() {
           : destination === address
             ? t('common.general.directions.mainnetPay')
             : ''
+    // Pay an invoice only for the amount it encodes. The form already refuses a
+    // mismatch; this keeps the review from ever labelling one as fees.
+    if (invoice && destination === invoice) {
+      try {
+        const { amountMsats } = decodeInvoice(invoice)
+        if (amountMsats > 0 && Math.abs(amountMsats - satoshis * 1000) >= 1000) {
+          setDetails(undefined)
+          return setError(t('errors.send.parsing.amountMismatch'))
+        }
+      } catch {
+        setDetails(undefined)
+        return setError('Unable to decode invoice')
+      }
+    }
     const showTotal = (total: number) => {
       if (balance < total) {
         setButtonLabel(t('errors.funds.insufficient'))
@@ -152,7 +171,7 @@ export default function SendDetails() {
     showTotal(total)
   }, [sendInfo, balance, svcWallet, aspInfo])
 
-  const handleTxid = (txid: string, lnSend? : LnSendActivity) => {
+  const handleTxid = (txid: string, lnSend?: LnSendActivity) => {
     if (!txid) return handleError(t('errors.send.general.errorSend'))
 
     saveTransactionActivityMetadata(txid, {
@@ -183,7 +202,7 @@ export default function SendDetails() {
     setError(extractError(err))
     setSendDone(true)
   }
-    /**
+  /**
    * Fund the covenant. That is the whole of the wallet's job.
    *
    * Funding IS acceptance — the protocol has no accept message — so once the

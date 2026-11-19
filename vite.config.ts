@@ -52,7 +52,10 @@ export default defineConfig(({ command, mode }) => ({
   // For most static hosting (Netlify, Vercel, etc.), this is handled automatically
   build: {
     emptyOutDir: true,
-    sourcemap: true,
+    // Off: a public .map hands out the readable source (CertiK pentest CWP-06).
+    // If Sentry ever needs them, build "hidden" maps, upload, and delete them
+    // from dist before deploying.
+    sourcemap: false,
     rollupOptions: {
       external: ['fs'],
     },

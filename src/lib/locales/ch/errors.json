@@ -65,7 +65,8 @@
     },
     "parsing": {
       "bip21": "无法解析 BIP21",
-      "recipientAddress": "收款地址无效"
+      "recipientAddress": "收款地址无效",
+      "amountMismatch": "此付款请求不一致：其金额与闪电网络发票不符。请向收款人索取新的付款请求。"
     },
     "chain": {
       "on": "不允许发送链上交易",
