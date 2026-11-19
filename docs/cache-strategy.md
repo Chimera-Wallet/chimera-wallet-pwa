@@ -37,114 +37,21 @@ Service-Worker-Allowed: /
 Cache-Control: public, max-age=86400
 ```
 
-## Netlify Configuration Example
+## Where these headers are configured
 
-If deploying to Netlify, add this to your `netlify.toml`:
+The wallet is deployed only to Azure Static Web Apps, which reads headers from
+`public/staticwebapp.config.json` (copied into `dist`; a copy anywhere else is
+never deployed). Its `routes` set the cache headers above per path; `globalHeaders`
+holds the security headers sent with every response. Anything not listed (fonts,
+images, icons in `public/`) gets Azure's default
+(`Cache-Control: public, must-revalidate, max-age=30`).
 
-```toml
-[[headers]]
-  for = "/"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-[[headers]]
-  for = "/index.html"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-[[headers]]
-  for = "/wallet-service-worker.mjs"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-    Service-Worker-Allowed = "/"
-
-[[headers]]
-  for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/*.js"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/*.css"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/manifest.json"
-  [headers.values]
-    Cache-Control = "public, max-age=86400"
-```
-
-## Vercel Configuration Example
-
-If deploying to Vercel, add this to your `vercel.json`:
-
-```json
-{
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/assets/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/wallet-service-worker.mjs",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        },
-        {
-          "key": "Service-Worker-Allowed",
-          "value": "/"
-        }
-      ]
-    }
-  ]
-}
-```
-
-## Cloudflare Pages Configuration
-
-Add `_headers` file to your `public` directory:
-
-```
-/
-  Cache-Control: no-cache, no-store, must-revalidate
-
-/index.html
-  Cache-Control: no-cache, no-store, must-revalidate
-
-/wallet-service-worker.mjs
-  Cache-Control: no-cache, no-store, must-revalidate
-  Service-Worker-Allowed: /
-
-/assets/*
-  Cache-Control: public, max-age=31536000, immutable
-
-/*.js
-  Cache-Control: public, max-age=31536000, immutable
-
-/*.css
-  Cache-Control: public, max-age=31536000, immutable
-```
+The year-long `immutable` rule is only safe for files whose name changes with
+their content. That's everything Vite writes to `/assets/`, so the rule is
+limited to `/assets/*`. Never extend it to a path holding a file whose name
+stays the same across releases (e.g. `/wallet-service-worker.mjs`,
+`/manifest.json`, or anything copied from `public/`): browsers would keep the
+old copy for a year.
 
 ## Testing Cache Invalidation
 

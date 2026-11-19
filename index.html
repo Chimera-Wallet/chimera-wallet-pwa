@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="palette-dark">
   <head>
     <title>Chimera Wallet</title>
     <meta charset="utf-8" />
@@ -8,27 +8,13 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#fff" />
+    <meta name="theme-color" content="#101010" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <!--
-      Theme bootstrap: MUST run as inline script before first paint to prevent
-      a white flash on dark-mode page loads (React hasn't mounted yet).
-      All runtime theme changes are handled by applyTheme() in
-      src/providers/config.tsx. Keep these two locations in sync.
+      The app is dark-only: palette-dark is set statically on <html> above so
+      there is no flash before React mounts. applyTheme() in
+      src/providers/config.tsx keeps it applied at runtime.
     -->
-    <script>
-      try {
-        var c = JSON.parse(localStorage.getItem('config') || '{}')
-        var t = c.theme
-        var dark = t === 'Dark' || (t !== 'Light' && window.matchMedia('(prefers-color-scheme: dark)').matches)
-        if (dark) {
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#101010')
-          document.documentElement.classList.add('palette-dark')
-        }
-      } catch (e) {
-        if (location.hostname === 'localhost') console.warn('Theme bootstrap failed', e)
-      }
-    </script>
     <meta
       name="description"
       content="Your Bitcoin, supercharged. Send payments, swap assets, and lend without giving up your keys."

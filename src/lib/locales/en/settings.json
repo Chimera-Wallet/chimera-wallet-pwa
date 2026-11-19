@@ -36,7 +36,8 @@
         "bioAuth": "Biometric Authentication",
         "bioAuthUnsupported":"Biometric authentication is not supported on this device",
         "useBio": "Use Biometrics",
-        "disableWarn": "Biometric authentication is active. Disabling it will remove your current lock — you can then set a password from Advanced Settings.",
+        "disableWarn": "Biometric authentication is active. To turn it off you'll choose a password to replace it, so your wallet stays locked.",
+        "choosePass": "Choose a password to replace biometric authentication. You'll use it to unlock your wallet from now on.",
         "enableFingerFace": "Enable fingerprint or face recognition to unlock your wallet. This will replace your current password.",
         "noContractFound": "No contracts found"
     },

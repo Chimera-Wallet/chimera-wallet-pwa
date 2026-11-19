@@ -194,7 +194,7 @@ describe('Send to chains', () => {
     ['POL', 'polygon', '0.000000000000000001', BigInt(1)],
     ['TRX', 'tron', '12.345678', BigInt('12345678')],
   ])('sends the exact %s amount from the wallet to the bridge treasury', async (symbol, chainId, value, amount) => {
-    const option = requireAssetChainOption(symbol, chainId)
+    const option = requireAssetChainOption(symbol, chainId, 'unwrap')
     const receiver = chainId === 'tron' ? `T${'1'.repeat(33)}` : destination
     render(
       <Harness

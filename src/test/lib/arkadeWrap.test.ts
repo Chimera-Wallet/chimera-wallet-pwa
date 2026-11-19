@@ -5,6 +5,7 @@ import {
   createUnwrapQuote,
   getWrapQuote,
   isTerminalWrapStatus,
+  quoteBaseUnits,
   type WrapQuote,
 } from '../../lib/arkadeWrap'
 
@@ -106,5 +107,11 @@ describe('arkadeWrap API client', () => {
     expect(isTerminalWrapStatus('pending')).toBe(false)
     expect(isTerminalWrapStatus('deposited')).toBe(false)
     expect(isTerminalWrapStatus('processing')).toBe(false)
+  })
+
+  it('keeps quote amounts in the asset base units', () => {
+    expect(quoteBaseUnits('50000000')).toBe(BigInt(50000000))
+    expect(quoteBaseUnits('5000000')).toBe(BigInt(5000000))
+    expect(quoteBaseUnits(null)).toBe(BigInt(0))
   })
 })

@@ -70,7 +70,8 @@
         },
         "parsing": {
             "bip21": "Unable to parse BIP21 URI",
-            "recipientAddress": "Invalid recipient address"   
+            "recipientAddress": "Invalid recipient address",
+            "amountMismatch": "This payment request is inconsistent: its amount doesn't match its Lightning invoice. Ask the recipient for a new one."
         },
         "chain": {
             "on": "Sending onchain not allowed",

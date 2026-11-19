@@ -88,7 +88,6 @@ export enum SettingsOptions {
   Support = 'support',
   Contracts = 'contracts',
   Vtxos = 'coin control',
-  Theme = 'theme',
   Fiat = 'fiat currency',
   Display = 'display preferences',
   Delegates = 'delegates',

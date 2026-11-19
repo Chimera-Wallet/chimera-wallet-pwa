@@ -316,6 +316,17 @@ export const getSupportedSendCurrencies = (): BankCurrency[] => {
   return getBankTransferConfigSync().supportedSendCurrencies
 }
 
+/**
+ * The currency a bank transfer screen starts in: the wallet's display
+ * currency when it's one of `supported`, otherwise the default.
+ */
+export const preferredBankCurrency = (supported: BankCurrency[], displayFiat: string): BankCurrency => {
+  const fiat = displayFiat.toUpperCase()
+  const match = supported.find((currency) => currency === fiat)
+  if (match) return match
+  return supported.includes(DEFAULT_CONFIG.defaultCurrency) ? DEFAULT_CONFIG.defaultCurrency : (supported[0] ?? DEFAULT_CONFIG.defaultCurrency)
+}
+
 /** Convenience constant for the default bank transfer currency */
 export const DEFAULT_BANK_CURRENCY: BankCurrency = DEFAULT_CONFIG.defaultCurrency
 

@@ -7,14 +7,14 @@ import Text from '../../components/Text'
 import FlexCol from '../../components/FlexCol'
 import FlexRow from '../../components/FlexRow'
 import ArrowIcon from '../../icons/Arrow'
-import { SettingsOptions, Themes } from '../../lib/types'
+import { SettingsOptions } from '../../lib/types'
 import { OptionsContext } from '../../providers/options'
 import Focusable from '../../components/Focusable'
 import { hapticSubtle } from '../../lib/haptics'
 import {useTranslation} from 'react-i18next'
 
 export default function General() {
-  const { config, systemTheme } = useContext(ConfigContext)
+  const { config } = useContext(ConfigContext)
   const { setOption } = useContext(OptionsContext)
   const {t} = useTranslation()
 
@@ -53,11 +53,6 @@ export default function General() {
       <Content>
         <Padded>
           <FlexCol gap='0'>
-            <Row
-              option={SettingsOptions.Theme}
-              value={config.theme === Themes.Auto ? `Auto (${systemTheme})` : config.theme}
-            />
-            <hr />
             <Row option={SettingsOptions.Fiat} value={config.fiat} />
             <hr />
             <Row option={SettingsOptions.Display} value={config.currencyDisplay} />

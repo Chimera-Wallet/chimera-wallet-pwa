@@ -65,7 +65,8 @@
     },
     "parsing": {
       "bip21": "Impossible d'analyser BIP21",
-      "recipientAddress": "Adresse du destinataire invalide"
+      "recipientAddress": "Adresse du destinataire invalide",
+      "amountMismatch": "Cette demande de paiement est incohérente : son montant ne correspond pas à celui de sa facture Lightning. Demandez-en une nouvelle au destinataire."
     },
     "chain": {
       "on": "L'envoi on-chain n'est pas autorisé",

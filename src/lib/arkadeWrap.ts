@@ -12,6 +12,7 @@
 // Docs: https://api.arkadewrap.com/docs/  (spec: /docs/openapi.json)
 
 import type { SourceChainId } from './sourceChains'
+import { BALANCE_DISPLAY_DECIMALS, prettyAssetAmount } from './assets'
 
 export const getArkadeWrapBaseUrl = (): string => {
   const url = import.meta.env.VITE_ARKADEWRAP_API
@@ -20,6 +21,22 @@ export const getArkadeWrapBaseUrl = (): string => {
 }
 
 export const SERVICE_FEE_PERCENT = 0.3
+
+/** Parse an optional quote amount. Every amount returned by the bridge uses the asset's base units. */
+export const quoteBaseUnits = (value: string | null | undefined): bigint => (value ? BigInt(value) : BigInt(0))
+
+/** Format a quote's base-unit amount with digit grouping, the same way as balances. Empty when absent. */
+export const prettyQuoteAmount = (value: string | null | undefined, precision: number): string =>
+  value ? prettyAssetAmount(BigInt(value), precision) : ''
+
+/**
+ * Format a bridge minimum for display, rounding up to the displayed precision
+ * so sending exactly the amount shown always satisfies it.
+ */
+export const prettyMinAmount = (minAmount: bigint, precision: number): string => {
+  const step = BigInt(10) ** BigInt(Math.max(0, precision - BALANCE_DISPLAY_DECIMALS))
+  return prettyAssetAmount(((minAmount + step - BigInt(1)) / step) * step, precision)
+}
 
 // Direction of a quote.
 export type WrapType = 'wrap' | 'unwrap'
@@ -53,9 +70,14 @@ export interface WrapQuote {
   fee_amount: string | null
   /** Net payout (amount - fee) credited to the receiver, in base units. */
   payout_amount: string | null
-  /** Minimum accepted unwrap deposit in base units. Null for wrap quotes. */
+  /** Minimum accepted deposit for this wrap or unwrap quote, in base units. */
   min_amount?: string | null
-  /** Fixed destination-network charge deducted from an unwrap payout, in base units. Null for wrap quotes. */
+  /** Extra base-unit amount still needed to reach the minimum; zero once it does. */
+  remaining_amount?: string | null
+  /**
+   * Fixed base-unit network charge deducted from the payout: unwrap delivery
+   * on the destination chain, or sweeping a wrap deposit to treasury.
+   */
   network_fee_amount?: string | null
   deposit_tx_hash: string | null
   mint_tx_hash: string | null

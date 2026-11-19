@@ -22,7 +22,7 @@ const defaultConfig: Config = {
   pubkey: '',
   referralSlideShowSeen: false,
   showBalance: true,
-  theme: Themes.Auto,
+  theme: Themes.Dark,
   unit: Unit.BTC,
 }
 
@@ -74,12 +74,10 @@ const updateDefaultConfig = (config: Partial<Config>): Config => {
 }
 
 
-export const resolveTheme = (theme: Themes): Themes.Dark | Themes.Light => {
-  if (theme === Themes.Auto) {
-    return window?.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? Themes.Dark : Themes.Light
-  }
-  return theme as Themes.Dark | Themes.Light
-}
+// Light mode was never finished (text rendered invisible, blocking login), so
+// the app is dark-only: every stored or system preference resolves to Dark.
+// `config.theme` is kept so existing configs and Nostr backups still parse.
+export const resolveTheme = (_theme?: Themes): Themes.Dark => Themes.Dark
 
 export const ConfigProvider = ({ children }: { children: ReactNode }) => {
   const [config, setConfig] = useState<Config>(defaultConfig)
@@ -157,17 +155,6 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
     updateConfig(config)
     setConfigLoaded(true)
   }, [configLoaded])
-
-  // always track system theme; apply it when Auto is selected
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    const handler = () => {
-      setSystemTheme(resolveTheme(Themes.Auto))
-      if (config.theme === Themes.Auto) applyTheme(Themes.Auto)
-    }
-    mediaQuery.addEventListener('change', handler)
-    return () => mediaQuery.removeEventListener('change', handler)
-  }, [config.theme])
 
   const useFiat = config.currencyDisplay === CurrencyDisplay.Fiat
 

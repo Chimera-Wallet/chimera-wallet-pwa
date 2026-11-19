@@ -65,7 +65,8 @@
     },
     "parsing": {
       "bip21": "BIP21を解析できません",
-      "recipientAddress": "受取人アドレスが無効です"
+      "recipientAddress": "受取人アドレスが無効です",
+      "amountMismatch": "この支払いリクエストは不整合です。金額がLightningインボイスの金額と一致しません。受取人に新しいリクエストを依頼してください。"
     },
     "chain": {
       "on": "オンチェーン送金は許可されていません",
