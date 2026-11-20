@@ -1,22 +1,19 @@
 /**
  * Wirex self-custodial (account-abstraction) wallet — EVM signer derivation,
  * plus on-chain kernel-account deployment via Wirex's own `@wirexapp/wpay-baas-sdk`.
- *
- * Signer: derived from this wallet's EXISTING mnemonic (see ./mnemonic.ts) at
- * the standard Ethereum path m/44'/60'/0'/0/0, rather than generating and
- * storing a second seed. A user who has already backed up their Arkade
- * mnemonic (src/providers/backup.tsx) thereby also backs up whatever secures
- * their Wirex EVM wallet.
  */
 
 import { HDKey } from '@scure/bip32'
 import { mnemonicToSeedSync } from '@scure/bip39'
 import { keccak_256 } from '@noble/hashes/sha3.js'
+import { hkdf } from '@noble/hashes/hkdf.js'
+import { sha256 } from '@noble/hashes/sha2.js'
 import { secp256k1 } from '@noble/curves/secp256k1.js'
 import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts'
 import type { Hex } from 'viem'
 import { createSDK, type SDKEnvironment } from '@wirexapp/wpay-baas-sdk'
-import { getMnemonic } from './mnemonic'
+import { getMnemonic, hasMnemonic } from './mnemonic'
+import { getPrivateKey } from './privateKey'
 
 const ETH_DERIVATION_PATH = "m/44'/60'/0'/0/0"
 
@@ -44,16 +41,45 @@ const deriveEthKeyNode = async (password: string): Promise<HDKey> => {
   return node
 }
 
+/**
+ * Wirex signer for legacy wallets is derived from the private key instead, so the
+ * user's existing key backup also recovers the Wirex wallet:
+ *
+ *   evmKey = HKDF-SHA256(ikm = arkPrivateKey, salt = none, info = LEGACY_EVM_DOMAIN, L = 32)
+ *
+ * Full RFC 5869 HKDF, with the domain string as `info` so the derived key is bound 
+ * to this one purpose.
+ *
+ * NOTE: changing the domain or algorithm would then change every legacy user's Wirex
+ * address and strands their card wallet.
+ */
+const LEGACY_EVM_DOMAIN = new TextEncoder().encode('chimera/wirex/evm-signer/v1')
+
+export const deriveLegacyEthPrivateKey = (arkPrivateKey: Uint8Array): Uint8Array => {
+  if (arkPrivateKey.length !== 32) throw new Error('Invalid private key: must be 32 bytes')
+  const evmKey = hkdf(sha256, arkPrivateKey, undefined, LEGACY_EVM_DOMAIN, 32)
+  if (!secp256k1.utils.isValidSecretKey(evmKey)) throw new Error('Derived EVM key is out of range')
+  return evmKey
+}
+
+const deriveEthPrivateKey = async (password: string): Promise<Uint8Array> => {
+  if (hasMnemonic()) {
+    const node = await deriveEthKeyNode(password)
+    return node.privateKey as Uint8Array
+  }
+  return deriveLegacyEthPrivateKey(await getPrivateKey(password))
+}
+
 const deriveEthAccount = async (password: string): Promise<PrivateKeyAccount> => {
-  const node = await deriveEthKeyNode(password)
-  return privateKeyToAccount(`0x${bytesToHex(node.privateKey as Uint8Array)}` as Hex)
+  const privateKey = await deriveEthPrivateKey(password)
+  return privateKeyToAccount(`0x${bytesToHex(privateKey)}` as Hex)
 }
 
 /** The Eth address for this wallet's Wirex signer does not expose the private key. */
 export const getWirexEvmAddress = async (password: string): Promise<string> => {
-  const node = await deriveEthKeyNode(password)
+  const privateKey = await deriveEthPrivateKey(password)
   // Uncompressed public key (65 bytes: 0x04 prefix + 32-byte X + 32-byte Y).
-  const uncompressedPubKey = secp256k1.getPublicKey(node.privateKey as Uint8Array, false)
+  const uncompressedPubKey = secp256k1.getPublicKey(privateKey, false)
   const addressBytes = keccak_256(uncompressedPubKey.slice(1)).slice(-20)
   return toChecksumAddress(bytesToHex(addressBytes))
 }

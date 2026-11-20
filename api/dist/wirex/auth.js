@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ProxyAuthError = exports.HOP_BY_HOP_REQUEST_HEADERS = exports.USER_WALLET_HEADER = void 0;
+exports.ProxyAuthError = exports.FORWARDED_REQUEST_HEADERS = exports.USER_WALLET_HEADER = void 0;
 exports.resolveBearerToken = resolveBearerToken;
 exports.buildForwardedHeaders = buildForwardedHeaders;
 exports.isValidWebhookSecret = isValidWebhookSecret;
@@ -8,9 +8,21 @@ exports.isValidWebhookSecret = isValidWebhookSecret;
 const crypto_1 = require("crypto");
 const token_1 = require("./token");
 exports.USER_WALLET_HEADER = 'x-wirex-user-wallet';
-// Stripped from the outgoing request when proxying to Wirex: standard
-// hop-by-hop headers, plus our own auth header, which is consumed here.
-exports.HOP_BY_HOP_REQUEST_HEADERS = new Set(['host', 'connection', 'content-length', exports.USER_WALLET_HEADER]);
+// The only caller headers forwarded to Wirex (lowercase). An allowlist rather
+// than a blocklist: in Azure the request arrives carrying the platform's own
+// headers (x-forwarded-*, x-original-url / x-ms-original-url with OUR path,
+// x-ms-*, x-arr-*) plus the browser's cookies, none of which Wirex should see
+// — and a routing-sensitive gateway can misread them (e.g. resolving the
+// called method from x-original-url). Our own USER_WALLET_HEADER is consumed
+// by resolveBearerToken and never forwarded; Authorization and X-Chain-Id are
+// always set by us, so a caller can't supply or duplicate them.
+exports.FORWARDED_REQUEST_HEADERS = new Set([
+    'content-type',
+    'accept',
+    // Partner-token user lookups identify the user with these (see token.ts).
+    'x-user-wallet',
+    'x-user-email',
+]);
 /** Thrown for caller-facing auth failures, as opposed to upstream/Wirex errors. */
 class ProxyAuthError extends Error {
     status;
@@ -28,25 +40,17 @@ async function resolveBearerToken(claimedWallet, chainId) {
         return (0, token_1.getPartnerToken)();
     return (0, token_1.getUserToken)({ type: 'wallet', value: claimedWallet }, chainId);
 }
-/** Build the headers to send upstream to Wirex: caller headers minus the hop-by-hop set, plus auth/chain headers. */
+/** Build the headers to send upstream to Wirex: allowlisted caller headers, plus auth/chain headers. */
 function buildForwardedHeaders(requestHeaders, token, chainId) {
     const forwarded = {};
-    let hasAcceptHeader = false;
     for (const [key, value] of requestHeaders) {
         const lowerKey = key.toLowerCase();
-        if (exports.HOP_BY_HOP_REQUEST_HEADERS.has(lowerKey))
-            continue;
-        forwarded[key] = value;
-        // Headers iteration always lowercases names, so this is the only
-        // reliable way to tell whether the caller already sent an Accept header
-        // — checking forwarded['Accept'] (capitalized) would never match.
-        if (lowerKey === 'accept')
-            hasAcceptHeader = true;
+        if (exports.FORWARDED_REQUEST_HEADERS.has(lowerKey))
+            forwarded[lowerKey] = value;
     }
-    forwarded['Authorization'] = `Bearer ${token}`;
-    forwarded['X-Chain-Id'] = chainId;
-    if (!hasAcceptHeader)
-        forwarded['Accept'] = 'application/json';
+    forwarded['authorization'] = `Bearer ${token}`;
+    forwarded['x-chain-id'] = chainId;
+    forwarded['accept'] ??= 'application/json';
     return forwarded;
 }
 /**
