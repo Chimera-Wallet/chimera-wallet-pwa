@@ -27,6 +27,7 @@ import SettingsPageTransition from '../../components/SettingsPageTransition'
 import Haptics from './Haptics'
 import Contracts from './Contracts'
 import Solvers from './Solvers'
+import Wirex from './Wirex'
 
 function settingsContent(option: SettingsOptions): JSX.Element {
   switch (option) {
@@ -86,6 +87,8 @@ function settingsContent(option: SettingsOptions): JSX.Element {
       return <Haptics />
     case SettingsOptions.Solvers:
       return <Solvers/>
+    case SettingsOptions.Wirex:
+      return <Wirex />
     default:
       return <></>
   }

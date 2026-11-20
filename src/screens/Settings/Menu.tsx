@@ -19,6 +19,7 @@ import CogIcon from '../../icons/Cog'
 import NotificationIcon from '../../icons/Notification'
 import PuzzleIcon from '../../icons/Puzzle'
 import {useTranslation} from 'react-i18next'
+import { isWirexEnabled } from '../../providers/wirex'
 
 // map the stored KYC status to a status pill
 function kycBadge(status: KycStatus): { text: string; tone: BadgeTone } {
@@ -45,6 +46,8 @@ export default function SettingsMenu() {
     { icon: <KnowledgeBaseIcon />, option: SettingsOptions.KnowledgeBase, label: t('settings.menu.knowledgeBase'), right: 'external' },
     { icon: <XIcon />, option: SettingsOptions.ManageAccount, label: t('settings.menu.manage'), right: 'external' },
     { icon: <AddressBookIcon />, option: SettingsOptions.AddressBook, label: t('settings.menu.addressBook') },
+    // Temporary placeholder dashboard for testing the Wirex integration.
+    ...(isWirexEnabled() ? [{ icon: <KYCIcon />, option: SettingsOptions.Wirex, label: 'Wirex (dev)' }] : []),
   ]
 
   const securityRows: MenuRow[] = [

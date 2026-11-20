@@ -1,15 +1,17 @@
 {
   "name": "chimera-wallet-api",
   "version": "1.0.0",
-  "main": "dist/coingecko/index.js",
+  "main": "dist/**/*.js",
   "scripts": {
     "build": "tsc",
+    "prestart": "tsc",
     "start": "func start"
   },
   "dependencies": {
     "@azure/functions": "^4.0.0"
   },
   "devDependencies": {
+    "@types/node": "^26.5.0",
     "typescript": "^5.0.0"
   }
 }

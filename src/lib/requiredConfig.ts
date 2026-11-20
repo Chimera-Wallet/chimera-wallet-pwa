@@ -42,6 +42,23 @@ export const getMissingRequiredConfig = (): string[] => {
     // A delegator URL is mandatory only when delegation is enabled.
     missing.push('VITE_DELEGATOR_URL')
   }
+  // Wirex must be explicitly enabled or disabled — no default is allowed.
+  // Its actual credentials (WIREX_CLIENT_ID/SECRET etc.) are server-only
+  // (see api/wirex/token.ts) and so aren't validated here.
+  const wirex = env.VITE_WIREX_ENABLED
+  if (wirex !== 'true' && wirex !== 'false') {
+    missing.push('VITE_WIREX_ENABLED')
+  } else if (wirex === 'true') {
+    // @wirexapp/wpay-baas-sdk config (see ../lib/wirexWallet.ts) is only
+    // needed once Wirex is actually switched on.
+    if (env.VITE_WIREX_SDK_ENV !== 'dev' && env.VITE_WIREX_SDK_ENV !== 'uat' && env.VITE_WIREX_SDK_ENV !== 'prod') {
+      missing.push('VITE_WIREX_SDK_ENV')
+    }
+    // Card top-up bridges Ark USDT to the Wirex wallet via Arkade Wrap.
+    if (env.VITE_WIREX_TOPUP_ENABLED === 'true' && !env.VITE_WIREX_DEPOSIT_CHAIN?.trim()) {
+      missing.push('VITE_WIREX_DEPOSIT_CHAIN')
+    }
+  }
   return missing
 }
 

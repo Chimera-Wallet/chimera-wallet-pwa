@@ -308,5 +308,119 @@
             "history": "Payment history",
             "notSet": "Not set"
         }
+    },
+    "wirexCard": {
+        "title": "Card",
+        "card": "Card",
+        "cardBalance": "Card Balance",
+        "selectCard": "Select card",
+        "cardN": "Card {{n}}",
+        "cardPosition": "{{n}} of {{total}}",
+        "topUp": "Top up",
+        "lockCard": "Lock card",
+        "unlockCard": "Unlock card",
+        "moveAssets": "Move assets",
+        "details": "Details",
+        "freeze": "Freeze",
+        "unfreeze": "Unfreeze",
+        "cardFrozen": "Card frozen",
+        "frozenToast": "Card frozen",
+        "transfer": {
+            "from": "From · {{name}}",
+            "to": "To · {{name}}",
+            "wallet": "Wallet",
+            "confirm": "Confirm transfer"
+        },
+        "cardDetails": {
+            "title": "Card details",
+            "close": "Close",
+            "loading": "Loading card details…",
+            "error": "Couldn't load card details. Please try again.",
+            "warning": "Never share your CVV. Chimera will never ask for it.",
+            "otherWallet": "This card belongs to a different wallet",
+            "copied": {
+                "number": "Card number copied",
+                "expiry": "Expiry date copied",
+                "cvv": "CVV copied",
+                "cardholder": "Cardholder copied",
+                "pin": "PIN copied"
+            }
+        },
+        "unfrozenToast": "Card unfrozen",
+        "toWallet": "To wallet",
+        "showBalance": "Show balance",
+        "hideBalance": "Hide balance",
+        "filter": "Filter",
+        "viewAll": "View all transactions",
+        "showLess": "Show less",
+        "period": {
+            "today": "Today",
+            "thisWeek": "This week",
+            "earlier": "Earlier"
+        },
+        "status": {
+            "active": "Active",
+            "frozen": "Frozen",
+            "Requested": "Requested",
+            "NotActivated": "Not activated",
+            "Closed": "Closed"
+        },
+        "transactions": "Transactions",
+        "noTransactions": "No transactions yet",
+        "available": "Available",
+        "confirm": "Confirm",
+        "amount": "Amount",
+        "selectToken": "Select asset",
+        "noAssets": "No assets in wallet",
+        "insufficient": "Insufficient balance",
+        "transferSent": "Transfer submitted",
+        "comingSoon": "Coming soon",
+        "support": "Support",
+        "info": "Info",
+        "fee": "Fee",
+        "topUpPending": "Top-up of {{amount}} {{ticker}} in progress",
+        "walkthrough": {
+            "continue": "Continue",
+            "getCard": "Get your card",
+            "frozen": "Card frozen",
+            "card": {
+                "title": "Your Chimera Card",
+                "body": "A Visa debit card connected to your Chimera wallet. Pay online and in store, anywhere Visa is accepted."
+            },
+            "topUp": {
+                "title": "Top up in seconds",
+                "body": "Move funds from your wallet to your card whenever you need. Your card balance is always one glance away."
+            },
+            "control": {
+                "title": "Always in control",
+                "body": "Freeze and unfreeze your card in one tap, check your card details and follow every transaction."
+            }
+        },
+        "withdraw": {
+            "fromCard": "Moving funds from the card to your Wirex wallet…",
+            "delay": "Waiting for Wirex's security delay. Keep this screen open, or finish it later from the card screen.",
+            "sent": "Withdrawal complete: {{ticker}} sent to your Base address",
+            "pending": "Withdrawal of {{amount}} pending",
+            "readyIn": "ready in {{minutes}} min",
+            "finish": "Finish withdrawal",
+            "noWallet": "Your Wirex wallet hasn't loaded yet",
+            "noCard": "Card not found",
+            "wrongPassword": "Wrong password"
+        },
+        "topUpFlow": {
+            "title": "Top up from wallet",
+            "from": "Amount from your wallet",
+            "youReceive": "Card receives about {{amount}} USD",
+            "belowMinimum": "Minimum top-up is {{amount}} {{ticker}}",
+            "noWallet": "Your card wallet isn't ready yet. Please try again later.",
+            "bridging": "Sending your funds to {{name}}…",
+            "crediting": "Funds sent, waiting for the card balance to update…",
+            "stillProcessing": "Still processing. Your card balance will update shortly; you can leave this screen.",
+            "failed": "The top-up failed. Please contact support with the reference below.",
+            "reference": "Reference: {{id}}",
+            "viewPayout": "View transaction",
+            "done": "Card topped up!",
+            "doneInfo": "{{amount}} {{ticker}} added to your card"
+        }
     }
 }

@@ -47,6 +47,16 @@ export const SOURCE_CHAINS: Record<SourceChainId, SourceChain> = {
     addressPlaceholder: 'Paste Polygon (0x) address',
     isValidAddress: (a) => EVM_ADDRESS_REGEX.test(a.trim()),
   },
+  // Only used to top up the Wirex card (its unified balance lives on Base).
+  // Deliberately absent from ASSET_SOURCE_CHAINS so it isn't offered in the
+  // general Send/Receive network pickers.
+  base: {
+    id: 'base',
+    name: 'Base',
+    icon: '/images/asset_logos/ETH.svg',
+    addressPlaceholder: 'Paste Base (0x) address',
+    isValidAddress: (a) => EVM_ADDRESS_REGEX.test(a.trim()),
+  },
 }
 
 export interface AssetChainOption {
@@ -112,4 +122,16 @@ export const requireSourceChain = (id: SourceChainId): SourceChain => {
   const chain = SOURCE_CHAINS[id]
   if (!chain) throw new Error(`Unknown source chain id: "${id}"`)
   return chain
+}
+
+/**
+ * Arkade Wrap chain the Wirex card top-up pays out on (VITE_WIREX_DEPOSIT_CHAIN).
+ * Must be a registered SourceChainId; Typhoon's chain id for Base is expected to
+ * be `base`.
+ */
+export const getWirexDepositChain = (): SourceChain => {
+  const id = import.meta.env.VITE_WIREX_DEPOSIT_CHAIN?.trim()
+  if (!id) throw new Error('Missing VITE_WIREX_DEPOSIT_CHAIN')
+  if (!(id in SOURCE_CHAINS)) throw new Error(`Unknown VITE_WIREX_DEPOSIT_CHAIN: "${id}"`)
+  return SOURCE_CHAINS[id as SourceChainId]
 }
