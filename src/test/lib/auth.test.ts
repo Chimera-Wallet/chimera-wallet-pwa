@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import {
   ProxyAuthError,
   USER_WALLET_HEADER,
-  HOP_BY_HOP_REQUEST_HEADERS,
+  FORWARDED_REQUEST_HEADERS,
   resolveBearerToken,
   buildForwardedHeaders,
   isValidWebhookSecret,
@@ -30,37 +30,57 @@ describe('resolveBearerToken', () => {
 })
 
 describe('buildForwardedHeaders', () => {
-  it('drops hop-by-hop and internal auth headers, forwards the rest', () => {
+  it('forwards only allowlisted headers, dropping Azure platform headers and cookies', () => {
+    // Roughly what a request looks like once Azure Static Web Apps has
+    // handed it to the function.
     const requestHeaders = new Headers({
       [USER_WALLET_HEADER]: '0xabc',
+      'Content-Type': 'application/json',
+      'X-User-Wallet': '0xdef',
       Host: 'app.example.com',
       Connection: 'keep-alive',
       'Content-Length': '123',
-      'X-Custom': 'keep-me',
+      Cookie: 'session=secret',
+      Origin: 'https://app.example.com',
+      'X-Forwarded-For': '203.0.113.7',
+      'X-Forwarded-Host': 'app.example.com',
+      'X-Original-URL': '/api/wirex/api/v2/user',
+      'X-Ms-Original-Url': 'https://app.example.com/api/wirex/api/v2/user',
+      'X-Arr-Log-Id': 'abc',
+      'X-Custom': 'drop-me',
     })
 
     const forwarded = buildForwardedHeaders(requestHeaders, 'upstream-token', '8453')
 
-    for (const header of HOP_BY_HOP_REQUEST_HEADERS) {
-      expect(Object.keys(forwarded).map((k) => k.toLowerCase())).not.toContain(header)
-    }
-    // Headers iteration normalizes names to lowercase per the Fetch spec —
-    // this is fine over HTTP (header names are case-insensitive), but means
-    // the forwarded object's keys come back lowercased too.
-    expect(forwarded['x-custom']).toBe('keep-me')
-    expect(forwarded['Authorization']).toBe('Bearer upstream-token')
-    expect(forwarded['X-Chain-Id']).toBe('8453')
+    expect(forwarded).toEqual({
+      'content-type': 'application/json',
+      'x-user-wallet': '0xdef',
+      accept: 'application/json',
+      authorization: 'Bearer upstream-token',
+      'x-chain-id': '8453',
+    })
+    for (const header of FORWARDED_REQUEST_HEADERS) expect(header).toBe(header.toLowerCase())
+  })
+
+  it('never lets the caller supply its own Authorization or X-Chain-Id', () => {
+    const forwarded = buildForwardedHeaders(
+      new Headers({ Authorization: 'Bearer attacker', 'X-Chain-Id': '1' }),
+      'upstream-token',
+      '8453',
+    )
+    expect(forwarded.authorization).toBe('Bearer upstream-token')
+    expect(forwarded['x-chain-id']).toBe('8453')
+    expect(Object.keys(forwarded).filter((k) => k.toLowerCase() === 'authorization')).toHaveLength(1)
   })
 
   it('defaults Accept to application/json when the caller did not send one', () => {
     const forwarded = buildForwardedHeaders(new Headers(), 'token', '1')
-    expect(forwarded['Accept']).toBe('application/json')
+    expect(forwarded.accept).toBe('application/json')
   })
 
   it('preserves a caller-supplied Accept header instead of overwriting it', () => {
     const forwarded = buildForwardedHeaders(new Headers({ Accept: 'text/plain' }), 'token', '1')
-    expect(forwarded['accept']).toBe('text/plain')
-    expect(forwarded['Accept']).toBeUndefined()
+    expect(forwarded.accept).toBe('text/plain')
   })
 })
 

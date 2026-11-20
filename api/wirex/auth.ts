@@ -4,9 +4,13 @@ import { getPartnerToken, getUserToken } from './token'
 
 export const USER_WALLET_HEADER = 'x-wirex-user-wallet'
 
-// Stripped from the outgoing request when proxying to Wirex: standard
-// hop-by-hop headers, plus our own auth header, which is consumed here.
-export const HOP_BY_HOP_REQUEST_HEADERS = new Set(['host', 'connection', 'content-length', USER_WALLET_HEADER])
+export const FORWARDED_REQUEST_HEADERS = new Set([
+  'content-type',
+  'accept',
+  // Partner-token user lookups identify the user with these (see token.ts).
+  'x-user-wallet',
+  'x-user-email',
+])
 
 /** Thrown for caller-facing auth failures, as opposed to upstream/Wirex errors. */
 export class ProxyAuthError extends Error {
@@ -26,26 +30,20 @@ export async function resolveBearerToken(claimedWallet: string | null, chainId: 
   return getUserToken({ type: 'wallet', value: claimedWallet }, chainId)
 }
 
-/** Build the headers to send upstream to Wirex: caller headers minus the hop-by-hop set, plus auth/chain headers. */
+/** Build the headers to send upstream to Wirex: allowlisted caller headers, plus auth/chain headers. */
 export function buildForwardedHeaders(
   requestHeaders: Iterable<[string, string]>,
   token: string,
   chainId: string,
 ): Record<string, string> {
   const forwarded: Record<string, string> = {}
-  let hasAcceptHeader = false
   for (const [key, value] of requestHeaders) {
     const lowerKey = key.toLowerCase()
-    if (HOP_BY_HOP_REQUEST_HEADERS.has(lowerKey)) continue
-    forwarded[key] = value
-    // Headers iteration always lowercases names, so this is the only
-    // reliable way to tell whether the caller already sent an Accept header
-    // — checking forwarded['Accept'] (capitalized) would never match.
-    if (lowerKey === 'accept') hasAcceptHeader = true
+    if (FORWARDED_REQUEST_HEADERS.has(lowerKey)) forwarded[lowerKey] = value
   }
-  forwarded['Authorization'] = `Bearer ${token}`
-  forwarded['X-Chain-Id'] = chainId
-  if (!hasAcceptHeader) forwarded['Accept'] = 'application/json'
+  forwarded['authorization'] = `Bearer ${token}`
+  forwarded['x-chain-id'] = chainId
+  forwarded['accept'] ??= 'application/json'
   return forwarded
 }
 
