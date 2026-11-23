@@ -1,21 +1,4 @@
 "use strict";
-// Card-details reveal session (logic only; the HTTP binding is cardReveal.ts).
-//
-// Wirex's PCI reveal SDK (@wirexapp/card-reveal-web) renders PAN/expiry/CVV
-// inside Wirex-served iframes and needs, in the browser, a user bearer token
-// plus a GetCardDetails action token. Our proxy never hands user tokens to
-// the browser (and it can't prove who is asking — see auth.ts), so this
-// endpoint only releases one AFTER Wirex itself has verified the user's
-// wallet signature:
-//
-//   1. the browser signs `By signing this I confirm that I am executing
-//      action GetCardDetails at {nonce}` with the user's main-wallet key;
-//   2. we mint that user's token and exchange the signature for an action
-//      token (POST /api/v1/confirmation/signature/verify);
-//   3. only if Wirex accepts the signature do we return both tokens.
-//
-// Card data never passes through here: the frames fetch it from Wirex directly.
-// Nothing sensitive is logged (no tokens, no signature).
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RevealSessionError = exports.NONCE_MAX_SKEW_S = exports.REVEAL_ACTION = void 0;
 exports.createRevealSession = createRevealSession;

@@ -1,6 +1,9 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest'
 import { setMnemonic } from '../../lib/mnemonic'
+import { privateKeyToNsec, setPrivateKey } from '../../lib/privateKey'
+import { parseRecoveryInput } from '../../lib/recoveryInput'
 import {
+  deriveLegacyEthPrivateKey,
   getWirexEvmAddress,
   deployWirexKernelAccount,
   signWirexActionConfirmation,
@@ -94,13 +97,71 @@ describe('wirexWallet.ts', () => {
       expect(address1).not.toBe(address2)
     })
 
-    it('throws when no mnemonic is stored', async () => {
-      await expect(getWirexEvmAddress(testPassword)).rejects.toThrow('No encrypted mnemonic found')
+    it('derives the standard m/44\'/60\'/0\'/0/0 address for a mnemonic wallet', async () => {
+      // Well-known address for this mnemonic; guards the mnemonic path against regressions.
+      await setMnemonic(testMnemonic, testPassword)
+      expect(await getWirexEvmAddress(testPassword)).toBe('0x9858EfFD232B4033E47d90003D41EC34EcaEda94')
+    })
+
+    it('throws when neither a mnemonic nor a private key is stored', async () => {
+      await expect(getWirexEvmAddress(testPassword)).rejects.toThrow('No encrypted private key found')
     })
 
     it('throws on the wrong password', async () => {
       await setMnemonic(testMnemonic, testPassword)
       await expect(getWirexEvmAddress('wrong-password')).rejects.toThrow()
+    })
+  })
+
+  describe('legacy raw-private-key wallets', () => {
+    const legacyKey = new Uint8Array(32).fill(1)
+    // FROZEN test vector: HKDF-SHA256(ikm = 0x0101…01, salt = none,
+    // info = 'chimera/wirex/evm-signer/v1', L = 32), cross-checked against an
+    // independent RFC 5869 implementation. If this changes, every legacy
+    // user's Wirex address changes with it.
+    const expectedEvmKey = '96a379bc4edaac04b02c2f5a31a3a65637497fef3b9aa5ec0ff196994aa74cf2'
+    const expectedAddress = '0x457C118A536087934d55e2c2DB5Ff9C1c68B2182'
+
+    it('derives the frozen EVM key from the private key', () => {
+      expect(Buffer.from(deriveLegacyEthPrivateKey(legacyKey)).toString('hex')).toBe(expectedEvmKey)
+    })
+
+    it('never uses the Ark private key itself as the EVM key', () => {
+      expect(Buffer.from(deriveLegacyEthPrivateKey(legacyKey))).not.toEqual(Buffer.from(legacyKey))
+    })
+
+    it('rejects keys that are not 32 bytes', () => {
+      expect(() => deriveLegacyEthPrivateKey(new Uint8Array(31))).toThrow('must be 32 bytes')
+    })
+
+    it('derives the frozen address when only a private key is stored', async () => {
+      await setPrivateKey(legacyKey, testPassword)
+      expect(await getWirexEvmAddress(testPassword)).toBe(expectedAddress)
+    })
+
+    it('signs action confirmations with the derived legacy key', async () => {
+      await setPrivateKey(legacyKey, testPassword)
+      const { address, nonce, signature } = await signWirexActionConfirmation(testPassword, 'GetCardDetails', 1_700_000_000_000)
+      expect(address).toBe(expectedAddress)
+      expect(
+        await verifyMessage({ address: expectedAddress, message: wirexConfirmationMessage('GetCardDetails', nonce), signature }),
+      ).toBe(true)
+    })
+
+    it('throws on the wrong password', async () => {
+      await setPrivateKey(legacyKey, testPassword)
+      await expect(getWirexEvmAddress('wrong-password')).rejects.toThrow()
+    })
+
+    // Restore accepts either encoding of the same 32 bytes; both must land on one Wirex address.
+    it.each([
+      ['nsec', privateKeyToNsec(legacyKey)],
+      ['hex', Buffer.from(legacyKey).toString('hex')],
+    ])('derives the frozen address for a key restored as %s', async (_format, input) => {
+      const parsed = parseRecoveryInput(input)
+      if (parsed.kind !== 'key' || !parsed.privateKey) throw new Error(`restore parser rejected ${_format} input`)
+      await setPrivateKey(parsed.privateKey, testPassword)
+      expect(await getWirexEvmAddress(testPassword)).toBe(expectedAddress)
     })
   })
 
