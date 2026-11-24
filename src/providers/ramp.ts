@@ -270,6 +270,65 @@ export const reportRampDeposit = (token: string, txid: string): Promise<RampOrde
     body: JSON.stringify({ txid }),
   }).then((r) => normalizeOrderAsset(r.order))
 
+// ─── eSIMs ──────────────────────────────────────────────────────────────────
+//
+// eSIMs are sold from stock ramp holds, for ARK-BTC or USDT-CX paid to its
+// shared deposit address (lib/esims.ts runs the flow). Orders are bound to the
+// wallet's eSIM key (lib/esimKey.ts), proven by a fresh signature per request.
+// Tickers here are ramp's own: no toArkadeTicker mapping.
+
+export type EsimAsset = 'ARK-BTC' | 'USDT-CX'
+
+export interface EsimSettings {
+  purchase_enabled: boolean
+  available: number
+  price: string
+  fiat_currency: string
+  assets: EsimAsset[]
+}
+
+export interface EsimOrder {
+  id: string // order token
+  code: string // reference the user quotes to support
+  status: RampOrderStatus
+  asset: EsimAsset
+  crypto_amount: string // pay exactly this much of `asset`
+  fiat_amount: string
+  fiat_currency: string
+  deposit_crypto_address: string | null
+  deposit_txid: string | null
+  created_at: string
+  expires_at: string | null
+  completed_at: string | null
+}
+
+export interface EsimOrderView {
+  order: EsimOrder
+  plan: string | null
+  link: string | null // set once the order is COMPLETED
+  link_unavailable?: boolean // delivered, but ramp can't read the link right now
+}
+
+export interface EsimWalletProof {
+  wallet_pubkey: string
+  timestamp: number
+  signature: string
+}
+
+export const getEsimSettings = (): Promise<EsimSettings> => request('/esim/settings')
+
+export const purchaseEsim = (
+  payload: { asset: EsimAsset; email: string } & EsimWalletProof,
+): Promise<EsimOrderView & { access_key: string }> =>
+  request('/esim/purchase', { method: 'POST', body: JSON.stringify({ ...payload, origin: 'app' }) })
+
+export const getEsimOrder = (token: string, accessKey: string): Promise<EsimOrderView> =>
+  request(`/esim/order/${encodeURIComponent(token)}`, { headers: { 'X-Access-Key': accessKey } })
+
+/** Every order bound to the wallet's eSIM key, with delivered links. */
+export const listEsimOrders = (proof: EsimWalletProof): Promise<{ orders: EsimOrderView[] }> =>
+  request('/esim/orders', { method: 'POST', body: JSON.stringify(proof) })
+
 // ─── Gift cards ─────────────────────────────────────────────────────────────
 
 export interface PurchaseGiftCardPayload {

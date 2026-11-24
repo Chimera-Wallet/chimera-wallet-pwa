@@ -24,6 +24,7 @@ import Verification from './screens/Settings/Verification'
 import { setupPeriodicUpdateCheck } from './lib/serviceWorkerUpdate'
 import PosSettlement from './providers/posSettlement'
 import BankDepositReporting from './providers/bankDepositReporting'
+import EsimSync from './providers/esimSync'
 import WrapDepositTracking from './providers/wrapDepositTracking'
 
 // Screens that make up the mandatory lock setup. While a stored wallet has no
@@ -266,6 +267,7 @@ export default function App() {
       </PageAnimWrapper>
       <PosSettlement />
       <BankDepositReporting />
+      <EsimSync />
       <WrapDepositTracking />
       {tab !== Tabs.None && !bootAnimActive && (
         <PillNavbarOverlay

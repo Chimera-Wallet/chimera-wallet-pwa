@@ -4,6 +4,7 @@ import { consoleError } from '@/lib/logs'
 import { BackupProvider as NostrBackup } from '@/lib/backup'
 import { getAddressBook, getDeletedAddressIds, onAddressBookChange } from '@/lib/addressBook'
 import { readSolverCardsFromStorage } from '@/lib/storage'
+import { getStoredEsims, onEsimsChange } from '@/lib/esims'
 import { ReactNode, createContext, useContext, useEffect, useRef } from 'react'
 
 /**
@@ -46,6 +47,16 @@ export const BackupProvider = ({ children }: { children: ReactNode }) => {
     [],
   )
 
+  useEffect(
+    () =>
+      onEsimsChange((esims) => {
+        backupFor(configRef.current)
+          ?.backupEsims(esims)
+          .catch((err) => consoleError(err, 'Failed to back up eSIMs'))
+      }),
+    [],
+  )
+
   const fullBackup = async (config: Config) => {
     // Called while switching backups on, so don't wait for the config flag
     if (!config.pubkey) return
@@ -54,6 +65,7 @@ export const BackupProvider = ({ children }: { children: ReactNode }) => {
       addressBook: getAddressBook(),
       addressBookDeleted: getDeletedAddressIds(),
       solverCards: readSolverCardsFromStorage(),
+      esims: getStoredEsims(),
     })
   }
 

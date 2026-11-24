@@ -5,6 +5,7 @@ import { Config } from './types'
 import { consoleError } from './logs'
 import { toXOnlyHex } from './keys'
 import type { AddressBookEntry } from './addressBook'
+import { isStoredEsim, mergeEsim, type StoredEsim } from './esims'
 
 /**
  * What one backup event may carry. Each event holds any subset of these keys.
@@ -13,6 +14,10 @@ import type { AddressBookEntry } from './addressBook'
  * any `addressBookDeleted`: a device whose restore timed out (load gives up
  * after 10s) and then saved one new contact must not hide the contacts every
  * earlier event holds. Deleted ids are what keep a deletion from coming back.
+ * eSIM orders are combined the same way, one per order token, keeping
+ * whatever any copy knows (a link, a txid, an access key): an eSIM is paid for
+ * and must never be lost to a newer, shorter list. They hold eSIM links and
+ * access keys, which is why they're only ever in this encrypted backup.
  *
  * Builds still in production read only `config` and ignore the other keys, so
  * events written here stay readable by them (beta shares these backups).
@@ -27,12 +32,14 @@ export type NostrBackupData = {
   addressBook?: AddressBookEntry[]
   addressBookDeleted?: string[]
   solverCards?: LocalCardInput[]
+  esims?: StoredEsim[]
 }
 
 export type RestoreHandlers = {
   config?: (config: Config) => void
   addressBook?: (entries: AddressBookEntry[], deletedIds: string[]) => void
   solverCards?: (cards: LocalCardInput[]) => void
+  esims?: (esims: StoredEsim[]) => void
 }
 
 /**
@@ -47,6 +54,7 @@ export const mergeBackupEvents = (events: BackupEvent[]): NostrBackupData => {
   const merged: NostrBackupData = {}
   const entries = new Map<string, AddressBookEntry>()
   const deleted = new Set<string>()
+  const esims = new Map<string, StoredEsim>()
   let hasAddressBook = false
   for (const event of sorted) {
     if (!event.content) continue
@@ -71,7 +79,15 @@ export const mergeBackupEvents = (events: BackupEvent[]): NostrBackupData => {
       for (const id of data.addressBookDeleted) if (typeof id === 'string') deleted.add(id)
     }
     if (Array.isArray(data.solverCards)) merged.solverCards = data.solverCards
+    if (Array.isArray(data.esims)) {
+      for (const esim of data.esims) {
+        if (!isStoredEsim(esim)) continue
+        const known = esims.get(esim.token)
+        esims.set(esim.token, known ? mergeEsim(known, esim) : esim)
+      }
+    }
   }
+  if (esims.size) merged.esims = [...esims.values()]
   if (hasAddressBook) {
     merged.addressBook = [...entries.values()].filter((entry) => !deleted.has(entry.id))
     merged.addressBookDeleted = [...deleted]
@@ -119,6 +135,9 @@ export class BackupProvider {
   /** Back up every network's solver cards. */
   backupSolverCards = async (solverCards: LocalCardInput[]) => this.save({ solverCards })
 
+  /** Back up every eSIM order. */
+  backupEsims = async (esims: StoredEsim[]) => this.save({ esims })
+
   /**
    * Back up everything in one event, e.g. when backups are switched on. An
    * empty card list is left out rather than written, so it can't blank out
@@ -129,6 +148,7 @@ export class BackupProvider {
     addressBook: AddressBookEntry[]
     addressBookDeleted: string[]
     solverCards: LocalCardInput[]
+    esims: StoredEsim[]
   }) => {
     const payload: NostrBackupData = {
       config: data.config,
@@ -136,6 +156,7 @@ export class BackupProvider {
       addressBookDeleted: data.addressBookDeleted,
     }
     if (data.solverCards.length) payload.solverCards = data.solverCards
+    if (data.esims.length) payload.esims = data.esims
     await this.save(payload)
   }
 
@@ -148,5 +169,6 @@ export class BackupProvider {
     if (data.config) handlers.config?.(data.config)
     if (data.addressBook) handlers.addressBook?.(data.addressBook, data.addressBookDeleted ?? [])
     if (data.solverCards) handlers.solverCards?.(data.solverCards)
+    if (data.esims) handlers.esims?.(data.esims)
   }
 }

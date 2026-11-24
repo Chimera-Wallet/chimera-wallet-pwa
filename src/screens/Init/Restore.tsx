@@ -20,6 +20,7 @@ import { deriveNostrKeyFromMnemonic } from '../../lib/mnemonic'
 import { getRecoveryWord, parseRecoveryInput } from '../../lib/recoveryInput'
 import { restoreAddressBook } from '../../lib/addressBook'
 import { saveSolverCardsToStorage } from '../../lib/storage'
+import { restoreEsims } from '../../lib/esims'
 import { AspContext } from '../../providers/asp'
 import { useTranslation } from 'react-i18next'
 
@@ -133,6 +134,13 @@ export default function InitRestore() {
         },
         // Cards are stored per network already, so all of them are kept
         solverCards: (cards) => saveSolverCardsToStorage(cards),
+        // eSIM orders belong to that network's ramp server. They also come back
+        // without the backup: the eSIM app lists them from ramp by wallet key.
+        esims: (esims) => {
+          if (foreignBackup) return
+          const added = restoreEsims(esims)
+          if (added) consoleLog(`Restored ${added} eSIM orders`)
+        },
       })
       .catch((err) => consoleError(err, 'Error restoring from nostr'))
       .finally(() => setRestoreDone(true))

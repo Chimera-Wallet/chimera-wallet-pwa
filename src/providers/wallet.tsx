@@ -66,6 +66,7 @@ import { IndexedDBStorageAdapter } from '@arkade-os/sdk/adapters/indexedDB'
 import { Indexer } from '../lib/indexer'
 import { useTranslation } from 'react-i18next'
 import { createRequestGeneration } from '../lib/requestGeneration'
+import { clearEsimKey, setEsimKey } from '../lib/esimKey'
 
 const SERVICE_WORKER_ACTIVATION_TIMEOUT_MS = 5_000
 const MESSAGE_BUS_INIT_TIMEOUT_MS = 30_000
@@ -750,6 +751,14 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     } else {
       throw new Error('Either mnemonic or privateKey must be provided')
     }
+    // The eSIM key is derived from the same secret and kept in memory only
+    // until the wallet locks (lib/esimKey.ts). A failure here must not stop
+    // the wallet from opening: only eSIM purchases need it.
+    try {
+      setEsimKey(credentials, isMainnet(network))
+    } catch (err) {
+      consoleError(err, 'Could not derive the eSIM key')
+    }
 
     const didInit = await initSvcWorkerWallet({
       identity,
@@ -865,6 +874,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
   const lockWallet = async () => {
     abortInitSession()
+    clearEsimKey()
     if (!svcWallet) throw new Error('Service worker not initialized')
     if (statusPingInterval.current) clearInterval(statusPingInterval.current)
     statusPingInterval.current = undefined
@@ -882,6 +892,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
   const resetWallet = async () => {
     abortInitSession()
+    clearEsimKey()
     if (statusPingInterval.current) clearInterval(statusPingInterval.current)
     statusPingInterval.current = undefined
     clearTimeout(reloadTimerRef.current)
