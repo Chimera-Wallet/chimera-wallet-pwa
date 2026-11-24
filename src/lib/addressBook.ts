@@ -21,6 +21,9 @@ export interface AddressBookEntry {
 
 // Storage key for address book
 const ADDRESS_BOOK_STORAGE_KEY = 'address_book'
+// Ids of deleted entries. The Nostr backup merges every backup event, so a
+// deletion needs a record of its own or a restore would bring the entry back.
+const ADDRESS_BOOK_DELETED_STORAGE_KEY = 'address_book_deleted'
 
 /**
  * Generate a unique ID for address book entries
@@ -41,11 +44,82 @@ export function getAddressBook(): AddressBookEntry[] {
   }
 }
 
+/** Ids of entries deleted from this address book (see the storage key note). */
+export function getDeletedAddressIds(): string[] {
+  try {
+    const stored = JSON.parse(localStorage.getItem(ADDRESS_BOOK_DELETED_STORAGE_KEY) ?? '[]')
+    return Array.isArray(stored) ? stored.filter((id): id is string => typeof id === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+function addDeletedAddressIds(ids: string[]): void {
+  if (!ids.length) return
+  const deleted = new Set(getDeletedAddressIds())
+  for (const id of ids) deleted.add(id)
+  localStorage.setItem(ADDRESS_BOOK_DELETED_STORAGE_KEY, JSON.stringify([...deleted]))
+}
+
+type AddressBookListener = (entries: AddressBookEntry[]) => void
+const listeners = new Set<AddressBookListener>()
+
+/**
+ * Be told whenever the address book is saved (the Nostr backup subscribes, see
+ * providers/backup.tsx). Not called for restoreAddressBook(), which writes what
+ * a backup already holds. Returns an unsubscribe function.
+ */
+export function onAddressBookChange(listener: AddressBookListener): () => void {
+  listeners.add(listener)
+  return () => {
+    listeners.delete(listener)
+  }
+}
+
 /**
  * Save address book to storage
  */
 export function saveAddressBook(entries: AddressBookEntry[]): void {
   localStorage.setItem(ADDRESS_BOOK_STORAGE_KEY, JSON.stringify(entries))
+  for (const listener of listeners) listener(entries)
+}
+
+/** Whether a value read from a backup is a well-formed address book entry. */
+export function isAddressBookEntry(value: unknown): value is AddressBookEntry {
+  const entry = value as AddressBookEntry | null
+  return Boolean(
+    entry &&
+    typeof entry.id === 'string' &&
+    (entry.type === AddressType.Ark || entry.type === AddressType.Bitcoin) &&
+    typeof entry.address === 'string' &&
+    entry.address.length > 0 &&
+    (entry.label === undefined || typeof entry.label === 'string') &&
+    (entry.contact === null || typeof entry.contact === 'string') &&
+    typeof entry.createdAt === 'number',
+  )
+}
+
+/**
+ * Bring back entries from a backup. Entries already on this device win over a
+ * backed-up entry with the same id, and nothing local is removed, so a restore
+ * can only add. Entries deleted here or in the backup stay deleted, and the
+ * backup's deletions are kept so later backups carry them on. Malformed entries
+ * are skipped. Returns how many were added.
+ */
+export function restoreAddressBook(backedUp: unknown, deletedIds: unknown = []): number {
+  if (Array.isArray(deletedIds)) addDeletedAddressIds(deletedIds.filter((id): id is string => typeof id === 'string'))
+  if (!Array.isArray(backedUp)) return 0
+  const local = getAddressBook()
+  const known = new Set([...local.map((entry) => entry.id), ...getDeletedAddressIds()])
+  const added: AddressBookEntry[] = []
+  for (const entry of backedUp) {
+    if (!isAddressBookEntry(entry) || known.has(entry.id)) continue
+    known.add(entry.id)
+    added.push(entry)
+  }
+  if (!added.length) return 0
+  localStorage.setItem(ADDRESS_BOOK_STORAGE_KEY, JSON.stringify([...local, ...added]))
+  return added.length
 }
 
 /**
@@ -82,6 +156,7 @@ export function removeAddress(id: string): boolean {
   const entries = getAddressBook()
   const filtered = entries.filter((e) => e.id !== id)
   if (filtered.length === entries.length) return false
+  addDeletedAddressIds([id])
   saveAddressBook(filtered)
   return true
 }
@@ -92,6 +167,7 @@ export function removeAddress(id: string): boolean {
 export function removeContact(contactName: string): void {
   const entries = getAddressBook()
   const filtered = entries.filter((e) => e.contact !== contactName)
+  addDeletedAddressIds(entries.filter((e) => e.contact === contactName).map((e) => e.id))
   saveAddressBook(filtered)
 }
 

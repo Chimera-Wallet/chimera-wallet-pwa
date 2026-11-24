@@ -14,7 +14,7 @@ import Shadow from '../../components/Shadow'
 import { defaultPassword } from '../../lib/constants'
 import { ConfigContext } from '../../providers/config'
 import Toggle from '../../components/Toggle'
-import { BackupProvider } from '../../lib/backup'
+import { BackupContext } from '../../providers/backup'
 import ErrorMessage from '../../components/Error'
 import SafeIcon from '../../icons/Safe'
 import FlexRow from '../../components/FlexRow'
@@ -28,11 +28,12 @@ import { WalletContext } from '../../providers/wallet'
 import { authenticateUser } from '../../lib/biometrics'
 import FingerprintIcon from '../../icons/Fingerprint'
 import InputPassword from '../../components/InputPassword'
-import {useTranslation} from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 
 export default function Backup() {
   const { wallet } = useContext(WalletContext)
   const { backupConfig, config, updateConfig } = useContext(ConfigContext)
+  const { fullBackup } = useContext(BackupContext)
 
   const { toast } = useToast()
 
@@ -44,8 +45,8 @@ export default function Backup() {
   const [showSecret, setShowSecret] = useState(false)
 
   const enteredPassword = useRef('')
-  
-  const {t} = useTranslation()
+
+  const { t } = useTranslation()
 
   useEffect(() => {
     verifyPassword(defaultPassword).then(setSecret)
@@ -99,12 +100,14 @@ export default function Backup() {
     const newConfig = { ...config, nostrBackup: !config.nostrBackup }
     updateConfig(newConfig)
     if (newConfig.nostrBackup) {
-      const backupProvider = new BackupProvider({ pubkey: config.pubkey })
-      await backupProvider.backupConfig(newConfig).catch((error) => {
+      // Everything at once: settings, address book and solver cards
+      try {
+        await fullBackup(newConfig)
+      } catch (error) {
         consoleError(error, 'Backup to Nostr failed')
         setError(t('errors.backup.nostrFail'))
         return
-      })
+      }
     } else {
       backupConfig(newConfig)
     }
@@ -120,9 +123,7 @@ export default function Backup() {
           {secretLabel}
         </Text>
         <TextSecondary centered wrap>
-          {isMnemonicWallet
-            ? t('settings.backup.mnemonicWarning')
-            : t('settings.backup.pkWarning')}
+          {isMnemonicWallet ? t('settings.backup.mnemonicWarning') : t('settings.backup.pkWarning')}
         </TextSecondary>
       </FlexCol>
       {!secret ? (
@@ -142,7 +143,7 @@ export default function Backup() {
       <FlexCol gap='0.25rem'>
         <FlexRow>
           <SafeIcon />
-          <TextSecondary> {t('settings.backup.keepSafeSecret',{secret: secretLabel.toLowerCase()})}</TextSecondary>
+          <TextSecondary> {t('settings.backup.keepSafeSecret', { secret: secretLabel.toLowerCase() })}</TextSecondary>
         </FlexRow>
         <FlexRow>
           <DontIcon />
@@ -162,7 +163,7 @@ export default function Backup() {
 
   return (
     <>
-      <Header text= {t('common.general.backup')} back />
+      <Header text={t('common.general.backup')} back />
       <Modal open={dialog} onOpenChange={setDialog}>
         <Dialog />
       </Modal>
@@ -179,7 +180,10 @@ export default function Backup() {
                   {showSecret ? (
                     <Button onClick={handleCopy} label={t('common.general.copyClipboardPrompt')} />
                   ) : (
-                    <Button onClick={toggleDialog} label={t('settings.backup.viewSecret',{secret: secretLabel.toLowerCase()})} />
+                    <Button
+                      onClick={toggleDialog}
+                      label={t('settings.backup.viewSecret', { secret: secretLabel.toLowerCase() })}
+                    />
                   )}
                   <FlexRow>
                     <OkIcon />
@@ -189,11 +193,7 @@ export default function Backup() {
               </Shadow>
               {showSecret ? (
                 <WarningBox
-                  text={
-                    isMnemonicWallet
-                      ? t('settings.backup.phraseAccess')
-                      : t('settings.backup.pkAccess')
-                  }
+                  text={isMnemonicWallet ? t('settings.backup.phraseAccess') : t('settings.backup.pkAccess')}
                 />
               ) : null}
             </FlexCol>

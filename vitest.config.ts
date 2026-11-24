@@ -28,6 +28,7 @@ export default defineConfig({
       VITE_DELEGATE_ENABLED: 'false',
       VITE_WIREX_ENABLED: 'false',
       VITE_ARKADEWRAP_API: 'https://api.arkadewrap.test',
+      VITE_NOSTR_RELAYS: 'wss://relay.test',
       // Matches production's set, which is what the existing screen tests assume
       VITE_ENABLED_ASSETS: 'BTC,CEXT',
       VITE_ARKADE_ETH: 'test-eth',

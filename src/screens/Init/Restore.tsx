@@ -18,8 +18,10 @@ import { TextSecondary } from '../../components/Text'
 import { OnboardStaggerContainer, OnboardStaggerChild } from '../../components/OnboardLoadIn'
 import { deriveNostrKeyFromMnemonic } from '../../lib/mnemonic'
 import { getRecoveryWord, parseRecoveryInput } from '../../lib/recoveryInput'
+import { restoreAddressBook } from '../../lib/addressBook'
+import { saveSolverCardsToStorage } from '../../lib/storage'
 import { AspContext } from '../../providers/asp'
-import {useTranslation} from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 
 // The ARK server is env-only (single source of truth). A backup made on another
 // network carries a different aspUrl; this detects that so we can ignore that
@@ -46,7 +48,7 @@ export default function InitRestore() {
   const { setInitInfo } = useContext(FlowContext)
   const { aspInfo } = useContext(AspContext)
 
-  const {t} = useTranslation()
+  const { t } = useTranslation()
 
   const buttonLabel = t('common.general.continue')
 
@@ -73,9 +75,7 @@ export default function InitRestore() {
   }
 
   const helperText =
-    parsed.kind === 'phrase'
-      ? t('init.restore.wordCount', { count: parsed.count })
-      : t('init.restore.inputHint')
+    parsed.kind === 'phrase' ? t('init.restore.wordCount', { count: parsed.count }) : t('init.restore.inputHint')
 
   const handleChange = (value: string, cursor: number | null) => {
     if (value !== input.value) setSubmitted(false)
@@ -101,25 +101,38 @@ export default function InitRestore() {
       setInitInfo({ privateKey, password: defaultPassword, restoring: true })
       seckey = privateKey!
     }
+    // Set by the config handler, which always runs before the others
+    let foreignBackup = false
     new BackupProvider({ seckey })
-      .restore((conf) => {
-        // A recovery phrase is network-agnostic and the same one is legitimately
-        // used on more than one network. The Nostr backup is keyed by the phrase,
-        // so restoring on staging can turn up the mainnet backup. That must not
-        // block the restore — the wallet is rebuilt from the phrase itself, and
-        // this callback only imports preferences. Skip a foreign network's
-        // settings (its importedAssets are asset IDs that mean nothing here) and
-        // let the restore continue with local defaults.
-        if (isForeignArkServer(conf.aspUrl)) {
-          consoleLog('Backup belongs to another network; keeping local settings')
-          return
-        }
-        // Never adopt network-critical fields (aspUrl, delegate) from a backup;
-        // only the user's preferences are safe to restore.
-        const preferences: Partial<Config> = { ...conf }
-        delete preferences.aspUrl
-        delete preferences.delegate
-        updateConfig({ ...config, ...preferences })
+      .restore({
+        config: (conf) => {
+          // A recovery phrase is network-agnostic and the same one is legitimately
+          // used on more than one network. The Nostr backup is keyed by the phrase,
+          // so restoring on staging can turn up the mainnet backup. That must not
+          // block the restore — the wallet is rebuilt from the phrase itself, and
+          // this callback only imports preferences. Skip a foreign network's
+          // settings (its importedAssets are asset IDs that mean nothing here) and
+          // let the restore continue with local defaults.
+          if (isForeignArkServer(conf.aspUrl)) {
+            foreignBackup = true
+            consoleLog('Backup belongs to another network; keeping local settings')
+            return
+          }
+          // Never adopt network-critical fields (aspUrl, delegate) from a backup;
+          // only the user's preferences are safe to restore.
+          const preferences: Partial<Config> = { ...conf }
+          delete preferences.aspUrl
+          delete preferences.delegate
+          updateConfig({ ...config, ...preferences })
+        },
+        // Another network's addresses (tark1/tb1 vs ark1/bc1) would be wrong here
+        addressBook: (entries, deletedIds) => {
+          if (foreignBackup) return
+          const added = restoreAddressBook(entries, deletedIds)
+          if (added) consoleLog(`Restored ${added} address book entries`)
+        },
+        // Cards are stored per network already, so all of them are kept
+        solverCards: (cards) => saveSolverCardsToStorage(cards),
       })
       .catch((err) => consoleError(err, 'Error restoring from nostr'))
       .finally(() => setRestoreDone(true))
@@ -135,8 +148,7 @@ export default function InitRestore() {
 
   const disabled = !input.value.trim()
 
-  if (restoring)
-    return <Loading text={t('init.restore.restoringWallet')} />
+  if (restoring) return <Loading text={t('init.restore.restoringWallet')} />
 
   return (
     <>
@@ -154,9 +166,7 @@ export default function InitRestore() {
                   error={error}
                   helperText={helperText}
                 />
-                <TextSecondary wrap>
-                  {t('init.restore.phraseEntry')}
-                </TextSecondary>
+                <TextSecondary wrap>{t('init.restore.phraseEntry')}</TextSecondary>
               </FlexCol>
             </OnboardStaggerChild>
           </OnboardStaggerContainer>

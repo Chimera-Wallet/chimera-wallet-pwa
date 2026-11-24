@@ -4,8 +4,28 @@ import { consoleError } from './logs'
 import { toXOnlyHex } from './keys'
 
 const nostrAppName = 'arkade_backup'
-const defaultRelays = ['wss://relay.damus.io', 'wss://relay.primal.net', 'wss://nostr.arkade.sh']
-const relays = import.meta.env.VITE_NOSTR_RELAY_URL ? [import.meta.env.VITE_NOSTR_RELAY_URL] : defaultRelays
+
+/**
+ * Relays the backup is written to and read from, from `VITE_NOSTR_RELAYS`
+ * (comma-separated). Every relay gets every write and every read is merged
+ * across all of them, so one relay going away loses nothing as long as another
+ * still holds the events. No baked-in default: the startup config gate blocks
+ * the app if this is empty (see requiredConfig.ts).
+ *
+ * Removing a relay from the list hides whatever backups only it holds, so add
+ * relays freely but drop one only after its events exist elsewhere.
+ */
+export const parseNostrRelays = (value: string | undefined): string[] =>
+  (value ?? '')
+    .split(',')
+    .map((relay) => relay.trim())
+    .filter((relay) => /^wss?:\/\/\S+$/i.test(relay))
+
+export const getNostrRelays = (): string[] => {
+  const relays = parseNostrRelays(import.meta.env.VITE_NOSTR_RELAYS)
+  if (!relays.length) throw new Error('VITE_NOSTR_RELAYS is not set')
+  return relays
+}
 
 export class NostrStorage {
   private seckey: Uint8Array | null
@@ -22,7 +42,7 @@ export class NostrStorage {
    */
   constructor(options: { seckey?: Uint8Array; pubkey?: string; relays?: string[] }) {
     this.pool = new SimplePool()
-    this.relays = options.relays || relays
+    this.relays = options.relays || getNostrRelays()
     if (options.seckey) {
       this.pubkey = getPublicKey(options.seckey)
       this.seckey = options.seckey
@@ -56,17 +76,23 @@ export class NostrStorage {
 
     const signedEvent = finalizeEvent(event, sk)
 
+    // publish() returns one promise per relay. Racing that array directly (as
+    // this used to) resolved at once, before any relay answered, and left each
+    // relay's failure as an unhandled rejection. Succeed once any relay has
+    // stored the event; fail only if none did within the timeout.
+    let timeoutHandler: ReturnType<typeof setTimeout> | undefined
     try {
       await Promise.race([
-        this.pool.publish(this.relays, signedEvent),
+        Promise.any(this.pool.publish(this.relays, signedEvent)),
         new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Publish timeout')), 10000)
+          timeoutHandler = setTimeout(() => reject(new Error('Publish timeout')), 10000)
         }),
       ])
-      console.log('Message published to Nostr successfully')
     } catch (error) {
-      console.error('Failed to publish to Nostr:', error)
-      throw error
+      consoleError(error, 'Failed to publish to Nostr')
+      throw error instanceof AggregateError ? new Error('No Nostr relay accepted the backup') : error
+    } finally {
+      if (timeoutHandler) clearTimeout(timeoutHandler)
     }
   }
 
