@@ -44,7 +44,7 @@ export default function WirexSetup({ title, initialUser, initialCards, onReady }
   const [mode, setMode] = useState<Mode>('load')
   const [password, setPassword] = useState('')
   const [passwordError, setPasswordError] = useState('')
-  //null while checking, wallets without a user password are encrypted with the default one.
+  // null while checking, wallets without a user password are encrypted with the default one.
   const [hasUserPassword, setHasUserPassword] = useState<boolean | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [email, setEmail] = useState('')
