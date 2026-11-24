@@ -47,6 +47,7 @@ export interface StoredEsim {
   depositAddress: string | null
   status: RampOrderStatus
   plan: string | null
+  imsi?: string | null // tells eSIMs apart; set once delivered (absent on orders saved before it existed)
   link: string | null
   linkUnavailable: boolean
   paying: boolean // a payment was started; never start another for this order
@@ -117,6 +118,7 @@ export const mergeEsim = (a: StoredEsim, b: StoredEsim): StoredEsim => {
     status: ahead.status,
     accessKey: a.accessKey ?? b.accessKey,
     plan: b.plan ?? a.plan,
+    imsi: b.imsi ?? a.imsi ?? null,
     link: b.link ?? a.link,
     linkUnavailable: (b.link ?? a.link) ? false : b.linkUnavailable || a.linkUnavailable,
     paying: a.paying || b.paying,
@@ -217,6 +219,7 @@ const fromView = (view: EsimOrderView, accessKey: string | null): StoredEsim => 
   depositAddress: view.order.deposit_crypto_address,
   status: view.order.status,
   plan: view.plan,
+  imsi: view.imsi ?? null,
   link: view.link,
   linkUnavailable: Boolean(view.link_unavailable),
   paying: false,

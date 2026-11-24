@@ -123,6 +123,11 @@ export default function AppEsims() {
         <Padded>
           <FlexCol gap='1rem'>
             {settingsError ? <ErrorMessage error text={t('apps.esims.unavailable')} /> : null}
+            {settings && !settings.purchase_enabled ? (
+              <Info color='orange' title={t('apps.esims.notForSale')}>
+                <TextSecondary>{t('apps.esims.notForSaleText')}</TextSecondary>
+              </Info>
+            ) : null}
             {settings && settings.purchase_enabled && settings.available === 0 ? (
               <Info color='orange' title={t('apps.esims.soldOut')}>
                 <TextSecondary>{t('apps.esims.soldOutText')}</TextSecondary>
@@ -138,10 +143,7 @@ export default function AppEsims() {
       </Content>
       {canBuy ? (
         <ButtonsOnBottom>
-          <Button
-            label={t('apps.esims.buyFor', { price: settings!.price, currency: settings!.fiat_currency })}
-            onClick={() => setView({ name: 'buy' })}
-          />
+          <Button label={t('apps.esims.buyEsim')} onClick={() => setView({ name: 'buy' })} />
         </ButtonsOnBottom>
       ) : null}
     </>
@@ -155,18 +157,24 @@ function stateLabel(t: (key: string) => string, state: EsimState): string {
 function EsimRow({ esim, onOpen }: { esim: StoredEsim; onOpen: () => void }) {
   const { t } = useTranslation()
   const state = esimState(esim)
+  // The IMSI tells delivered eSIMs apart; before delivery the order code does
+  const identifier = esim.imsi ? `${t('apps.esims.imsi')} ${esim.imsi}` : `${t('apps.esims.order')} ${esim.code}`
   return (
-    <button type='button' onClick={onOpen} style={{ all: 'unset', cursor: 'pointer', width: '100%' }}>
+    <button type='button' onClick={onOpen} style={{ all: 'unset', cursor: 'pointer', display: 'block', width: '100%' }}>
       <Shadow>
-        <FlexRow between padding='0.75rem'>
-          <FlexCol gap='0.25rem'>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem' }}>
+          {/* Only this side gives way on a narrow screen; the status never truncates */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1, minWidth: 0 }}>
             <Text bold>{esim.plan ?? t('apps.esims.esim')}</Text>
+            <TextSecondary>{identifier}</TextSecondary>
             <TextSecondary>{formatDate(esim.createdAt)}</TextSecondary>
-          </FlexCol>
-          <Text small color={state === 'ready' ? 'green' : state === 'needsSupport' ? 'red' : 'neutral-500'}>
-            {stateLabel(t, state)}
-          </Text>
-        </FlexRow>
+          </div>
+          <div style={{ flexShrink: 0 }}>
+            <Text small color={state === 'ready' ? 'green' : state === 'needsSupport' ? 'red' : 'neutral-500'}>
+              {stateLabel(t, state)}
+            </Text>
+          </div>
+        </div>
       </Shadow>
     </button>
   )
@@ -386,6 +394,12 @@ function EsimOrder({ esim, onBack }: { esim: StoredEsim; onBack: () => void }) {
                 <TextSecondary>{t('apps.esims.order')}</TextSecondary>
                 <Text copy={esim.code}>{esim.code}</Text>
               </FlexRow>
+              {esim.imsi ? (
+                <FlexRow between>
+                  <TextSecondary>{t('apps.esims.imsi')}</TextSecondary>
+                  <Text copy={esim.imsi}>{esim.imsi}</Text>
+                </FlexRow>
+              ) : null}
               <FlexRow between>
                 <TextSecondary>{t('apps.esims.bought')}</TextSecondary>
                 <Text>{formatDate(esim.createdAt)}</Text>

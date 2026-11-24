@@ -106,13 +106,19 @@ describe('eSIM orders', () => {
 
   it('never loses a link, txid or key when two copies are combined', () => {
     const paid = esim({ txid: 'tx1', reported: true, status: 'DEPOSIT_RECEIVED' })
-    const delivered = esim({ accessKey: null, status: 'COMPLETED', link: 'https://esim.test/1' })
+    const delivered = esim({
+      accessKey: null,
+      status: 'COMPLETED',
+      link: 'https://esim.test/1',
+      imsi: '001010000000001',
+    })
     const merged = mergeEsim(paid, delivered)
     expect(merged).toMatchObject({
       txid: 'tx1',
       accessKey: 'k'.repeat(43),
       status: 'COMPLETED',
       link: 'https://esim.test/1',
+      imsi: '001010000000001',
     })
     expect(mergeEsim(delivered, esim())).toMatchObject({ status: 'COMPLETED', link: 'https://esim.test/1' })
   })

@@ -305,6 +305,7 @@ export interface EsimOrder {
 export interface EsimOrderView {
   order: EsimOrder
   plan: string | null
+  imsi?: string | null // the delivered eSIM's IMSI, once the order is COMPLETED
   link: string | null // set once the order is COMPLETED
   link_unavailable?: boolean // delivered, but ramp can't read the link right now
 }
