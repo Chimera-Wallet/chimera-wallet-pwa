@@ -396,8 +396,32 @@
                 "body": "Freeze and unfreeze your card in one tap, check your card details and follow every transaction."
             }
         },
+        "setup": {
+            "tabLoad": "I have an account",
+            "tabCreate": "New account",
+            "passwordTitle": "Wallet password",
+            "passwordHelp": "Required to find or create your card account: it unlocks the key that owns it.",
+            "passwordPlaceholder": "Enter your wallet password",
+            "passwordBiometrics": "You'll confirm with biometrics when you continue.",
+            "passwordNone": "Your wallet has no password, so there's nothing to enter.",
+            "loadHelp": "We'll look up the Wirex account linked to this wallet.",
+            "createHelp": "Your card account will be linked to this wallet.",
+            "email": "Email",
+            "country": "Country of residence",
+            "countryPlaceholder": "2-letter code, e.g. GB",
+            "countryHelp": "This can't be changed later.",
+            "pep": "I am a politically exposed person (PEP)",
+            "pepHelp": "A PEP holds, or has held, a prominent public role, or is a close family member or associate of someone who does.",
+            "ctaLoad": "Find my account",
+            "ctaCreate": "Create account",
+            "notFound": "There's no Wirex account for this wallet yet.",
+            "createInstead": "Create one instead",
+            "busyLoad": "Looking up your account…",
+            "busyDeploy": "Setting up your card wallet (this can take a minute)…",
+            "busyCreate": "Creating your Wirex account…"
+        },
         "withdraw": {
-            "fromCard": "Moving funds from the card to your Wirex wallet…",
+            "fromCard":"Moving funds from the card to your Wirex wallet…",
             "delay": "Waiting for Wirex's security delay. Keep this screen open, or finish it later from the card screen.",
             "sent": "Withdrawal complete: {{ticker}} sent to your Base address",
             "pending": "Withdrawal of {{amount}} pending",

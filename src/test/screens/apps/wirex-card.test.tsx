@@ -12,7 +12,13 @@ import {
   setWirexCardBlocked,
   createCardRevealSession,
 } from '../../../lib/wirex'
-import { getWirexConfigCompanyId, signWirexActionConfirmation } from '../../../lib/wirexWallet'
+import {
+  deployWirexKernelAccount,
+  getWirexConfigCompanyId,
+  getWirexEvmAddress,
+  signWirexActionConfirmation,
+} from '../../../lib/wirexWallet'
+import { isValidPassword } from '../../../lib/privateKey'
 import { createCardReveal } from '@wirexapp/card-reveal-web'
 import { mockNavigationContextValue } from '../mocks'
 
@@ -105,7 +111,7 @@ describe('AppWirexCard', () => {
   it('shows setup when there is no stored account', async () => {
     render(<AppWirexCard />)
     await skipWalkthrough()
-    expect(await screen.findByText('Load existing account')).toBeInTheDocument()
+    expect(await screen.findByTestId('wirex-setup-submit')).toHaveTextContent('apps.wirexCard.setup.ctaLoad')
     expect(getWirexUserByAddress).not.toHaveBeenCalled()
   })
 
@@ -125,6 +131,87 @@ describe('AppWirexCard', () => {
     render(<AppWirexCard />)
     await waitFor(() => expect(screen.getByTestId('wirex-card-balance')).toHaveTextContent('100.00'))
     expect(getWirexUserByAddress).toHaveBeenCalledWith('0xUser')
+  })
+})
+
+describe('Wirex setup', () => {
+  const skipWalkthrough = async () => {
+    const next = await screen.findByTestId('wirex-walkthrough-next')
+    for (let i = 0; i < 3; i++) fireEvent.click(next)
+  }
+  const passwordInput = () => screen.getByTestId('wirex-setup-password').querySelector('input') as HTMLInputElement
+  const submit = () => screen.getByTestId('wirex-setup-submit')
+  const openTab = (tab: 'tabLoad' | 'tabCreate') => fireEvent.click(screen.getByText(`apps.wirexCard.setup.${tab}`))
+
+  // Wallet protected by the password 'secret'.
+  const withUserPassword = () => vi.mocked(isValidPassword).mockImplementation(async (pw) => pw === 'secret')
+
+  afterEach(() => {
+    cleanup()
+    vi.mocked(isValidPassword).mockImplementation(async () => true)
+  })
+
+  it('shows the password section on both tabs', async () => {
+    withUserPassword()
+    render(<AppWirexCard />)
+    await skipWalkthrough()
+    await waitFor(() => expect(passwordInput()).toBeTruthy())
+    openTab('tabCreate')
+    expect(passwordInput()).toBeTruthy()
+    expect(submit()).toHaveTextContent('apps.wirexCard.setup.ctaCreate')
+  })
+
+  it('keeps the button disabled until a password is entered', async () => {
+    withUserPassword()
+    render(<AppWirexCard />)
+    await skipWalkthrough()
+    await waitFor(() => expect(passwordInput()).toBeTruthy())
+    expect(submit()).toBeDisabled()
+    fireEvent.change(passwordInput(), { target: { value: 'secret' } })
+    expect(submit()).not.toBeDisabled()
+  })
+
+  it('rejects a wrong password before deriving or deploying anything', async () => {
+    withUserPassword()
+    render(<AppWirexCard />)
+    await skipWalkthrough()
+    await waitFor(() => expect(passwordInput()).toBeTruthy())
+    openTab('tabCreate')
+    fireEvent.change(passwordInput(), { target: { value: 'nope' } })
+    fireEvent.change(screen.getByTestId('wirex-setup-email'), { target: { value: 'a@b.com' } })
+    fireEvent.change(screen.getByTestId('wirex-setup-country'), { target: { value: 'gb' } })
+    fireEvent.click(submit())
+    expect(await screen.findByText('apps.wirexCard.withdraw.wrongPassword')).toBeInTheDocument()
+    expect(getWirexEvmAddress).not.toHaveBeenCalled()
+    expect(deployWirexKernelAccount).not.toHaveBeenCalled()
+  })
+
+  it('offers to create an account when none is found, keeping the password', async () => {
+    withUserPassword()
+    vi.mocked(getWirexEvmAddress).mockResolvedValue('0xUser')
+    vi.mocked(getWirexUserByAddress).mockResolvedValue(null)
+    render(<AppWirexCard />)
+    await skipWalkthrough()
+    await waitFor(() => expect(passwordInput()).toBeTruthy())
+    fireEvent.change(passwordInput(), { target: { value: 'secret' } })
+    fireEvent.click(submit())
+    fireEvent.click(await screen.findByTestId('wirex-setup-create-instead'))
+    expect(submit()).toHaveTextContent('apps.wirexCard.setup.ctaCreate')
+    expect(passwordInput().value).toBe('secret')
+    expect(getWirexEvmAddress).toHaveBeenCalledWith('secret')
+  })
+
+  it('needs no password input for a wallet without a password', async () => {
+    vi.mocked(getWirexEvmAddress).mockResolvedValue('0xUser')
+    vi.mocked(getWirexUserByAddress).mockResolvedValue(user)
+    vi.mocked(getWirexCards).mockResolvedValue({ data: [] })
+    render(<AppWirexCard />)
+    await skipWalkthrough()
+    expect(await screen.findByText('apps.wirexCard.setup.passwordNone')).toBeInTheDocument()
+    expect(passwordInput()).toBeNull()
+    await waitFor(() => expect(submit()).not.toBeDisabled())
+    fireEvent.click(submit())
+    await waitFor(() => expect(getWirexUserByAddress).toHaveBeenCalledWith('0xUser'))
   })
 })
 
