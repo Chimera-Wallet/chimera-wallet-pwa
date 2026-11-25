@@ -12,7 +12,7 @@
 // Docs: https://api.arkadewrap.com/docs/  (spec: /docs/openapi.json)
 
 import type { SourceChainId } from './sourceChains'
-import { BALANCE_DISPLAY_DECIMALS, prettyAssetAmount } from './assets'
+import { BALANCE_DISPLAY_DECIMALS, getAssetConfig, prettyAssetAmount } from './assets'
 
 export const getArkadeWrapBaseUrl = (): string => {
   const url = import.meta.env.VITE_ARKADEWRAP_API
@@ -22,8 +22,40 @@ export const getArkadeWrapBaseUrl = (): string => {
 
 export const SERVICE_FEE_PERCENT = 0.3
 
-/** Parse an optional quote amount. Every amount returned by the bridge uses the asset's base units. */
+/** Parse an optional quote amount, in the asset's base units (see normalizeQuoteLimits). */
 export const quoteBaseUnits = (value: string | null | undefined): bigint => (value ? BigInt(value) : BigInt(0))
+
+const BRIDGE_LIMIT_DECIMALS = 18
+const WRAPPED_TICKER_SUFFIX = '-CX'
+
+const tickerPrecision = (ticker: string): number | undefined => {
+  const upper = ticker.toUpperCase()
+  const base = upper.endsWith(WRAPPED_TICKER_SUFFIX) ? upper.slice(0, -WRAPPED_TICKER_SUFFIX.length) : upper
+  return getAssetConfig(base)?.precision
+}
+
+/**
+ * Rewrite the limit fields of a quote into the asset base units (independent of the scale decided by the bridge). 
+ * Scale is read off the limit itself e.g: 18-decimal limit is just a multiple of 
+ * 10^(18-precision) but as a base-unit this would be a crazy limit (as seen in screenshots). 
+ */
+export const normalizeQuoteLimits = (quote: WrapQuote): WrapQuote => {
+  const precision = tickerPrecision(quote.ticker ?? '')
+  if (precision === undefined) return quote
+  const shift = BRIDGE_LIMIT_DECIMALS - precision
+  if (shift <= 0) return quote
+  const step = BigInt(10) ** BigInt(shift)
+  const probe = quoteBaseUnits(quote.min_amount) || quoteBaseUnits(quote.network_fee_amount)
+  if (probe === BigInt(0) || probe % step !== BigInt(0)) return quote
+  const convert = (value: string | null | undefined): string | null | undefined =>
+    value ? ((BigInt(value) + step - BigInt(1)) / step).toString() : value
+  return {
+    ...quote,
+    min_amount: convert(quote.min_amount),
+    remaining_amount: convert(quote.remaining_amount),
+    network_fee_amount: convert(quote.network_fee_amount),
+  }
+}
 
 /** Format a quote's base-unit amount with digit grouping, the same way as balances. Empty when absent. */
 export const prettyQuoteAmount = (value: string | null | undefined, precision: number): string =>
@@ -122,15 +154,13 @@ export const createWrapQuote = async (payload: WrapQuoteRequest): Promise<WrapQu
     body: JSON.stringify(payload),
   })
   if (!response.ok) return parseError(response, 'Failed to create wrap quote')
-  return response.json()
+  return normalizeQuoteLimits(await response.json())
 }
 
 // Unwrap names the wrapped Arkade asset (`USDT` -> `USDT-CX`), while wrap names
 // the native one. The published spec says otherwise ("ticker on the destination
 // chain"), but the live API rejects `ethereum/USDT` as an unsupported unwrap and
 // accepts `ethereum/USDT-CX`. Callers pass the plain asset ticker for both.
-const WRAPPED_TICKER_SUFFIX = '-CX'
-
 export const toWrappedTicker = (ticker: string): string =>
   ticker.toUpperCase().endsWith(WRAPPED_TICKER_SUFFIX) ? ticker : `${ticker}${WRAPPED_TICKER_SUFFIX}`
 
@@ -146,7 +176,7 @@ export const createUnwrapQuote = async (payload: WrapQuoteRequest): Promise<Wrap
     body: JSON.stringify({ ...payload, ticker: toWrappedTicker(payload.ticker) }),
   })
   if (!response.ok) return parseError(response, 'Failed to create unwrap quote')
-  return response.json()
+  return normalizeQuoteLimits(await response.json())
 }
 
 /** Poll a wrap/unwrap quote by id. */
@@ -157,5 +187,5 @@ export const getWrapQuote = async (id: string): Promise<WrapQuote> => {
     headers: { accept: 'application/json' },
   })
   if (!response.ok) return parseError(response, 'Failed to get quote status')
-  return response.json()
+  return normalizeQuoteLimits(await response.json())
 }

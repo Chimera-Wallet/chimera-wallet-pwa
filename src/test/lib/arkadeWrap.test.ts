@@ -5,6 +5,7 @@ import {
   createUnwrapQuote,
   getWrapQuote,
   isTerminalWrapStatus,
+  normalizeQuoteLimits,
   quoteBaseUnits,
   type WrapQuote,
 } from '../../lib/arkadeWrap'
@@ -113,5 +114,35 @@ describe('arkadeWrap API client', () => {
     expect(quoteBaseUnits('50000000')).toBe(BigInt(50000000))
     expect(quoteBaseUnits('5000000')).toBe(BigInt(5000000))
     expect(quoteBaseUnits(null)).toBe(BigInt(0))
+  })
+
+  it('converts 18-decimal limits into the asset base units', () => {
+    const quote = normalizeQuoteLimits({
+      ...sampleQuote,
+      min_amount: '50000000000000000000',
+      remaining_amount: '50000000000000000000',
+      network_fee_amount: '5000000000000000000',
+    })
+    expect(quote.min_amount).toBe('50000000')
+    expect(quote.remaining_amount).toBe('50000000')
+    expect(quote.network_fee_amount).toBe('5000000')
+  })
+
+  it('converts 18-decimal limits on a wrapped (-CX) unwrap ticker', () => {
+    const quote = normalizeQuoteLimits({ ...sampleQuote, ticker: 'USDT-CX', min_amount: '20000000000000000000' })
+    expect(quote.min_amount).toBe('20000000')
+  })
+
+  it('leaves base-unit limits untouched', () => {
+    const base = { ...sampleQuote, min_amount: '50000000', remaining_amount: '12345', network_fee_amount: '1500' }
+    expect(normalizeQuoteLimits(base)).toEqual(base)
+    const eth = { ...sampleQuote, ticker: 'ETH', min_amount: '10000000000000000' }
+    expect(normalizeQuoteLimits(eth)).toEqual(eth)
+  })
+
+  it('normalizes limits on fetched quotes', async () => {
+    fetchMocker.mockResponseOnce(JSON.stringify({ ...sampleQuote, min_amount: '50000000000000000000' }))
+    const result = await getWrapQuote(sampleQuote.id)
+    expect(result.min_amount).toBe('50000000')
   })
 })
