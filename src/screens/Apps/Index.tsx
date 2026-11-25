@@ -114,6 +114,7 @@ export default function Apps() {
             <App name={t('common.general.statement')} image='/images/apps/Statement.svg' page={Pages.AppStatement} />
             <App name={t('apps.referral.referral')} image='/images/apps/Referral.svg' page={Pages.AppReferral} />
             <App name={t('apps.giftCards.giftCards')} image='/images/apps/GiftCards.svg' page={Pages.AppGiftCards} />
+            <App name={t('apps.esims.esims')} image='/images/apps/Esims.svg' page={Pages.AppEsims} />
             <App name={t('apps.card.card')} image='/images/apps/CardReservation.svg' page={Pages.AppCardReservation} />
             <App name={t('apps.staking.staking')} image='/images/apps/Transfer.svg' comingSoon />
           </div>

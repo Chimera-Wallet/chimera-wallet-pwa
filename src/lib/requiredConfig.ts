@@ -13,6 +13,7 @@
 
 import { consoleError } from './logs'
 import { getRequiredAssetIdEnvVars, getUnknownEnabledAssetSymbols } from './assets'
+import { parseNostrRelays } from './nostr'
 
 // Env vars that must be present and non-empty regardless of which assets are
 // enabled. The per-asset `VITE_ARKADE_*` ids are NOT listed here — they depend
@@ -34,6 +35,9 @@ export const getMissingRequiredConfig = (): string[] => {
   if (unknownAssets.length) {
     missing.push(`VITE_ENABLED_ASSETS (unknown asset symbol: ${unknownAssets.join(', ')})`)
   }
+  // The Nostr backup has no default relays: without one, a restore silently
+  // finds nothing and backups are silently dropped.
+  if (!parseNostrRelays(env.VITE_NOSTR_RELAYS).length) missing.push('VITE_NOSTR_RELAYS')
   // Delegation must be explicitly enabled or disabled — no default is allowed.
   const delegate = env.VITE_DELEGATE_ENABLED
   if (delegate !== 'true' && delegate !== 'false') {

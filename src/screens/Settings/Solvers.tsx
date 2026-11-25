@@ -232,7 +232,8 @@ export default function Solvers() {
   useEffect(() => {
     return () => {
       if (reload) runDiscovery(false)
-      if (localCards) backupSolverCards(localCards).catch((err) => consoleError(err, 'failed to backup solver cards'))
+      // Backs up every network's cards, not just this network's localCards
+      if (localCards) backupSolverCards().catch((err) => consoleError(err, 'failed to backup solver cards'))
     }
   }, [localCards, reload, runDiscovery])
 

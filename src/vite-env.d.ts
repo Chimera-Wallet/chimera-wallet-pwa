@@ -8,6 +8,8 @@ interface ImportMetaEnv {
   readonly VITE_DEV_NSEC?: string
   readonly VITE_DELEGATE_ENABLED?: string
   readonly VITE_DELEGATOR_URL?: string
+  // Nostr relays for the encrypted backup, comma-separated (required)
+  readonly VITE_NOSTR_RELAYS?: string
   // Chimera API
   readonly VITE_CHIMERA_API?: string
   // Arkade wrapped asset IDs (differ per environment)

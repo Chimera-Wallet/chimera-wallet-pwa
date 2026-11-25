@@ -46,6 +46,7 @@ import AppReferral from '../screens/Apps/Referral/Index'
 import AppGiftCards from '../screens/Apps/GiftCards/Index'
 import AppGiftCardPurchase from '../screens/Apps/GiftCards/Purchase'
 import AppGiftCardRedeem from '../screens/Apps/GiftCards/Redeem'
+import AppEsims from '../screens/Apps/Esims/Index'
 import AppCardReservation from '../screens/Apps/CardReservation/Index'
 import AppWirexCard from '../screens/Apps/WirexCard/Index'
 import AppWirexMoveAssets from '../screens/Apps/WirexCard/MoveAssets'
@@ -82,6 +83,7 @@ export enum Pages {
   AppGiftCards,
   AppGiftCardPurchase,
   AppGiftCardRedeem,
+  AppEsims,
   AppCardReservation,
   AppWirexMoveAssets,
   AppWirexTopUp,
@@ -157,6 +159,7 @@ const pageTab: Record<Pages, Tabs> = {
   [Pages.AppGiftCards]: Tabs.Apps,
   [Pages.AppGiftCardPurchase]: Tabs.Apps,
   [Pages.AppGiftCardRedeem]: Tabs.Apps,
+  [Pages.AppEsims]: Tabs.Apps,
   [Pages.AppCardReservation]: Tabs.Card,
   [Pages.AppWirexMoveAssets]: Tabs.Card,
   [Pages.AppWirexTopUp]: Tabs.Card,
@@ -253,6 +256,8 @@ export const pageComponent = (page: Pages, navigationData?: Record<string, unkno
       return <AppReferral />
     case Pages.AppGiftCards:
       return <AppGiftCards />
+    case Pages.AppEsims:
+      return <AppEsims />
     case Pages.AppGiftCardPurchase:
       return <AppGiftCardPurchase />
     case Pages.AppGiftCardRedeem:
