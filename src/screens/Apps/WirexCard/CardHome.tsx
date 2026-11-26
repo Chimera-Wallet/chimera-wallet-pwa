@@ -47,7 +47,16 @@ import {
 } from '../../../lib/wirexCard'
 import { type PendingTopUp, isWirexTopUpEnabled, readPendingTopUps, trackWirexTopUp } from '../../../lib/wirexTopUp'
 import CardDetailsSheet, { type CardDetailsSession } from './CardDetails'
-import { ActionTile, CardArt, CardTxRow, type MoveAssetsNavData, type MoveDirection, type TopUpNavData } from './shared'
+import {
+  ActionTile,
+  CardArt,
+  CardTxRow,
+  GREY_LIGHT,
+  GREY_MEDIUM,
+  type MoveAssetsNavData,
+  type MoveDirection,
+  type TopUpNavData,
+} from './shared'
 
 /** Something that needs the wallet password (key derivation), run once it's unlocked. */
 interface PasswordAction {
@@ -74,15 +83,23 @@ const resetButton: React.CSSProperties = {
   textAlign: 'left',
 }
 
-/** Rounded dark surface used for the card panel and the transaction groups. */
+/** Translucent surface (Figma) used for the card block and the transaction groups. */
+const SURFACE = 'rgba(231, 234, 236, 0.1)'
 const panel: React.CSSProperties = {
-  background: 'var(--info-container-bg2)',
-  borderRadius: 20,
+  background: SURFACE,
+  borderRadius: 16,
   overflow: 'hidden',
 }
 
-/** Light periwinkle used for the frozen state (Figma): status pill text, Unfreeze button. */
-const FROZEN_ACCENT = '#8ea2f5'
+/** Pale blue used for the frozen state (Figma): status pill, Unfreeze button. */
+const FROZEN_ACCENT = '#8cbfff'
+
+const sectionLabel: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: 0.88,
+  color: GREY_MEDIUM,
+}
 
 /** Transactions shown before "View all transactions". */
 const TX_PREVIEW = 5
@@ -91,11 +108,11 @@ const cardStatusStyle = (status: WirexCard['status']) => {
   if (status === 'Active')
     return {
       labelKey: 'apps.wirexCard.status.active',
-      color: 'var(--green-active)',
-      background: 'rgba(29, 255, 120, 0.12)',
+      color: '#16bf5a',
+      background: 'rgba(22, 191, 90, 0.15)',
     }
   if (status === 'Blocked')
-    return { labelKey: 'apps.wirexCard.status.frozen', color: FROZEN_ACCENT, background: 'rgba(31, 59, 219, 0.25)' }
+    return { labelKey: 'apps.wirexCard.status.frozen', color: FROZEN_ACCENT, background: 'rgba(140, 191, 255, 0.15)' }
   return { labelKey: `apps.wirexCard.status.${status}`, color: 'var(--orange)', background: 'var(--orangebg)' }
 }
 
@@ -351,7 +368,16 @@ export default function WirexCardHome({ user, cards: initialCards }: { user: Wir
             </button>
           </div>
 
-          <div style={{ ...panel, padding: '1.25rem 1.25rem 1.75rem', display: 'flex', flexDirection: 'column' }}>
+          <div
+            style={{
+              background: SURFACE,
+              borderRadius: 24,
+              padding: 20,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 16,
+            }}
+          >
             {cards.length > 1 ? (
               <button
                 type='button'
@@ -367,7 +393,7 @@ export default function WirexCardHome({ user, cards: initialCards }: { user: Wir
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   gap: '0.5rem',
-                  margin: '-0.25rem 0.25rem 1rem',
+                  margin: '-0.25rem 0.25rem 0',
                 }}
               >
                 <span style={{ fontSize: 14, fontWeight: 600 }}>{cardName(current, cards.indexOf(current), t)}</span>
@@ -383,29 +409,19 @@ export default function WirexCardHome({ user, cards: initialCards }: { user: Wir
               frozenLabel={locked ? t('apps.wirexCard.cardFrozen') : undefined}
             />
 
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'flex-end',
-                justifyContent: 'space-between',
-                margin: '1rem 0.25rem 0',
-              }}
-            >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <button
                 type='button'
                 onClick={() => setHidden((h) => !h)}
                 aria-label={hidden ? t('apps.wirexCard.showBalance') : t('apps.wirexCard.hideBalance')}
-                style={{ ...resetButton, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}
+                style={{ ...resetButton, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}
               >
-                <span style={{ fontSize: 12, color: 'var(--white)', fontFamily: 'Titillium Web' }}>{t('apps.wirexCard.cardBalance')}</span>
-                <span
-                  data-testid='wirex-card-balance'
-                  style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}
-                >
-                  <span style={{ fontSize: '2rem', fontWeight: 700, lineHeight: 1.1 }}>
+                <span style={{ fontSize: 14, color: GREY_LIGHT }}>{t('apps.wirexCard.cardBalance')}</span>
+                <span data-testid='wirex-card-balance' style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                  <span style={{ fontSize: 32, fontWeight: 600, lineHeight: 'normal' }}>
                     {hidden ? '••••••' : prettyNumber(balance, 2, true, 2)}
                   </span>
-                  <span style={{ fontSize: 13 }}>{CARD_CURRENCY}</span>
+                  <span style={{ fontSize: 16 }}>{CARD_CURRENCY}</span>
                 </span>
               </button>
               <span
@@ -413,26 +429,25 @@ export default function WirexCardHome({ user, cards: initialCards }: { user: Wir
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 5,
-                  marginBottom: 6,
-                  padding: '3px 8px',
-                  borderRadius: 999,
-                  fontFamily: 'Titillium Web, sans-serif',
+                  gap: 6,
+                  flexShrink: 0,
+                  padding: '4px 10px',
+                  borderRadius: 12,
                   fontSize: 10,
-                  fontWeight: 600, // semibold
-                  fontStyle: 'normal',
+                  fontWeight: 600,
+                  lineHeight: 'normal',
                   letterSpacing: 0.8,
                   textTransform: 'uppercase',
                   color: status.color,
                   background: status.background,
                 }}
               >
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor' }} />
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} />
                 {t(status.labelKey, { defaultValue: current.status })}
               </span>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.25rem', marginTop: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 4 }}>
               <ActionTile
                 testId='wirex-top-up'
                 icon={<img src='/images/icons/Plus.png' alt='' />}
@@ -443,8 +458,15 @@ export default function WirexCardHome({ user, cards: initialCards }: { user: Wir
               />
               <ActionTile
                 testId='wirex-lock'
-                icon={<img src='/images/icons/Snowflake.png' alt='' />}
-                iconBackground={locked ? FROZEN_ACCENT : 'var(--bg)'}
+                icon={
+                  <img
+                    src={locked ? '/images/card/snowflake-dark.svg' : '/images/icons/Snowflake.png'}
+                    alt=''
+                    width={locked ? 18 : 24}
+                    height={locked ? 18 : 24}
+                  />
+                }
+                iconBackground={locked ? FROZEN_ACCENT : undefined}
                 label={locked ? t('apps.wirexCard.unfreeze') : t('apps.wirexCard.freeze')}
                 onClick={toggleLock}
                 disabled={locking}
@@ -452,7 +474,6 @@ export default function WirexCardHome({ user, cards: initialCards }: { user: Wir
               <ActionTile
                 testId='wirex-details'
                 icon={<img src='/images/icons/Open.png' alt='' />}
-                iconBackground='var(--bg)'
                 label={t('apps.wirexCard.details')}
                 onClick={showDetails}
                 disabled={openingDetails}
@@ -460,7 +481,6 @@ export default function WirexCardHome({ user, cards: initialCards }: { user: Wir
               <ActionTile
                 testId='wirex-move-assets'
                 icon={<img src='/images/icons/Vertical.png' alt='' />}
-                iconBackground='var(--bg)'
                 label={t('apps.wirexCard.toWallet')}
                 onClick={() => moveAssets('fromCard')}
                 disabled={locked}
@@ -502,22 +522,26 @@ export default function WirexCardHome({ user, cards: initialCards }: { user: Wir
           <ErrorMessage error={Boolean(error)} text={error} />
 
           <FlexCol stretch gap='0.75rem'>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 15, fontWeight: 700 }}>{t('apps.wirexCard.transactions')}</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 4 }}>
+              <span style={{ fontSize: 16, fontWeight: 600 }}>{t('apps.wirexCard.transactions')}</span>
               <button type='button' style={iconButton} onClick={openFilter} aria-label={t('apps.wirexCard.filter')}>
-                <ListFilter size={18} />
+                <ListFilter size={20} />
               </button>
             </div>
 
             {groups.length ? (
               groups.map((g) => (
-                <FlexCol stretch key={g.period} gap='0.4rem'>
-                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: 'var(--grey)' }}>
-                    {t(`apps.wirexCard.period.${g.period}`).toUpperCase()}
-                  </span>
+                <FlexCol stretch key={g.period} gap='0.75rem'>
+                  <span style={sectionLabel}>{t(`apps.wirexCard.period.${g.period}`).toUpperCase()}</span>
                   <div style={panel}>
                     {g.txs.map((tx, i) => (
-                      <div key={tx.id} style={i ? { borderTop: '1px solid rgba(255, 255, 255, 0.06)' } : undefined}>
+                      <div key={tx.id}>
+                        {/* Figma "Divider / Transactions": 6% white hairline, inset 54px to line up with the text. */}
+                        {i ? (
+                          <div
+                            style={{ height: 1, margin: '0 16px 0 54px', background: 'rgba(255, 255, 255, 0.06)' }}
+                          />
+                        ) : null}
                         <CardTxRow tx={tx} />
                       </div>
                     ))}
@@ -532,7 +556,7 @@ export default function WirexCardHome({ user, cards: initialCards }: { user: Wir
               <button
                 type='button'
                 onClick={() => setShowAll((v) => !v)}
-                style={{ ...resetButton, alignSelf: 'center', padding: '0.5rem', fontSize: 13, fontWeight: 600 }}
+                style={{ ...resetButton, alignSelf: 'center', padding: '0.5rem', fontSize: 14, fontWeight: 600 }}
               >
                 {showAll ? t('apps.wirexCard.showLess') : t('apps.wirexCard.viewAll')}
               </button>
@@ -559,7 +583,7 @@ export default function WirexCardHome({ user, cards: initialCards }: { user: Wir
             ]
               .filter(Boolean)
               .join(' · '),
-            icon: <CardArt width={48} radius={4} last4={last4} style={{ boxShadow: 'none' }} />,
+            icon: <CardArt width={48} radius={4} last4={last4} style={{ filter: 'none' }} />,
           }
         })}
       />

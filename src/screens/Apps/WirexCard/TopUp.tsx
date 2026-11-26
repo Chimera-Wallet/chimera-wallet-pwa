@@ -265,6 +265,40 @@ export default function WirexTopUp() {
     <>
       {header}
       <TransferLayout
+        notes={
+          <>
+            <ErrorMessage error={Boolean(error)} text={error} />
+            {insufficient ? <ErrorMessage error text={t('apps.wirexCard.insufficient')} /> : null}
+            <InfoContainer>
+              {!quote && !error ? <InfoLine compact text={t('common.general.loading')} /> : null}
+              {minAmount > BigInt(0) ? (
+                <InfoLine
+                  compact
+                  text={t('common.notifications.unwrapService.minAmount', {
+                    amount: prettyMinAmount(minAmount, precision),
+                    ticker: source.symbol,
+                  })}
+                />
+              ) : null}
+              <InfoLine compact text={t('common.notifications.wrapService.feeRate', { rate: SERVICE_FEE_PERCENT })} />
+              {quote?.network_fee_amount ? (
+                <InfoLine
+                  compact
+                  text={t('common.notifications.unwrapService.networkFee', {
+                    amount: prettyAssetAmount(BigInt(quote.network_fee_amount), precision),
+                    ticker: source.symbol,
+                  })}
+                />
+              ) : null}
+              <InfoLine
+                compact
+                text={t('apps.wirexCard.topUpFlow.youReceive', {
+                  amount: prettyAssetAmount(payout, precision),
+                })}
+              />
+            </InfoContainer>
+          </>
+        }
         footer={
           <>
             <ConfirmTransferButton
@@ -296,9 +330,9 @@ export default function WirexTopUp() {
           from={
             <TransferRow
               testId='wirex-topup-from'
-              icon={<AssetIcon symbol={source.symbol} size={36} />}
+              icon={<AssetIcon symbol={source.symbol} size={40} />}
               label={t('apps.wirexCard.transfer.from', { name: t('apps.wirexCard.transfer.wallet') })}
-              title={`${assetConfig.name} · ${prettyAssetAmount(available, precision)} ${source.symbol}`}
+              title={`${assetConfig.name} ${prettyAssetAmount(available, precision)} ${source.symbol}`}
             />
           }
           to={
@@ -306,40 +340,10 @@ export default function WirexTopUp() {
               testId='wirex-topup-to'
               icon={<CardRowIcon />}
               label={t('apps.wirexCard.transfer.to', { name: t('apps.wirexCard.card') })}
-              title={`${t('apps.wirexCard.card')} · ${prettyNumber(baselineWusd, CARD_DECIMALS, true, CARD_DECIMALS)} ${CARD_CURRENCY}`}
+              title={`${t('apps.wirexCard.card')} ${prettyNumber(baselineWusd, CARD_DECIMALS, true, CARD_DECIMALS)} ${CARD_CURRENCY}`}
             />
           }
         />
-        <ErrorMessage error={Boolean(error)} text={error} />
-        {insufficient ? <ErrorMessage error text={t('apps.wirexCard.insufficient')} /> : null}
-        <InfoContainer>
-          {!quote && !error ? <InfoLine compact text={t('common.general.loading')} /> : null}
-          {minAmount > BigInt(0) ? (
-            <InfoLine
-              compact
-              text={t('common.notifications.unwrapService.minAmount', {
-                amount: prettyMinAmount(minAmount, precision),
-                ticker: source.symbol,
-              })}
-            />
-          ) : null}
-          <InfoLine compact text={t('common.notifications.wrapService.feeRate', { rate: SERVICE_FEE_PERCENT })} />
-          {quote?.network_fee_amount ? (
-            <InfoLine
-              compact
-              text={t('common.notifications.unwrapService.networkFee', {
-                amount: prettyAssetAmount(BigInt(quote.network_fee_amount), precision),
-                ticker: source.symbol,
-              })}
-            />
-          ) : null}
-          <InfoLine
-            compact
-            text={t('apps.wirexCard.topUpFlow.youReceive', {
-              amount: prettyAssetAmount(payout, precision),
-            })}
-          />
-        </InfoContainer>
       </TransferLayout>
     </>
   )

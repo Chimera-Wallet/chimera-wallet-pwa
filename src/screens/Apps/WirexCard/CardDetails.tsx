@@ -48,20 +48,20 @@ const APPEARANCE: PciAppearance = {
     colorBackground: 'rgba(37, 37, 42, 1)', // --info-container-bg2
     colorBorder: 'transparent',
     borderWidth: '0px',
-    borderRadius: '16px',
+    borderRadius: '20px',
     controlMinHeight: '64px',
     fieldGap: '12px',
     colorText: '#ffffff',
-    colorLabel: '#8a8a8f',
+    colorLabel: '#9b9ca6',
     colorCopyIcon: '#8a8a8f',
     colorCopyIconHover: '#ffffff',
     colorFocus: '#1f3bdb', // --blue-primary
     copyIconSize: '22px',
-    fontFamily: 'Geist, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
-    fontSizeBase: '15px',
+    fontFamily: "'Titillium Web', -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+    fontSizeBase: '14px',
     fontWeightBase: '600',
     fontSizeLabel: '10px',
-    fontWeightLabel: '500',
+    fontWeightLabel: '600',
     wordSpacing: '3px',
     fontSmoothing: 'antialiased',
   },
@@ -130,9 +130,9 @@ export default function CardDetailsSheet({ card, session, onClose }: CardDetails
 
   return (
     <SheetModal isOpen={Boolean(session)} onClose={onClose}>
-      <div data-testid='wirex-card-details' style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '0.5rem' }}>
-          <span style={{ fontSize: 18, fontWeight: 700 }}>{t('apps.wirexCard.cardDetails.title')}</span>
+      <div data-testid='wirex-card-details' style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 18, fontWeight: 600 }}>{t('apps.wirexCard.cardDetails.title')}</span>
           <button
             type='button'
             onClick={onClose}
@@ -141,12 +141,12 @@ export default function CardDetailsSheet({ card, session, onClose }: CardDetails
               background: 'none',
               border: 'none',
               color: 'var(--white)',
-              padding: 4,
+              padding: 0,
               cursor: 'pointer',
               display: 'flex',
             }}
           >
-            <X size={22} />
+            <X size={24} />
           </button>
         </div>
 
@@ -156,8 +156,8 @@ export default function CardDetailsSheet({ card, session, onClose }: CardDetails
         {/* Wirex's iframes mount here and size themselves. */}
         <div ref={setContainer} data-testid='wirex-card-details-frame' style={{ width: '100%' }} />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--grey)', fontSize: 11 }}>
-          <Info size={14} style={{ flexShrink: 0 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#9b9ca6', fontSize: 12 }}>
+          <Info size={16} style={{ flexShrink: 0 }} />
           <span>{t('apps.wirexCard.cardDetails.warning')}</span>
         </div>
       </div>

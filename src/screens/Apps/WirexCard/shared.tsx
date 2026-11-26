@@ -1,5 +1,5 @@
 import { CSSProperties, ReactNode } from 'react'
-import { ArrowUpDown, ChevronDown, CreditCard, Download, Repeat, Snowflake } from 'lucide-react'
+import { ArrowUpDown, ChevronDown, CreditCard, Download, Repeat } from 'lucide-react'
 import { prettyNumber } from '../../../lib/format'
 import { hapticLight } from '../../../lib/haptics'
 import { CARD_CURRENCY, type WirexCardTx, type WirexCardTxType } from '../../../lib/wirexCard'
@@ -28,32 +28,56 @@ interface CardArtProps {
   width?: number | string
   last4?: string
   /**
-   * Corner radius. Defaults to the Figma corner as a percentage of the card's
-   * width / height, so it scales with the card (cqw can't be used here: on the
-   * card itself it resolves against the parent).
+   * Corner radius. Defaults to the Figma corner (16 on the 326×206 card) as a
+   * percentage of width / height, so it scales with the card.
    */
   radius?: number | string
-  /** When set, renders the frozen look (Figma): lighter card, blurred details, this label in a centred pill. */
+  /** When set, renders the frozen look (Figma "Card / Frozen"): frosted overlay plus this label in a centred badge. */
   frozenLabel?: string
   style?: CSSProperties
 }
 
-const ACTIVE_BG = 'linear-gradient(160deg, #2440e6 0%, #1f38d6 100%)'
-// Figma: soft blue glow around the card plus a faint light edge, no dark drop shadow.
-const ACTIVE_SHADOW = '0 0 36px 2px rgba(31, 56, 214, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.08)'
-const FROZEN_SHADOW = '0 0 36px 2px rgba(116, 137, 243, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.12)'
-const FROZEN_BG = 'linear-gradient(160deg, #7489f3 0%, #6278ea 55%, #5a70e2 100%)'
+/** Figma "Card / Chimera Visa / Front" artwork (blue card, strips, Debit, VISA Platinum). */
+export const CARD_ART_SRC = '/images/card/card-art.svg'
 
-// Sizes are authored against a 230px-wide card and expressed in container
-// units, so the artwork scales with whatever width it's given.
-const u = (px: number) => `${(px / 230) * 100}cqw`
+// Figma: blue glow drop shadow on the Card screen; pale blue when frozen.
+const ACTIVE_SHADOW = 'drop-shadow(0 10px 20px rgba(31, 59, 219, 0.6))'
+const FROZEN_SHADOW = 'drop-shadow(0 10px 20px rgba(140, 191, 255, 0.35))'
 
-/**
- * Blue "Debit / VISA Platinum" card artwork (Card walkthrough + card home).
- * PLACEHOLDER art in CSS/SVG until a dedicated card asset is supplied; "VISA"
- * is styled text, not the official logo.
- */
-export function CardArt({ width = 320, last4, radius = 16, frozenLabel, style }: CardArtProps) {
+// Text sizes are authored against the 326px-wide Figma card and expressed in
+// container units, so they scale with whatever width the card is given.
+const u = (px: number) => `${(px / 326) * 100}cqw`
+
+/** Figma "Badge / Frozen": snowflake + label in a dark pill. Fixed size, not scaled with the card. */
+export function FrozenBadge({ label, style }: { label: string; style?: CSSProperties }) {
+  return (
+    <span
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '6px 14px 6px 12px',
+        borderRadius: 16,
+        background: 'rgba(0, 0, 0, 0.6)',
+        color: '#fff',
+        fontFamily: 'Titillium Web, sans-serif',
+        fontSize: 12,
+        fontWeight: 600,
+        lineHeight: 'normal',
+        letterSpacing: 0.96,
+        textTransform: 'uppercase',
+        whiteSpace: 'nowrap',
+        ...style,
+      }}
+    >
+      <img src='/images/icons/Snowflake.svg' alt='' width={16} height={16} />
+      {label}
+    </span>
+  )
+}
+
+/** Blue "Debit / VISA Platinum" card (Card walkthrough + card home), with the last four digits overlaid. */
+export function CardArt({ width = 326, last4, radius = '4.91% / 7.77%', frozenLabel, style }: CardArtProps) {
   const frozen = frozenLabel !== undefined
   return (
     <div
@@ -61,93 +85,60 @@ export function CardArt({ width = 320, last4, radius = 16, frozenLabel, style }:
       style={{
         position: 'relative',
         width,
-        // Figma card is 320×206; height follows the width at that ratio.
-        aspectRatio: '320 / 206',
-        containerType: 'inline-size',
-        borderRadius: radius,
-        background: frozen ? FROZEN_BG : ACTIVE_BG,
-        transition: 'background 0.3s ease, box-shadow 0.3s ease',
-        boxShadow: frozen ? FROZEN_SHADOW : ACTIVE_SHADOW,
-        overflow: 'hidden',
-        color: '#fff',
-        fontFamily: 'Titillium Web, sans-serif',
+        aspectRatio: '326 / 206',
         flexShrink: 0,
+        filter: frozen ? FROZEN_SHADOW : ACTIVE_SHADOW,
+        transition: 'filter 0.3s ease',
         ...style,
       }}
     >
       <div
-        style={{ position: 'absolute', inset: 0, filter: frozen ? `blur(${u(3)})` : 'none', opacity: frozen ? 0.8 : 1 }}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: radius,
+          overflow: 'hidden',
+          containerType: 'inline-size',
+        }}
       >
-        {/* Strips on the left edge. Figma (on the 320×206 card): 72.82×80.7 group,
-            62.65 from the top, flush left, solid #2F59ED. Three wedges, wide at
-            the edge and tapering right; the middle one is the longest. */}
-        <svg
-          viewBox='0 0 100 100'
-          preserveAspectRatio='none'
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: `${(62.65 / 206) * 100}%`,
-            width: `${(72.82 / 320) * 100}%`,
-            height: `${(80.7 / 206) * 100}%`,
-          }}
-        >
-          <polygon points='0,0 85,24 0,13' fill='#2F59ED' />
-          <polygon points='0,43 100,50 0,57' fill='#2F59ED' />
-          <polygon points='0,87 85,76 0,100' fill='#2F59ED' />
-        </svg>
-        <span style={{ position: 'absolute', top: u(8), right: u(12), fontSize: u(13), fontWeight: 600 }}>Debit</span>
+        <img
+          src={CARD_ART_SRC}
+          alt=''
+          draggable={false}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }}
+        />
         <span
           style={{
             position: 'absolute',
-            left: u(14),
-            bottom: u(12),
-            fontFamily: 'Geist Mono, monospace',
-            fontSize: u(9),
-            letterSpacing: 1,
-            opacity: 0.85,
+            left: u(20),
+            top: `${(176 / 206) * 100}%`,
+            fontFamily: "'Space Mono', 'Geist Mono', monospace",
+            fontSize: u(12),
+            lineHeight: 'normal',
+            letterSpacing: u(1.44),
+            color: 'rgba(255, 255, 255, 0.85)',
+            whiteSpace: 'nowrap',
           }}
         >
           •• {last4 ?? '••••'}
         </span>
-        <span
-          style={{
-            position: 'absolute',
-            right: u(12),
-            bottom: u(8),
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-end',
-            lineHeight: 1,
-          }}
-        >
-          <span style={{ fontSize: u(24), fontWeight: 900, fontStyle: 'italic', letterSpacing: -0.5 }}>VISA</span>
-          <span style={{ fontSize: u(7), opacity: 0.85, marginTop: 1 }}>Platinum</span>
-        </span>
+        {frozen ? (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'rgba(199, 222, 255, 0.3)',
+              backdropFilter: 'blur(4px)',
+              WebkitBackdropFilter: 'blur(4px)',
+            }}
+          />
+        ) : null}
       </div>
       {frozen ? (
-        <span
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: u(4),
-            padding: `${u(4)} ${u(9)}`,
-            borderRadius: 999,
-            background: 'rgba(16, 20, 48, 0.9)',
-            fontSize: u(7.5),
-            fontWeight: 700,
-            letterSpacing: 1,
-            textTransform: 'uppercase',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          <Snowflake style={{ width: u(9), height: u(9) }} />
-          {frozenLabel}
-        </span>
+        <FrozenBadge
+          label={frozenLabel}
+          style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+        />
       ) : null}
     </div>
   )
@@ -164,14 +155,7 @@ interface ActionTileProps {
   iconBackground?: string
 }
 
-export function ActionTile({
-  icon,
-  label,
-  onClick,
-  disabled,
-  testId,
-  iconBackground = 'var(--black)',
-}: ActionTileProps) {
+export function ActionTile({ icon, label, onClick, disabled, testId, iconBackground = '#000' }: ActionTileProps) {
   return (
     <button
       type='button'
@@ -182,29 +166,31 @@ export function ActionTile({
         onClick()
       }}
       style={{
-        flex: 1,
-        minWidth: 0,
+        flex: '0 1 auto',
+        minWidth: 52,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '0.5rem',
+        gap: 8,
         padding: 0,
         border: 'none',
         background: 'none',
-        color: 'var(--white)',
+        color: '#fff',
+        fontFamily: 'inherit',
         cursor: disabled ? 'default' : 'pointer',
-        opacity: disabled ? 0.5 : 1,
+        opacity: disabled ? 0.35 : 1,
       }}
     >
       <span
         style={{
-          width: 48,
-          height: 48,
+          width: 52,
+          height: 52,
           borderRadius: '50%',
           background: iconBackground,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          transition: 'background 0.3s ease',
         }}
       >
         {icon}
@@ -213,8 +199,9 @@ export function ActionTile({
         style={{
           fontSize: 11,
           fontWeight: 600,
+          lineHeight: 'normal',
           textTransform: 'uppercase',
-          letterSpacing: 0.8,
+          letterSpacing: 0.88,
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
@@ -228,14 +215,19 @@ export function ActionTile({
 }
 
 const ICONS: Record<WirexCardTxType, JSX.Element> = {
-  deposit: <Download size={16} />,
-  payment: <CreditCard size={16} />,
-  withdraw: <ArrowUpDown size={16} />,
-  swap: <Repeat size={16} />,
+  deposit: <Download size={18} />,
+  payment: <CreditCard size={18} />,
+  withdraw: <ArrowUpDown size={18} />,
+  swap: <Repeat size={18} />,
 }
 
+/** Figma text colours without a matching token. */
+export const GREY_MEDIUM = '#9b9ca6'
+export const GREY_LIGHT = '#ced0dd'
+const GREEN = '#16bf5a'
+
 const STATUS_STYLE: Record<WirexCardTx['status'], { color: string; background: string }> = {
-  Confirmed: { color: 'var(--green-active)', background: 'rgba(29, 255, 120, 0.12)' },
+  Confirmed: { color: GREEN, background: 'rgba(22, 191, 90, 0.2)' },
   Pending: { color: 'var(--orange)', background: 'var(--orangebg)' },
   Failed: { color: 'var(--red)', background: 'var(--redbg)' },
 }
@@ -259,15 +251,22 @@ export function CardTxRow({ tx }: { tx: WirexCardTx }) {
   return (
     <div
       data-testid='wirex-card-tx'
-      style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.7rem 0.85rem' }}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        minHeight: 64,
+        padding: '0 16px',
+        boxSizing: 'border-box',
+      }}
     >
       <span
         style={{
-          width: 32,
-          height: 32,
+          width: 30,
+          height: 30,
           borderRadius: '50%',
-          background: 'var(--black)',
-          color: 'var(--white)',
+          background: '#000',
+          color: '#fff',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -277,9 +276,16 @@ export function CardTxRow({ tx }: { tx: WirexCardTx }) {
         {ICONS[tx.type]}
       </span>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 0 }}>
-        <span style={{ fontSize: 10, color: 'var(--grey)' }}>{formatDate(tx.date)}</span>
+        <span style={{ fontSize: 10, lineHeight: '10px', color: GREY_MEDIUM }}>{formatDate(tx.date)}</span>
         <span
-          style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+          style={{
+            fontSize: 14,
+            fontWeight: 600,
+            lineHeight: '16px',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
         >
           {tx.title}
         </span>
@@ -287,10 +293,10 @@ export function CardTxRow({ tx }: { tx: WirexCardTx }) {
           style={{
             alignSelf: 'flex-start',
             fontSize: 8,
-            fontWeight: 700,
-            letterSpacing: 0.5,
-            padding: '1px 5px',
-            borderRadius: 3,
+            fontWeight: 600,
+            lineHeight: 'normal',
+            padding: '1px 6px',
+            borderRadius: 4,
             textTransform: 'uppercase',
             ...status,
           }}
@@ -298,12 +304,12 @@ export function CardTxRow({ tx }: { tx: WirexCardTx }) {
           {tx.status}
         </span>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, flexShrink: 0 }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: primary >= 0 ? 'var(--green-active)' : 'var(--white)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
+        <span style={{ fontSize: 12, lineHeight: '16px', color: primary >= 0 ? GREEN : '#fff' }}>
           {signed(primary)} {primaryCurrency}
         </span>
         {showSecondary ? (
-          <span style={{ fontSize: 11, color: 'var(--grey)' }}>
+          <span style={{ fontSize: 10, lineHeight: '14px', color: GREY_MEDIUM }}>
             {prettyNumber(Math.abs(tx.amount), 8)} {tx.currency}
           </span>
         ) : null}
@@ -312,9 +318,11 @@ export function CardTxRow({ tx }: { tx: WirexCardTx }) {
   )
 }
 
-// Transfer screens
+// Transfer screens (Figma "03 Panel Card SWAP")
 
-const ROW_BG = 'var(--info-container-bg2)'
+const ROW_BG = 'var(--info-container-bg2)' // #25252a
+const CHIP_BG = '#2c2c2e'
+const MAIN_BG = '#101015'
 
 interface TransferAmountProps {
   value: string
@@ -327,11 +335,11 @@ interface TransferAmountProps {
   ariaLabel: string
 }
 
-/** Large centred amount input (native decimal keyboard) with its unit and a hint underneath. */
+/** Figma "Amount / Input": SemiBold 38 number + Regular 18 unit on one baseline, counter-value underneath. */
 export function TransferAmount({ value, onChange, unit, hint, disabled, testId, ariaLabel }: TransferAmountProps) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '1rem 0 0.5rem' }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 6, maxWidth: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2px 0 4px' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4, maxWidth: '100%' }}>
         <input
           type='text'
           inputMode='decimal'
@@ -349,29 +357,30 @@ export function TransferAmount({ value, onChange, unit, hint, disabled, testId, 
             border: 'none',
             outline: 'none',
             color: 'var(--white)',
-            fontSize: '2.75rem',
-            fontWeight: 700,
-            lineHeight: 1.1,
+            caretColor: 'var(--blue-primary)',
+            fontFamily: 'inherit',
+            fontSize: 38,
+            fontWeight: 600,
+            lineHeight: '38px',
             textAlign: 'center',
             padding: 0,
           }}
         />
-        <span style={{ fontSize: 15, fontWeight: 600 }}>{unit}</span>
+        <span style={{ fontSize: 18, lineHeight: 'normal' }}>{unit}</span>
       </div>
-      {hint ? <span style={{ fontSize: 12, color: 'var(--grey)' }}>{hint}</span> : null}
+      {hint ? <span style={{ fontSize: 12, lineHeight: '16px', color: 'var(--white)' }}>{hint}</span> : null}
     </div>
   )
 }
 
-/** The card's row icon: a rounded-square tile holding the design's card glyph. */
+/** The card's row icon (Figma): a 40px rounded-square outline holding the bank glyph. */
 export const CardRowIcon = () => (
   <span
     style={{
-      width: 36,
-      height: 36,
+      width: 40,
+      height: 40,
       borderRadius: 10,
-      border: '1px solid rgba(255, 255, 255, 0.12)',
-      background: 'rgba(0, 0, 0, 0.25)',
+      border: '1px solid rgba(255, 255, 255, 0.16)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -379,16 +388,15 @@ export const CardRowIcon = () => (
       boxSizing: 'border-box',
     }}
   >
-    {/* Design's card glyph (24×24, white on transparent), shown at native size. */}
-    <img src='/images/icons/cardIcon.png' alt='' width={24} height={24} />
+    <img src='/images/card/bank.svg' alt='' width={20} height={20} />
   </span>
 )
 
 interface TransferRowProps {
   icon: ReactNode
-  /** Small uppercase caption, e.g. "From · Card". */
+  /** Small uppercase caption, e.g. "From card". */
   label: string
-  /** Main line, e.g. "Card · 15,456.78 USD". */
+  /** Main line, e.g. "Card 15,456.78 USD". */
   title: string
   /** Makes the row a picker (shows a chevron). */
   onClick?: () => void
@@ -399,20 +407,29 @@ export function TransferRow({ icon, label, title, onClick, testId }: TransferRow
   const content = (
     <>
       {icon}
-      <span style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 0, textAlign: 'left' }}>
+      <span style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, textAlign: 'left' }}>
         <span
           style={{
             fontSize: 10,
             fontWeight: 600,
-            letterSpacing: 0.8,
+            lineHeight: '16px',
+            letterSpacing: 1,
             textTransform: 'uppercase',
-            color: 'var(--grey)',
+            color: GREY_MEDIUM,
           }}
         >
           {label}
         </span>
         <span
-          style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+          style={{
+            fontSize: 14,
+            fontWeight: 600,
+            lineHeight: '16px',
+            letterSpacing: 1,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
         >
           {title}
         </span>
@@ -423,13 +440,15 @@ export function TransferRow({ icon, label, title, onClick, testId }: TransferRow
   const style: CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.75rem',
+    gap: 8,
     width: '100%',
-    padding: '0.9rem 1rem',
-    borderRadius: 16,
+    height: 64,
+    padding: '8px 12px',
+    borderRadius: 20,
     border: 'none',
     background: ROW_BG,
-    color: 'var(--white)',
+    color: '#fff',
+    fontFamily: 'inherit',
     boxSizing: 'border-box',
   }
   return onClick ? (
@@ -443,25 +462,21 @@ export function TransferRow({ icon, label, title, onClick, testId }: TransferRow
   )
 }
 
-/** The FROM and TO rows stacked, with the round flip button over the gap (static arrow when `onFlip` is absent). */
+/** The FROM and TO rows stacked, with the Figma "Switch" button over the gap (static when `onFlip` is absent). */
 export function TransferRows({ from, to, onFlip }: { from: ReactNode; to: ReactNode; onFlip?: () => void }) {
   const circle: CSSProperties = {
     position: 'absolute',
-    top: '50%',
+    top: 48,
     left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: 32,
-    height: 32,
-    borderRadius: '50%',
-    border: '3px solid var(--bg)',
-    background: 'var(--blue-primary)',
-    color: 'var(--white)',
+    transform: 'translateX(-50%)',
+    padding: 8,
+    borderRadius: 20,
+    border: `4px solid ${ROW_BG}`,
+    background: MAIN_BG,
     display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 0,
     zIndex: 1,
   }
+  const icon = <img src='/images/icons/Vertical.png' alt='' width={24} height={24} />
   return (
     <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 8 }}>
       {from}
@@ -477,11 +492,11 @@ export function TransferRows({ from, to, onFlip }: { from: ReactNode; to: ReactN
           }}
           style={{ ...circle, cursor: 'pointer' }}
         >
-          <ArrowUpDown size={18} />
+          {icon}
         </button>
       ) : (
         <span aria-hidden style={circle}>
-          <ArrowUpDown size={14} />
+          {icon}
         </span>
       )}
     </div>
@@ -509,14 +524,16 @@ export function ConfirmTransferButton({ label, onClick, disabled, loading, testI
         alignItems: 'center',
         justifyContent: 'space-between',
         width: '100%',
-        height: 52,
-        padding: '0 1rem',
-        borderRadius: 12,
+        height: 48,
+        padding: '12px 16px',
+        borderRadius: 16,
         border: 'none',
         background: off ? 'rgba(255, 255, 255, 0.25)' : 'var(--blue-primary)',
-        color: 'rgba(16,16,21,1)',
-        fontSize: 13,
+        color: MAIN_BG,
+        fontFamily: 'inherit',
+        fontSize: 14,
         fontWeight: 600,
+        lineHeight: '16px',
         letterSpacing: 1,
         textTransform: 'uppercase',
         cursor: off ? 'default' : 'pointer',
@@ -524,7 +541,7 @@ export function ConfirmTransferButton({ label, onClick, disabled, loading, testI
       }}
     >
       {label}
-      <img src='/images/icons/Withdrawal.png' alt='' />
+      <img src='/images/icons/Withdrawal.png' alt='' width={16} height={16} style={{ opacity: 0.5 }} />
     </button>
   )
 }
@@ -538,9 +555,10 @@ interface PercentChipsProps {
 
 const PERCENTAGES = [25, 50, 75, 100]
 
+/** Figma "Amount Shortcuts". */
 export function PercentChips({ onSelect, disabled, testIdPrefix }: PercentChipsProps) {
   return (
-    <div style={{ display: 'flex', gap: 6 }}>
+    <div style={{ display: 'flex', gap: 8 }}>
       {PERCENTAGES.map((pct) => (
         <button
           key={pct}
@@ -553,13 +571,17 @@ export function PercentChips({ onSelect, disabled, testIdPrefix }: PercentChipsP
           }}
           style={{
             flex: 1,
-            height: 36,
-            borderRadius: 10,
+            minWidth: 0,
+            height: 37,
+            padding: '0 8px',
+            borderRadius: 16,
             border: 'none',
-            background: ROW_BG,
-            color: 'var(--white)',
+            background: CHIP_BG,
+            color: GREY_LIGHT,
+            fontFamily: 'inherit',
             fontSize: 12,
             fontWeight: 600,
+            letterSpacing: 1,
             cursor: disabled ? 'default' : 'pointer',
             opacity: disabled ? 0.5 : 1,
           }}
@@ -571,32 +593,36 @@ export function PercentChips({ onSelect, disabled, testIdPrefix }: PercentChipsP
   )
 }
 
-export function TransferLayout({ children, footer }: { children: ReactNode; footer: ReactNode }) {
+/**
+ * Figma lays the transfer panel out as one column under the app bar (amount,
+ * From/To, CONFIRM TRANSFER, shortcuts) with the numeric keyboard below, so the
+ * footer follows the content instead of being pinned to the bottom. `notes`
+ * (fees, progress, errors) go underneath, outside the designed panel.
+ */
+export function TransferLayout({
+  children,
+  footer,
+  notes,
+}: {
+  children: ReactNode
+  footer: ReactNode
+  notes?: ReactNode
+}) {
   return (
-    <>
-      <div
-        style={{
-          display: 'flex',
-          flex: 1,
-          flexDirection: 'column',
-          gap: '1rem',
-          minHeight: 0,
-          overflowY: 'auto',
-          padding: '0 1rem',
-        }}
-      >
-        {children}
-      </div>
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-          padding: '0.75rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom))',
-        }}
-      >
-        {footer}
-      </div>
-    </>
+    <div
+      style={{
+        display: 'flex',
+        flex: 1,
+        flexDirection: 'column',
+        gap: 12,
+        minHeight: 0,
+        overflowY: 'auto',
+        padding: '0 16px calc(16px + env(safe-area-inset-bottom))',
+      }}
+    >
+      {children}
+      {footer}
+      {notes}
+    </div>
   )
 }

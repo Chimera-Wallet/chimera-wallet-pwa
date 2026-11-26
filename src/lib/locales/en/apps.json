@@ -312,7 +312,7 @@
     "wirexCard": {
         "title": "Card",
         "card": "Card",
-        "cardBalance": "Card Balance",
+        "cardBalance": "Card balance",
         "selectCard": "Select card",
         "cardN": "Card {{n}}",
         "cardPosition": "{{n}} of {{total}}",
@@ -326,8 +326,8 @@
         "cardFrozen": "Card frozen",
         "frozenToast": "Card frozen",
         "transfer": {
-            "from": "From · {{name}}",
-            "to": "To · {{name}}",
+            "from": "From {{name}}",
+            "to": "To {{name}}",
             "wallet": "Wallet",
             "confirm": "Confirm transfer"
         },

@@ -1,4 +1,3 @@
-
 import { useContext, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { List } from 'lucide-react'
@@ -209,8 +208,8 @@ export default function WirexMoveAssets() {
     }
   }
 
-  const cardTitle = `${t('apps.wirexCard.card')} · ${fmt(cardBalance)} ${CARD_CURRENCY}`
-  const tokenTitle = `${tokenName(token.symbol)} · ${fmt(token.balance)} ${token.symbol}`
+  const cardTitle = `${t('apps.wirexCard.card')} ${fmt(cardBalance)} ${CARD_CURRENCY}`
+  const tokenTitle = `${tokenName(token.symbol)} ${fmt(token.balance)} ${token.symbol}`
   const cardRow = (isSource: boolean) => (
     <TransferRow
       testId='wirex-row-card'
@@ -224,7 +223,7 @@ export default function WirexMoveAssets() {
   const tokenRow = (isSource: boolean) => (
     <TransferRow
       testId='wirex-row-token'
-      icon={<AssetIcon symbol={token.symbol} size={36} />}
+      icon={<AssetIcon symbol={token.symbol} size={40} />}
       label={t(isSource ? 'apps.wirexCard.transfer.from' : 'apps.wirexCard.transfer.to', {
         name: t('apps.wirexCard.transfer.wallet'),
       })}
@@ -257,6 +256,22 @@ export default function WirexMoveAssets() {
         auxAriaLabel={t('apps.wirexCard.transactions')}
       />
       <TransferLayout
+        notes={
+          <>
+            {!fromCard && estimate ? (
+              <TextSecondary>
+                {t('apps.wirexCard.fee')}: {fmt(estimate.fee_amount)} {estimate.currency}
+              </TextSecondary>
+            ) : null}
+            {withdrawStep ? (
+              <TextSecondary testId='wirex-withdraw-step'>
+                {t(withdrawStep === 'card' ? 'apps.wirexCard.withdraw.fromCard' : 'apps.wirexCard.withdraw.delay')}
+              </TextSecondary>
+            ) : null}
+            {overBalance ? <ErrorMessage error text={t('apps.wirexCard.insufficient')} /> : null}
+            <ErrorMessage error={Boolean(error)} text={error} />
+          </>
+        }
         footer={
           <>
             <ConfirmTransferButton
@@ -284,18 +299,6 @@ export default function WirexMoveAssets() {
           to={fromCard ? tokenRow(false) : cardRow(false)}
           onFlip={flip}
         />
-        {!fromCard && estimate ? (
-          <TextSecondary>
-            {t('apps.wirexCard.fee')}: {fmt(estimate.fee_amount)} {estimate.currency}
-          </TextSecondary>
-        ) : null}
-        {withdrawStep ? (
-          <TextSecondary testId='wirex-withdraw-step'>
-            {t(withdrawStep === 'card' ? 'apps.wirexCard.withdraw.fromCard' : 'apps.wirexCard.withdraw.delay')}
-          </TextSecondary>
-        ) : null}
-        {overBalance ? <ErrorMessage error text={t('apps.wirexCard.insufficient')} /> : null}
-        <ErrorMessage error={Boolean(error)} text={error} />
       </TransferLayout>
 
       <SelectSheet
