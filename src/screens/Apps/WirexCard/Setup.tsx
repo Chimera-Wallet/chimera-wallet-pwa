@@ -1,4 +1,5 @@
-import { useContext, useEffect, useState } from 'react'
+import { CSSProperties, ReactNode, useContext, useEffect, useState } from 'react'
+import { CreditCard, Eye, EyeOff, Info, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import Header from '../../../components/Header'
 import Content from '../../../components/Content'
@@ -6,11 +7,8 @@ import Padded from '../../../components/Padded'
 import FlexCol from '../../../components/FlexCol'
 import Text, { TextSecondary } from '../../../components/Text'
 import Button from '../../../components/Button'
-import Input from '../../../components/Input'
-import InputPassword from '../../../components/InputPassword'
 import ErrorMessage from '../../../components/Error'
 import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
-import SegmentedControl from '../../../components/SegmentedControl'
 import { WalletContext } from '../../../providers/wallet'
 import { authenticateUser } from '../../../lib/biometrics'
 import { defaultPassword } from '../../../lib/constants'
@@ -27,9 +25,13 @@ import {
 } from '../../../lib/wirex'
 import { deployWirexKernelAccount, getWirexEvmAddress } from '../../../lib/wirexWallet'
 import { errorText, pickActiveCard, storeWirexAddress, withRetry } from '../../../lib/wirexCard'
+import { hapticSubtle } from '../../../lib/haptics'
+import { GREY_MEDIUM } from './shared'
 
 interface SetupProps {
   title: string
+  /** Opens the card walkthrough again (header info icon). */
+  onInfo?: () => void
   initialUser: WirexUser | null
   initialCards: WirexCard[]
   onReady: (user: WirexUser, cards: WirexCard[]) => void
@@ -37,12 +39,13 @@ interface SetupProps {
 
 type Mode = 'load' | 'create'
 
-export default function WirexSetup({ title, initialUser, initialCards, onReady }: SetupProps) {
+export default function WirexSetup({ title, onInfo, initialUser, initialCards, onReady }: SetupProps) {
   const { t } = useTranslation()
   const { wallet } = useContext(WalletContext)
 
   const [mode, setMode] = useState<Mode>('load')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [passwordError, setPasswordError] = useState('')
   // null while checking, wallets without a user password are encrypted with the default one.
   const [hasUserPassword, setHasUserPassword] = useState<boolean | null>(null)
@@ -167,8 +170,6 @@ export default function WirexSetup({ title, initialUser, initialCards, onReady }
   const disabled = Boolean(busy)
 
   if (!user) {
-    const tabLoad = t('apps.wirexCard.setup.tabLoad')
-    const tabCreate = t('apps.wirexCard.setup.tabCreate')
     const passwordMissing = Boolean(hasUserPassword) && !wallet.lockedByBiometrics && !password
     const passwordChecking = hasUserPassword === null && !wallet.lockedByBiometrics
     const formInvalid = mode === 'create' && (!email.trim() || country.length !== 2)
@@ -184,99 +185,152 @@ export default function WirexSetup({ title, initialUser, initialCards, onReady }
       setNotFound(false)
     }
 
+    const help = (text: string) => <InfoLine text={text} />
+
     return (
       <>
-        <Header text={title} />
+        <Header
+          text={title}
+          logo
+          auxIcon={onInfo ? <Info size={20} /> : undefined}
+          auxFunc={onInfo}
+          auxAriaLabel={t('apps.wirexCard.info')}
+        />
         <Content>
           <Padded>
-            <FlexCol gap='1.5rem'>
-              <SegmentedControl
-                options={[tabLoad, tabCreate]}
-                selected={mode === 'load' ? tabLoad : tabCreate}
-                onChange={(value) => switchMode(value === tabCreate ? 'create' : 'load')}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 24 }}>
+              <Tabs
+                options={[
+                  { value: 'load', label: t('apps.wirexCard.setup.tabLoad') },
+                  { value: 'create', label: t('apps.wirexCard.setup.tabCreate') },
+                ]}
+                selected={mode}
+                onChange={(value) => switchMode(value as Mode)}
               />
 
-              <FlexCol gap='0.5rem' testId='wirex-setup-password'>
-                <Text bold>{t('apps.wirexCard.setup.passwordTitle')}</Text>
+              <div data-testid='wirex-setup-password' style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {wallet.lockedByBiometrics ? (
-                  <TextSecondary>{t('apps.wirexCard.setup.passwordBiometrics')}</TextSecondary>
+                  help(t('apps.wirexCard.setup.passwordBiometrics'))
                 ) : hasUserPassword === false ? (
-                  <TextSecondary>{t('apps.wirexCard.setup.passwordNone')}</TextSecondary>
+                  help(t('apps.wirexCard.setup.passwordNone'))
                 ) : (
                   <>
-                    <TextSecondary>{t('apps.wirexCard.setup.passwordHelp')}</TextSecondary>
-                    <InputPassword
-                      onChange={(e) => {
-                        setPassword(e.target.value)
-                        setPasswordError('')
-                      }}
-                      onEnter={submit}
-                      placeholder={t('apps.wirexCard.setup.passwordPlaceholder')}
-                    />
-                    <ErrorMessage error={Boolean(passwordError)} text={passwordError} />
+                    <Field
+                      label={t('apps.wirexCard.setup.passwordTitle')}
+                      right={
+                        <button
+                          type='button'
+                          aria-label={
+                            showPassword
+                              ? t('apps.wirexCard.setup.hidePassword')
+                              : t('apps.wirexCard.setup.showPassword')
+                          }
+                          onClick={() => setShowPassword((v) => !v)}
+                          style={iconButton}
+                        >
+                          {showPassword ? (
+                            <EyeOff size={22} color='var(--white)' />
+                          ) : (
+                            <Eye size={22} color='var(--white)' />
+                          )}
+                        </button>
+                      }
+                    >
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        autoComplete='current-password'
+                        placeholder={t('apps.wirexCard.setup.passwordPlaceholder')}
+                        aria-label={t('apps.wirexCard.setup.passwordTitle')}
+                        data-testid='wirex-setup-password-input'
+                        onChange={(e) => {
+                          setPassword(e.target.value)
+                          setPasswordError('')
+                        }}
+                        onKeyDown={(e) => (e.key === 'Enter' ? submit() : undefined)}
+                        style={inputStyle}
+                      />
+                    </Field>
+                    {passwordError ? <ErrorLine text={passwordError} /> : null}
                   </>
                 )}
-              </FlexCol>
+                {mode === 'load' ? (
+                  <>
+                    {hasUserPassword && !wallet.lockedByBiometrics
+                      ? help(t('apps.wirexCard.setup.passwordHelp'))
+                      : null}
+                    {help(t('apps.wirexCard.setup.loadHelp'))}
+                  </>
+                ) : hasUserPassword && !wallet.lockedByBiometrics ? (
+                  help(t('apps.wirexCard.setup.passwordHelpCreate'))
+                ) : (
+                  help(t('apps.wirexCard.setup.createHelp'))
+                )}
+              </div>
 
-              {mode === 'load' ? (
-                <TextSecondary>{t('apps.wirexCard.setup.loadHelp')}</TextSecondary>
-              ) : (
-                <FlexCol gap='0.75rem'>
-                  <TextSecondary>{t('apps.wirexCard.setup.createHelp')}</TextSecondary>
-                  <Input
-                    label={t('apps.wirexCard.setup.email')}
-                    value={email}
-                    onChange={(value: string) => setEmail(value)}
-                    testId='wirex-setup-email'
-                  />
-                  <FlexCol gap='0.25rem'>
-                    <Input
-                      label={t('apps.wirexCard.setup.country')}
-                      placeholder={t('apps.wirexCard.setup.countryPlaceholder')}
-                      maxLength={2}
-                      value={country}
-                      onChange={(value: string) => setCountry(value.toUpperCase())}
-                      testId='wirex-setup-country'
-                    />
-                    <TextSecondary>{t('apps.wirexCard.setup.countryHelp')}</TextSecondary>
-                  </FlexCol>
-                  <label className='flex w-full cursor-pointer items-center gap-3 rounded-lg border border-neutral-500 p-3'>
+              {mode === 'create' ? (
+                <>
+                  <Field label={t('apps.wirexCard.setup.email')}>
                     <input
-                      type='checkbox'
-                      checked={isPep}
-                      onChange={(e) => setIsPep(e.target.checked)}
-                      style={{ width: 20, height: 20, accentColor: 'var(--primary)', flexShrink: 0 }}
+                      type='email'
+                      value={email}
+                      autoComplete='email'
+                      placeholder={t('apps.wirexCard.setup.emailPlaceholder')}
+                      aria-label={t('apps.wirexCard.setup.email')}
+                      data-testid='wirex-setup-email'
+                      onChange={(e) => setEmail(e.target.value)}
+                      style={inputStyle}
                     />
-                    <FlexCol gap='0.25rem'>
-                      <Text small>{t('apps.wirexCard.setup.pep')}</Text>
-                      <TextSecondary>{t('apps.wirexCard.setup.pepHelp')}</TextSecondary>
-                    </FlexCol>
-                  </label>
-                </FlexCol>
-              )}
+                  </Field>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <Field label={t('apps.wirexCard.setup.country')}>
+                      <input
+                        type='text'
+                        value={country}
+                        maxLength={2}
+                        autoCapitalize='characters'
+                        autoComplete='country'
+                        placeholder={t('apps.wirexCard.setup.countryPlaceholder')}
+                        aria-label={t('apps.wirexCard.setup.country')}
+                        data-testid='wirex-setup-country'
+                        onChange={(e) => setCountry(e.target.value.toUpperCase())}
+                        style={inputStyle}
+                      />
+                    </Field>
+                    {help(t('apps.wirexCard.setup.countryHelp'))}
+                  </div>
+                  <PepToggle
+                    checked={isPep}
+                    onChange={setIsPep}
+                    title={t('apps.wirexCard.setup.pep')}
+                    description={t('apps.wirexCard.setup.pepHelp')}
+                  />
+                </>
+              ) : null}
 
-              {busy ? <TextSecondary>{busy}</TextSecondary> : null}
-              <ErrorMessage error={Boolean(error)} text={error} />
+              {busy ? <span style={{ fontSize: 12, color: GREY_MEDIUM }}>{busy}</span> : null}
+              {error ? <ErrorLine text={error} /> : null}
               {notFound ? (
-                <FlexCol gap='0.5rem'>
-                  <TextSecondary>{t('apps.wirexCard.setup.notFound')}</TextSecondary>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <span style={{ fontSize: 12, color: GREY_MEDIUM }}>{t('apps.wirexCard.setup.notFound')}</span>
                   <Button
                     label={t('apps.wirexCard.setup.createInstead')}
                     onClick={() => switchMode('create')}
                     secondary
                     testId='wirex-setup-create-instead'
                   />
-                </FlexCol>
+                </div>
               ) : null}
-            </FlexCol>
+            </div>
           </Padded>
         </Content>
         <ButtonsOnBottom>
-          <Button
+          <SubmitButton
             label={t(mode === 'load' ? 'apps.wirexCard.setup.ctaLoad' : 'apps.wirexCard.setup.ctaCreate')}
             onClick={submit}
             disabled={!canSubmit}
             loading={disabled}
+            icon={mode === 'load' ? <Search size={16} /> : <CreditCard size={16} />}
             testId='wirex-setup-submit'
           />
         </ButtonsOnBottom>
@@ -357,5 +411,237 @@ export default function WirexSetup({ title, initialUser, initialCards, onReady }
         </Padded>
       </Content>
     </>
+  )
+}
+
+// ─── Form pieces (Figma: Card / Register, Card / Login) ─────────────────────
+
+const SURFACE = 'rgba(231, 234, 236, 0.1)'
+const FIELD_BG = 'var(--info-container-bg2)' // #25252a
+
+const iconButton: CSSProperties = { display: 'flex', padding: 0, border: 'none', background: 'none', cursor: 'pointer' }
+
+const inputStyle: CSSProperties = {
+  fontSize: 14,
+  fontWeight: 600,
+  lineHeight: '16px',
+  letterSpacing: 1,
+  color: 'var(--white)',
+  width: '100%',
+  padding: 0,
+  border: 'none',
+  outline: 'none',
+  background: 'transparent',
+  fontFamily: 'inherit',
+}
+
+/** Info glyph + muted helper text under a field. */
+function InfoLine({ text }: { text: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '0 4px' }}>
+      <Info size={14} color={GREY_MEDIUM} style={{ flexShrink: 0, marginTop: 1 }} />
+      <span style={{ fontSize: 12, lineHeight: '16px', color: GREY_MEDIUM }}>{text}</span>
+    </div>
+  )
+}
+
+const ErrorLine = ({ text }: { text: string }) => (
+  <span style={{ fontSize: 12, padding: '0 4px', color: 'var(--red)' }}>{text}</span>
+)
+
+/** "I have an account" / "New account" pill switch. */
+function Tabs({
+  options,
+  selected,
+  onChange,
+}: {
+  options: { value: string; label: string }[]
+  selected: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <div role='tablist' style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 16, background: SURFACE }}>
+      {options.map((option) => {
+        const active = option.value === selected
+        return (
+          <button
+            key={option.value}
+            type='button'
+            role='tab'
+            aria-selected={active}
+            data-testid={`wirex-setup-tab-${option.value}`}
+            onClick={() => {
+              if (active) return
+              hapticSubtle()
+              onChange(option.value)
+            }}
+            style={{
+              flex: 1,
+              height: 36,
+              border: 'none',
+              borderRadius: 12,
+              background: active ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
+              color: active ? 'var(--white)' : GREY_MEDIUM,
+              fontFamily: 'inherit',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'background-color 0.2s, color 0.2s',
+            }}
+          >
+            {option.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+/** Bordered tile with a radio-style toggle for the PEP declaration. */
+function PepToggle({
+  checked,
+  onChange,
+  title,
+  description,
+}: {
+  checked: boolean
+  onChange: (checked: boolean) => void
+  title: string
+  description: string
+}) {
+  return (
+    <button
+      type='button'
+      role='checkbox'
+      aria-checked={checked}
+      data-testid='wirex-setup-pep'
+      onClick={() => {
+        hapticSubtle()
+        onChange(!checked)
+      }}
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 12,
+        width: '100%',
+        padding: 16,
+        borderRadius: 16,
+        border: `1px solid ${checked ? 'var(--blue-primary)' : 'rgba(255, 255, 255, 0.1)'}`,
+        background: 'transparent',
+        color: 'var(--white)',
+        fontFamily: 'inherit',
+        textAlign: 'left',
+        cursor: 'pointer',
+      }}
+    >
+      <span
+        aria-hidden
+        style={{
+          width: 20,
+          height: 20,
+          marginTop: 1,
+          borderRadius: '50%',
+          border: `2px solid ${checked ? 'var(--blue-primary)' : 'var(--white)'}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          boxSizing: 'border-box',
+        }}
+      >
+        {checked ? (
+          <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--blue-primary)' }} />
+        ) : null}
+      </span>
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <span style={{ fontSize: 14, fontWeight: 600 }}>{title}</span>
+        <span style={{ fontSize: 12, lineHeight: '16px', color: GREY_MEDIUM }}>{description}</span>
+      </span>
+    </button>
+  )
+}
+
+/** Figma "Field": 64px row on #25252a, uppercase caption over the input. */
+function Field({ label, right, children }: { label: string; right?: ReactNode; children: ReactNode }) {
+  return (
+    <label
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        height: 64,
+        padding: '8px 12px',
+        borderRadius: 20,
+        background: FIELD_BG,
+        boxSizing: 'border-box',
+      }}
+    >
+      <span style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flex: 1, minWidth: 0 }}>
+        <span
+          style={{
+            fontSize: 10,
+            fontWeight: 600,
+            lineHeight: '16px',
+            letterSpacing: 1,
+            textTransform: 'uppercase',
+            color: GREY_MEDIUM,
+          }}
+        >
+          {label}
+        </span>
+        {children}
+      </span>
+      {right ? <span style={{ display: 'flex', flexShrink: 0 }}>{right}</span> : null}
+    </label>
+  )
+}
+
+/** Bottom CTA: blue when ready, grey with dark text while the form is incomplete. */
+function SubmitButton({
+  label,
+  onClick,
+  disabled,
+  loading,
+  icon,
+  testId,
+}: {
+  label: string
+  onClick: () => void
+  disabled?: boolean
+  loading?: boolean
+  icon: ReactNode
+  testId?: string
+}) {
+  const off = disabled || loading
+  return (
+    <button
+      type='button'
+      data-testid={testId}
+      disabled={off}
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+        height: 48,
+        padding: '12px 16px',
+        borderRadius: 16,
+        border: 'none',
+        background: off ? 'rgba(255, 255, 255, 0.25)' : 'var(--blue-primary)',
+        color: off ? '#101015' : 'white',
+        fontFamily: 'inherit',
+        fontSize: 14,
+        fontWeight: 600,
+        lineHeight: '16px',
+        letterSpacing: 1,
+        textTransform: 'uppercase',
+        cursor: off ? 'default' : 'pointer',
+        transition: 'background 0.2s ease, color 0.2s ease',
+      }}
+    >
+      {loading ? <span className='spinner' /> : label}
+      <span style={{ display: 'flex', opacity: 0.5 }}>{icon}</span>
+    </button>
   )
 }

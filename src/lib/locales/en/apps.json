@@ -11,7 +11,7 @@
         "noAddrContact": "No addresses for this contact.",
         "addAddr": "Add Address",
         "addNewAddr": "Add new address",
-        "newAddr": "New Address" ,
+        "newAddr": "New Address",
         "addrType": "Address Type",
         "delCont": "Delete Contact",
         "save": "Save as",
@@ -27,10 +27,10 @@
         "selAddr": "Select Address",
         "emptyMess": "No saved accounts yet. Add your addresses to easily access them later.",
         "emptyContMess": "No contacts yet. Add contact addresses to send funds quickly.",
-        "addNewAcc": "Add New Account", 
+        "addNewAcc": "Add New Account",
         "addNewCont": "Add New Contact"
     },
-    "assets":{
+    "assets": {
         "burning": "Burning...",
         "confBurn": "Confirm Burn",
         "amountBurn": "You are about to burn {{amount}} {{id}}. This action is irreversible.",
@@ -52,7 +52,7 @@
         "mint": "Mint",
         "mintAss": "Mint Asset",
         "arkMint": "Arkade Mint",
-        "arkMintDis":"Arkade Mint is disabled.",
+        "arkMintDis": "Arkade Mint is disabled.",
         "enableView": "Enable it to view your assets.",
         "mintingContAss": "Minting control asset...",
         "mintingAss": "Minting asset...",
@@ -70,8 +70,8 @@
         "amStar": "Amount *",
         "iconUrl": "Icon URL",
         "controlAss": "Control Asset",
-        "none": "None", 
-        "existing": "Existing", 
+        "none": "None",
+        "existing": "Existing",
         "new": "New",
         "selectWallet": "Select from wallet...",
         "assetCreate": "Asset Created",
@@ -92,7 +92,7 @@
         "redeem": "Redeem gift card"
     },
     "lendasat": {
-       "lendasat": "Lendasat"
+        "lendasat": "Lendasat"
     },
     "referral": {
         "referral": "Referral",
@@ -107,12 +107,12 @@
         "refresh": "Refresh",
         "claim": "Claim Reward",
         "infoSlides": [
-      {
-        "title": "What is the Referral Program?",
-        "description":
-          "You're at the centre, and the rewards are endless!\n\nEarn 20% of all fees from every friend who signs up with your link—forever.\nNo caps, no limits, no expiration; just continuous rewards. The more you share, the more you earn. Ready?\n\nCopy your link, spread the word, and let the rewards roll in!",
-        "image": "/rocket.png"
-      }]
+            {
+                "title": "What is the Referral Program?",
+                "description": "You're at the centre, and the rewards are endless!\n\nEarn 20% of all fees from every friend who signs up with your link—forever.\nNo caps, no limits, no expiration; just continuous rewards. The more you share, the more you earn. Ready?\n\nCopy your link, spread the word, and let the rewards roll in!",
+                "image": "/rocket.png"
+            }
+        ]
     },
     "swap": {
         "swap": "Swap",
@@ -140,7 +140,7 @@
         "swift": "SWIFT Bank Transfer",
         "ref": "Reference (Required)",
         "mustIncl": "You MUST include this reference in your transfer for it to be processed correctly.",
-        "refresh":"Refreshing...",
+        "refresh": "Refreshing...",
         "refreshStat": "Refresh Status",
         "backToWal": "Back to Wallet",
         "createSwap": "Create New Swap",
@@ -152,7 +152,6 @@
         "kycVerReq": "KYC Verification Required",
         "transReq": "Transactions over {{thresh}} EUR require identity verification.",
         "amountsReq": "Amounts over {{thresh}} EUR require KYC verification",
-
         "unavailable": "Swap unavailable",
         "unavailableText": "No swap markets are available right now. Please try again later.",
         "selectFrom": "You pay",
@@ -196,12 +195,11 @@
         "geningPDF": "Generating PDF...",
         "noTransYet": "No transactions available yet",
         "infoSlides": [
-      {
-        "title":"Your Financial Overview",
-        "description":
-          "Access detailed statements of all your transactions, balances, and account activity in one place.",
-        "image": "/images/apps/statement.png"
-      }
+            {
+                "title": "Your Financial Overview",
+                "description": "Access detailed statements of all your transactions, balances, and account activity in one place.",
+                "image": "/images/apps/statement.png"
+            }
         ]
     },
     "pos": {
@@ -400,16 +398,16 @@
             "tabLoad": "I have an account",
             "tabCreate": "New account",
             "passwordTitle": "Wallet password",
-            "passwordHelp": "Required to find or create your card account: it unlocks the key that owns it.",
+            "passwordHelp": "Required to find your card account: it unlocks the key that owns it.",
             "passwordPlaceholder": "Enter your wallet password",
             "passwordBiometrics": "You'll confirm with biometrics when you continue.",
             "passwordNone": "Your wallet has no password, so there's nothing to enter.",
             "loadHelp": "We'll look up the Wirex account linked to this wallet.",
             "createHelp": "Your card account will be linked to this wallet.",
-            "email": "Email",
+            "email": "E-mail",
             "country": "Country of residence",
             "countryPlaceholder": "2-letter code, e.g. GB",
-            "countryHelp": "This can't be changed later.",
+            "countryHelp": "Country of residence can't be changed later.",
             "pep": "I am a politically exposed person (PEP)",
             "pepHelp": "A PEP holds, or has held, a prominent public role, or is a close family member or associate of someone who does.",
             "ctaLoad": "Find my account",
@@ -418,10 +416,14 @@
             "createInstead": "Create one instead",
             "busyLoad": "Looking up your account…",
             "busyDeploy": "Setting up your card wallet (this can take a minute)…",
-            "busyCreate": "Creating your Wirex account…"
+            "busyCreate": "Creating your Wirex account…",
+            "passwordHelpCreate": "Required to create your card account: it unlocks the key that owns it. Your card account will be linked to this wallet.",
+            "emailPlaceholder": "name@example.com",
+            "showPassword": "Show password",
+            "hidePassword": "Hide password"
         },
         "withdraw": {
-            "fromCard":"Moving funds from the card to your Wirex wallet…",
+            "fromCard": "Moving funds from the card to your Wirex wallet…",
             "delay": "Waiting for Wirex's security delay. Keep this screen open, or finish it later from the card screen.",
             "sent": "Withdrawal complete: {{ticker}} sent to your Base address",
             "pending": "Withdrawal of {{amount}} pending",

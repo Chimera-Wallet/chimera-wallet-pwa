@@ -68,6 +68,7 @@ export default function AppWirexCard() {
     return (
       <WirexSetup
         title={title}
+        onInfo={() => setWalkthroughDone(false)}
         initialUser={state.user}
         initialCards={state.cards}
         onReady={(user, cards) => setState(toState(user, cards))}
